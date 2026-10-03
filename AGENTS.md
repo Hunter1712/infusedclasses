@@ -16,4 +16,4 @@ Single-context layout (`GLOSSARY.md` + `docs/adr/` at root). See `docs/agents/do
 
 ### Build
 
-Use system `gradle`, not `./gradlew`. PowerShell-safe commands only.
+Use system `gradle`, not `./gradlew` (wrapper stalls in agent shell). PowerShell-safe commands only.
