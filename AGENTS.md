@@ -13,3 +13,7 @@ Default five-role vocabulary (`needs-triage`, `needs-info`, `ready-for-agent`, `
 ### Domain docs
 
 Single-context layout (`GLOSSARY.md` + `docs/adr/` at root). See `docs/agents/domain.md`.
+
+### Build
+
+Use system `gradle`, not `./gradlew`. PowerShell-safe commands only.
