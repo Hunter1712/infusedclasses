@@ -1,4 +1,4 @@
-package dev.infusedclasses;
+package com.hunter1712.infusedclasses;
 
 /**
  * Server-side cooldown tracking for active abilities. Pure logic, no Minecraft types, so the state machine

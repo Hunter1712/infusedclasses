@@ -1,4 +1,4 @@
-package dev.infusedclasses;
+package com.hunter1712.infusedclasses;
 
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
@@ -74,3 +74,4 @@ class ClassRegistryTest {
 		assertNull(classes.classId());
 	}
 }
+

@@ -1,4 +1,4 @@
-package dev.infusedclasses;
+package com.hunter1712.infusedclasses;
 
 import net.minecraft.resources.Identifier;
 
@@ -13,3 +13,4 @@ public record ClassDefinition(
 		Identifier activeAbility
 ) {
 }
+

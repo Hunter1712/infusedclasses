@@ -1,4 +1,4 @@
-package dev.infusedclasses;
+package com.hunter1712.infusedclasses;
 
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
@@ -67,3 +67,4 @@ public final class ClassRegistry {
 		return BY_ID.get(id);
 	}
 }
+

@@ -1,10 +1,10 @@
-package dev.infusedclasses.client;
+package com.hunter1712.infusedclasses.client;
 
-import dev.infusedclasses.ClassConfirmedPayload;
-import dev.infusedclasses.InfusedClasses;
-import dev.infusedclasses.OpenClassScreenPayload;
-import dev.infusedclasses.SelectClassPayload;
-import dev.infusedclasses.WarCryPayload;
+import com.hunter1712.infusedclasses.ClassConfirmedPayload;
+import com.hunter1712.infusedclasses.InfusedClasses;
+import com.hunter1712.infusedclasses.OpenClassScreenPayload;
+import com.hunter1712.infusedclasses.SelectClassPayload;
+import com.hunter1712.infusedclasses.WarCryPayload;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
@@ -50,3 +50,4 @@ public class InfusedClassesClient implements ClientModInitializer {
 		ClientPlayNetworking.send(new SelectClassPayload(id));
 	}
 }
+

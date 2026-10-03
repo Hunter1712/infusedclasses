@@ -1,6 +1,6 @@
-package dev.infusedclasses.mixin;
+package com.hunter1712.infusedclasses.mixin;
 
-import dev.infusedclasses.PlayerClasses;
+import com.hunter1712.infusedclasses.PlayerClasses;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.level.storage.ValueOutput;
@@ -34,3 +34,4 @@ public abstract class PlayerMixin implements PlayerClasses.Owner {
 		}
 	}
 }
+

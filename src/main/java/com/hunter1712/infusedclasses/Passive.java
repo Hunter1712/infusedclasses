@@ -1,4 +1,4 @@
-package dev.infusedclasses;
+package com.hunter1712.infusedclasses;
 
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
@@ -8,3 +8,4 @@ import net.minecraft.world.entity.ai.attributes.AttributeModifier;
  */
 public record Passive(Identifier attribute, Identifier modifier, double value, AttributeModifier.Operation operation) {
 }
+

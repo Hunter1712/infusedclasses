@@ -1,4 +1,4 @@
-package dev.infusedclasses;
+package com.hunter1712.infusedclasses;
 
 import io.netty.buffer.ByteBuf;
 import net.minecraft.network.codec.StreamCodec;
@@ -17,3 +17,4 @@ public record SelectClassPayload(Identifier classId) implements CustomPacketPayl
 		return TYPE;
 	}
 }
+

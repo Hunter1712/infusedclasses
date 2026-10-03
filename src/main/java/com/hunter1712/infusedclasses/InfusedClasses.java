@@ -1,4 +1,4 @@
-package dev.infusedclasses;
+package com.hunter1712.infusedclasses;
 
 import com.mojang.brigadier.arguments.StringArgumentType;
 import net.fabricmc.api.ModInitializer;
@@ -149,3 +149,4 @@ public class InfusedClasses implements ModInitializer {
 		player.displayClientMessage(Component.literal("War Cry!").withStyle(ChatFormatting.RED), true);
 	}
 }
+

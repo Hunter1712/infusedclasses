@@ -1,7 +1,7 @@
-package dev.infusedclasses.client;
+package com.hunter1712.infusedclasses.client;
 
-import dev.infusedclasses.ClassDefinition;
-import dev.infusedclasses.ClassRegistry;
+import com.hunter1712.infusedclasses.ClassDefinition;
+import com.hunter1712.infusedclasses.ClassRegistry;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
@@ -50,3 +50,4 @@ public class ClassSelectScreen extends Screen {
 		return false;
 	}
 }
+

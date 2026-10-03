@@ -1,4 +1,4 @@
-package dev.infusedclasses;
+package com.hunter1712.infusedclasses;
 
 import net.minecraft.core.Holder;
 import net.minecraft.resources.Identifier;
@@ -118,3 +118,4 @@ public class PlayerClasses {
 		PlayerClasses classes();
 	}
 }
+

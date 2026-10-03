@@ -13,10 +13,10 @@
 	],
 	"entrypoints": {
 		"main": [
-			"dev.infusedclasses.InfusedClasses"
+			"com.hunter1712.infusedclasses.InfusedClasses"
 		],
 		"client": [
-			"dev.infusedclasses.client.InfusedClassesClient"
+			"com.hunter1712.infusedclasses.client.InfusedClassesClient"
 		]
 	},
 	"depends": {
