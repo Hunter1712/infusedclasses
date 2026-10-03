@@ -9,6 +9,8 @@ import net.minecraft.network.chat.Component;
 
 /** One button per class. Locked ones show but stay disabled. No custom art. */
 public class ClassSelectScreen extends Screen {
+	private int classCount = ClassRegistry.all().size();
+
 	protected ClassSelectScreen() {
 		super(Component.literal("Choose your class"));
 	}
@@ -16,7 +18,8 @@ public class ClassSelectScreen extends Screen {
 	@Override
 	protected void init() {
 		java.util.Collection<ClassDefinition> defs = ClassRegistry.all();
-		int y = listTop(defs.size());
+		classCount = defs.size();
+		int y = listTop(classCount);
 		for (ClassDefinition def : defs) {
 			String label = def.displayName() + (def.locked() ? " (soon)" : "");
 			addRenderableWidget(Button.builder(Component.literal(label), b -> InfusedClassesClient.pickClass(def.id()))
@@ -30,7 +33,7 @@ public class ClassSelectScreen extends Screen {
 	@Override
 	public void render(GuiGraphics graphics, int mouseX, int mouseY, float delta) {
 		super.render(graphics, mouseX, mouseY, delta);
-		graphics.drawCenteredString(font, title, width / 2, listTop(ClassRegistry.all().size()) - 20, 0xFFFFFF);
+		graphics.drawCenteredString(font, title, width / 2, listTop(classCount) - 20, 0xFFFFFF);
 	}
 
 	private int listTop(int count) {

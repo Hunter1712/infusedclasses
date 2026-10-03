@@ -27,6 +27,7 @@ import net.minecraft.world.phys.Vec3;
 /** Server side. Authoritative: client sends intents, every decision happens here. */
 public class InfusedClasses implements ModInitializer {
 	public static final String MOD_ID = "infusedclasses";
+	private static final String UNKNOWN_OR_LOCKED = "Unknown or locked class";
 
 	public static final CustomPacketPayload.Type<SelectClassPayload> SELECT_CLASS =
 			new CustomPacketPayload.Type<>(Identifier.fromNamespaceAndPath(MOD_ID, "select_class"));
@@ -39,11 +40,20 @@ public class InfusedClasses implements ModInitializer {
 
 	@Override
 	public void onInitialize() {
+		registerPayloads();
+		registerEvents();
+		registerReceivers();
+		registerCommands();
+	}
+
+	private static void registerPayloads() {
 		PayloadTypeRegistry.playC2S().register(SELECT_CLASS, SelectClassPayload.STREAM_CODEC);
 		PayloadTypeRegistry.playC2S().register(WAR_CRY, WarCryPayload.STREAM_CODEC);
 		PayloadTypeRegistry.playS2C().register(OPEN_CLASS_SCREEN, OpenClassScreenPayload.STREAM_CODEC);
 		PayloadTypeRegistry.playS2C().register(CLASS_CONFIRMED, ClassConfirmedPayload.STREAM_CODEC);
+	}
 
+	private static void registerEvents() {
 		ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> {
 			ServerPlayer player = handler.getPlayer();
 			PlayerClasses classes = PlayerClasses.of(player);
@@ -53,15 +63,18 @@ public class InfusedClasses implements ModInitializer {
 			}
 		});
 
+		// Vanilla clears attribute modifiers on respawn, so re-apply the class passives.
 		ServerPlayerEvents.AFTER_RESPAWN.register((oldPlayer, newPlayer, alive) ->
 				PlayerClasses.of(newPlayer).refresh(newPlayer));
+	}
 
+	private static void registerReceivers() {
 		ServerPlayNetworking.registerGlobalReceiver(SELECT_CLASS, (payload, context) -> context.server()
 				.execute(() -> {
 					ServerPlayer player = context.player();
 					ClassDefinition def = PlayerClasses.of(player).setClass(player, payload.classId());
 					if (def == null) {
-						player.displayClientMessage(Component.literal("Unknown or locked class").withStyle(ChatFormatting.RED), false);
+						player.displayClientMessage(Component.literal(UNKNOWN_OR_LOCKED).withStyle(ChatFormatting.RED), false);
 						return;
 					}
 					context.responseSender().sendPacket(new ClassConfirmedPayload());
@@ -71,7 +84,9 @@ public class InfusedClasses implements ModInitializer {
 
 		ServerPlayNetworking.registerGlobalReceiver(WAR_CRY, (payload, context) -> context.server()
 				.execute(() -> warCry(context.player())));
+	}
 
+	private static void registerCommands() {
 		// ponytail: plain string arg, not a custom ArgumentType. Suggests ids, parses one line.
 		CommandRegistrationCallback.EVENT.register((dispatcher, registry, env) ->
 				dispatcher.register(Commands.literal("class")
@@ -88,7 +103,7 @@ public class InfusedClasses implements ModInitializer {
 												.executes(ctx -> {
 													Identifier id = Identifier.tryParse(StringArgumentType.getString(ctx, "class"));
 													if (id == null) {
-														ctx.getSource().sendFailure(Component.literal("Unknown or locked class"));
+														ctx.getSource().sendFailure(Component.literal(UNKNOWN_OR_LOCKED));
 														return 0;
 													}
 													return setClass(ctx.getSource(),
@@ -103,7 +118,7 @@ public class InfusedClasses implements ModInitializer {
 					+ " to " + def.displayName()), true);
 			return 1;
 		}
-		source.sendFailure(Component.literal("Unknown or locked class: " + id));
+		source.sendFailure(Component.literal(UNKNOWN_OR_LOCKED + ": " + id));
 		return 0;
 	}
 
@@ -113,13 +128,12 @@ public class InfusedClasses implements ModInitializer {
 			return;
 		}
 		long now = System.currentTimeMillis();
-		long remaining = classes.cooldowns().warCryRemaining(now);
-		if (remaining > 0) {
+		if (!classes.cooldowns().useWarCry(now)) {
+			long remaining = classes.cooldowns().warCryRemaining(now);
 			player.displayClientMessage(Component.literal("War Cry: "
 					+ String.format(java.util.Locale.ROOT, "%.0fs", remaining / 1000.0)), true);
 			return;
 		}
-		classes.cooldowns().useWarCry(now);
 		player.addEffect(new MobEffectInstance(MobEffects.STRENGTH, Cooldowns.WAR_CRY_EFFECT_TICKS, 1));
 		if (player.level() instanceof ServerLevel level) {
 			level.playSound(null, player.blockPosition(), SoundEvents.RAVAGER_ROAR, SoundSource.PLAYERS, 1.0F, 1.0F);

@@ -54,7 +54,7 @@ public class PlayerClasses {
 			return null;
 		}
 		removeModifiers(player);
-		classId = id;
+		classId = def.id();
 		applyModifiers(player, def);
 		return def;
 	}
