@@ -13,7 +13,6 @@ import net.minecraft.commands.Commands;
 import net.minecraft.commands.arguments.EntityArgument;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -26,17 +25,8 @@ import net.minecraft.world.phys.Vec3;
 
 /** Server side. Authoritative: client sends intents, every decision happens here. */
 public class InfusedClasses implements ModInitializer {
-	public static final String MOD_ID = "infusedclasses";
+	public static final String MOD_ID = ClassPackets.MOD_ID;
 	private static final String UNKNOWN_OR_LOCKED = "Unknown or locked class";
-
-	public static final CustomPacketPayload.Type<SelectClassPayload> SELECT_CLASS =
-			new CustomPacketPayload.Type<>(Identifier.fromNamespaceAndPath(MOD_ID, "select_class"));
-	public static final CustomPacketPayload.Type<OpenClassScreenPayload> OPEN_CLASS_SCREEN =
-			new CustomPacketPayload.Type<>(Identifier.fromNamespaceAndPath(MOD_ID, "open_class_screen"));
-	public static final CustomPacketPayload.Type<WarCryPayload> WAR_CRY =
-			new CustomPacketPayload.Type<>(Identifier.fromNamespaceAndPath(MOD_ID, "war_cry"));
-	public static final CustomPacketPayload.Type<ClassConfirmedPayload> CLASS_CONFIRMED =
-			new CustomPacketPayload.Type<>(Identifier.fromNamespaceAndPath(MOD_ID, "class_confirmed"));
 
 	@Override
 	public void onInitialize() {
@@ -47,10 +37,10 @@ public class InfusedClasses implements ModInitializer {
 	}
 
 	private static void registerPayloads() {
-		PayloadTypeRegistry.playC2S().register(SELECT_CLASS, SelectClassPayload.STREAM_CODEC);
-		PayloadTypeRegistry.playC2S().register(WAR_CRY, WarCryPayload.STREAM_CODEC);
-		PayloadTypeRegistry.playS2C().register(OPEN_CLASS_SCREEN, OpenClassScreenPayload.STREAM_CODEC);
-		PayloadTypeRegistry.playS2C().register(CLASS_CONFIRMED, ClassConfirmedPayload.STREAM_CODEC);
+		PayloadTypeRegistry.playC2S().register(ClassPackets.SELECT_CLASS, SelectClassPayload.STREAM_CODEC);
+		PayloadTypeRegistry.playC2S().register(ClassPackets.WAR_CRY, WarCryPayload.STREAM_CODEC);
+		PayloadTypeRegistry.playS2C().register(ClassPackets.OPEN_CLASS_SCREEN, OpenClassScreenPayload.STREAM_CODEC);
+		PayloadTypeRegistry.playS2C().register(ClassPackets.CLASS_CONFIRMED, ClassConfirmedPayload.STREAM_CODEC);
 	}
 
 	private static void registerEvents() {
@@ -69,7 +59,7 @@ public class InfusedClasses implements ModInitializer {
 	}
 
 	private static void registerReceivers() {
-		ServerPlayNetworking.registerGlobalReceiver(SELECT_CLASS, (payload, context) -> context.server()
+		ServerPlayNetworking.registerGlobalReceiver(ClassPackets.SELECT_CLASS, (payload, context) -> context.server()
 				.execute(() -> {
 					ServerPlayer player = context.player();
 					ClassDefinition def = PlayerClasses.of(player).setClass(player, payload.classId());
@@ -82,7 +72,7 @@ public class InfusedClasses implements ModInitializer {
 							.append(Component.literal(def.displayName()).withStyle(ChatFormatting.WHITE)), false);
 				}));
 
-		ServerPlayNetworking.registerGlobalReceiver(WAR_CRY, (payload, context) -> context.server()
+		ServerPlayNetworking.registerGlobalReceiver(ClassPackets.WAR_CRY, (payload, context) -> context.server()
 				.execute(() -> warCry(context.player())));
 	}
 
@@ -108,7 +98,18 @@ public class InfusedClasses implements ModInitializer {
 													}
 													return setClass(ctx.getSource(),
 															EntityArgument.getPlayer(ctx, "player"), id);
-												}))))));
+												}))))
+						// Reopens the picker for GUI iteration. Picking is still server-validated,
+						// so reopening never bypasses the locked-class check.
+						.then(Commands.literal("select")
+								.then(Commands.argument("player", EntityArgument.player())
+										.executes(ctx -> {
+											ServerPlayer player = EntityArgument.getPlayer(ctx, "player");
+											ServerPlayNetworking.send(player, new OpenClassScreenPayload());
+											ctx.getSource().sendSuccess(() -> Component.literal(
+													"Opened class picker for " + player.getName().getString()), true);
+											return 1;
+										})))));
 	}
 
 	private static int setClass(CommandSourceStack source, ServerPlayer player, Identifier id) {
@@ -124,15 +125,18 @@ public class InfusedClasses implements ModInitializer {
 
 	static void warCry(ServerPlayer player) {
 		PlayerClasses classes = PlayerClasses.of(player);
-		if (!ClassRegistry.WARRIOR.equals(classes.classId())) {
-			return;
-		}
-		long now = System.currentTimeMillis();
-		if (!classes.cooldowns().useWarCry(now)) {
-			long remaining = classes.cooldowns().warCryRemaining(now);
-			player.displayClientMessage(Component.literal("War Cry: "
-					+ String.format(java.util.Locale.ROOT, "%.0fs", remaining / 1000.0)), true);
-			return;
+		WarCryAbility.Result result = WarCryAbility.trigger(classes, System.currentTimeMillis());
+		switch (result.kind()) {
+			case WRONG_CLASS -> {
+				return;
+			}
+			case ON_COOLDOWN -> {
+				player.displayClientMessage(Component.literal("War Cry: "
+						+ String.format(java.util.Locale.ROOT, "%.0fs", result.remainingMs() / 1000.0)), true);
+				return;
+			}
+			case FIRED -> {
+			}
 		}
 		player.addEffect(new MobEffectInstance(MobEffects.STRENGTH, Cooldowns.WAR_CRY_EFFECT_TICKS, 1));
 		if (player.level() instanceof ServerLevel level) {

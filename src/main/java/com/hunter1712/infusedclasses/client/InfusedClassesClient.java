@@ -1,7 +1,7 @@
 package com.hunter1712.infusedclasses.client;
 
 import com.hunter1712.infusedclasses.ClassConfirmedPayload;
-import com.hunter1712.infusedclasses.InfusedClasses;
+import com.hunter1712.infusedclasses.ClassPackets;
 import com.hunter1712.infusedclasses.OpenClassScreenPayload;
 import com.hunter1712.infusedclasses.SelectClassPayload;
 import com.hunter1712.infusedclasses.WarCryPayload;
@@ -20,12 +20,12 @@ public class InfusedClassesClient implements ClientModInitializer {
 
 	@Override
 	public void onInitializeClient() {
-		ClientPlayNetworking.registerGlobalReceiver(InfusedClasses.OPEN_CLASS_SCREEN,
+		ClientPlayNetworking.registerGlobalReceiver(ClassPackets.OPEN_CLASS_SCREEN,
 				(OpenClassScreenPayload payload, ClientPlayNetworking.Context context) -> context.client()
 						.execute(() -> context.client().setScreen(new ClassSelectScreen())));
 
 		// Picker closes only on server confirm, so a rejected pick stays open for retry.
-		ClientPlayNetworking.registerGlobalReceiver(InfusedClasses.CLASS_CONFIRMED,
+		ClientPlayNetworking.registerGlobalReceiver(ClassPackets.CLASS_CONFIRMED,
 				(ClassConfirmedPayload payload, ClientPlayNetworking.Context context) -> context.client()
 						.execute(() -> {
 							if (Minecraft.getInstance().screen instanceof ClassSelectScreen) {
