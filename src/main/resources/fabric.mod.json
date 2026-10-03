@@ -1,0 +1,28 @@
+{
+	"schemaVersion": 1,
+	"id": "infusedclasses",
+	"version": "${version}",
+	"name": "Infused Classes",
+	"description": "Character classes for Minecraft. Start as a Warrior: more health, armor and toughness, slower, War Cry for damage.",
+	"authors": [],
+	"contact": {},
+	"license": "MIT",
+	"environment": "*",
+	"mixins": [
+		"infusedclasses.mixins.json"
+	],
+	"entrypoints": {
+		"main": [
+			"dev.infusedclasses.InfusedClasses"
+		],
+		"client": [
+			"dev.infusedclasses.client.InfusedClassesClient"
+		]
+	},
+	"depends": {
+		"fabricloader": ">=${loader_version}",
+		"minecraft": "~${minecraft_version}",
+		"java": ">=21",
+		"fabric-api": "*"
+	}
+}
