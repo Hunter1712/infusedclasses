@@ -41,4 +41,9 @@ public class ClassSelectScreen extends Screen {
 	public boolean isPauseScreen() {
 		return false;
 	}
+
+	@Override
+	public boolean shouldCloseOnEsc() {
+		return false;
+	}
 }

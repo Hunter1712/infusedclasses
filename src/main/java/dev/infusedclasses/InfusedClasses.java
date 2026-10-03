@@ -61,6 +61,7 @@ public class InfusedClasses implements ModInitializer {
 					ServerPlayer player = context.player();
 					ClassDefinition def = PlayerClasses.of(player).setClass(player, payload.classId());
 					if (def == null) {
+						player.displayClientMessage(Component.literal("Unknown or locked class").withStyle(ChatFormatting.RED), false);
 						return;
 					}
 					context.responseSender().sendPacket(new ClassConfirmedPayload());

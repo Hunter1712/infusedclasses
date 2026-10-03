@@ -8,10 +8,13 @@ import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.player.Player;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /** Per-player class state. One instance per player, supplied by the mixin. */
 public class PlayerClasses {
 	public static final String NBT_KEY = "InfusedClass";
+	private static final Logger LOGGER = LoggerFactory.getLogger(PlayerClasses.class);
 
 	private Identifier classId;
 	// ponytail: cooldowns reset on relog, persist to NBT if the reset becomes an exploit.
@@ -84,6 +87,7 @@ public class PlayerClasses {
 		for (Passive p : def.passives()) {
 			AttributeInstance inst = instance(player, p.attribute());
 			if (inst == null) {
+				LOGGER.warn("Unknown attribute {} for class {}, skipping passive", p.attribute(), def.id());
 				continue;
 			}
 			inst.removeModifier(p.modifier());

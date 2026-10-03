@@ -4,6 +4,7 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -56,7 +57,7 @@ public final class ClassRegistry {
 	}
 
 	public static Collection<ClassDefinition> all() {
-		return BY_ID.values();
+		return Collections.unmodifiableCollection(BY_ID.values());
 	}
 
 	public static ClassDefinition byId(Identifier id) {
