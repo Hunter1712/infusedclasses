@@ -12,7 +12,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 /**
  * Conditional-passive stacks: the transient half of per-player state. Time is passed in rather
  * than read, so decay and the grace period are asserted without waiting, and the class is passed
- * in rather than looked up, so this module holds no reference to a player's choice.
+ * in rather than looked up, so this module holds no reference to a player's choice. Stacks are
+ * addressed by the passive definition, the same way production does.
  */
 class ConditionalPassiveStacksTest {
 	@Test
@@ -23,7 +24,7 @@ class ConditionalPassiveStacksTest {
 		runtime.onTrigger(warrior(), "on_hit_taken", base);
 		runtime.onTrigger(warrior(), "on_hit_taken", base);
 
-		assertEquals(2, runtime.stacks("Bulwark"));
+		assertEquals(2, runtime.stacks(bulwark()));
 	}
 
 	@Test
@@ -35,7 +36,7 @@ class ConditionalPassiveStacksTest {
 			runtime.onTrigger(warrior(), "on_hit_taken", base);
 		}
 
-		assertEquals(10, runtime.stacks("Bulwark"));
+		assertEquals(10, runtime.stacks(bulwark()));
 	}
 
 	@Test
@@ -45,12 +46,12 @@ class ConditionalPassiveStacksTest {
 
 		runtime.onTrigger(warrior(), "on_death", base);
 
-		assertEquals(0, runtime.stacks("Bulwark"));
+		assertEquals(0, runtime.stacks(bulwark()));
 
 		PlayerRuntime noClass = new PlayerRuntime();
 		noClass.onTrigger(null, "on_hit_taken", base);
 
-		assertEquals(0, noClass.stacks("Bulwark"));
+		assertEquals(0, noClass.stacks(bulwark()));
 	}
 
 	@Test
@@ -62,11 +63,21 @@ class ConditionalPassiveStacksTest {
 
 		assertEquals(ClassRegistry.WARRIOR.toString(), oldClasses.writeId());
 
+		// Stacks live in the transient half and never reach the saved payload: the whole
+		// persisted content is still the one choice id, however many stacks have been earned.
+		oldRuntime.onTrigger(warrior(), "on_hit_taken", System.currentTimeMillis());
+		assertEquals(2, oldRuntime.stacks(bulwark()));
+		assertEquals(ClassRegistry.WARRIOR.toString(), oldClasses.writeId());
+
+		// The respawn copy carries the choice and nothing else, and reads back as the same id.
+		// The new player's own stacks are zero because the server entry drops the old runtime
+		// and creates a fresh one under the shared UUID, which is wiring the suite cannot reach
+		// without a live server player; that ordering is marked in the entry instead.
 		PlayerClasses newClasses = new PlayerClasses();
 		newClasses.copyFrom(oldClasses);
-		PlayerRuntime newRuntime = new PlayerRuntime();
 
-		assertEquals(0, newRuntime.stacks("Bulwark"));
+		assertEquals(ClassRegistry.WARRIOR.toString(), newClasses.writeId());
+		assertEquals(ClassRegistry.WARRIOR, newClasses.currentDefinition().id());
 	}
 
 	@Test
@@ -79,7 +90,7 @@ class ConditionalPassiveStacksTest {
 		boolean changed = runtime.tickDecay(warrior(), base + 4_000);
 
 		assertFalse(changed);
-		assertEquals(1, runtime.stacks("Bulwark"));
+		assertEquals(1, runtime.stacks(bulwark()));
 	}
 
 	@Test
@@ -92,7 +103,7 @@ class ConditionalPassiveStacksTest {
 		boolean changed = runtime.tickDecay(warrior(), base + 6_000);
 
 		assertTrue(changed);
-		assertEquals(0, runtime.stacks("Bulwark"));
+		assertEquals(0, runtime.stacks(bulwark()));
 	}
 
 	@Test
@@ -102,13 +113,13 @@ class ConditionalPassiveStacksTest {
 		for (int i = 0; i < 5; i++) {
 			runtime.onTrigger(warrior(), "on_hit_taken", base);
 		}
-		assertEquals(5, runtime.stacks("Bulwark"));
+		assertEquals(5, runtime.stacks(bulwark()));
 
 		// Tick at 10 seconds after trigger - 5 seconds past grace, should lose 5
 		boolean changed = runtime.tickDecay(warrior(), base + 10_000);
 
 		assertTrue(changed);
-		assertEquals(0, runtime.stacks("Bulwark"));
+		assertEquals(0, runtime.stacks(bulwark()));
 	}
 
 	@Test
@@ -125,43 +136,49 @@ class ConditionalPassiveStacksTest {
 		// Since second hit reset grace, still in grace period
 		runtime.tickDecay(warrior(), base + 8_000);
 
-		assertEquals(2, runtime.stacks("Bulwark"));
+		assertEquals(2, runtime.stacks(bulwark()));
 	}
 
 	@Test
 	void capGraceAndDecayRateComeFromThePassiveNotFromThisModule() {
-		ClassDefinition def = withPassives(new ConditionalPassive("Swift", "on_land", 4, ClassRegistry.ARMOR,
-				Identifier.fromNamespaceAndPath("infusedclasses", "swift_armor"), 0.5, 2, 2));
+		ConditionalPassive swift = new ConditionalPassive("Swift", "on_land", 4, ClassRegistry.ARMOR,
+				Identifier.fromNamespaceAndPath("infusedclasses", "swift_armor"), 0.5, 2, 2);
+		ClassDefinition def = withPassives(swift);
 		PlayerRuntime runtime = new PlayerRuntime();
 		long base = System.currentTimeMillis();
 
 		for (int i = 0; i < 6; i++) {
 			runtime.onTrigger(def, "on_land", base);
 		}
-		assertEquals(4, runtime.stacks("Swift")); // its own cap, not the ten Bulwark allows
+		assertEquals(4, runtime.stacks(swift)); // its own cap, not the ten Bulwark allows
 
 		assertFalse(runtime.tickDecay(def, base + 2_000)); // still inside its own two-second grace
 		assertTrue(runtime.tickDecay(def, base + 3_000)); // one second past grace, two per second
-		assertEquals(2, runtime.stacks("Swift"));
+		assertEquals(2, runtime.stacks(swift));
 	}
 
 	@Test
 	void eachPassiveIsCountedSeparatelyAndOnlyForItsOwnTrigger() {
 		ConditionalPassive swift = new ConditionalPassive("Swift", "on_land", 4, ClassRegistry.ARMOR,
 				Identifier.fromNamespaceAndPath("infusedclasses", "swift_armor"), 0.5, 2, 2);
-		ClassDefinition def = withPassives(warrior().passives().get(0), swift);
+		ClassDefinition def = withPassives(bulwark(), swift);
 		PlayerRuntime runtime = new PlayerRuntime();
 		long base = System.currentTimeMillis();
 
 		runtime.onTrigger(def, "on_hit_taken", base);
 		runtime.onTrigger(def, "on_hit_taken", base);
 
-		assertEquals(2, runtime.stacks("Bulwark"));
-		assertEquals(0, runtime.stacks("Swift"));
+		assertEquals(2, runtime.stacks(bulwark()));
+		assertEquals(0, runtime.stacks(swift));
 	}
 
 	private static ClassDefinition warrior() {
 		return ClassRegistry.byId(ClassRegistry.WARRIOR);
+	}
+
+	/** The one passive on the warrior, addressed the way the entry addresses it. */
+	private static ConditionalPassive bulwark() {
+		return warrior().passives().get(0);
 	}
 
 	/** A class carrying exactly the given passives, so a rule can be read off a passive of our own. */

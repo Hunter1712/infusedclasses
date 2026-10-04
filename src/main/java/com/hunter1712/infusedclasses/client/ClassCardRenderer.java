@@ -66,10 +66,10 @@ public final class ClassCardRenderer {
 
 		for (ClassPresentation.CardLine line : ClassPresentation.cardLinesFor(def)) {
 			MutableComponent text = Component.literal(line.text());
-			if (line.bold()) {
+			if (line.style().bold()) {
 				text = text.withStyle(s -> s.withBold(true));
 			}
-			graphics.drawCenteredString(font, text, cx, ty, line.color());
+			graphics.drawCenteredString(font, text, cx, ty, line.style().color());
 			ty += 11;
 		}
 	}

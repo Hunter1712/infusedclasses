@@ -27,10 +27,10 @@ public final class ClassPresentation {
 	}
 
 	/** One rendered card line, the section it belongs to, and the style it draws with. */
-	public record CardLine(String text, LineKind kind, int color, boolean bold) {
+	public record CardLine(String text, LineKind kind, LineStyle style) {
 		/** A line's style comes from its kind, so a renderer never has to read the line. */
 		public CardLine(String text, LineKind kind) {
-			this(text, kind, styleFor(kind).color(), styleFor(kind).bold());
+			this(text, kind, styleFor(kind));
 		}
 	}
 

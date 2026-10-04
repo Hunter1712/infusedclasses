@@ -109,6 +109,8 @@ class WarCryAbilityTest {
 		WarCryAbility.Result second = WarCryAbility.trigger(classes.currentDefinition(), runtime.cooldowns(), 16_000);
 
 		assertEquals("War Cry: 15s", second.announcement().text());
+		// No style of its own, as it has always been: the client decides what unstyled means.
+		assertNull(second.announcement().style());
 	}
 
 	@Test

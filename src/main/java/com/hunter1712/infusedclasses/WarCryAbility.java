@@ -26,7 +26,11 @@ public final class WarCryAbility {
 		ON_COOLDOWN
 	}
 
-	/** A chat line the entry sends verbatim: the text and the style it shows in. */
+	/**
+	 * A chat line the entry sends verbatim: the text, and the chat style it shows in. A null style
+	 * is a decision too: the line goes out unstyled and inherits whatever the client shows by
+	 * default, which is what the cooldown line has always done.
+	 */
 	public record ChatLine(String text, ChatFormatting style) {
 	}
 
@@ -52,8 +56,9 @@ public final class WarCryAbility {
 		}
 
 		public static Result onCooldown(long remainingMs) {
+			// Unstyled on purpose: this line has never carried a colour of its own.
 			return new Result(Kind.ON_COOLDOWN, remainingMs, null,
-					new ChatLine(NAME + ": " + String.format(Locale.ROOT, "%.0fs", remainingMs / 1000.0), ChatFormatting.WHITE));
+					new ChatLine(NAME + ": " + String.format(Locale.ROOT, "%.0fs", remainingMs / 1000.0), null));
 		}
 	}
 

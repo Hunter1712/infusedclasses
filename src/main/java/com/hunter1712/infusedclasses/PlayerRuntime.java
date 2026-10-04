@@ -10,23 +10,25 @@ import java.util.Map;
  *
  * Time arrives as a parameter and the class whose passives these are is passed in too, so this
  * module holds no clock and no reference to a player's choice. Stacks, the cap, the grace period
- * and the decay rate are the passive's own facts, read off the definition it is handed.
+ * and the decay rate are the passive's own facts, read off the definition it is handed, which is
+ * also what a stack is keyed by: a passive is addressed by what it is, not by its name.
  */
 public final class PlayerRuntime {
 	// ponytail: cooldowns reset on relog, persist to NBT if the reset becomes an exploit.
 	private final Cooldowns cooldowns = new Cooldowns();
-	// Conditional-passive stacks: keyed by passive name.
-	private final Map<String, Integer> passiveStacks = new HashMap<>();
-	// Last-trigger timestamps (millis) for decay: keyed by passive name.
-	private final Map<String, Long> lastTriggerTime = new HashMap<>();
+	// Conditional-passive stacks: keyed by the passive definition, never by its name, so a
+	// passive is addressed by what it is rather than by what it is called.
+	private final Map<ConditionalPassive, Integer> passiveStacks = new HashMap<>();
+	// Last-trigger timestamps (millis) for decay: keyed by the passive definition.
+	private final Map<ConditionalPassive, Long> lastTriggerTime = new HashMap<>();
 
 	public Cooldowns cooldowns() {
 		return cooldowns;
 	}
 
 	/** Current stacks for a passive, 0 when never triggered. */
-	public int stacks(String passiveName) {
-		return passiveStacks.getOrDefault(passiveName, 0);
+	public int stacks(ConditionalPassive passive) {
+		return passiveStacks.getOrDefault(passive, 0);
 	}
 
 	/** Bumps every passive on the given class whose trigger matches.
@@ -37,15 +39,16 @@ public final class PlayerRuntime {
 		}
 		for (ConditionalPassive passive : def.passives()) {
 			if (passive.trigger().equals(trigger)) {
-				passiveStacks.put(passive.name(), Math.min(passive.maxStacks(), stacks(passive.name()) + 1));
-				lastTriggerTime.put(passive.name(), now);
+				passiveStacks.put(passive, Math.min(passive.maxStacks(), stacks(passive) + 1));
+				lastTriggerTime.put(passive, now);
 			}
 		}
 	}
 
 	/**
-	 * Ticks decay for all passives on the given class.
-	 * Returns true if any stacks changed (so callers can re-apply modifiers).
+	 * Ticks decay for all passives on the given class, and says whether any stacks moved. A
+	 * caller that puts the effect on the player needs that: a tick which moved no stacks cannot
+	 * have changed what should be on the player, so it needs no attribute write.
 	 * Decay rule: each passive's own grace period, then its own decay rate.
 	 */
 	public boolean tickDecay(ClassDefinition def, long now) {
@@ -54,12 +57,11 @@ public final class PlayerRuntime {
 		}
 		boolean anyChanged = false;
 		for (ConditionalPassive passive : def.passives()) {
-			String name = passive.name();
-			int current = stacks(name);
+			int current = stacks(passive);
 			if (current <= 0) {
 				continue;
 			}
-			Long last = lastTriggerTime.get(name);
+			Long last = lastTriggerTime.get(passive);
 			if (last == null) {
 				continue;
 			}
@@ -68,7 +70,7 @@ public final class PlayerRuntime {
 				int decayed = (int) ((elapsedSec - passive.graceSeconds()) * passive.decayPerSecond());
 				int next = Math.max(0, current - decayed);
 				if (next != current) {
-					passiveStacks.put(name, next);
+					passiveStacks.put(passive, next);
 					anyChanged = true;
 				}
 			}
