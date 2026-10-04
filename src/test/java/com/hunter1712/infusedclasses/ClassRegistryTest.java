@@ -1,6 +1,9 @@
 package com.hunter1712.infusedclasses;
 
+import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.world.entity.ai.attributes.Attribute;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -41,6 +44,27 @@ class ClassRegistryTest {
 		assertEquals(10, bulwark.maxStacks());
 		assertFalse(bulwark.shortDesc().isBlank());
 		assertFalse(bulwark.fullDesc().isBlank());
+	}
+
+	@Test
+	void warriorPassiveCopySaysWhatItDoesToday() {
+		ConditionalPassive bulwark = ClassRegistry.byId(ClassRegistry.WARRIOR).passives().get(0);
+
+		assertEquals("+1 Armor per stack, up to 10", bulwark.shortDesc());
+		assertEquals("Taking a hit grants 1 stack (max 10). Each stack adds +1 armor. "
+				+ "After 5s without a hit, lose 1 stack per second.", bulwark.fullDesc());
+	}
+
+	@Test
+	void passiveCopyIsGeneratedFromItsOwnNumbers() {
+		ConditionalPassive swift = new ConditionalPassive("Swift", "on_land", 4,
+				ResourceKey.create(Registries.ATTRIBUTE, Identifier.withDefaultNamespace("movement_speed")),
+				Identifier.fromNamespaceAndPath("infusedclasses", "swift_speed"),
+				0.5, 3, 2);
+
+		assertEquals("+0.5 Movement speed per stack, up to 4", swift.shortDesc());
+		assertEquals("Taking a hit grants 1 stack (max 4). Each stack adds +0.5 movement speed. "
+				+ "After 3s without a hit, lose 2 stack per second.", swift.fullDesc());
 	}
 
 	@Test

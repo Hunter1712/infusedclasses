@@ -15,6 +15,7 @@ import net.minecraft.commands.Commands;
 import net.minecraft.commands.arguments.EntityArgument;
 import net.minecraft.core.Holder;
 import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
@@ -27,7 +28,6 @@ import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.ai.attributes.Attribute;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
-import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.phys.Vec3;
 
 /** Server side. Authoritative: client sends intents, every decision happens here. */
@@ -69,61 +69,56 @@ public class InfusedClasses implements ModInitializer {
 			}
 		});
 
-		// Server tick: decay conditional passive stacks and re-apply armor modifier.
+		// Server tick: decay conditional passive stacks, then put their effect on the player.
 		ServerTickEvents.END_SERVER_TICK.register(server -> {
 			for (ServerPlayer player : server.getPlayerList().getPlayers()) {
 				PlayerClasses classes = PlayerClasses.of(player);
 				if (!classes.hasClass()) {
 					continue;
 				}
-				// Decay stacks
-				boolean stacksChanged = classes.tickDecay();
-				// Re-apply armor modifier if stacks changed or if we need to initialize
-				applyConditionalArmorModifier(player, classes, stacksChanged);
+				classes.tickDecay();
+				applyPassiveEffects(player, classes.currentDefinition(), classes);
 			}
 		});
 	}
 
 	/**
-	 * Applies or removes the conditional armor modifier based on current Bulwark stacks.
-	 * Called every tick; only writes to attribute when stacks actually change.
+	 * Adapter for {@link PassiveEffect}: asks the decision module what each passive on the class
+	 * should be contributing, then makes the player's attributes agree. Idempotent: an attribute is
+	 * only written when what is applied differs from what should be, so the modifier is created
+	 * once and left alone while the stacks hold still.
 	 */
-	private static void applyConditionalArmorModifier(ServerPlayer player, PlayerClasses classes, boolean stacksChanged) {
-		ClassDefinition def = classes.currentDefinition();
+	private static void applyPassiveEffects(ServerPlayer player, ClassDefinition def, PlayerClasses classes) {
 		if (def == null) {
 			return;
 		}
-		// Find Bulwark passive (the only one with armor effect for now)
-		ConditionalPassive bulwark = def.passives().stream()
-				.filter(p -> "Bulwark".equals(p.name()))
-				.findFirst()
+		for (ConditionalPassive passive : def.passives()) {
+			apply(player, passive, PassiveEffect.forStacks(passive, classes.stacks(passive.name())));
+		}
+	}
+
+	private static void apply(ServerPlayer player, ConditionalPassive passive, PassiveEffect.Modifier wanted) {
+		Holder<Attribute> attribute = player.registryAccess().lookupOrThrow(Registries.ATTRIBUTE)
+				.get(passive.attribute())
 				.orElse(null);
-		if (bulwark == null) {
+		if (attribute == null) {
 			return;
 		}
-		int stacks = classes.stacks("Bulwark");
-		Identifier modifierId = Identifier.fromNamespaceAndPath(ClassPackets.MOD_ID, "bulwark_armor");
-
-		AttributeInstance armor = player.getAttribute(Attributes.ARMOR);
-		if (armor == null) {
+		AttributeInstance instance = player.getAttribute(attribute);
+		if (instance == null) {
 			return;
 		}
-
-		// If modifier exists, check if value matches current stacks
-		AttributeModifier existing = armor.getModifier(modifierId);
-		double targetValue = stacks * 1.0; // +1 armor per stack
-		if (existing != null && existing.amount() == targetValue) {
-			return; // already correct
-		}
-
-		// Remove old modifier if present
+		AttributeModifier existing = instance.getModifier(passive.modifierId());
 		if (existing != null) {
-			armor.removeModifier(modifierId);
+			if (wanted != null && existing.amount() == wanted.amount()) {
+				return; // already correct
+			}
+			instance.removeModifier(passive.modifierId());
 		}
-
-		// Apply new modifier if stacks > 0
-		if (stacks > 0) {
-			armor.addPermanentModifier(new AttributeModifier(modifierId, targetValue, AttributeModifier.Operation.ADD_VALUE));
+		// No decision means no stacks, so the passive contributes nothing right now.
+		if (wanted != null) {
+			instance.addPermanentModifier(new AttributeModifier(
+					wanted.modifierId(), wanted.amount(), AttributeModifier.Operation.ADD_VALUE));
 		}
 	}
 
