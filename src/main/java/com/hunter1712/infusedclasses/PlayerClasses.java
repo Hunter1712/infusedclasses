@@ -130,7 +130,7 @@ public class PlayerClasses {
 		}
 		p.xp += Math.max(0, amount);
 		int gained = 0;
-		while (p.level < SkillTrees.MAX_LEVEL && p.xp >= SkillTrees.xpForNextLevel(p.level)) {
+		while (p.xp >= SkillTrees.xpForNextLevel(p.level)) {
 			p.xp -= SkillTrees.xpForNextLevel(p.level);
 			p.level++;
 			p.unspent++;

@@ -4,6 +4,7 @@ import com.hunter1712.infusedclasses.ClassConfirmedPayload;
 import com.hunter1712.infusedclasses.ClassPackets;
 import com.hunter1712.infusedclasses.OpenClassScreenPayload;
 import com.hunter1712.infusedclasses.RequestTalentsPayload;
+import com.hunter1712.infusedclasses.RespecTalentsPayload;
 import com.hunter1712.infusedclasses.SelectClassPayload;
 import com.hunter1712.infusedclasses.SpendTalentPayload;
 import com.hunter1712.infusedclasses.TalentStatePayload;
@@ -69,6 +70,10 @@ public class InfusedClassesClient implements ClientModInitializer {
 
 	public static void spendTalent(String nodeId) {
 		ClientPlayNetworking.send(new SpendTalentPayload(nodeId));
+	}
+
+	public static void respecTalents() {
+		ClientPlayNetworking.send(new RespecTalentsPayload());
 	}
 }
 

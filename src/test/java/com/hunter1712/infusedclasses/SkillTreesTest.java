@@ -27,7 +27,10 @@ class SkillTreesTest {
 		assertTrue(first < mid);
 		assertTrue(mid < last);
 		assertTrue(first <= SkillTrees.xpForKill(true) * 2);
-		assertEquals(Integer.MAX_VALUE, SkillTrees.xpForNextLevel(SkillTrees.MAX_LEVEL));
+		assertEquals(SkillTrees.xpForNextLevel(SkillTrees.MAX_LEVEL),
+				SkillTrees.xpForNextLevel(SkillTrees.MAX_LEVEL + 1));
+		assertEquals(SkillTrees.xpForNextLevel(SkillTrees.MAX_LEVEL),
+				SkillTrees.xpForNextLevel(SkillTrees.MAX_LEVEL + 10));
 	}
 
 	@Test
@@ -68,26 +71,27 @@ class SkillTreesTest {
 	}
 
 	@Test
-	void warCryForkIsDurationVsPotencyAndMutuallyExclusive() {
+	void warCryIsSingleUpgradeWithResistanceAndDuration() {
 		SkillTrees.WarCryEffects base = SkillTrees.warCryEffects(java.util.Set.of());
-		SkillTrees.WarCryEffects duration = SkillTrees.warCryEffects(java.util.Set.of(SkillTrees.WAR_CRY_NODE));
-		SkillTrees.WarCryEffects potency = SkillTrees.warCryEffects(java.util.Set.of(SkillTrees.WAR_CRY_POTENCY_NODE));
+		SkillTrees.WarCryEffects upgraded = SkillTrees.warCryEffects(java.util.Set.of(SkillTrees.WAR_CRY_NODE));
 
-		assertTrue(duration.resistance());
-		assertTrue(potency.resistance());
-		assertTrue(duration.strengthTicks() > base.strengthTicks());
-		assertEquals(Cooldowns.WAR_CRY_EFFECT_TICKS, potency.strengthTicks());
-		assertTrue(potency.strengthAmp() > duration.strengthAmp());
+		assertFalse(base.resistance());
+		assertEquals(Cooldowns.WAR_CRY_EFFECT_TICKS, base.strengthTicks());
+		assertTrue(upgraded.resistance());
+		assertTrue(upgraded.strengthTicks() > base.strengthTicks());
 
 		PlayerClasses classes = warrior();
-		classes.progress().unspent = 10;
+		classes.progress().unspent = 20;
 		assertTrue(classes.tryUnlock("juggernaut_vigor1"));
-		assertTrue(classes.tryUnlock("juggernaut_vigor2"));
 		assertTrue(classes.tryUnlock("juggernaut_plate1"));
+		assertTrue(classes.tryUnlock("juggernaut_vigor2"));
 		assertTrue(classes.tryUnlock("juggernaut_plate2"));
+		assertTrue(classes.tryUnlock(SkillTrees.THICK_SKIN_NODE));
+		assertTrue(classes.tryUnlock("juggernaut_vigor3"));
+		assertTrue(classes.tryUnlock("juggernaut_ward2"));
+		assertTrue(classes.tryUnlock("juggernaut_hide1"));
 		assertTrue(classes.tryUnlock(SkillTrees.WAR_CRY_NODE));
-		assertFalse(classes.tryUnlock(SkillTrees.WAR_CRY_POTENCY_NODE));
-		assertNotNull(SkillTrees.unlockRejectReason(classes.unlockedNodes(), classes.unspentPoints(), SkillTrees.WAR_CRY_POTENCY_NODE));
+		assertTrue(SkillTrees.warCryUpgraded(classes.unlockedNodes()));
 	}
 
 	@Test
@@ -109,13 +113,13 @@ class SkillTreesTest {
 	}
 
 	@Test
-	void rawXpGrantsLevelsAndCapsAtTwenty() {
+	void rawXpGrantsLevelsWithoutCap() {
 		PlayerClasses classes = warrior();
 		int gained = classes.addXp(100000);
-		assertEquals(SkillTrees.MAX_LEVEL, classes.level());
-		assertEquals(SkillTrees.MAX_LEVEL - 1, classes.unspentPoints());
+		assertTrue(classes.level() > SkillTrees.MAX_LEVEL);
+		assertEquals(classes.level() - 1, classes.unspentPoints());
 		assertTrue(gained > 0);
-		assertEquals(0, classes.addXp(100000));
+		assertTrue(classes.addXp(100000) > 0);
 		assertEquals(0, classes.addXp(-5));
 	}
 
@@ -183,6 +187,7 @@ class SkillTreesTest {
 		oldClasses.progress().unspent = 5;
 		oldClasses.tryUnlock("juggernaut_vigor1");
 		oldClasses.tryUnlock("juggernaut_plate1");
+		oldClasses.tryUnlock("juggernaut_vigor2");
 		oldClasses.tryUnlock(SkillTrees.THICK_SKIN_NODE);
 		oldClasses.thickSkin().hit(1_000L);
 
@@ -192,5 +197,61 @@ class SkillTreesTest {
 		assertEquals(ClassRegistry.WARRIOR, fresh.classId());
 		assertTrue(fresh.unlockedNodes().contains(SkillTrees.THICK_SKIN_NODE));
 		assertEquals(0, fresh.thickSkin().count());
+	}
+
+	@Test
+	void spineGatesRejectSkippingToCapstone() {
+		PlayerClasses classes = warrior();
+		classes.progress().unspent = 30;
+		assertNotNull(SkillTrees.unlockRejectReason(classes.unlockedNodes(), classes.unspentPoints(),
+				SkillTrees.ENDURING_SKIN_NODE));
+		assertFalse(classes.tryUnlock(SkillTrees.ENDURING_SKIN_NODE));
+		assertNotNull(SkillTrees.unlockRejectReason(classes.unlockedNodes(), classes.unspentPoints(),
+				SkillTrees.WAR_CRY_NODE));
+	}
+
+	@Test
+	void fullSpineSpendsMidTeensAndRespecRefunds() {
+		PlayerClasses classes = warrior();
+		classes.progress().unspent = 30;
+		String[] order = {"juggernaut_vigor1", "juggernaut_plate1", "juggernaut_vigor2", "juggernaut_plate2",
+				SkillTrees.THICK_SKIN_NODE, "juggernaut_vigor3", "juggernaut_ward2", "juggernaut_hide1",
+				"juggernaut_hide2", SkillTrees.WAR_CRY_NODE, "juggernaut_vigor4", "juggernaut_plate3",
+				"juggernaut_ward3", "juggernaut_hide3", SkillTrees.ENDURING_SKIN_NODE};
+		for (String id : order) {
+			assertTrue(classes.tryUnlock(id), id);
+		}
+		int spent = SkillTrees.spentPoints(classes.unlockedNodes());
+		assertTrue(spent >= 15 && spent <= 18, "spent=" + spent);
+		assertEquals(spent, classes.respec());
+		assertTrue(classes.unlockedNodes().isEmpty());
+	}
+
+	@Test
+	void enduringSkinRaisesCapAndDecay() {
+		assertEquals(SkillTrees.THICK_SKIN_CAP, SkillTrees.capFor(java.util.Set.of()));
+		assertEquals(SkillTrees.ENDURING_SKIN_CAP,
+				SkillTrees.capFor(java.util.Set.of(SkillTrees.ENDURING_SKIN_NODE)));
+		assertTrue(SkillTrees.decayFor(java.util.Set.of(SkillTrees.ENDURING_SKIN_NODE))
+				> SkillTrees.decayFor(java.util.Set.of()));
+
+		SkillTrees.ThickSkin skin = new SkillTrees.ThickSkin();
+		for (int i = 0; i < 20; i++) {
+			skin.hit(1_000L + i, SkillTrees.capFor(java.util.Set.of(SkillTrees.ENDURING_SKIN_NODE)));
+		}
+		assertEquals(SkillTrees.ENDURING_SKIN_CAP, skin.count());
+		assertEquals(SkillTrees.ENDURING_SKIN_CAP,
+				skin.tick(1_000L + SkillTrees.THICK_SKIN_DECAY_MS + 1_000L,
+						SkillTrees.decayFor(java.util.Set.of(SkillTrees.ENDURING_SKIN_NODE))));
+		assertEquals(0, skin.tick(1_000L + SkillTrees.ENDURING_SKIN_DECAY_MS + 50_000L,
+				SkillTrees.decayFor(java.util.Set.of(SkillTrees.ENDURING_SKIN_NODE))));
+	}
+
+	@Test
+	void removedNodesDropOnDecode() {
+		SkillTrees.Progress p = SkillTrees.decodeProgress("5,10,2,juggernaut_vigor1+juggernaut_war_cry_potency+bogus");
+		assertTrue(p.unlocked.contains("juggernaut_vigor1"));
+		assertTrue(p.unlocked.stream().noneMatch(id -> SkillTrees.byId(id) == null));
+		assertEquals(25, SkillTrees.decodeProgress("0,25,3,").level);
 	}
 }

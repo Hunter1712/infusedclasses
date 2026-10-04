@@ -50,6 +50,7 @@ public class InfusedClasses implements ModInitializer {
 		PayloadTypeRegistry.playC2S().register(ClassPackets.WAR_CRY, WarCryPayload.STREAM_CODEC);
 		PayloadTypeRegistry.playC2S().register(ClassPackets.SPEND_TALENT, SpendTalentPayload.STREAM_CODEC);
 		PayloadTypeRegistry.playC2S().register(ClassPackets.REQUEST_TALENTS, RequestTalentsPayload.STREAM_CODEC);
+		PayloadTypeRegistry.playC2S().register(ClassPackets.RESPEC_TALENTS, RespecTalentsPayload.STREAM_CODEC);
 		PayloadTypeRegistry.playS2C().register(ClassPackets.OPEN_CLASS_SCREEN, OpenClassScreenPayload.STREAM_CODEC);
 		PayloadTypeRegistry.playS2C().register(ClassPackets.CLASS_CONFIRMED, ClassConfirmedPayload.STREAM_CODEC);
 		PayloadTypeRegistry.playS2C().register(ClassPackets.TALENT_STATE, TalentStatePayload.STREAM_CODEC);
@@ -87,8 +88,9 @@ public class InfusedClasses implements ModInitializer {
 		ServerLivingEntityEvents.AFTER_DAMAGE.register((entity, source, base, taken, blocked) -> {
 			if (entity instanceof ServerPlayer player
 					&& SkillTrees.thickSkinUnlocked(PlayerClasses.of(player).unlockedNodes())) {
-				PlayerClasses.of(player).thickSkin().hit(System.currentTimeMillis());
-				PlayerClasses.of(player).refreshThickSkin(player);
+				PlayerClasses classes = PlayerClasses.of(player);
+				classes.thickSkin().hit(System.currentTimeMillis(), SkillTrees.capFor(classes.unlockedNodes()));
+				classes.refreshThickSkin(player);
 			}
 		});
 
@@ -97,7 +99,8 @@ public class InfusedClasses implements ModInitializer {
 			long now = System.currentTimeMillis();
 			for (ServerPlayer player : server.getPlayerList().getPlayers()) {
 				PlayerClasses classes = PlayerClasses.of(player);
-				if (classes.thickSkin().count() > 0 && classes.thickSkin().tick(now) == 0) {
+				if (classes.thickSkin().count() > 0
+						&& classes.thickSkin().tick(now, SkillTrees.decayFor(classes.unlockedNodes())) == 0) {
 					classes.refreshThickSkin(player);
 				}
 			}
@@ -123,6 +126,14 @@ public class InfusedClasses implements ModInitializer {
 
 		ServerPlayNetworking.registerGlobalReceiver(ClassPackets.REQUEST_TALENTS, (payload, context) -> context.server()
 				.execute(() -> sendTalentState(context.player())));
+
+		ServerPlayNetworking.registerGlobalReceiver(ClassPackets.RESPEC_TALENTS, (payload, context) -> context.server()
+				.execute(() -> {
+					ServerPlayer player = context.player();
+					PlayerClasses.of(player).respec();
+					PlayerClasses.of(player).refresh(player);
+					sendTalentState(player);
+				}));
 
 		ServerPlayNetworking.registerGlobalReceiver(ClassPackets.SPEND_TALENT, (payload, context) -> context.server()
 				.execute(() -> {

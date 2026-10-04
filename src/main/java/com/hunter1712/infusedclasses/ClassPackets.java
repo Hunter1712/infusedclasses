@@ -23,6 +23,8 @@ public final class ClassPackets {
 			new CustomPacketPayload.Type<>(Identifier.fromNamespaceAndPath(MOD_ID, "spend_talent"));
 	public static final CustomPacketPayload.Type<RequestTalentsPayload> REQUEST_TALENTS =
 			new CustomPacketPayload.Type<>(Identifier.fromNamespaceAndPath(MOD_ID, "request_talents"));
+	public static final CustomPacketPayload.Type<RespecTalentsPayload> RESPEC_TALENTS =
+			new CustomPacketPayload.Type<>(Identifier.fromNamespaceAndPath(MOD_ID, "respec_talents"));
 	public static final CustomPacketPayload.Type<TalentStatePayload> TALENT_STATE =
 			new CustomPacketPayload.Type<>(Identifier.fromNamespaceAndPath(MOD_ID, "talent_state"));
 

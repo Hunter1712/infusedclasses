@@ -24,20 +24,21 @@ public final class SkillTrees {
 
 	public static final String THICK_SKIN_NODE = "juggernaut_thick_skin";
 	public static final String WAR_CRY_NODE = "juggernaut_war_cry";
-	public static final String WAR_CRY_POTENCY_NODE = "juggernaut_war_cry_potency";
+	public static final String ENDURING_SKIN_NODE = "juggernaut_enduring_skin";
 
 	public static final int THICK_SKIN_CAP = 5;
 	public static final double THICK_SKIN_ARMOR_PER_STACK = 1.0;
 	public static final long THICK_SKIN_DECAY_MS = 5_000L;
+	// ponytail: capstone only reparametrizes the stack engine. Higher cap + longer decay, no new trigger.
+	public static final int ENDURING_SKIN_CAP = 8;
+	public static final long ENDURING_SKIN_DECAY_MS = 10_000L;
 	public static final Identifier THICK_SKIN_MODIFIER =
 			Identifier.fromNamespaceAndPath("infusedclasses", "thick_skin");
 	public static final Identifier THICK_SKIN_ATTRIBUTE =
 			Identifier.fromNamespaceAndPath("minecraft", "armor");
 
 	public static final int WAR_CRY_UPGRADED_TICKS = 240; // 12s
-	public static final int WAR_CRY_POTENCY_TICKS = Cooldowns.WAR_CRY_EFFECT_TICKS; // 8s, harder not longer
 	public static final int WAR_CRY_BASE_AMP = 1;
-	public static final int WAR_CRY_POTENCY_AMP = 2;
 
 	/** Branches visible but locked in MVP: no nodes, no spend, placeholders only. */
 	public static final List<String> LOCKED_BRANCHES = List.of("Berserker", "Warlord");
@@ -67,15 +68,23 @@ public final class SkillTrees {
 		}
 
 		public int hit(long now) {
+			return hit(now, THICK_SKIN_CAP);
+		}
+
+		public int hit(long now, int cap) {
 			lastHit = now;
-			if (stacks < THICK_SKIN_CAP) {
+			if (stacks < cap) {
 				stacks++;
 			}
 			return stacks;
 		}
 
 		public int tick(long now) {
-			if (stacks > 0 && now - lastHit > THICK_SKIN_DECAY_MS) {
+			return tick(now, THICK_SKIN_DECAY_MS);
+		}
+
+		public int tick(long now, long decayMs) {
+			if (stacks > 0 && now - lastHit > decayMs) {
 				stacks = 0;
 			}
 			return stacks;
@@ -87,18 +96,46 @@ public final class SkillTrees {
 		}
 	}
 
+	public static boolean enduringUnlocked(Set<String> unlocked) {
+		return unlocked != null && unlocked.contains(ENDURING_SKIN_NODE);
+	}
+
+	public static int capFor(Set<String> unlocked) {
+		return enduringUnlocked(unlocked) ? ENDURING_SKIN_CAP : THICK_SKIN_CAP;
+	}
+
+	public static long decayFor(Set<String> unlocked) {
+		return enduringUnlocked(unlocked) ? ENDURING_SKIN_DECAY_MS : THICK_SKIN_DECAY_MS;
+	}
+
 	public static final List<Node> NODES = List.of(
-			new Node("juggernaut_vigor1", "Vigor I", "+2 Max Health", 1, 0,
-					new Passive(minecraftId("max_health"), treeModifier("jug_vigor1"), 2.0, AttributeModifier.Operation.ADD_VALUE)),
-			new Node("juggernaut_vigor2", "Vigor II", "+2 Max Health", 1, 1,
-					new Passive(minecraftId("max_health"), treeModifier("jug_vigor2"), 2.0, AttributeModifier.Operation.ADD_VALUE)),
-			new Node("juggernaut_plate1", "Plate I", "+1 Armor", 1, 1,
+			new Node("juggernaut_vigor1", "Vigor I", "+1 Max Health", 1, 0,
+					new Passive(minecraftId("max_health"), treeModifier("jug_vigor1"), 1.0, AttributeModifier.Operation.ADD_VALUE)),
+			new Node("juggernaut_plate1", "Plate I", "+1 Armor", 1, 0,
 					new Passive(minecraftId("armor"), treeModifier("jug_plate1"), 1.0, AttributeModifier.Operation.ADD_VALUE)),
-			new Node("juggernaut_plate2", "Plate II", "+1 Toughness", 1, 2,
-					new Passive(minecraftId("armor_toughness"), treeModifier("jug_plate2"), 1.0, AttributeModifier.Operation.ADD_VALUE)),
-			new Node(THICK_SKIN_NODE, "Thick Skin", "Hits grant +1 Armor, up to 5, lost out of combat", 1, 2, null),
-			new Node(WAR_CRY_NODE, "Hold the Line", "War Cry also grants Resistance, lasts 12s", 2, 4, null),
-			new Node(WAR_CRY_POTENCY_NODE, "Unbreakable Shout", "War Cry Strength II plus Resistance, 8s. One War Cry path only", 2, 4, null));
+			new Node("juggernaut_vigor2", "Vigor II", "+1 Max Health", 1, 1,
+					new Passive(minecraftId("max_health"), treeModifier("jug_vigor2"), 1.0, AttributeModifier.Operation.ADD_VALUE)),
+			new Node("juggernaut_plate2", "Ward I", "+0.5 Toughness", 1, 2,
+					new Passive(minecraftId("armor_toughness"), treeModifier("jug_plate2"), 0.5, AttributeModifier.Operation.ADD_VALUE)),
+			new Node(THICK_SKIN_NODE, "Thick Skin", "Hits grant +1 Armor, up to 5, lost out of combat", 1, 3, null),
+			new Node("juggernaut_vigor3", "Vigor III", "+1 Max Health", 1, 4,
+					new Passive(minecraftId("max_health"), treeModifier("jug_vigor3"), 1.0, AttributeModifier.Operation.ADD_VALUE)),
+			new Node("juggernaut_ward2", "Ward II", "+0.5 Toughness", 1, 5,
+					new Passive(minecraftId("armor_toughness"), treeModifier("jug_ward2"), 0.5, AttributeModifier.Operation.ADD_VALUE)),
+			new Node("juggernaut_hide1", "Hide I", "+5% Knockback Resist", 1, 5,
+					new Passive(minecraftId("knockback_resistance"), treeModifier("jug_hide1"), 0.05, AttributeModifier.Operation.ADD_VALUE)),
+			new Node("juggernaut_hide2", "Hide II", "+5% Knockback Resist", 1, 6,
+					new Passive(minecraftId("knockback_resistance"), treeModifier("jug_hide2"), 0.05, AttributeModifier.Operation.ADD_VALUE)),
+			new Node(WAR_CRY_NODE, "Hold the Line", "War Cry also grants Resistance, lasts 12s", 2, 8, null),
+			new Node("juggernaut_vigor4", "Vigor IV", "+1 Max Health", 1, 9,
+					new Passive(minecraftId("max_health"), treeModifier("jug_vigor4"), 1.0, AttributeModifier.Operation.ADD_VALUE)),
+			new Node("juggernaut_plate3", "Plate II", "+1 Armor", 1, 10,
+					new Passive(minecraftId("armor"), treeModifier("jug_plate3"), 1.0, AttributeModifier.Operation.ADD_VALUE)),
+			new Node("juggernaut_ward3", "Ward III", "+0.5 Toughness", 1, 10,
+					new Passive(minecraftId("armor_toughness"), treeModifier("jug_ward3"), 0.5, AttributeModifier.Operation.ADD_VALUE)),
+			new Node("juggernaut_hide3", "Hide III", "+5% Knockback Resist", 1, 11,
+					new Passive(minecraftId("knockback_resistance"), treeModifier("jug_hide3"), 0.05, AttributeModifier.Operation.ADD_VALUE)),
+			new Node(ENDURING_SKIN_NODE, "Enduring Skin", "Thick Skin holds 8 stacks and lingers 10s out of combat", 2, 13, null));
 
 	static {
 		for (Node n : NODES) {
@@ -131,12 +168,13 @@ public final class SkillTrees {
 		return null;
 	}
 
-	/** XP to leave `level` for `level + 1`. Cap returns never-reachable. */
+	/** XP to leave `level` for `level + 1`. Exponential through 20, flat ceiling beyond so play keeps earning. */
 	public static int xpForNextLevel(int level) {
-		if (level < 1 || level >= MAX_LEVEL) {
+		if (level < 1) {
 			return Integer.MAX_VALUE;
 		}
-		return (int) Math.round(BASE_LEVEL_XP * Math.pow(LEVEL_GROWTH, level - 1));
+		int effective = Math.min(level, MAX_LEVEL);
+		return (int) Math.round(BASE_LEVEL_XP * Math.pow(LEVEL_GROWTH, effective - 1));
 	}
 
 	public static int xpForKill(boolean meleeAffinity) {
@@ -172,13 +210,6 @@ public final class SkillTrees {
 		if (spentPoints(unlocked) < node.gate()) {
 			return "Requires " + node.gate() + " spent first";
 		}
-		if (isWarCryNode(nodeId) && unlocked != null) {
-			for (String other : unlocked) {
-				if (!other.equals(nodeId) && isWarCryNode(other)) {
-					return "Choose one War Cry path (respec to switch)";
-				}
-			}
-		}
 		return null;
 	}
 
@@ -202,11 +233,7 @@ public final class SkillTrees {
 	}
 
 	public static boolean warCryUpgraded(Set<String> unlocked) {
-		return unlocked != null && (unlocked.contains(WAR_CRY_NODE) || unlocked.contains(WAR_CRY_POTENCY_NODE));
-	}
-
-	public static boolean isWarCryNode(String nodeId) {
-		return WAR_CRY_NODE.equals(nodeId) || WAR_CRY_POTENCY_NODE.equals(nodeId);
+		return unlocked != null && unlocked.contains(WAR_CRY_NODE);
 	}
 
 	public static boolean thickSkinUnlocked(Set<String> unlocked) {
@@ -220,11 +247,8 @@ public final class SkillTrees {
 		return new WarCryEffects(Cooldowns.WAR_CRY_EFFECT_TICKS, 1, false, 0, 0);
 	}
 
-	/** Set-based effects: duration path lasts longer, potency path hits harder, either adds Resistance. */
+	/** Single War Cry upgrade: duration plus Resistance. No fork. */
 	public static WarCryEffects warCryEffects(Set<String> unlocked) {
-		if (unlocked != null && unlocked.contains(WAR_CRY_POTENCY_NODE)) {
-			return new WarCryEffects(WAR_CRY_POTENCY_TICKS, WAR_CRY_POTENCY_AMP, true, WAR_CRY_POTENCY_TICKS, 0);
-		}
 		return warCryEffects(unlocked != null && unlocked.contains(WAR_CRY_NODE));
 	}
 
@@ -257,7 +281,7 @@ public final class SkillTrees {
 				p.xp = Math.max(0, Integer.parseInt(parts[0]));
 			}
 			if (parts.length > 1 && !parts[1].isEmpty()) {
-				p.level = Math.min(MAX_LEVEL, Math.max(1, Integer.parseInt(parts[1])));
+				p.level = Math.max(1, Integer.parseInt(parts[1]));
 			}
 			if (parts.length > 2 && !parts[2].isEmpty()) {
 				p.unspent = Math.max(0, Integer.parseInt(parts[2]));
