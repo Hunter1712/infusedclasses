@@ -28,7 +28,8 @@ class WarCryAbilityTest {
 	@Test
 	void warriorFiresWhenReady() {
 		PlayerClasses classes = warrior();
-		WarCryAbility.Result result = WarCryAbility.trigger(classes.currentDefinition(), classes.cooldowns(), 0);
+		PlayerRuntime runtime = new PlayerRuntime();
+		WarCryAbility.Result result = WarCryAbility.trigger(classes.currentDefinition(), runtime.cooldowns(), 0);
 
 		assertEquals(WarCryAbility.Kind.FIRED, result.kind());
 		assertEquals(0, result.remainingMs());
@@ -37,9 +38,10 @@ class WarCryAbilityTest {
 	@Test
 	void secondUseInsideCooldownReportsRemaining() {
 		PlayerClasses classes = warrior();
-		WarCryAbility.trigger(classes.currentDefinition(), classes.cooldowns(), 1_000);
+		PlayerRuntime runtime = new PlayerRuntime();
+		WarCryAbility.trigger(classes.currentDefinition(), runtime.cooldowns(), 1_000);
 
-		WarCryAbility.Result second = WarCryAbility.trigger(classes.currentDefinition(), classes.cooldowns(), 16_000);
+		WarCryAbility.Result second = WarCryAbility.trigger(classes.currentDefinition(), runtime.cooldowns(), 16_000);
 
 		assertEquals(WarCryAbility.Kind.ON_COOLDOWN, second.kind());
 		assertEquals(15_000, second.remainingMs());
@@ -48,20 +50,22 @@ class WarCryAbilityTest {
 	@Test
 	void firesAgainAtCooldownEdge() {
 		PlayerClasses classes = warrior();
-		WarCryAbility.trigger(classes.currentDefinition(), classes.cooldowns(), 0);
+		PlayerRuntime runtime = new PlayerRuntime();
+		WarCryAbility.trigger(classes.currentDefinition(), runtime.cooldowns(), 0);
 
-		assertTrue(WarCryAbility.trigger(classes.currentDefinition(), classes.cooldowns(), Cooldowns.WAR_CRY_MS).kind() == WarCryAbility.Kind.FIRED);
+		assertTrue(WarCryAbility.trigger(classes.currentDefinition(), runtime.cooldowns(), Cooldowns.WAR_CRY_MS).kind() == WarCryAbility.Kind.FIRED);
 	}
 
 	@Test
 	void nonWarriorIsRejectedWithoutTouchingCooldown() {
 		PlayerClasses classes = new PlayerClasses();
 		classes.readId("infusedclasses:ranger");
+		PlayerRuntime runtime = new PlayerRuntime();
 
-		WarCryAbility.Result result = WarCryAbility.trigger(classes.currentDefinition(), classes.cooldowns(), 0);
+		WarCryAbility.Result result = WarCryAbility.trigger(classes.currentDefinition(), runtime.cooldowns(), 0);
 
 		assertEquals(WarCryAbility.Kind.WRONG_CLASS, result.kind());
-		assertEquals(0, classes.cooldowns().warCryRemaining(0));
+		assertEquals(0, runtime.cooldowns().warCryRemaining(0));
 	}
 
 	@Test
@@ -74,8 +78,9 @@ class WarCryAbilityTest {
 	@Test
 	void firedResultCarriesTheEffectFacts() {
 		PlayerClasses classes = warrior();
+		PlayerRuntime runtime = new PlayerRuntime();
 
-		WarCryAbility.Outcome outcome = WarCryAbility.trigger(classes.currentDefinition(), classes.cooldowns(), 0).outcome();
+		WarCryAbility.Outcome outcome = WarCryAbility.trigger(classes.currentDefinition(), runtime.cooldowns(), 0).outcome();
 
 		assertEquals(id("strength"), outcome.effect());
 		assertEquals(160, outcome.durationTicks()); // 8s, as the picker claims
@@ -85,8 +90,9 @@ class WarCryAbilityTest {
 	@Test
 	void firedResultCarriesItsPresentation() {
 		PlayerClasses classes = warrior();
+		PlayerRuntime runtime = new PlayerRuntime();
 
-		WarCryAbility.Result result = WarCryAbility.trigger(classes.currentDefinition(), classes.cooldowns(), 0);
+		WarCryAbility.Result result = WarCryAbility.trigger(classes.currentDefinition(), runtime.cooldowns(), 0);
 
 		assertEquals(id("entity.ravager.roar"), result.outcome().sound());
 		assertEquals(id("angry_villager"), result.outcome().particle());
@@ -97,9 +103,10 @@ class WarCryAbilityTest {
 	@Test
 	void cooldownMessageIsDecidedNotFormattedByTheCaller() {
 		PlayerClasses classes = warrior();
-		WarCryAbility.trigger(classes.currentDefinition(), classes.cooldowns(), 1_000);
+		PlayerRuntime runtime = new PlayerRuntime();
+		WarCryAbility.trigger(classes.currentDefinition(), runtime.cooldowns(), 1_000);
 
-		WarCryAbility.Result second = WarCryAbility.trigger(classes.currentDefinition(), classes.cooldowns(), 16_000);
+		WarCryAbility.Result second = WarCryAbility.trigger(classes.currentDefinition(), runtime.cooldowns(), 16_000);
 
 		assertEquals("War Cry: 15s", second.announcement().text());
 	}
@@ -107,30 +114,33 @@ class WarCryAbilityTest {
 	@Test
 	void cooldownMessageRoundsToWholeSeconds() {
 		PlayerClasses classes = warrior();
-		WarCryAbility.trigger(classes.currentDefinition(), classes.cooldowns(), 0);
+		PlayerRuntime runtime = new PlayerRuntime();
+		WarCryAbility.trigger(classes.currentDefinition(), runtime.cooldowns(), 0);
 
 		// 1.4s left rounds down to "1s", 1.6s left rounds up to "2s".
 		assertEquals("War Cry: 1s",
-				WarCryAbility.trigger(classes.currentDefinition(), classes.cooldowns(), 28_600).announcement().text());
+				WarCryAbility.trigger(classes.currentDefinition(), runtime.cooldowns(), 28_600).announcement().text());
 		assertEquals("War Cry: 2s",
-				WarCryAbility.trigger(classes.currentDefinition(), classes.cooldowns(), 28_400).announcement().text());
+				WarCryAbility.trigger(classes.currentDefinition(), runtime.cooldowns(), 28_400).announcement().text());
 	}
 
 	@Test
 	void cooldownIsThirtySeconds() {
 		PlayerClasses classes = warrior();
-		WarCryAbility.trigger(classes.currentDefinition(), classes.cooldowns(), 0);
+		PlayerRuntime runtime = new PlayerRuntime();
+		WarCryAbility.trigger(classes.currentDefinition(), runtime.cooldowns(), 0);
 
 		assertEquals("War Cry: 30s",
-				WarCryAbility.trigger(classes.currentDefinition(), classes.cooldowns(), 0).announcement().text());
+				WarCryAbility.trigger(classes.currentDefinition(), runtime.cooldowns(), 0).announcement().text());
 	}
 
 	@Test
 	void onCooldownHasNoEffectToApply() {
 		PlayerClasses classes = warrior();
-		WarCryAbility.trigger(classes.currentDefinition(), classes.cooldowns(), 0);
+		PlayerRuntime runtime = new PlayerRuntime();
+		WarCryAbility.trigger(classes.currentDefinition(), runtime.cooldowns(), 0);
 
-		WarCryAbility.Result second = WarCryAbility.trigger(classes.currentDefinition(), classes.cooldowns(), 1_000);
+		WarCryAbility.Result second = WarCryAbility.trigger(classes.currentDefinition(), runtime.cooldowns(), 1_000);
 
 		assertNull(second.outcome());
 	}
@@ -138,8 +148,9 @@ class WarCryAbilityTest {
 	@Test
 	void wrongClassHasNothingAtAllToApply() {
 		PlayerClasses classes = ranger();
+		PlayerRuntime runtime = new PlayerRuntime();
 
-		WarCryAbility.Result result = WarCryAbility.trigger(classes.currentDefinition(), classes.cooldowns(), 0);
+		WarCryAbility.Result result = WarCryAbility.trigger(classes.currentDefinition(), runtime.cooldowns(), 0);
 
 		assertNull(result.outcome());
 		assertNull(result.announcement());

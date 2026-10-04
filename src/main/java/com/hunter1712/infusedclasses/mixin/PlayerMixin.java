@@ -12,7 +12,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 /** One PlayerClasses slot per player, saved with player data so class survives relogs. */
 @Mixin(Player.class)
-public abstract class PlayerMixin implements PlayerClasses.Owner {
+public abstract class PlayerMixin implements PlayerClassAccess {
 	@Unique
 	private final PlayerClasses infusedclasses$classes = new PlayerClasses();
 
