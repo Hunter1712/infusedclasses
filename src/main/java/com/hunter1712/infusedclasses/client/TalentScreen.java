@@ -23,10 +23,11 @@ public class TalentScreen extends Screen {
 	private static final int JUG_W = 210;
 	private static final int SIDE_W = 120;
 	private static final int SMALL_BG = 20;
-	private static final int BIG_BG = 28;
+	private static final int BIG_BG = 26;
 	private static final int COL_DX = 32;
-	private static final int SMALL_ROW_H = 24;
-	private static final int BIG_ROW_H = 32;
+	private static final int SMALL_ROW_H = 22;
+	private static final int BIG_ROW_H = 30;
+	private static final int SPINE_TOP = 44;
 
 	private static final int TITLE_COLOR = 0xFFE8C15A;
 	private static final int SUBTITLE_COLOR = 0xFF9A9A9A;
@@ -58,13 +59,28 @@ public class TalentScreen extends Screen {
 	@Override
 	protected void init() {
 		slots.clear();
-		cardH = Math.min(380, Math.max(300, this.height - 40));
+		// Probe the spine height first so the card and respec button fit content.
+		int spineEnd = SPINE_TOP;
+		for (SkillTrees.Node node : SkillTrees.NODES) {
+			boolean big = node.bonus() == null;
+			if (big) {
+				spineEnd += 2;
+			}
+			if (big) {
+				spineEnd += BIG_ROW_H;
+			} else if (!isLeftColumn(node.id())) {
+				spineEnd += SMALL_ROW_H;
+			}
+		}
+		int wantH = spineEnd + 8 + 20 + PAD;
+		cardH = Math.max(200, wantH);
 		int rowW = JUG_W + SIDE_W * 2 + GAP * 2;
 		jugLeft = width / 2 - rowW / 2;
-		cardsTop = Math.max(24, height / 2 - cardH / 2 + 8);
+		int centered = height / 2 - cardH / 2 + 8;
+		cardsTop = Math.max(8, Math.min(centered, Math.max(8, height - cardH - 8)));
 
 		int cx = jugLeft + JUG_W / 2;
-		int y = cardsTop + 52;
+		int y = cardsTop + SPINE_TOP;
 		for (SkillTrees.Node node : SkillTrees.NODES) {
 			boolean big = node.bonus() == null;
 			int size = big ? BIG_BG : SMALL_BG;
