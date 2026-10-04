@@ -4,7 +4,11 @@
 
 **Blocked by:** None (can start immediately; verifiable within the legacy point budget via commands and the existing panel).
 
-**Status:** ready-for-agent
+**Status:** wontfix
+
+## Comments
+
+SUPERSEDED — implemented in `1fbfc1c`, then the design was replaced by the ranked model in `skill-tree-ranks` (stat blocks folded into 5/5 rank lines, magic gates replaced by tier spend plus keystone chain). Do not implement from this file.
 
 - [ ] Full spine spendable end-to-end through click and command fallback with server-side validation
 - [ ] Staggered spend gates reject skipping (stat block before each big stop is mandatory)

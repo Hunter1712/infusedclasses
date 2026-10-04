@@ -4,7 +4,11 @@
 
 **Blocked by:** 02 (needs the final spine node list to lay out).
 
-**Status:** ready-for-agent
+**Status:** wontfix
+
+## Comments
+
+SUPERSEDED — implemented in `1fbfc1c`/`e7f03d5`, then the design was replaced by the ranked BL2-style panel in `skill-tree-ranks` (generic grid renderer, corner badges, banner, name plates; Warlord card cut). Do not implement from this file.
 
 - [ ] Three cards render in one row with per-tree accent strips; locked cards are dimmed with a coming-soon read and no clickable nodes
 - [ ] Small stat nodes render smaller than big passive/upgrade nodes; all nodes use vanilla-only icons with a colour-block fallback and zero new texture assets

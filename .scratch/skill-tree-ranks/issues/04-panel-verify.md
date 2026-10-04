@@ -4,10 +4,14 @@
 
 **Blocked by:** 01, 02 (needs the final node data and rules; Rallying live-check additionally needs 03).
 
-**Status:** ready-for-agent
+**Status:** ready-for-human
 
 - [ ] Seven slots plus header read top-to-bottom with no scroll on common windows; small and big slots visually distinct
 - [ ] Tier dividers, corner rank badges, action-skill banner, and name plates render; tooltips carry name, rank, cost, and reject reason
 - [ ] Respec refunds through the server path; denied picks, toast/sound, and locked-card dimming confirmed live
 - [ ] Screenshot matrix captured: fresh, mid-spend, and full-unlock at two window sizes; death and relog keep progress with stacks wiped
-- [ ] Full pure-logic suite green with no new texture assets in the repo
+- [x] Full pure-logic suite green with no new texture assets in the repo
+
+## Comments
+
+Panel code done through `b398924` (generic grid, badges, banner, plates, compact fit). Screenshots so far confirm tiers, pips-turned-badges, owned header, gated states, chain edges, and locked Berserker card. Remaining is all human in-game work: full fresh/mid/full matrix at two window sizes, live respec click, denied-pick chat, death/relog persistence.

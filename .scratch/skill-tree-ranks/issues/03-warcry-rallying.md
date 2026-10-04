@@ -4,8 +4,12 @@
 
 **Blocked by:** 02 (needs the rules and result type).
 
-**Status:** ready-for-agent
+**Status:** ready-for-human
 
-- [ ] Header renders owned for Warriors with no spend path; Hold the Line edge targets it
+- [x] Header renders owned for Warriors with no spend path; Hold the Line edge targets it
 - [ ] Rallying cast grants Absorption with the longer window; non-Rallying casts behave exactly as today
 - [ ] Cooldown shortens only while Rallying is owned; relog reset behavior unchanged
+
+## Comments
+
+Code in `3c68c71`, effects unit-tested. Header confirmed in screenshots. Remaining: one live War Cry cast with Rallying owned (golden hearts + ~20s recharge) — needs a human in-game.

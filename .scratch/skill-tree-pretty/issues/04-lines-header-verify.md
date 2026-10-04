@@ -4,7 +4,11 @@
 
 **Blocked by:** 01, 03 (needs uncapped economy plus the rendered panel).
 
-**Status:** ready-for-agent
+**Status:** wontfix
+
+## Comments
+
+SUPERSEDED — implemented in `1fbfc1c`/`e7f03d5`, then superseded by `skill-tree-ranks` issue 04, which carries the remaining manual verification matrix. Do not implement from this file.
 
 - [ ] Connector lines trace every spine edge beneath icons and take the child node's state colour
 - [ ] In-card header shows level, XP-to-next (flattened past 20), and unspent points with no stale max-cap read

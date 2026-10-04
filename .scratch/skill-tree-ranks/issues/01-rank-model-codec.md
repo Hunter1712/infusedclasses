@@ -6,6 +6,10 @@
 
 **Status:** ready-for-agent
 
-- [ ] Ranks accrue to max and reject beyond; respec refunds rank-times-cost
-- [ ] Legacy saves fold into ranks with the Bulwark cap; unknown ids drop; high-level round-trips stay uncapped
-- [ ] Level 1-20 curve keeps its shape, post-20 stays flat, full suite green
+- [x] Ranks accrue to max and reject beyond; respec refunds rank-times-cost
+- [x] Legacy saves fold into ranks with the Bulwark cap; unknown ids drop; high-level round-trips stay uncapped
+- [x] Level 1-20 curve keeps its shape, post-20 stays flat, full suite green
+
+## Comments
+
+CLOSED — implemented in `3c68c71`, full suite green (`gradle test --rerun-tasks`). No live-client check needed: pure data layer.
