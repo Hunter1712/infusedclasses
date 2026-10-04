@@ -115,13 +115,13 @@ public class ClassSelectScreen extends Screen {
 		graphics.fill(card.x() + PAD, y, card.x() + CARD_W - PAD, y + 1, 0xFF3A3A3A);
 		y += 6;
 
-		for (String line : ClassPresentation.cardLinesFor(def)) {
-			if (line.equals("COMING SOON")) {
-				graphics.drawCenteredString(font, line, cx, y, TITLE_COLOR);
-			} else if (line.startsWith("Passives:") || line.startsWith("Ability:") || line.equals("No passives yet")) {
-				graphics.drawCenteredString(font, line, cx, y, PASSIVE_COLOR);
+		for (ClassPresentation.CardLine line : ClassPresentation.cardLinesFor(def)) {
+			if (line.text().equals("COMING SOON")) {
+				graphics.drawCenteredString(font, line.text(), cx, y, TITLE_COLOR);
+			} else if (line.kind() == ClassPresentation.LineKind.PASSIVE) {
+				graphics.drawCenteredString(font, line.text(), cx, y, PASSIVE_COLOR);
 			} else {
-				graphics.drawCenteredString(font, line, cx, y, ABILITY_COLOR);
+				graphics.drawCenteredString(font, line.text(), cx, y, ABILITY_COLOR);
 			}
 			y += 11;
 		}

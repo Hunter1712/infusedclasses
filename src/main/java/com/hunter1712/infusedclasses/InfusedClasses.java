@@ -47,24 +47,13 @@ public class InfusedClasses implements ModInitializer {
 		ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> {
 			ServerPlayer player = handler.getPlayer();
 			PlayerClasses classes = PlayerClasses.of(player);
-			ClassDefinition def = classes.currentDefinition();
-			if (def != null) {
-				ClassApplier.reapply(new ServerModifiers(player), def);
-			}
 			if (!classes.hasClass()) {
 				sender.sendPacket(new OpenClassScreenPayload());
 			}
 		});
 
-		// Vanilla clears attribute modifiers on respawn and the new entity starts with
-		// empty in-memory state, so copy the choice before re-applying passives.
 		ServerPlayerEvents.AFTER_RESPAWN.register((oldPlayer, newPlayer, alive) -> {
 			PlayerClasses.of(newPlayer).copyFrom(PlayerClasses.of(oldPlayer));
-			PlayerClasses classes = PlayerClasses.of(newPlayer);
-			ClassDefinition def = classes.currentDefinition();
-			if (def != null) {
-				ClassApplier.reapply(new ServerModifiers(newPlayer), def);
-			}
 		});
 	}
 
@@ -78,8 +67,7 @@ public class InfusedClasses implements ModInitializer {
 						player.displayClientMessage(Component.literal(UNKNOWN_OR_LOCKED).withStyle(ChatFormatting.RED), false);
 						return;
 					}
-					ClassApplier.reapply(new ServerModifiers(player), def);
-					context.responseSender().sendPacket(new ClassConfirmedPayload());
+						context.responseSender().sendPacket(new ClassConfirmedPayload());
 					player.displayClientMessage(Component.literal("Class: ").withStyle(ChatFormatting.GRAY)
 							.append(Component.literal(def.displayName()).withStyle(ChatFormatting.WHITE)), false);
 				}));
@@ -128,7 +116,6 @@ public class InfusedClasses implements ModInitializer {
 		PlayerClasses classes = PlayerClasses.of(player);
 		ClassDefinition def = classes.trySetClass(id);
 		if (def != null) {
-			ClassApplier.reapply(new ServerModifiers(player), def);
 			source.sendSuccess(() -> Component.literal("Set " + player.getName().getString()
 					+ " to " + def.displayName()), true);
 			return 1;

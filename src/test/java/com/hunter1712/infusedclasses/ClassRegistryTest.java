@@ -1,15 +1,15 @@
 package com.hunter1712.infusedclasses;
 
 import net.minecraft.resources.Identifier;
-import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.CsvSource;
+
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ClassRegistryTest {
 	@Test
@@ -30,31 +30,17 @@ class ClassRegistryTest {
 		assertNull(ClassRegistry.byId(Identifier.fromNamespaceAndPath("infusedclasses", "bard")));
 	}
 
-	@ParameterizedTest
-	@CsvSource({
-			"max_health, 8.0, ADD_VALUE",
-			"armor, 4.0, ADD_VALUE",
-			"armor_toughness, 2.0, ADD_VALUE",
-			"movement_speed, -0.1, ADD_MULTIPLIED_TOTAL",
-	})
-	void warriorPassiveMathMatchesSpec(String attribute, double value, AttributeModifier.Operation operation) {
-		Identifier id = Identifier.fromNamespaceAndPath("minecraft", attribute);
-		Passive match = ClassRegistry.byId(ClassRegistry.WARRIOR).passives().stream()
-				.filter(p -> p.attribute().equals(id))
-				.findFirst()
-				.orElseThrow(() -> new AssertionError("no passive for " + id));
-
-		assertEquals(value, match.value());
-		assertEquals(operation, match.operation());
-		assertEquals("infusedclasses", match.modifier().getNamespace());
-	}
-
 	@Test
-	void warriorHasNoFlatDamageBonus() {
-		Identifier damage = Identifier.fromNamespaceAndPath("minecraft", "attack_damage");
+	void warriorCarriesBulwarkConditionalPassive() {
+		List<ConditionalPassive> passives = ClassRegistry.byId(ClassRegistry.WARRIOR).passives();
 
-		assertFalse(ClassRegistry.byId(ClassRegistry.WARRIOR).passives().stream()
-				.anyMatch(p -> p.attribute().equals(damage)));
+		assertEquals(1, passives.size());
+		ConditionalPassive bulwark = passives.get(0);
+		assertEquals("Bulwark", bulwark.name());
+		assertEquals("on_hit_taken", bulwark.trigger());
+		assertEquals(10, bulwark.maxStacks());
+		assertFalse(bulwark.shortDesc().isBlank());
+		assertFalse(bulwark.fullDesc().isBlank());
 	}
 
 	@Test

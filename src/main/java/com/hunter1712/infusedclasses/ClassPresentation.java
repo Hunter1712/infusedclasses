@@ -12,33 +12,49 @@ public final class ClassPresentation {
 	private ClassPresentation() {
 	}
 
-	/** Tooltip for the select button: locked teaser or joined ability lines. */
+	/** One rendered card line plus which section it belongs to. */
+	public enum LineKind {
+		PASSIVE, ABILITY, NOTICE
+	}
+
+	public record CardLine(String text, LineKind kind) {
+	}
+
+	/** Tooltip for the select button: locked teaser or passive texts joined with ability lines. */
 	public static String tooltipFor(ClassDefinition def) {
 		if (def.locked()) {
 			return "Coming soon";
 		}
-		return String.join(" — ", def.abilityLines()) + ". Click to choose " + def.displayName() + ".";
+		List<String> parts = new ArrayList<>();
+		for (ConditionalPassive p : def.passives()) {
+			parts.add(p.name() + ": " + p.fullDesc());
+		}
+		parts.addAll(def.abilityLines());
+		return String.join(" — ", parts) + ". Click to choose " + def.displayName() + ".";
 	}
 
-	/** Lines shown in the card body: passives (or placeholder) then ability lines. */
-	public static List<String> cardLinesFor(ClassDefinition def) {
-		List<String> lines = new ArrayList<>();
+	/** Lines shown in the card body: passive name/short-desc pairs then ability lines. */
+	public static List<CardLine> cardLinesFor(ClassDefinition def) {
+		List<CardLine> lines = new ArrayList<>();
 		if (def.locked()) {
-			lines.add("Passives: ???");
-			lines.add("Ability: ???");
-			lines.add("COMING SOON");
+			lines.add(new CardLine("Passives: ???", LineKind.PASSIVE));
+			lines.add(new CardLine("Ability: ???", LineKind.ABILITY));
+			lines.add(new CardLine("COMING SOON", LineKind.NOTICE));
 			return lines;
 		}
-		for (Passive p : def.passives()) {
-			lines.add(ClassAttributes.display(p));
+		for (ConditionalPassive p : def.passives()) {
+			lines.add(new CardLine(p.name(), LineKind.PASSIVE));
+			lines.add(new CardLine(p.shortDesc(), LineKind.PASSIVE));
 		}
-		if (lines.isEmpty()) {
-			lines.add("No passives yet");
+		if (def.passives().isEmpty()) {
+			lines.add(new CardLine("No passives yet", LineKind.PASSIVE));
 		}
 		if (def.activeAbility() == null) {
-			lines.add("Ability: —");
+			lines.add(new CardLine("Ability: —", LineKind.ABILITY));
 		} else {
-			lines.addAll(def.abilityLines());
+			for (String ability : def.abilityLines()) {
+				lines.add(new CardLine(ability, LineKind.ABILITY));
+			}
 		}
 		return lines;
 	}
