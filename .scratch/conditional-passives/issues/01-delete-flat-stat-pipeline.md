@@ -4,10 +4,14 @@
 
 **Blocked by:** None (can start immediately).
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] `Passive`, `ClassAttributes`, `ClassApplier`, `ServerModifiers`, `ModifierSink` records/classes removed.
-- [ ] `ClassDefinition` exposes `List<ConditionalPassive>` rather than old passives.
-- [ ] Warrior definition registers the `Bulwark` conditional passive with trigger `on_hit_taken`, max stacks 10.
-- [ ] Passive-specific tests removed or adapted.
-- [ ] Project compiles cleanly with no dead references.
+- [x] `Passive`, `ClassAttributes`, `ClassApplier`, `ServerModifiers`, `ModifierSink` records/classes removed.
+- [x] `ClassDefinition` exposes `List<ConditionalPassive>` rather than old passives.
+- [x] Warrior definition registers the `Bulwark` conditional passive with trigger `on_hit_taken`, max stacks 10.
+- [x] Passive-specific tests removed or adapted.
+- [x] Project compiles cleanly with no dead references.
+
+## Comments
+
+Implemented. `gradle test` green; `ClassAttributesTest`/`ModifierSinkTest` deleted, `ClassRegistryTest`/`ClassPresentationTest` adapted to `ConditionalPassive` data and the `CardLine` presentation seam.
