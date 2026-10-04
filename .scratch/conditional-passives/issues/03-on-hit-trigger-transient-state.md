@@ -4,8 +4,8 @@
 
 **Blocked by:** 01.
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] Hurt event while Warrior selected increments transient stacks.
-- [ ] Stacks cap at 10.
-- [ ] Stacks are transient and not written to NBT.
+- [x] Hurt event while Warrior selected increments transient stacks.
+- [x] Stacks cap at 10.
+- [x] Stacks are transient and not written to NBT.
