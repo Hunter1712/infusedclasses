@@ -19,7 +19,9 @@ import net.minecraft.core.particles.SimpleParticleType;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.permissions.Permissions;
@@ -68,6 +70,10 @@ public class InfusedClasses implements ModInitializer {
 			PlayerClassAccess.of(newPlayer).copyFrom(PlayerClassAccess.of(oldPlayer));
 			// Only the choice crosses. The old player's transient state is dropped, and the new
 			// player's starts empty, which is what a respawn has always done to it.
+			// Load-bearing ordering: both players share one UUID, so the old entry has to go
+			// before the new one is created. The other order would hand the respawned player the
+			// stacks their old body earned. This lives in wiring the suite does not cover, so it
+			// is marked rather than faked.
 			RUNTIMES.remove(oldPlayer.getUUID());
 			runtime(newPlayer);
 		});
@@ -76,10 +82,15 @@ public class InfusedClasses implements ModInitializer {
 				RUNTIMES.remove(handler.getPlayer().getUUID()));
 
 		ServerLivingEntityEvents.AFTER_DAMAGE.register((entity, source, baseDamageTaken, damageTaken, blocked) -> {
-			if (entity instanceof ServerPlayer player) {
-				PlayerClasses classes = PlayerClassAccess.of(player);
-				runtime(player).onTrigger(classes.currentDefinition(), "on_hit_taken", System.currentTimeMillis());
+			if (!(entity instanceof ServerPlayer player)) {
+				return;
 			}
+			PlayerClasses classes = PlayerClassAccess.of(player);
+			// Classless players are inert, and cost nothing: no transient state is made for them.
+			if (!classes.hasClass()) {
+				return;
+			}
+			runtime(player).onTrigger(classes.currentDefinition(), "on_hit_taken", System.currentTimeMillis());
 		});
 
 		// Server tick: decay conditional passive stacks, then put their effect on the player.
@@ -92,8 +103,8 @@ public class InfusedClasses implements ModInitializer {
 				}
 				ClassDefinition def = classes.currentDefinition();
 				PlayerRuntime runtime = runtime(player);
-				runtime.tickDecay(def, now);
-				applyPassiveEffects(player, def, runtime);
+				boolean stacksMoved = runtime.tickDecay(def, now);
+				applyPassiveEffects(player, def, runtime, stacksMoved);
 			}
 		});
 	}
@@ -109,42 +120,65 @@ public class InfusedClasses implements ModInitializer {
 
 	/**
 	 * Adapter for {@link PassiveEffect}: asks the decision module what each passive on the class
-	 * should be contributing, then makes the player's attributes agree. Idempotent: an attribute is
-	 * only written when what is applied differs from what should be, so the modifier is created
-	 * once and left alone while the stacks hold still.
+	 * should be contributing, then makes the player's attributes agree. The decision alone names
+	 * the attribute, the modifier id and the amount; nothing here decides what to write.
+	 *
+	 * Idempotent: an attribute is only written when what is applied differs from what should be,
+	 * so the modifier is created once and left alone while the stacks hold still. A passive with
+	 * no stacks is not resolved at all, because there is nothing it could contribute and nothing
+	 * that could have changed unless decay just moved the stacks.
 	 */
-	private static void applyPassiveEffects(ServerPlayer player, ClassDefinition def, PlayerRuntime runtime) {
+	private static void applyPassiveEffects(ServerPlayer player, ClassDefinition def, PlayerRuntime runtime,
+			boolean stacksMoved) {
 		if (def == null) {
 			return;
 		}
 		for (ConditionalPassive passive : def.passives()) {
-			apply(player, passive, PassiveEffect.forStacks(passive, runtime.stacks(passive.name())));
+			PassiveEffect.Modifier wanted = PassiveEffect.forStacks(passive, runtime.stacks(passive));
+			if (wanted == null) {
+				// No decision means no stacks. The only thing that can still be on the player is
+				// a modifier those stacks earned, and only the definition knows the id it was
+				// written under, so this is the one path that reads the passive rather than the
+				// decision. There is no decision to be inconsistent with here.
+				if (stacksMoved) {
+					remove(player, passive.attribute(), passive.modifierId());
+				}
+				continue;
+			}
+			apply(player, wanted);
 		}
 	}
 
-	private static void apply(ServerPlayer player, ConditionalPassive passive, PassiveEffect.Modifier wanted) {
-		Holder<Attribute> attribute = player.registryAccess().lookupOrThrow(Registries.ATTRIBUTE)
-				.get(passive.attribute())
-				.orElse(null);
-		if (attribute == null) {
-			return;
-		}
-		AttributeInstance instance = player.getAttribute(attribute);
+	/** Writes exactly what the decision names, and only when it differs from what is applied. */
+	private static void apply(ServerPlayer player, PassiveEffect.Modifier wanted) {
+		AttributeInstance instance = attribute(player, wanted.attribute());
 		if (instance == null) {
 			return;
 		}
-		AttributeModifier existing = instance.getModifier(passive.modifierId());
+		AttributeModifier existing = instance.getModifier(wanted.modifierId());
 		if (existing != null) {
-			if (wanted != null && existing.amount() == wanted.amount()) {
+			if (existing.amount() == wanted.amount()) {
 				return; // already correct
 			}
-			instance.removeModifier(passive.modifierId());
+			instance.removeModifier(wanted.modifierId());
 		}
-		// No decision means no stacks, so the passive contributes nothing right now.
-		if (wanted != null) {
-			instance.addPermanentModifier(new AttributeModifier(
-					wanted.modifierId(), wanted.amount(), AttributeModifier.Operation.ADD_VALUE));
+		instance.addPermanentModifier(new AttributeModifier(
+				wanted.modifierId(), wanted.amount(), AttributeModifier.Operation.ADD_VALUE));
+	}
+
+	/** Takes off a modifier stacks used to earn. A no-op when there is none. */
+	private static void remove(ServerPlayer player, ResourceKey<Attribute> attribute, Identifier modifierId) {
+		AttributeInstance instance = attribute(player, attribute);
+		if (instance != null) {
+			instance.removeModifier(modifierId);
 		}
+	}
+
+	private static AttributeInstance attribute(ServerPlayer player, ResourceKey<Attribute> key) {
+		Holder<Attribute> holder = player.registryAccess().lookupOrThrow(Registries.ATTRIBUTE)
+				.get(key)
+				.orElse(null);
+		return holder == null ? null : player.getAttribute(holder);
 	}
 
 	private static void registerReceivers() {
@@ -240,7 +274,11 @@ public class InfusedClasses implements ModInitializer {
 		}
 		WarCryAbility.ChatLine announcement = result.announcement();
 		if (announcement != null) {
-			player.displayClientMessage(Component.literal(announcement.text()).withStyle(announcement.style()), true);
+			MutableComponent line = Component.literal(announcement.text());
+			if (announcement.style() != null) {
+				line = line.withStyle(announcement.style());
+			}
+			player.displayClientMessage(line, true);
 		}
 	}
 

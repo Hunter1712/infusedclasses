@@ -90,21 +90,21 @@ class ClassPresentationTest {
 		// Passives section
 		assertEquals("Passives", lines.get(0).text());
 		assertEquals(ClassPresentation.LineKind.PASSIVE_HEADER, lines.get(0).kind());
-		assertEquals(0xFFFFFFFF, lines.get(0).color());
-		assertTrue(lines.get(0).bold());
+		assertEquals(0xFFFFFFFF, lines.get(0).style().color());
+		assertTrue(lines.get(0).style().bold());
 		assertEquals("  Bulwark", lines.get(1).text());
 		assertEquals(ClassPresentation.LineKind.PASSIVE, lines.get(1).kind());
-		assertEquals(0xFFBDBDBD, lines.get(1).color());
-		assertFalse(lines.get(1).bold());
+		assertEquals(0xFFBDBDBD, lines.get(1).style().color());
+		assertFalse(lines.get(1).style().bold());
 		// Active section
 		assertEquals("Active", lines.get(2).text());
 		assertEquals(ClassPresentation.LineKind.ABILITY_HEADER, lines.get(2).kind());
-		assertEquals(0xFFFFFFFF, lines.get(2).color());
-		assertTrue(lines.get(2).bold());
+		assertEquals(0xFFFFFFFF, lines.get(2).style().color());
+		assertTrue(lines.get(2).style().bold());
 		assertEquals("  War Cry", lines.get(3).text());
 		assertEquals(ClassPresentation.LineKind.ABILITY, lines.get(3).kind());
-		assertEquals(0xFF7ED6FF, lines.get(3).color());
-		assertFalse(lines.get(3).bold());
+		assertEquals(0xFF7ED6FF, lines.get(3).style().color());
+		assertFalse(lines.get(3).style().bold());
 	}
 
 	@Test
@@ -117,16 +117,16 @@ class ClassPresentationTest {
 		assertEquals(3, lines.size());
 		assertEquals("Passives: ???", lines.get(0).text());
 		assertEquals(ClassPresentation.LineKind.PASSIVE, lines.get(0).kind());
-		assertEquals(0xFFBDBDBD, lines.get(0).color());
-		assertFalse(lines.get(0).bold());
+		assertEquals(0xFFBDBDBD, lines.get(0).style().color());
+		assertFalse(lines.get(0).style().bold());
 		assertEquals("Active: ???", lines.get(1).text());
 		assertEquals(ClassPresentation.LineKind.ABILITY, lines.get(1).kind());
-		assertEquals(0xFF7ED6FF, lines.get(1).color());
-		assertFalse(lines.get(1).bold());
+		assertEquals(0xFF7ED6FF, lines.get(1).style().color());
+		assertFalse(lines.get(1).style().bold());
 		assertEquals("COMING SOON", lines.get(2).text());
 		assertEquals(ClassPresentation.LineKind.NOTICE, lines.get(2).kind());
-		assertEquals(0xFFE8C15A, lines.get(2).color(), "notice draws in the title gold");
-		assertTrue(lines.get(2).bold(), "notice draws bold");
+		assertEquals(0xFFE8C15A, lines.get(2).style().color(), "notice draws in the title gold");
+		assertTrue(lines.get(2).style().bold(), "notice draws bold");
 	}
 
 	@Test
@@ -147,9 +147,8 @@ class ClassPresentationTest {
 	void everyCardLineCarriesTheStyleOfItsKind() {
 		for (ClassDefinition def : ClassRegistry.all()) {
 			for (ClassPresentation.CardLine line : ClassPresentation.cardLinesFor(def)) {
-				ClassPresentation.LineStyle style = ClassPresentation.styleFor(line.kind());
-				assertEquals(style.color(), line.color(), def.id() + " line \"" + line.text() + "\" colour");
-				assertEquals(style.bold(), line.bold(), def.id() + " line \"" + line.text() + "\" bold");
+				assertEquals(ClassPresentation.styleFor(line.kind()), line.style(),
+						def.id() + " line \"" + line.text() + "\" draws with the style of its kind");
 			}
 		}
 	}
@@ -189,11 +188,11 @@ class ClassPresentationTest {
 		assertTrue(lines.stream().noneMatch(l -> l.text().equals("No passives yet")));
 		assertEquals("Active", lines.get(0).text());
 		assertEquals(ClassPresentation.LineKind.ABILITY_HEADER, lines.get(0).kind());
-		assertEquals(0xFFFFFFFF, lines.get(0).color());
-		assertTrue(lines.get(0).bold());
+		assertEquals(0xFFFFFFFF, lines.get(0).style().color());
+		assertTrue(lines.get(0).style().bold());
 		assertEquals("  Ability line", lines.get(1).text());
 		assertEquals(ClassPresentation.LineKind.ABILITY, lines.get(1).kind());
-		assertEquals(0xFF7ED6FF, lines.get(1).color());
-		assertFalse(lines.get(1).bold());
+		assertEquals(0xFF7ED6FF, lines.get(1).style().color());
+		assertFalse(lines.get(1).style().bold());
 	}
 }

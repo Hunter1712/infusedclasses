@@ -7,7 +7,8 @@ import net.minecraft.world.entity.ai.attributes.Attribute;
 /**
  * Reactive conditional passive: event-triggered stacks, a cap, decay after a grace period, and
  * the attribute those stacks are worth. Plain data, no game bootstrap needed, so tests assert on
- * it directly.
+ * it directly. The picker copy is generated from these numbers, so it can say what the passive
+ * does but never an earning event its trigger does not carry.
  *
  * @param attribute which attribute the stacks add to, as a registry key rather than a live holder
  * @param modifierId identifier the passive's modifier is written under
@@ -32,9 +33,27 @@ public record ConditionalPassive(
 
 	/** Full picker copy. Generated from the numbers so it cannot drift from behaviour. */
 	public String fullDesc() {
-		return "Taking a hit grants 1 stack (max " + maxStacks + "). Each stack adds +" + amount(perStack)
-				+ " " + word() + ". After " + graceSeconds + "s without a hit, lose " + decayPerSecond
-				+ " stack per second.";
+		return earnClause() + " (max " + maxStacks + "). Each stack adds +" + amount(perStack)
+				+ " " + word() + ". After " + graceSeconds + "s " + idleClause() + ", lose "
+				+ stacks(decayPerSecond) + " per second.";
+	}
+
+	/**
+	 * What earns a stack. The definition carries a trigger id, not prose for it, so the copy only
+	 * describes an earning event it actually knows: the one trigger the mod emits is described,
+	 * and any other trigger is described as the bare trigger rather than guessed at.
+	 */
+	private String earnClause() {
+		return isHitTrigger() ? "Taking a hit grants 1 stack" : "Each trigger grants 1 stack";
+	}
+
+	/** The idle half of the same wording: what has to stop happening for the stacks to decay. */
+	private String idleClause() {
+		return isHitTrigger() ? "without a hit" : "without a trigger";
+	}
+
+	private boolean isHitTrigger() {
+		return "on_hit_taken".equals(trigger);
 	}
 
 	/** Attribute name as the copy spells it: "minecraft:armor_toughness" reads as "armor toughness". */
@@ -49,5 +68,10 @@ public record ConditionalPassive(
 	/** Whole numbers read as "1", not "1.0", so the copy matches the game. */
 	private static String amount(double value) {
 		return value == Math.rint(value) ? Long.toString((long) value) : Double.toString(value);
+	}
+
+	/** Decay rate in stacks, pluralised: "lose 1 stack", "lose 2 stacks". */
+	private static String stacks(int decayPerSecond) {
+		return decayPerSecond + (decayPerSecond == 1 ? " stack" : " stacks");
 	}
 }
