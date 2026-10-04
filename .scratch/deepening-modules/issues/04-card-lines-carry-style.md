@@ -6,7 +6,7 @@ From the player's side nothing changes: the picker looks and reads exactly as it
 
 **Blocked by:** None (can start immediately)
 
-**Status:** ready-for-agent
+**Status:** done
 
 - [x] A card line carries the colour and weight the screen needs, derived from its line kind.
 - [x] The screen no longer compares any rendered text to decide how to draw it.
