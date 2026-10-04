@@ -1,6 +1,9 @@
 package com.hunter1712.infusedclasses;
 
+import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.world.entity.ai.attributes.Attribute;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -15,6 +18,9 @@ import java.util.Map;
 public final class ClassRegistry {
 	public static final Identifier WARRIOR = Identifier.fromNamespaceAndPath("infusedclasses", "warrior");
 	public static final Identifier WARRIOR_ABILITY = Identifier.fromNamespaceAndPath("infusedclasses", "war_cry");
+	/** ponytail: attribute ids rather than vanilla holders, so the passive stays bootstrap-free. */
+	public static final ResourceKey<Attribute> ARMOR =
+			ResourceKey.create(Registries.ATTRIBUTE, Identifier.withDefaultNamespace("armor"));
 
 	private static final Map<Identifier, ClassDefinition> BY_ID = new LinkedHashMap<>();
 
@@ -26,9 +32,12 @@ public final class ClassRegistry {
 				List.of(new ConditionalPassive(
 						"Bulwark",
 						"on_hit_taken",
-						"+1 Armor per stack, up to 10",
-						"Taking a hit grants 1 stack (max 10). Each stack adds +1 armor. After 5s without a hit, lose 1 stack per second.",
-						10)),
+						10,
+						ARMOR,
+						Identifier.fromNamespaceAndPath(ClassPackets.MOD_ID, "bulwark_armor"),
+						1.0,
+						5,
+						1)),
 				WARRIOR_ABILITY,
 				0xFFE74C3C,
 				"Frontline bruiser",

@@ -58,7 +58,7 @@ public class PlayerClasses {
 	/**
 	 * Ticks decay for all passives on the current class.
 	 * Returns true if any stacks changed (so callers can re-apply modifiers).
-	 * Decay rule: 5 second grace after last trigger, then -1 stack per second.
+	 * Decay rule: each passive's own grace period, then its own decay rate.
 	 */
 	public boolean tickDecay() {
 		return tickDecay(System.currentTimeMillis());
@@ -82,8 +82,8 @@ public class PlayerClasses {
 				continue;
 			}
 			long elapsedSec = (now - last) / 1000;
-			if (elapsedSec > 5) {
-				int decayed = (int) (elapsedSec - 5);
+			if (elapsedSec > passive.graceSeconds()) {
+				int decayed = (int) ((elapsedSec - passive.graceSeconds()) * passive.decayPerSecond());
 				int next = Math.max(0, current - decayed);
 				if (next != current) {
 					passiveStacks.put(name, next);

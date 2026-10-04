@@ -6,15 +6,15 @@ From the player's side nothing changes: Bulwark still grants one armor per stack
 
 **Blocked by:** None (can start immediately)
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] A passive definition carries which attribute it affects, its modifier identifier, and its per-stack contribution.
-- [ ] A pure module maps a passive plus a stack count to the modifier to apply; zero or fewer stacks yields no modifier.
-- [ ] The mapping is assertable in plain JUnit with no player, level, attribute instance, or graphics object constructed.
-- [ ] The mapping is covered at zero stacks, one stack, and above the cap.
-- [ ] The server entry reaches the effect through the passive definition, with no name comparison against a literal anywhere in it.
-- [ ] The passive's player-visible description is either generated from those fields or stops asserting numbers, so copy cannot drift from behaviour.
-- [ ] The attribute write is still idempotent: the modifier is only touched when the target value differs from what is already applied.
-- [ ] Falling to zero stacks removes the modifier.
-- [ ] All existing stack, decay, grace-period and persistence tests pass unchanged.
-- [ ] Bulwark's gameplay numbers are unchanged: one armor per stack, ten stack cap, five second grace, one stack per second after.
+- [x] A passive definition carries which attribute it affects, its modifier identifier, and its per-stack contribution.
+- [x] A pure module maps a passive plus a stack count to the modifier to apply; zero or fewer stacks yields no modifier.
+- [x] The mapping is assertable in plain JUnit with no player, level, attribute instance, or graphics object constructed.
+- [x] The mapping is covered at zero stacks, one stack, and above the cap.
+- [x] The server entry reaches the effect through the passive definition, with no name comparison against a literal anywhere in it.
+- [x] The passive's player-visible description is either generated from those fields or stops asserting numbers, so copy cannot drift from behaviour.
+- [x] The attribute write is still idempotent: the modifier is only touched when the target value differs from what is already applied.
+- [x] Falling to zero stacks removes the modifier.
+- [x] All existing stack, decay, grace-period and persistence tests pass unchanged.
+- [x] Bulwark's gameplay numbers are unchanged: one armor per stack, ten stack cap, five second grace, one stack per second after.
