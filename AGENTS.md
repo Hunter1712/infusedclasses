@@ -12,7 +12,7 @@ Five-role vocabulary: `needs-triage`, `needs-info`, `ready-for-agent`, `ready-fo
 
 ### Domain docs
 
-None yet (`GLOSSARY.md`, `docs/adr/`). Created lazily via `/domain-modeling` when terms or decisions actually get resolved.
+`GLOSSARY.md` at the repo root, and decisions in `docs/adr/`. Use their vocabulary in issues, proposals, hypotheses and test names. More are created lazily via `/domain-modeling` when terms or decisions actually get resolved.
 
 ## Pre-flight
 
@@ -21,7 +21,7 @@ After any edit in `src/main/java`, expect `gradle compileJava` or `gradle test` 
 
 ## Architecture review trigger
 
-Flag for `/improve-codebase-architecture` when any `src/main/java/**/*.java` file grows past ~150 lines or gains >2 public methods with the same noun; also when a live path and a pure path for the same fact coexist (the `PlayerClasses` shallow-split pattern).
+Flag for `/improve-codebase-architecture` when any `src/main/java/**/*.java` file grows past ~150 lines or gains >2 public methods with the same noun; also when a decision and the code that applies it end up in the same place — a name literal compared to find a passive in the server entry, or the screen reading what a card line says in order to draw it. Decisions stay pure and adapters apply them; a decision that needs a game object has the seam in the wrong place. See ADR-0001.
 
 ## Build
 
