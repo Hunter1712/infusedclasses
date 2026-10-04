@@ -4,19 +4,18 @@ import com.hunter1712.infusedclasses.SkillTrees;
 import java.util.ArrayList;
 import java.util.List;
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.gui.components.Button;
-import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.Identifier;
+import net.minecraft.util.FormattedCharSequence;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import org.lwjgl.glfw.GLFW;
 
 /**
- * Card talent panel in the class-select idiom, rendered generically from node
- * grid coordinates. Juggernaut holds ranked slots with pips, tier dividers,
- * and explicit attachment edges; Berserker is a dimmed locked card. Server
- * stays authoritative: slot clicks and respec are intents, state arrives via
+ * Minimal BL2-style talent panel. No vanilla widgets: slots, respec, and
+ * tooltips are all custom-drawn flat frames with state colors. Server stays
+ * authoritative: slot clicks and respec are intents, state arrives via
  * TalentStatePayload.
  */
 public class TalentScreen extends Screen {
@@ -29,16 +28,18 @@ public class TalentScreen extends Screen {
 	private static final int PITCH_X = 56;
 	private static final int PITCH_Y = 40;
 	private static final int GRID_TOP = 96;
+	private static final int TIP_W = 190;
 
-	private static final int TITLE_COLOR = 0xFFE8C15A;
-	private static final int SUBTITLE_COLOR = 0xFF9A9A9A;
+	private static final int GOLD = 0xFFE8C15A;
+	private static final int GREY = 0xFF9A9A9A;
 	private static final int JUGGERNAUT_ACCENT = 0xFFE74C3C;
 	private static final int BERSERKER_ACCENT = 0xFFE67E22;
 	private static final int LOCKED_ACCENT = 0xFF555555;
 	private static final int UNLOCKED_BORDER = 0xFF4CAF50;
-	private static final int AVAILABLE_BORDER = 0xFFFFFFFF;
+	private static final int AVAILABLE_BORDER = 0xFFCFCFCF;
 	private static final int GATED_BORDER = 0xFF555555;
 	private static final int CAPSTONE_BORDER = 0xFFFFD75E;
+	private static final int RED = 0xFFFF5555;
 
 	private SkillTrees.Progress progress;
 	private final List<NodeSlot> slots = new ArrayList<>();
@@ -47,6 +48,10 @@ public class TalentScreen extends Screen {
 	private int cardsTop;
 	private int cardH;
 	private int maxRow;
+	private int respecX;
+	private int respecY;
+	private int respecW;
+	private int respecH;
 
 	private record NodeSlot(SkillTrees.Node node, int x, int y, int size) {
 		boolean contains(int mx, int my) {
@@ -83,37 +88,47 @@ public class TalentScreen extends Screen {
 			int size = big ? BIG_BG : SMALL_BG;
 			int x = cx + node.col() * PITCH_X - PITCH_X - size / 2;
 			int y = cardsTop + GRID_TOP + node.row() * PITCH_Y - size / 2;
-			NodeSlot slot = new NodeSlot(node, x, y, size);
-			slots.add(slot);
-			Button iconButton = Button.builder(Component.literal(""), b -> InfusedClassesClient.spendTalent(node.id()))
-					.bounds(x, y, size, size)
-					.tooltip(Tooltip.create(tooltipFor(node)))
-					.build();
-			iconButton.active = SkillTrees.rankOf(progress.ranks, node.id()) > 0
-					|| SkillTrees.canUnlock(progress.ranks, progress.unspent, node.id());
-			addRenderableWidget(iconButton);
+			slots.add(new NodeSlot(node, x, y, size));
 		}
 
-		int spent = SkillTrees.spentPoints(progress.ranks);
-		int by = cardsTop + cardH - PAD - 20;
-		Button respec = Button.builder(Component.literal("Respec (refund " + spent + ")"),
-				b -> InfusedClassesClient.respecTalents())
-				.bounds(jugLeft + PAD, by, JUG_W - PAD * 2, 20)
-				.tooltip(Tooltip.create(Component.literal("Refund all spent ranks")))
-				.build();
-		respec.active = spent > 0;
-		addRenderableWidget(respec);
+		String label = "RESPEC · REFUND " + SkillTrees.spentPoints(progress.ranks);
+		respecW = font.width(label) + 16;
+		respecH = 16;
+		respecX = jugLeft + JUG_W / 2 - respecW / 2;
+		respecY = cardsTop + cardH - PAD - respecH;
 	}
 
-	private Component tooltipFor(SkillTrees.Node node) {
+	@Override
+	public boolean mouseClicked(MouseButtonEvent click, boolean doubleClick) {
+		int mx = (int) click.x();
+		int my = (int) click.y();
+		if (click.button() == GLFW.GLFW_MOUSE_BUTTON_LEFT) {
+			for (NodeSlot slot : slots) {
+				if (slot.contains(mx, my)) {
+					InfusedClassesClient.spendTalent(slot.node.id());
+					return true;
+				}
+			}
+			if (mx >= respecX && mx < respecX + respecW && my >= respecY && my < respecY + respecH
+					&& SkillTrees.spentPoints(progress.ranks) > 0) {
+				InfusedClassesClient.respecTalents();
+				return true;
+			}
+		}
+		return super.mouseClicked(click, doubleClick);
+	}
+
+	private Component tooltipTitle(SkillTrees.Node node) {
 		int rank = SkillTrees.rankOf(progress.ranks, node.id());
-		SkillTrees.Check check = SkillTrees.check(progress.ranks, progress.unspent, node.id());
-		String rankRead = node.maxRank() > 1 ? "Rank " + rank + "/" + node.maxRank() + " — " : "";
+		String ranks = node.maxRank() > 1 ? " " + rank + "/" + node.maxRank() : "";
+		return Component.literal(node.name().toUpperCase(java.util.Locale.ROOT) + ranks);
+	}
+
+	private String tooltipInfo(SkillTrees.Node node) {
 		int tierNeed = SkillTrees.TIER_REQ.get(node.tier());
-		return Component.literal(node.name() + " — " + node.blurb()
-				+ " — " + rankRead + "cost " + node.cost() + " pt"
-				+ (tierNeed > 0 ? ", needs " + tierNeed + " spent" : "")
-				+ " — " + SkillTrees.describe(check, node));
+		String cost = node.maxRank() > 1 ? "1 pt/rank" : "cost " + node.cost() + " pt";
+		String tier = tierNeed > 0 ? " · needs " + tierNeed + " spent" : "";
+		return node.blurb() + " — " + cost + tier;
 	}
 
 	private static ItemStack iconFor(SkillTrees.Node node) {
@@ -142,6 +157,16 @@ public class TalentScreen extends Screen {
 		return GATED_BORDER;
 	}
 
+	private int stateTextColor(SkillTrees.Node node) {
+		if (SkillTrees.rankOf(progress.ranks, node.id()) > 0) {
+			return UNLOCKED_BORDER;
+		}
+		if (SkillTrees.canUnlock(progress.ranks, progress.unspent, node.id())) {
+			return 0xFFFFFFFF;
+		}
+		return RED;
+	}
+
 	private NodeSlot slotOf(String id) {
 		for (NodeSlot slot : slots) {
 			if (slot.node.id().equals(id)) {
@@ -155,9 +180,8 @@ public class TalentScreen extends Screen {
 	public void renderBackground(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
 		super.renderBackground(graphics, mouseX, mouseY, partialTick);
 		graphics.fillGradient(0, 0, width, height, 0xC0101010, 0xD0101010);
-		drawCardFrame(graphics, jugLeft, cardsTop, JUG_W, cardH, JUGGERNAUT_ACCENT,
-				isHovering(jugLeft, cardsTop, JUG_W, cardH, mouseX, mouseY), false);
-		drawCardFrame(graphics, berLeft, cardsTop, SIDE_W, cardH, BERSERKER_ACCENT, false, true);
+		drawCardFrame(graphics, jugLeft, cardsTop, JUG_W, cardH, JUGGERNAUT_ACCENT, false);
+		drawCardFrame(graphics, berLeft, cardsTop, SIDE_W, cardH, BERSERKER_ACCENT, true);
 		drawTierDividers(graphics);
 		drawEdges(graphics);
 	}
@@ -176,9 +200,9 @@ public class TalentScreen extends Screen {
 				continue;
 			}
 			int y = cardsTop + GRID_TOP + row * PITCH_Y - PITCH_Y / 2;
-			String label = tier == 4 ? "CAPSTONE — 12 PTS" : "TIER " + tier + (tier == 1 ? "" : " — " + SkillTrees.TIER_REQ.get(tier) + " PTS");
-			graphics.drawCenteredString(font, label, cx, y - 4, SUBTITLE_COLOR);
-			graphics.fill(jugLeft + PAD, y + 8, jugLeft + JUG_W - PAD, y + 9, 0xFF3A3A3A);
+			String label = tier == 4 ? "CAPSTONE · 12 PTS"
+					: "TIER " + tier + (tier == 1 ? "" : " · " + SkillTrees.TIER_REQ.get(tier) + " PTS");
+			graphics.drawCenteredString(font, label, cx, y - 4, GREY);
 			lastTier = tier;
 		}
 	}
@@ -208,7 +232,7 @@ public class TalentScreen extends Screen {
 		int y1;
 		if (fromId == null) {
 			x1 = x2;
-			y1 = cardsTop + 66;
+			y1 = cardsTop + 62;
 		} else {
 			NodeSlot from = slotOf(fromId);
 			if (from == null) {
@@ -233,39 +257,41 @@ public class TalentScreen extends Screen {
 	@Override
 	public void render(GuiGraphics graphics, int mouseX, int mouseY, float delta) {
 		super.render(graphics, mouseX, mouseY, delta);
-		graphics.drawCenteredString(font, Component.literal("Talents").withStyle(s -> s.withBold(true)),
-				width / 2, cardsTop - 20, TITLE_COLOR);
+		graphics.drawCenteredString(font, Component.literal("TALENTS").withStyle(s -> s.withBold(true)),
+				width / 2, cardsTop - 20, GOLD);
 		drawJugHeader(graphics);
 		drawLockedText(graphics);
+		NodeSlot hovered = null;
 		for (NodeSlot slot : slots) {
-			drawSlot(graphics, slot, slot.contains(mouseX, mouseY));
+			boolean hot = slot.contains(mouseX, mouseY);
+			drawSlot(graphics, slot, hot);
+			if (hot) {
+				hovered = slot;
+			}
+		}
+		drawRespec(graphics, mouseX, mouseY);
+		if (hovered != null) {
+			drawTooltip(graphics, hovered, mouseX, mouseY);
 		}
 	}
 
 	private void drawJugHeader(GuiGraphics graphics) {
 		int cx = jugLeft + JUG_W / 2;
-		graphics.drawCenteredString(font, "Juggernaut", cx, cardsTop + 10, 0xFFFFFFFF);
-		graphics.drawCenteredString(font, "Defence — tank", cx, cardsTop + 21, SUBTITLE_COLOR);
+		graphics.drawCenteredString(font, "JUGGERNAUT", cx, cardsTop + 10, 0xFFFFFFFF);
+		graphics.drawCenteredString(font, "DEFENCE", cx, cardsTop + 21, GREY);
 		int next = SkillTrees.xpForNextLevel(progress.level);
-		String sub = "Level " + progress.level + " • " + progress.xp + "/" + next + " XP • "
-				+ progress.unspent + " pts";
-		graphics.drawCenteredString(font, sub, cx, cardsTop + 32, SUBTITLE_COLOR);
-		graphics.fill(jugLeft + PAD, cardsTop + 44, jugLeft + JUG_W - PAD, cardsTop + 45, 0xFF3A3A3A);
-		int bx0 = cx - 70;
-		int by0 = cardsTop + 50;
-		graphics.fill(bx0, by0, bx0 + 140, by0 + 16, 0xE0141414);
-		graphics.fill(bx0, by0, bx0 + 140, by0 + 1, UNLOCKED_BORDER);
-		graphics.fill(bx0, by0 + 15, bx0 + 140, by0 + 16, UNLOCKED_BORDER);
-		graphics.fill(bx0, by0, bx0 + 1, by0 + 16, UNLOCKED_BORDER);
-		graphics.fill(bx0 + 139, by0, bx0 + 140, by0 + 16, UNLOCKED_BORDER);
-		graphics.drawCenteredString(font, "WAR CRY — owned ✓", cx, by0 + 4, 0xFFFFFFFF);
+		String sub = "LV " + progress.level + " · " + progress.xp + "/" + next + " XP · "
+				+ progress.unspent + " PTS";
+		graphics.drawCenteredString(font, sub, cx, cardsTop + 32, GREY);
+		graphics.drawCenteredString(font, "WAR CRY · OWNED", cx, cardsTop + 46, UNLOCKED_BORDER);
+		graphics.fill(cx - 60, cardsTop + 57, cx + 60, cardsTop + 58, 0xFF3A3A3A);
 	}
 
 	private void drawLockedText(GuiGraphics graphics) {
 		int cx = berLeft + SIDE_W / 2;
-		graphics.drawCenteredString(font, "Berserker", cx, cardsTop + 10, 0xFF8A8A8A);
-		graphics.drawCenteredString(font, "Offence — damage", cx, cardsTop + 21, SUBTITLE_COLOR);
-		graphics.drawCenteredString(font, "COMING SOON", cx, cardsTop + 40, TITLE_COLOR);
+		graphics.drawCenteredString(font, "BERSERKER", cx, cardsTop + 10, 0xFF8A8A8A);
+		graphics.drawCenteredString(font, "OFFENCE", cx, cardsTop + 21, GREY);
+		graphics.drawCenteredString(font, "COMING SOON", cx, cardsTop + 40, GOLD);
 	}
 
 	private void drawSlot(GuiGraphics graphics, NodeSlot slot, boolean hovered) {
@@ -279,17 +305,11 @@ public class TalentScreen extends Screen {
 		boolean capstone = slot.node.id().equals(SkillTrees.RALLYING_NODE);
 		graphics.fill(x0, y0, x1, y1, 0xE0141414);
 		int border = capstone && available ? CAPSTONE_BORDER : stateColor(slot.node);
-		if (hovered && available) {
-			border = 0xFF8A8A8A;
-		}
 		int thick = capstone ? 2 : 1;
 		graphics.fill(x0, y0, x1, y0 + thick, border);
 		graphics.fill(x0, y1 - thick, x1, y1, border);
 		graphics.fill(x0, y0, x0 + thick, y1, border);
 		graphics.fill(x1 - thick, y0, x1, y1, border);
-		if (hovered && available) {
-			graphics.fill(x0 + thick, y0 + thick, x1 - thick, y1 - thick, 0x14FFFFFF);
-		}
 		if (!available) {
 			graphics.fill(x0 + thick, y0 + thick, x1 - thick, y1 - thick, 0x50000000);
 		}
@@ -298,36 +318,76 @@ public class TalentScreen extends Screen {
 		} catch (NoSuchMethodError | UnsupportedOperationException fallback) {
 			graphics.fill(x0 + 4, y0 + 4, x1 - 4, y1 - 4, stateColor(slot.node));
 		}
-		if (owned) {
-			graphics.drawString(font, "✓", x1 - 8, y0 + 1, UNLOCKED_BORDER, false);
-		}
 		if (slot.node.maxRank() > 1) {
-			String pips = rank + "/" + slot.node.maxRank();
-			graphics.drawCenteredString(font, pips, slot.cx(), y1 + 2, owned || available ? 0xFFFFFFFF : SUBTITLE_COLOR);
+			int filled = rank;
+			int total = slot.node.maxRank();
+			int pipW = 4;
+			int gap = 2;
+			int rowW = total * pipW + (total - 1) * gap;
+			int px = slot.cx() - rowW / 2;
+			int py = y1 + 3;
+			for (int i = 0; i < total; i++) {
+				int color = i < filled ? owned ? UNLOCKED_BORDER : 0xFFFFFFFF : 0xFF3A3A3A;
+				graphics.fill(px + i * (pipW + gap), py, px + i * (pipW + gap) + pipW, py + 2, color);
+			}
 		}
 	}
 
-	private void drawCardFrame(GuiGraphics graphics, int x, int y, int w, int h, int accent, boolean hovered, boolean locked) {
+	private void drawRespec(GuiGraphics graphics, int mouseX, int mouseY) {
+		int spent = SkillTrees.spentPoints(progress.ranks);
+		boolean hot = mouseX >= respecX && mouseX < respecX + respecW && mouseY >= respecY && mouseY < respecY + respecH;
+		int color = spent > 0 ? hot ? 0xFFFFFFFF : GREY : 0xFF555555;
+		String label = "RESPEC · REFUND " + spent;
+		graphics.drawCenteredString(font, label, jugLeft + JUG_W / 2, respecY + 4, color);
+		if (hot && spent > 0) {
+			int w = font.width(label);
+			int cx = jugLeft + JUG_W / 2;
+			graphics.fill(cx - w / 2, respecY + 13, cx + w / 2, respecY + 14, color);
+		}
+	}
+
+	private void drawTooltip(GuiGraphics graphics, NodeSlot slot, int mouseX, int mouseY) {
+		SkillTrees.Check check = SkillTrees.check(progress.ranks, progress.unspent, slot.node.id());
+		String state = SkillTrees.rankOf(progress.ranks, slot.node.id()) > 0 ? "Owned"
+				: SkillTrees.describe(check, slot.node);
+		List<FormattedCharSequence> body = font.split(Component.literal(tooltipInfo(slot.node)), TIP_W);
+		int h = (body.size() + 2) * 10 + 12;
+		int w = TIP_W + 16;
+		int x = mouseX + 14;
+		int y = mouseY - 10;
+		if (x + w > width) {
+			x = mouseX - w - 10;
+		}
+		if (y + h > height) {
+			y = height - h - 4;
+		}
+		graphics.fill(x, y, x + w, y + h, 0xF0101010);
+		graphics.fill(x, y, x + w, y + 1, 0xFF6A6A6A);
+		graphics.fill(x, y + h - 1, x + w, y + h, 0xFF6A6A6A);
+		graphics.fill(x, y, x + 1, y + h, 0xFF6A6A6A);
+		graphics.fill(x + w - 1, y, x + w, y + h, 0xFF6A6A6A);
+		graphics.drawString(font, tooltipTitle(slot.node), x + 8, y + 6, GOLD, false);
+		int ly = y + 18;
+		for (FormattedCharSequence line : body) {
+			graphics.drawString(font, line, x + 8, ly, GREY, false);
+			ly += 10;
+		}
+		graphics.drawString(font, state, x + 8, ly, stateTextColor(slot.node), false);
+	}
+
+	private void drawCardFrame(GuiGraphics graphics, int x, int y, int w, int h, int accent, boolean locked) {
 		if (locked) {
 			accent = LOCKED_ACCENT;
 		}
 		graphics.fill(x, y, x + w, y + h, 0xE0141414);
-		graphics.fill(x, y, x + w, y + 3, accent);
-		int border = hovered && !locked ? 0xFF8A8A8A : 0xFF3A3A3A;
-		graphics.fill(x, y, x + 1, y + h, border);
-		graphics.fill(x + w - 1, y, x + w, y + h, border);
-		graphics.fill(x, y, x + w, y + 1, border);
-		graphics.fill(x, y + h - 1, x + w, y + h, border);
-		if (hovered && !locked) {
-			graphics.fill(x + 1, y + 3, x + w - 1, y + h - 1, 0x14FFFFFF);
-		}
+		graphics.fill(x, y, x + w, y + 2, accent);
+		graphics.fill(x, y, x + 1, y + h, 0xFF2A2A2A);
+		graphics.fill(x + w - 1, y, x + w, y + h, 0xFF2A2A2A);
+		graphics.fill(x, y, x + w, y + 1, 0xFF2A2A2A);
+		graphics.fill(x, y + h - 1, x + w, y + h, 0xFF2A2A2A);
 		if (locked) {
-			graphics.fill(x + 1, y + 3, x + w - 1, y + h - 1, 0x50000000);
+			graphics.fill(x + 1, y + 2, x + w - 1, y + h - 1, 0x50000000);
 		}
-	}
-
-	private static boolean isHovering(int x, int y, int w, int h, int mx, int my) {
-		return mx >= x && mx < x + w && my >= y && my < y + h;
 	}
 
 	@Override
