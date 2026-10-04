@@ -1,5 +1,6 @@
 package com.hunter1712.infusedclasses;
 
+import com.hunter1712.infusedclasses.mixin.PlayerClassAccess;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
@@ -29,10 +30,16 @@ import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.phys.Vec3;
 
+import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+
 /** Server side. Authoritative: client sends intents, every decision happens here. */
 public class InfusedClasses implements ModInitializer {
 	public static final String MOD_ID = ClassPackets.MOD_ID;
 	private static final String UNKNOWN_OR_LOCKED = "Unknown or locked class";
+	/** The transient half of per-player state, held here because it is not reachable from the player. */
+	private static final Map<UUID, PlayerRuntime> RUNTIMES = new ConcurrentHashMap<>();
 
 	@Override
 	public void onInitialize() {
@@ -52,33 +59,52 @@ public class InfusedClasses implements ModInitializer {
 	private static void registerEvents() {
 		ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> {
 			ServerPlayer player = handler.getPlayer();
-			PlayerClasses classes = PlayerClasses.of(player);
-			if (!classes.hasClass()) {
+			if (!PlayerClassAccess.of(player).hasClass()) {
 				sender.sendPacket(new OpenClassScreenPayload());
 			}
 		});
 
 		ServerPlayerEvents.AFTER_RESPAWN.register((oldPlayer, newPlayer, alive) -> {
-			PlayerClasses.of(newPlayer).copyFrom(PlayerClasses.of(oldPlayer));
+			PlayerClassAccess.of(newPlayer).copyFrom(PlayerClassAccess.of(oldPlayer));
+			// Only the choice crosses. The old player's transient state is dropped, and the new
+			// player's starts empty, which is what a respawn has always done to it.
+			RUNTIMES.remove(oldPlayer.getUUID());
+			runtime(newPlayer);
 		});
+
+		ServerPlayConnectionEvents.DISCONNECT.register((handler, server) ->
+				RUNTIMES.remove(handler.getPlayer().getUUID()));
 
 		ServerLivingEntityEvents.AFTER_DAMAGE.register((entity, source, baseDamageTaken, damageTaken, blocked) -> {
 			if (entity instanceof ServerPlayer player) {
-				PlayerClasses.of(player).onTrigger("on_hit_taken");
+				PlayerClasses classes = PlayerClassAccess.of(player);
+				runtime(player).onTrigger(classes.currentDefinition(), "on_hit_taken", System.currentTimeMillis());
 			}
 		});
 
 		// Server tick: decay conditional passive stacks, then put their effect on the player.
 		ServerTickEvents.END_SERVER_TICK.register(server -> {
+			long now = System.currentTimeMillis();
 			for (ServerPlayer player : server.getPlayerList().getPlayers()) {
-				PlayerClasses classes = PlayerClasses.of(player);
+				PlayerClasses classes = PlayerClassAccess.of(player);
 				if (!classes.hasClass()) {
 					continue;
 				}
-				classes.tickDecay();
-				applyPassiveEffects(player, classes.currentDefinition(), classes);
+				ClassDefinition def = classes.currentDefinition();
+				PlayerRuntime runtime = runtime(player);
+				runtime.tickDecay(def, now);
+				applyPassiveEffects(player, def, runtime);
 			}
 		});
+	}
+
+	/**
+	 * The transient state of one player, and the whole of its lifetime: created the first time
+	 * something needs it, replaced by an empty one when the player respawns, dropped when they
+	 * log out. Nothing in it is persisted, so none of it is ever written or copied.
+	 */
+	private static PlayerRuntime runtime(ServerPlayer player) {
+		return RUNTIMES.computeIfAbsent(player.getUUID(), id -> new PlayerRuntime());
 	}
 
 	/**
@@ -87,12 +113,12 @@ public class InfusedClasses implements ModInitializer {
 	 * only written when what is applied differs from what should be, so the modifier is created
 	 * once and left alone while the stacks hold still.
 	 */
-	private static void applyPassiveEffects(ServerPlayer player, ClassDefinition def, PlayerClasses classes) {
+	private static void applyPassiveEffects(ServerPlayer player, ClassDefinition def, PlayerRuntime runtime) {
 		if (def == null) {
 			return;
 		}
 		for (ConditionalPassive passive : def.passives()) {
-			apply(player, passive, PassiveEffect.forStacks(passive, classes.stacks(passive.name())));
+			apply(player, passive, PassiveEffect.forStacks(passive, runtime.stacks(passive.name())));
 		}
 	}
 
@@ -125,7 +151,7 @@ public class InfusedClasses implements ModInitializer {
 		ServerPlayNetworking.registerGlobalReceiver(SelectClassPayload.TYPE, (payload, context) -> context.server()
 				.execute(() -> {
 					ServerPlayer player = context.player();
-					PlayerClasses classes = PlayerClasses.of(player);
+					PlayerClasses classes = PlayerClassAccess.of(player);
 					ClassDefinition def = classes.trySetClass(payload.classId());
 					if (def == null) {
 						player.displayClientMessage(Component.literal(UNKNOWN_OR_LOCKED).withStyle(ChatFormatting.RED), false);
@@ -177,7 +203,7 @@ public class InfusedClasses implements ModInitializer {
 	}
 
 	private static int setClass(CommandSourceStack source, ServerPlayer player, Identifier id) {
-		PlayerClasses classes = PlayerClasses.of(player);
+		PlayerClasses classes = PlayerClassAccess.of(player);
 		ClassDefinition def = classes.trySetClass(id);
 		if (def != null) {
 			source.sendSuccess(() -> Component.literal("Set " + player.getName().getString()
@@ -189,8 +215,9 @@ public class InfusedClasses implements ModInitializer {
 	}
 
 	static void warCry(ServerPlayer player) {
-		PlayerClasses classes = PlayerClasses.of(player);
-		applyAbility(player, WarCryAbility.trigger(classes.currentDefinition(), classes.cooldowns(), System.currentTimeMillis()));
+		PlayerClasses classes = PlayerClassAccess.of(player);
+		applyAbility(player, WarCryAbility.trigger(classes.currentDefinition(),
+				runtime(player).cooldowns(), System.currentTimeMillis()));
 	}
 
 	/**
