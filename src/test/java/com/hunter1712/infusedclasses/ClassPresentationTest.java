@@ -46,7 +46,24 @@ class ClassPresentationTest {
 		String tooltip = ClassPresentation.tooltipFor(warrior);
 
 		ConditionalPassive bulwark = warrior.passives().get(0);
-		assertEquals("Bulwark: " + bulwark.fullDesc() + " — War Cry (R) — Strength burst. Click to choose Warrior.", tooltip);
+		assertEquals("Bulwark: " + bulwark.fullDesc() + " (max " + bulwark.maxStacks() + " stacks) — War Cry (R) — Strength burst. Click to choose Warrior.", tooltip);
+	}
+
+	@Test
+	void warriorTooltipIncludesMaxStacks() {
+		ClassDefinition warrior = ClassRegistry.byId(ClassRegistry.WARRIOR);
+
+		String tooltip = ClassPresentation.tooltipFor(warrior);
+
+		ConditionalPassive bulwark = warrior.passives().get(0);
+		assertTrue(tooltip.contains(bulwark.name()));
+		assertTrue(tooltip.contains(bulwark.fullDesc()));
+		assertTrue(tooltip.contains("max " + bulwark.maxStacks() + " stacks"));
+	}
+
+	@Test
+	void subtitleIsChoiceShapesAbility() {
+		assertEquals("Your choice shapes your ability", ClassPresentation.subtitle());
 	}
 
 	@Test

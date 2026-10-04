@@ -75,7 +75,7 @@ public class ClassSelectScreen extends Screen {
 		super.render(graphics, mouseX, mouseY, delta);
 		int top = cardsTop();
 		graphics.drawCenteredString(font, Component.literal("Choose your class").withStyle(s -> s.withBold(true)), width / 2, top - 44, TITLE_COLOR);
-		graphics.drawCenteredString(font, "Your choice shapes passives and ability", width / 2, top - 28, SUBTITLE_COLOR);
+		graphics.drawCenteredString(font, ClassPresentation.subtitle(), width / 2, top - 28, SUBTITLE_COLOR);
 		graphics.drawCenteredString(font, "\u00a7m                                           \u00a7r", width / 2, top - 17, SUBTITLE_COLOR);
 
 		for (int i = 0; i < classes.size(); i++) {

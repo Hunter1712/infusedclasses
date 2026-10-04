@@ -20,6 +20,11 @@ public final class ClassPresentation {
 	public record CardLine(String text, LineKind kind) {
 	}
 
+	/** Picker subtitle under the title. */
+	public static String subtitle() {
+		return "Your choice shapes your ability";
+	}
+
 	/** Tooltip for the select button: locked teaser or passive texts joined with ability lines. */
 	public static String tooltipFor(ClassDefinition def) {
 		if (def.locked()) {
@@ -27,7 +32,7 @@ public final class ClassPresentation {
 		}
 		List<String> parts = new ArrayList<>();
 		for (ConditionalPassive p : def.passives()) {
-			parts.add(p.name() + ": " + p.fullDesc());
+			parts.add(p.name() + ": " + p.fullDesc() + " (max " + p.maxStacks() + " stacks)");
 		}
 		parts.addAll(def.abilityLines());
 		return String.join(" — ", parts) + ". Click to choose " + def.displayName() + ".";

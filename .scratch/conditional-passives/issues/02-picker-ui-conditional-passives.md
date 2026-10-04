@@ -4,10 +4,10 @@
 
 **Blocked by:** 01.
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] Card shows one name line and one short-desc line per conditional passive.
-- [ ] Tooltip includes name + full description + max stacks.
-- [ ] Empty classes show `No passives yet`.
-- [ ] Locked cards still show `Passives: ???`, `Ability: ???`, `COMING SOON`.
-- [ ] Subtitle reads exactly `Your choice shapes your ability`.
+- [x] Card shows one name line and one short-desc line per conditional passive.
+- [x] Tooltip includes name + full description + max stacks.
+- [x] Empty classes show `No passives yet`.
+- [x] Locked cards still show `Passives: ???`, `Ability: ???`, `COMING SOON`.
+- [x] Subtitle reads exactly `Your choice shapes your ability`.
