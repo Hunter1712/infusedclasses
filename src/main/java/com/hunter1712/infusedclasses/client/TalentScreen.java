@@ -27,8 +27,8 @@ public class TalentScreen extends Screen {
 	private static final int SMALL_BG = 20;
 	private static final int BIG_BG = 26;
 	private static final int PITCH_X = 56;
-	private static final int PITCH_Y = 46;
-	private static final int GRID_TOP = 118;
+	private static final int PITCH_Y = 40;
+	private static final int GRID_TOP = 96;
 
 	private static final int TITLE_COLOR = 0xFFE8C15A;
 	private static final int SUBTITLE_COLOR = 0xFF9A9A9A;
@@ -46,6 +46,7 @@ public class TalentScreen extends Screen {
 	private int berLeft;
 	private int cardsTop;
 	private int cardH;
+	private int maxRow;
 
 	private record NodeSlot(SkillTrees.Node node, int x, int y, int size) {
 		boolean contains(int mx, int my) {
@@ -65,7 +66,7 @@ public class TalentScreen extends Screen {
 	@Override
 	protected void init() {
 		slots.clear();
-		int maxRow = 0;
+		maxRow = 0;
 		for (SkillTrees.Node node : SkillTrees.NODES) {
 			maxRow = Math.max(maxRow, node.row());
 		}
@@ -164,7 +165,7 @@ public class TalentScreen extends Screen {
 	private void drawTierDividers(GuiGraphics graphics) {
 		int cx = jugLeft + JUG_W / 2;
 		int lastTier = 0;
-		for (int row = 0; row <= 3; row++) {
+		for (int row = 0; row <= maxRow; row++) {
 			int tier = 0;
 			for (NodeSlot slot : slots) {
 				if (slot.node.row() == row && !isRing(slot.node)) {
