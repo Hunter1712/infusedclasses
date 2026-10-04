@@ -3,6 +3,7 @@ package com.hunter1712.infusedclasses;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
+import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents;
 import net.fabricmc.fabric.api.entity.event.v1.ServerPlayerEvents;
 import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
@@ -54,6 +55,12 @@ public class InfusedClasses implements ModInitializer {
 
 		ServerPlayerEvents.AFTER_RESPAWN.register((oldPlayer, newPlayer, alive) -> {
 			PlayerClasses.of(newPlayer).copyFrom(PlayerClasses.of(oldPlayer));
+		});
+
+		ServerLivingEntityEvents.AFTER_DAMAGE.register((entity, source, baseDamageTaken, damageTaken, blocked) -> {
+			if (entity instanceof ServerPlayer player) {
+				PlayerClasses.of(player).onTrigger("on_hit_taken");
+			}
 		});
 	}
 
