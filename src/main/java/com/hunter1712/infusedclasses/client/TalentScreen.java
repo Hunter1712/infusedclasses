@@ -83,12 +83,26 @@ public class TalentScreen extends Screen {
 		cardsTop = Math.max(8, Math.min(centered, Math.max(8, height - cardH - 8)));
 
 		int cx = jugLeft + JUG_W / 2;
+		java.util.Map<Integer, java.util.List<NodeSlot>> byRow = new java.util.LinkedHashMap<>();
 		for (SkillTrees.Node node : SkillTrees.NODES) {
 			boolean big = node.bonus() == null && !isRing(node);
 			int size = big ? BIG_BG : SMALL_BG;
 			int x = cx + node.col() * PITCH_X - PITCH_X - size / 2;
 			int y = cardsTop + GRID_TOP + node.row() * PITCH_Y - size / 2;
-			slots.add(new NodeSlot(node, x, y, size));
+			byRow.computeIfAbsent(node.row(), r -> new java.util.ArrayList<>())
+					.add(new NodeSlot(node, x, y, size));
+		}
+		for (java.util.List<NodeSlot> rowSlots : byRow.values()) {
+			int min = Integer.MAX_VALUE;
+			int max = Integer.MIN_VALUE;
+			for (NodeSlot s : rowSlots) {
+				min = Math.min(min, s.x());
+				max = Math.max(max, s.x() + s.size());
+			}
+			int shift = cx - (min + max) / 2;
+			for (NodeSlot s : rowSlots) {
+				slots.add(new NodeSlot(s.node(), s.x() + shift, s.y(), s.size()));
+			}
 		}
 
 		String label = "RESPEC · REFUND " + SkillTrees.spentPoints(progress.ranks);
