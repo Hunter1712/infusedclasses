@@ -8,6 +8,8 @@ import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.ChatFormatting;
 
 import java.util.List;
 
@@ -27,8 +29,10 @@ public class ClassSelectScreen extends Screen {
 	private static final int NAME_COLOR = 0xFFFFFFFF;
 	private static final int NAME_LOCKED_COLOR = 0xFF8A8A8A;
 	private static final int TAGLINE_COLOR = 0xFFB0A67E;
-	private static final int PASSIVE_COLOR = 0xFFBDBDBD;
-	private static final int ABILITY_COLOR = 0xFF7ED6FF;
+	private static final int PASSIVE_HEADER_COLOR = 0xFFFFFFFF; // white for headers
+	private static final int PASSIVE_COLOR = 0xFFBDBDBD;         // light gray for items
+	private static final int ABILITY_HEADER_COLOR = 0xFFFFFFFF;  // white for headers
+	private static final int ABILITY_COLOR = 0xFF7ED6FF;         // blue for items
 	private static final int FOOTER_COLOR = 0xFF777777;
 
 	private List<ClassDefinition> classes = List.of();
@@ -116,13 +120,27 @@ public class ClassSelectScreen extends Screen {
 		y += 6;
 
 		for (ClassPresentation.CardLine line : ClassPresentation.cardLinesFor(def)) {
+			int color;
+			boolean bold = false;
 			if (line.text().equals("COMING SOON")) {
-				graphics.drawCenteredString(font, line.text(), cx, y, TITLE_COLOR);
+				color = TITLE_COLOR;
+				bold = true;
+			} else if (line.kind() == ClassPresentation.LineKind.PASSIVE_HEADER) {
+				color = PASSIVE_HEADER_COLOR;
+				bold = true;
 			} else if (line.kind() == ClassPresentation.LineKind.PASSIVE) {
-				graphics.drawCenteredString(font, line.text(), cx, y, PASSIVE_COLOR);
+				color = PASSIVE_COLOR;
+			} else if (line.kind() == ClassPresentation.LineKind.ABILITY_HEADER) {
+				color = ABILITY_HEADER_COLOR;
+				bold = true;
 			} else {
-				graphics.drawCenteredString(font, line.text(), cx, y, ABILITY_COLOR);
+				color = ABILITY_COLOR;
 			}
+			MutableComponent text = Component.literal(line.text());
+			if (bold) {
+				text = text.withStyle(s -> s.withBold(true));
+			}
+			graphics.drawCenteredString(font, text, cx, y, color);
 			y += 11;
 		}
 	}

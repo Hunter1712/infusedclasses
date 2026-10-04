@@ -32,7 +32,8 @@ public final class ClassRegistry {
 				WARRIOR_ABILITY,
 				0xFFE74C3C,
 				"Frontline bruiser",
-				List.of("War Cry (R)", "Strength burst")));
+				List.of("War Cry (R)", "Strength burst"),
+				"Gives Strength II for 8s"));
 
 		register(new ClassDefinition(
 				Identifier.fromNamespaceAndPath("infusedclasses", "ranger"),
@@ -42,7 +43,8 @@ public final class ClassRegistry {
 				null,
 				0xFF2ECC71,
 				"Wilds archer",
-				List.of()));
+				List.of(),
+				""));
 
 		register(new ClassDefinition(
 				Identifier.fromNamespaceAndPath("infusedclasses", "mage"),
@@ -52,7 +54,8 @@ public final class ClassRegistry {
 				null,
 				0xFF9B59B6,
 				"Arcane burst",
-				List.of()));
+				List.of(),
+				""));
 	}
 
 	private ClassRegistry() {

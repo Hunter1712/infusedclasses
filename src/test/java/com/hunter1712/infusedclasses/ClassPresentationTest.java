@@ -46,7 +46,11 @@ class ClassPresentationTest {
 		String tooltip = ClassPresentation.tooltipFor(warrior);
 
 		ConditionalPassive bulwark = warrior.passives().get(0);
-		assertEquals("Bulwark: " + bulwark.fullDesc() + " (max " + bulwark.maxStacks() + " stacks) — War Cry (R) — Strength burst. Click to choose Warrior.", tooltip);
+		// Tooltip shows passive, then active name + dedicated description
+		assertTrue(tooltip.contains("Bulwark: " + bulwark.fullDesc() + " (max " + bulwark.maxStacks() + " stacks)"));
+		assertTrue(tooltip.contains("Active: War Cry"));
+		assertTrue(tooltip.contains("Gives Strength II for 8s"));
+		assertTrue(tooltip.endsWith("Click to choose Warrior."));
 	}
 
 	@Test
@@ -82,11 +86,16 @@ class ClassPresentationTest {
 
 		List<ClassPresentation.CardLine> lines = ClassPresentation.cardLinesFor(warrior);
 
-		assertTrue(lines.stream().anyMatch(l -> l.text().equals("Bulwark") && l.kind() == ClassPresentation.LineKind.PASSIVE));
-		assertTrue(lines.stream().anyMatch(l -> l.text().equals(warrior.passives().get(0).shortDesc())
-				&& l.kind() == ClassPresentation.LineKind.PASSIVE));
-		assertTrue(lines.stream().anyMatch(l -> l.text().equals("War Cry (R)") && l.kind() == ClassPresentation.LineKind.ABILITY));
-		assertTrue(lines.stream().anyMatch(l -> l.text().equals("Strength burst") && l.kind() == ClassPresentation.LineKind.ABILITY));
+		// Passives section
+		assertEquals("Passives", lines.get(0).text());
+		assertEquals(ClassPresentation.LineKind.PASSIVE_HEADER, lines.get(0).kind());
+		assertEquals("  Bulwark", lines.get(1).text());
+		assertEquals(ClassPresentation.LineKind.PASSIVE, lines.get(1).kind());
+		// Active section
+		assertEquals("Active", lines.get(2).text());
+		assertEquals(ClassPresentation.LineKind.ABILITY_HEADER, lines.get(2).kind());
+		assertEquals("  War Cry", lines.get(3).text());
+		assertEquals(ClassPresentation.LineKind.ABILITY, lines.get(3).kind());
 	}
 
 	@Test
@@ -98,7 +107,7 @@ class ClassPresentationTest {
 
 		assertEquals(3, lines.size());
 		assertEquals("Passives: ???", lines.get(0).text());
-		assertEquals("Ability: ???", lines.get(1).text());
+		assertEquals("Active: ???", lines.get(1).text());
 		assertEquals("COMING SOON", lines.get(2).text());
 	}
 
@@ -123,17 +132,21 @@ class ClassPresentationTest {
 	}
 
 	@Test
-	void classWithNoPassivesShowsPlaceholder() {
+	void classWithNoPassivesShowsOnlyActive() {
 		Identifier customId = net.minecraft.resources.Identifier.fromNamespaceAndPath("infusedclasses", "custom");
 		ClassDefinition def = new ClassDefinition(
 				customId, "Custom", false,
 				List.of(),
 				ClassRegistry.WARRIOR_ABILITY,
-				0xFFFFFF, "tag", List.of("Ability line"));
+				0xFFFFFF, "tag", List.of("Ability line"), "");
 
 		List<ClassPresentation.CardLine> lines = ClassPresentation.cardLinesFor(def);
 
-		assertTrue(lines.stream().anyMatch(l -> l.text().equals("No passives yet")));
-		assertTrue(lines.stream().anyMatch(l -> l.text().equals("Ability line")));
+		// No passives section at all when empty
+		assertTrue(lines.stream().noneMatch(l -> l.text().equals("No passives yet")));
+		assertEquals("Active", lines.get(0).text());
+		assertEquals(ClassPresentation.LineKind.ABILITY_HEADER, lines.get(0).kind());
+		assertEquals("  Ability line", lines.get(1).text());
+		assertEquals(ClassPresentation.LineKind.ABILITY, lines.get(1).kind());
 	}
 }

@@ -14,7 +14,7 @@ public final class ClassPresentation {
 
 	/** One rendered card line plus which section it belongs to. */
 	public enum LineKind {
-		PASSIVE, ABILITY, NOTICE
+		PASSIVE_HEADER, PASSIVE, ABILITY_HEADER, ABILITY, NOTICE
 	}
 
 	public record CardLine(String text, LineKind kind) {
@@ -25,41 +25,53 @@ public final class ClassPresentation {
 		return "Your choice shapes your ability";
 	}
 
-	/** Tooltip for the select button: locked teaser or passive texts joined with ability lines. */
+	/** Tooltip for the select button: concise passive/active summary. */
 	public static String tooltipFor(ClassDefinition def) {
 		if (def.locked()) {
 			return "Coming soon";
 		}
-		List<String> parts = new ArrayList<>();
-		for (ConditionalPassive p : def.passives()) {
-			parts.add(p.name() + ": " + p.fullDesc() + " (max " + p.maxStacks() + " stacks)");
+		StringBuilder sb = new StringBuilder();
+		if (!def.passives().isEmpty()) {
+			for (ConditionalPassive p : def.passives()) {
+				sb.append(p.name()).append(": ").append(p.fullDesc()).append(" (max ").append(p.maxStacks()).append(" stacks). ");
+			}
 		}
-		parts.addAll(def.abilityLines());
-		return String.join(" — ", parts) + ". Click to choose " + def.displayName() + ".";
+		if (def.activeAbility() != null) {
+			// First ability line is the name (may include keybind); strip "(X)" suffix
+			String raw = def.abilityLines().getFirst();
+			String clean = raw.replaceAll("\\s*\\([^)]+\\)\\s*$", "").trim();
+			sb.append("Active: ").append(clean);
+			// Dedicated ability description field
+			if (def.abilityDesc() != null && !def.abilityDesc().isBlank()) {
+				sb.append(" — ").append(def.abilityDesc());
+			}
+			sb.append(". ");
+		}
+		sb.append("Click to choose ").append(def.displayName()).append(".");
+		return sb.toString();
 	}
 
-	/** Lines shown in the card body: passive name/short-desc pairs then ability lines. */
+	/** Lines shown in the card body: Passives header + names, then Active header + ability names. */
 	public static List<CardLine> cardLinesFor(ClassDefinition def) {
 		List<CardLine> lines = new ArrayList<>();
 		if (def.locked()) {
 			lines.add(new CardLine("Passives: ???", LineKind.PASSIVE));
-			lines.add(new CardLine("Ability: ???", LineKind.ABILITY));
+			lines.add(new CardLine("Active: ???", LineKind.ABILITY));
 			lines.add(new CardLine("COMING SOON", LineKind.NOTICE));
 			return lines;
 		}
-		for (ConditionalPassive p : def.passives()) {
-			lines.add(new CardLine(p.name(), LineKind.PASSIVE));
-			lines.add(new CardLine(p.shortDesc(), LineKind.PASSIVE));
-		}
-		if (def.passives().isEmpty()) {
-			lines.add(new CardLine("No passives yet", LineKind.PASSIVE));
-		}
-		if (def.activeAbility() == null) {
-			lines.add(new CardLine("Ability: —", LineKind.ABILITY));
-		} else {
-			for (String ability : def.abilityLines()) {
-				lines.add(new CardLine(ability, LineKind.ABILITY));
+		if (!def.passives().isEmpty()) {
+			lines.add(new CardLine("Passives", LineKind.PASSIVE_HEADER));
+			for (ConditionalPassive p : def.passives()) {
+				lines.add(new CardLine("  " + p.name(), LineKind.PASSIVE));
 			}
+		}
+		if (def.activeAbility() != null) {
+			lines.add(new CardLine("Active", LineKind.ABILITY_HEADER));
+			// First ability line is the name (may include keybind); strip "(X)" suffix
+			String raw = def.abilityLines().getFirst();
+			String clean = raw.replaceAll("\\s*\\([^)]+\\)\\s*$", "").trim();
+			lines.add(new CardLine("  " + clean, LineKind.ABILITY));
 		}
 		return lines;
 	}
