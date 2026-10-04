@@ -8,7 +8,7 @@ Minecraft has no character classes: every player plays identically. Player wants
 
 ## Solution
 
-A Fabric mod that detects a player's first join, shows a class-selection GUI, persists the choice on the player, and applies class passives (attribute modifiers) plus one keybind-triggered active ability per class. Warrior ships first: buffed health/armor/melee, slower movement, War Cry active. Other classes appear greyed out in the GUI.
+A Fabric mod that detects a player's first join, shows a class-selection GUI, persists the choice on the player, and applies class passives (attribute modifiers) plus one keybind-triggered active ability per class. Warrior ships first: buffed health/armor, slower movement, War Cry as the damage tool. Other classes appear greyed out in the GUI.
 
 ## User Stories
 
@@ -18,7 +18,7 @@ A Fabric mod that detects a player's first join, shows a class-selection GUI, pe
 4. As a server admin, I want class changes possible via command, so that I can fix mistakes.
 5. As a Warrior, I want increased max health, so that I feel tankier.
 6. As a Warrior, I want increased armor, so that I take less damage.
-7. As a Warrior, I want bonus melee damage with swords/axes, so that melee feels like my role.
+7. As a Warrior, I want War Cry as my melee damage tool (no flat melee bonus), so that melee feels like my role.
 8. As a Warrior, I want slightly reduced movement speed, so that the class has a real weakness.
 9. As a Warrior, I want a War Cry active ability on a keybind, so that I have an active tool.
 10. As a Warrior, I want War Cry to grant a temporary Strength buff, so that it feels powerful.
@@ -36,10 +36,10 @@ A Fabric mod that detects a player's first join, shows a class-selection GUI, pe
 - Class choice persisted in player NBT (`entity data`), travels with the player; also covered by player data backups.
 - First-join detection: server checks player's NBT on join; if unset, flag client to open the class GUI. GUI is a client screen listing all classes; locked ones greyed.
 - On selection, client sends choice to server; server writes NBT, applies modifiers, closes GUI.
-- Passives implemented as attribute modifiers on the player (`max_health`, armor, `attack_damage` item-filtered for sword/axe in practice via equip handling, `movement_speed` negative). Old class modifiers removed by namespacing modifier identifiers per class.
+- Passives implemented as attribute modifiers on the player (`max_health`, armor, armor_toughness, `movement_speed` negative; no `attack_damage` — War Cry is the damage tool). Old class modifiers removed by namespacing modifier identifiers per class.
 - Active ability: client keybind sends packet to server; server validates class + cooldown, applies effect (Strength II, 8s), starts 30s cooldown tracked server-side, sends particles/sound to the player.
-- War Cry cooldown feedback via item-cooldown-style visual on a HUD element or simple action bar message; exact widget deferred — must exist.
-- Admin command (e.g. `/class set <player> <class>`) sets class, strips previous modifiers, applies new.
+- War Cry cooldown feedback via action bar message (remaining seconds on cooldown, shout confirmation on fire). An item-cooldown-style HUD visual is deferred.
+- Admin command `/class set <player> <class>` sets class, strips previous modifiers, applies new. `/class select <player>` reopens the picker for GUI iteration; picking stays server-validated.
 - MP-correct throughout: server authoritative; client only sends intents.
 - Warrior baseline: +8 max health points (+4 hearts), armor/toughness bonus, -10% movement speed. No flat damage bonus — War Cry is the damage tool.
 

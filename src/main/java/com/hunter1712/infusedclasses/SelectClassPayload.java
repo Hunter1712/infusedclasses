@@ -7,7 +7,8 @@ import net.minecraft.resources.Identifier;
 
 /** Client intent: "I picked this class". Server validates and applies. */
 public record SelectClassPayload(Identifier classId) implements CustomPacketPayload {
-	public static final CustomPacketPayload.Type<SelectClassPayload> TYPE = ClassPackets.SELECT_CLASS;
+	public static final CustomPacketPayload.Type<SelectClassPayload> TYPE =
+			new CustomPacketPayload.Type<>(Identifier.fromNamespaceAndPath(ClassPackets.MOD_ID, "select_class"));
 
 	public static final StreamCodec<ByteBuf, SelectClassPayload> STREAM_CODEC =
 			StreamCodec.composite(Identifier.STREAM_CODEC, SelectClassPayload::classId, SelectClassPayload::new);

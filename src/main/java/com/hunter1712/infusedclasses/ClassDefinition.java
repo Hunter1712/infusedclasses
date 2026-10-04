@@ -15,12 +15,5 @@ public record ClassDefinition(
 		String tagline,
 		List<String> abilityLines
 ) {
-	/** Picker tooltip: locked teasers stay generic, playable joins ability lines. */
-	public String abilityBlurb() {
-		if (locked) {
-			return "Coming soon";
-		}
-		return String.join(" — ", abilityLines) + ". Click to choose " + displayName + ".";
-	}
 }
 

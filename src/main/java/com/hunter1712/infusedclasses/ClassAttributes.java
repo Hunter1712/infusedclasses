@@ -7,6 +7,7 @@ import net.minecraft.world.entity.ai.attributes.Attributes;
 
 import java.util.Locale;
 import java.util.Map;
+import java.util.function.Supplier;
 
 /**
  * One seam for attribute knowledge: gameplay resolution plus display naming
@@ -14,21 +15,24 @@ import java.util.Map;
  * assert without game bootstrap; only resolve touches live holders.
  */
 public final class ClassAttributes {
-	private static final Map<String, String> DISPLAY = Map.of(
-			"max_health", "Max Health",
-			"armor", "Armor",
-			"armor_toughness", "Toughness",
-			"movement_speed", "Move Speed",
-			"attack_damage", "Attack Damage",
-			"attack_speed", "Attack Speed",
-			"knockback_resistance", "Knockback Resist");
+	private static final Map<String, AttributeInfo> TABLE = Map.of(
+			"max_health", new AttributeInfo("Max Health", () -> Attributes.MAX_HEALTH),
+			"armor", new AttributeInfo("Armor", () -> Attributes.ARMOR),
+			"armor_toughness", new AttributeInfo("Toughness", () -> Attributes.ARMOR_TOUGHNESS),
+			"movement_speed", new AttributeInfo("Move Speed", () -> Attributes.MOVEMENT_SPEED),
+			"attack_damage", new AttributeInfo("Attack Damage", () -> Attributes.ATTACK_DAMAGE),
+			"attack_speed", new AttributeInfo("Attack Speed", () -> Attributes.ATTACK_SPEED),
+			"knockback_resistance", new AttributeInfo("Knockback Resist", () -> Attributes.KNOCKBACK_RESISTANCE));
+
+	private record AttributeInfo(String displayName, Supplier<Holder<Attribute>> holderSupplier) {
+	}
 
 	private ClassAttributes() {
 	}
 
 	/** Pure: true when this mod knows how to resolve and display the attribute. */
 	public static boolean isKnown(Identifier id) {
-		return id != null && "minecraft".equals(id.getNamespace()) && DISPLAY.containsKey(id.getPath());
+		return id != null && "minecraft".equals(id.getNamespace()) && TABLE.containsKey(id.getPath());
 	}
 
 	/** Pure display name, prettified fallback for future attributes. */
@@ -36,8 +40,8 @@ public final class ClassAttributes {
 		if (attribute == null) {
 			return "";
 		}
-		String known = DISPLAY.get(attribute.getPath());
-		return known != null ? known : prettify(attribute.getPath());
+		AttributeInfo info = TABLE.get(attribute.getPath());
+		return info != null ? info.displayName() : prettify(attribute.getPath());
 	}
 
 	/** Pure passive line, e.g. "+8 Max Health" or "-10% Move Speed". */
@@ -55,16 +59,8 @@ public final class ClassAttributes {
 		if (!isKnown(id)) {
 			return null;
 		}
-		return switch (id.getPath()) {
-			case "max_health" -> Attributes.MAX_HEALTH;
-			case "armor" -> Attributes.ARMOR;
-			case "armor_toughness" -> Attributes.ARMOR_TOUGHNESS;
-			case "movement_speed" -> Attributes.MOVEMENT_SPEED;
-			case "attack_damage" -> Attributes.ATTACK_DAMAGE;
-			case "attack_speed" -> Attributes.ATTACK_SPEED;
-			case "knockback_resistance" -> Attributes.KNOCKBACK_RESISTANCE;
-			default -> null;
-		};
+		AttributeInfo info = TABLE.get(id.getPath());
+		return info != null ? info.holderSupplier().get() : null;
 	}
 
 	public static String prettify(String path) {

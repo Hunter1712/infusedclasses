@@ -1,5 +1,6 @@
 package com.hunter1712.infusedclasses;
 
+import net.minecraft.resources.Identifier;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -14,7 +15,8 @@ class WarCryAbilityTest {
 
 	@Test
 	void warriorFiresWhenReady() {
-		WarCryAbility.Result result = WarCryAbility.trigger(warrior(), 0);
+		PlayerClasses classes = warrior();
+		WarCryAbility.Result result = WarCryAbility.trigger(classes.currentDefinition(), classes.cooldowns(), 0);
 
 		assertEquals(WarCryAbility.Kind.FIRED, result.kind());
 		assertEquals(0, result.remainingMs());
@@ -23,9 +25,9 @@ class WarCryAbilityTest {
 	@Test
 	void secondUseInsideCooldownReportsRemaining() {
 		PlayerClasses classes = warrior();
-		WarCryAbility.trigger(classes, 1_000);
+		WarCryAbility.trigger(classes.currentDefinition(), classes.cooldowns(), 1_000);
 
-		WarCryAbility.Result second = WarCryAbility.trigger(classes, 16_000);
+		WarCryAbility.Result second = WarCryAbility.trigger(classes.currentDefinition(), classes.cooldowns(), 16_000);
 
 		assertEquals(WarCryAbility.Kind.ON_COOLDOWN, second.kind());
 		assertEquals(15_000, second.remainingMs());
@@ -34,9 +36,9 @@ class WarCryAbilityTest {
 	@Test
 	void firesAgainAtCooldownEdge() {
 		PlayerClasses classes = warrior();
-		WarCryAbility.trigger(classes, 0);
+		WarCryAbility.trigger(classes.currentDefinition(), classes.cooldowns(), 0);
 
-		assertTrue(WarCryAbility.trigger(classes, Cooldowns.WAR_CRY_MS).kind() == WarCryAbility.Kind.FIRED);
+		assertTrue(WarCryAbility.trigger(classes.currentDefinition(), classes.cooldowns(), Cooldowns.WAR_CRY_MS).kind() == WarCryAbility.Kind.FIRED);
 	}
 
 	@Test
@@ -44,7 +46,7 @@ class WarCryAbilityTest {
 		PlayerClasses classes = new PlayerClasses();
 		classes.readId("infusedclasses:ranger");
 
-		WarCryAbility.Result result = WarCryAbility.trigger(classes, 0);
+		WarCryAbility.Result result = WarCryAbility.trigger(classes.currentDefinition(), classes.cooldowns(), 0);
 
 		assertEquals(WarCryAbility.Kind.WRONG_CLASS, result.kind());
 		assertEquals(0, classes.cooldowns().warCryRemaining(0));
@@ -52,7 +54,7 @@ class WarCryAbilityTest {
 
 	@Test
 	void missingClassIsRejected() {
-		WarCryAbility.Result result = WarCryAbility.trigger(new PlayerClasses(), 0);
+		WarCryAbility.Result result = WarCryAbility.trigger(null, new Cooldowns(), 0);
 
 		assertEquals(WarCryAbility.Kind.WRONG_CLASS, result.kind());
 	}

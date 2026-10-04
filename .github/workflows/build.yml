@@ -14,4 +14,6 @@ jobs:
           distribution: temurin
           java-version: 21
       - uses: gradle/actions/setup-gradle@v4
-      - run: ./gradlew build --info
+        with:
+          gradle-version: 9.7.1
+      - run: gradle build --info
