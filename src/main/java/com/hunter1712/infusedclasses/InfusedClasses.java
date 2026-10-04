@@ -5,6 +5,7 @@ import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents;
 import net.fabricmc.fabric.api.entity.event.v1.ServerPlayerEvents;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
@@ -12,6 +13,7 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.commands.arguments.EntityArgument;
+import net.minecraft.core.Holder;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
@@ -22,6 +24,10 @@ import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
+import net.minecraft.world.entity.ai.attributes.Attribute;
+import net.minecraft.world.entity.ai.attributes.AttributeInstance;
+import net.minecraft.world.entity.ai.attributes.AttributeModifier;
+import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.phys.Vec3;
 
 /** Server side. Authoritative: client sends intents, every decision happens here. */
@@ -62,6 +68,63 @@ public class InfusedClasses implements ModInitializer {
 				PlayerClasses.of(player).onTrigger("on_hit_taken");
 			}
 		});
+
+		// Server tick: decay conditional passive stacks and re-apply armor modifier.
+		ServerTickEvents.END_SERVER_TICK.register(server -> {
+			for (ServerPlayer player : server.getPlayerList().getPlayers()) {
+				PlayerClasses classes = PlayerClasses.of(player);
+				if (!classes.hasClass()) {
+					continue;
+				}
+				// Decay stacks
+				boolean stacksChanged = classes.tickDecay();
+				// Re-apply armor modifier if stacks changed or if we need to initialize
+				applyConditionalArmorModifier(player, classes, stacksChanged);
+			}
+		});
+	}
+
+	/**
+	 * Applies or removes the conditional armor modifier based on current Bulwark stacks.
+	 * Called every tick; only writes to attribute when stacks actually change.
+	 */
+	private static void applyConditionalArmorModifier(ServerPlayer player, PlayerClasses classes, boolean stacksChanged) {
+		ClassDefinition def = classes.currentDefinition();
+		if (def == null) {
+			return;
+		}
+		// Find Bulwark passive (the only one with armor effect for now)
+		ConditionalPassive bulwark = def.passives().stream()
+				.filter(p -> "Bulwark".equals(p.name()))
+				.findFirst()
+				.orElse(null);
+		if (bulwark == null) {
+			return;
+		}
+		int stacks = classes.stacks("Bulwark");
+		Identifier modifierId = Identifier.fromNamespaceAndPath(ClassPackets.MOD_ID, "bulwark_armor");
+
+		AttributeInstance armor = player.getAttribute(Attributes.ARMOR);
+		if (armor == null) {
+			return;
+		}
+
+		// If modifier exists, check if value matches current stacks
+		AttributeModifier existing = armor.getModifier(modifierId);
+		double targetValue = stacks * 1.0; // +1 armor per stack
+		if (existing != null && existing.amount() == targetValue) {
+			return; // already correct
+		}
+
+		// Remove old modifier if present
+		if (existing != null) {
+			armor.removeModifier(modifierId);
+		}
+
+		// Apply new modifier if stacks > 0
+		if (stacks > 0) {
+			armor.addPermanentModifier(new AttributeModifier(modifierId, targetValue, AttributeModifier.Operation.ADD_VALUE));
+		}
 	}
 
 	private static void registerReceivers() {

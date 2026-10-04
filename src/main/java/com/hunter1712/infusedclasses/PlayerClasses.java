@@ -15,6 +15,8 @@ public class PlayerClasses {
 	private final Cooldowns cooldowns = new Cooldowns();
 	// Transient conditional-passive stacks: keyed by passive name, never written to NBT.
 	private final Map<String, Integer> passiveStacks = new HashMap<>();
+	// Transient last-trigger timestamps (millis) for decay: keyed by passive name.
+	private final Map<String, Long> lastTriggerTime = new HashMap<>();
 
 	public Identifier classId() {
 		return classId;
@@ -36,6 +38,11 @@ public class PlayerClasses {
 	/** String-keyed trigger helper: bumps every passive on the current class whose trigger matches.
 	 *  Unknown triggers and trigger-less classes are inert. */
 	public void onTrigger(String trigger) {
+		onTrigger(trigger, System.currentTimeMillis());
+	}
+
+	/** Testable overload with injected time. */
+	void onTrigger(String trigger, long now) {
 		ClassDefinition def = currentDefinition();
 		if (def == null) {
 			return;
@@ -43,8 +50,48 @@ public class PlayerClasses {
 		for (ConditionalPassive passive : def.passives()) {
 			if (passive.trigger().equals(trigger)) {
 				passiveStacks.put(passive.name(), Math.min(passive.maxStacks(), stacks(passive.name()) + 1));
+				lastTriggerTime.put(passive.name(), now);
 			}
 		}
+	}
+
+	/**
+	 * Ticks decay for all passives on the current class.
+	 * Returns true if any stacks changed (so callers can re-apply modifiers).
+	 * Decay rule: 5 second grace after last trigger, then -1 stack per second.
+	 */
+	public boolean tickDecay() {
+		return tickDecay(System.currentTimeMillis());
+	}
+
+	/** Testable overload with injected time. */
+	boolean tickDecay(long now) {
+		ClassDefinition def = currentDefinition();
+		if (def == null) {
+			return false;
+		}
+		boolean anyChanged = false;
+		for (ConditionalPassive passive : def.passives()) {
+			String name = passive.name();
+			int current = stacks(name);
+			if (current <= 0) {
+				continue;
+			}
+			Long last = lastTriggerTime.get(name);
+			if (last == null) {
+				continue;
+			}
+			long elapsedSec = (now - last) / 1000;
+			if (elapsedSec > 5) {
+				int decayed = (int) (elapsedSec - 5);
+				int next = Math.max(0, current - decayed);
+				if (next != current) {
+					passiveStacks.put(name, next);
+					anyChanged = true;
+				}
+			}
+		}
+		return anyChanged;
 	}
 
 	/** Mixin-backed accessor. Cast is safe: mixin implements Owner on every Player. */
