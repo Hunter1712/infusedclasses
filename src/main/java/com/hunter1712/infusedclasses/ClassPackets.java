@@ -19,6 +19,12 @@ public final class ClassPackets {
 			new CustomPacketPayload.Type<>(Identifier.fromNamespaceAndPath(MOD_ID, "war_cry"));
 	public static final CustomPacketPayload.Type<ClassConfirmedPayload> CLASS_CONFIRMED =
 			new CustomPacketPayload.Type<>(Identifier.fromNamespaceAndPath(MOD_ID, "class_confirmed"));
+	public static final CustomPacketPayload.Type<SpendTalentPayload> SPEND_TALENT =
+			new CustomPacketPayload.Type<>(Identifier.fromNamespaceAndPath(MOD_ID, "spend_talent"));
+	public static final CustomPacketPayload.Type<RequestTalentsPayload> REQUEST_TALENTS =
+			new CustomPacketPayload.Type<>(Identifier.fromNamespaceAndPath(MOD_ID, "request_talents"));
+	public static final CustomPacketPayload.Type<TalentStatePayload> TALENT_STATE =
+			new CustomPacketPayload.Type<>(Identifier.fromNamespaceAndPath(MOD_ID, "talent_state"));
 
 	private ClassPackets() {
 	}

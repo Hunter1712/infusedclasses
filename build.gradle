@@ -44,6 +44,30 @@ test {
 	useJUnitPlatform()
 }
 
+// Client-visible changes ship as a jar, and compileJava alone never refreshes it.
+// gradle deployClient rebuilds, copies build/libs/infusedclasses-<version>.jar to the
+// live instance mods folder, and fails loudly if the jar is missing afterwards.
+// Override the target with -PmcModsDir=<path> or the MC_MODS_DIR env var.
+def mcModsDir = findProperty('mcModsDir') ?: System.getenv('MC_MODS_DIR') ?:
+		'C:/Users/Yaza/AppData/Roaming/ElyPrismLauncher/instances/1.21.11/minecraft/mods'
+
+tasks.register('deployClient', Copy) {
+	group = 'infusedclasses'
+	description = 'Rebuilds the mod jar and copies it to the client mods folder.'
+	dependsOn build
+	from(layout.buildDirectory.dir('libs')) {
+		include "infusedclasses-${project.version}.jar"
+	}
+	into mcModsDir
+	doLast {
+		def target = file("${mcModsDir}/infusedclasses-${project.version}.jar")
+		if (!target.exists()) {
+			throw new GradleException("deployClient: jar missing at ${target}")
+		}
+		logger.lifecycle("deployClient: ${target} (${target.length()} bytes)")
+	}
+}
+
 java {
 	withSourcesJar()
 	sourceCompatibility = JavaVersion.VERSION_21

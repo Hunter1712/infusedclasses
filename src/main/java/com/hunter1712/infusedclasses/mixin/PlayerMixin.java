@@ -24,6 +24,7 @@ public abstract class PlayerMixin implements PlayerClasses.Owner {
 	@Inject(method = "readAdditionalSaveData", at = @At("TAIL"))
 	private void infusedclasses$read(ValueInput input, CallbackInfo ci) {
 		infusedclasses$classes.readId(input.getString(PlayerClasses.NBT_KEY).orElse(null));
+		infusedclasses$classes.readTree(input.getString(PlayerClasses.TREE_KEY).orElse(null));
 	}
 
 	@Inject(method = "addAdditionalSaveData", at = @At("TAIL"))
@@ -31,6 +32,10 @@ public abstract class PlayerMixin implements PlayerClasses.Owner {
 		String id = infusedclasses$classes.writeId();
 		if (id != null) {
 			output.putString(PlayerClasses.NBT_KEY, id);
+		}
+		String tree = infusedclasses$classes.writeTree();
+		if (tree != null && !tree.isEmpty()) {
+			output.putString(PlayerClasses.TREE_KEY, tree);
 		}
 	}
 }

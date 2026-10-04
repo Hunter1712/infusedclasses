@@ -3,7 +3,10 @@ package com.hunter1712.infusedclasses.client;
 import com.hunter1712.infusedclasses.ClassConfirmedPayload;
 import com.hunter1712.infusedclasses.ClassPackets;
 import com.hunter1712.infusedclasses.OpenClassScreenPayload;
+import com.hunter1712.infusedclasses.RequestTalentsPayload;
 import com.hunter1712.infusedclasses.SelectClassPayload;
+import com.hunter1712.infusedclasses.SpendTalentPayload;
+import com.hunter1712.infusedclasses.TalentStatePayload;
 import com.hunter1712.infusedclasses.WarCryPayload;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
@@ -17,6 +20,7 @@ import org.lwjgl.glfw.GLFW;
 /** Client: opens picker on server signal, sends class pick and War Cry key as intents. */
 public class InfusedClassesClient implements ClientModInitializer {
 	private static KeyMapping warCryKey;
+	private static KeyMapping talentsKey;
 
 	@Override
 	public void onInitializeClient() {
@@ -33,8 +37,16 @@ public class InfusedClassesClient implements ClientModInitializer {
 							}
 						}));
 
+		// Talent state is only ever sent when the player asked (key, command, spend),
+		// so receipt always (re)opens the panel with fresh server-validated numbers.
+		ClientPlayNetworking.registerGlobalReceiver(ClassPackets.TALENT_STATE,
+				(TalentStatePayload payload, ClientPlayNetworking.Context context) -> context.client()
+						.execute(() -> Minecraft.getInstance().setScreen(new TalentScreen(payload.state()))));
+
 		warCryKey = KeyBindingHelper.registerKeyBinding(new KeyMapping(
 				"key.infusedclasses.war_cry", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_R, KeyMapping.Category.GAMEPLAY));
+		talentsKey = KeyBindingHelper.registerKeyBinding(new KeyMapping(
+				"key.infusedclasses.talents", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_J, KeyMapping.Category.GAMEPLAY));
 
 		ClientTickEvents.END_CLIENT_TICK.register(client -> {
 			if (client.player == null || warCryKey == null) {
@@ -43,11 +55,20 @@ public class InfusedClassesClient implements ClientModInitializer {
 			while (warCryKey.consumeClick()) {
 				ClientPlayNetworking.send(new WarCryPayload());
 			}
+			if (talentsKey != null) {
+				while (talentsKey.consumeClick()) {
+					ClientPlayNetworking.send(new RequestTalentsPayload());
+				}
+			}
 		});
 	}
 
 	public static void pickClass(net.minecraft.resources.Identifier id) {
 		ClientPlayNetworking.send(new SelectClassPayload(id));
+	}
+
+	public static void spendTalent(String nodeId) {
+		ClientPlayNetworking.send(new SpendTalentPayload(nodeId));
 	}
 }
 

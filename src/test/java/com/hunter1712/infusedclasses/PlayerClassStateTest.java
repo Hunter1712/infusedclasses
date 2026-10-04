@@ -38,4 +38,15 @@ class PlayerClassStateTest {
 
 		assertEquals(ClassRegistry.WARRIOR, classes.classId());
 	}
+
+	@Test
+	void respawnCopyPreservesClassOnFreshInstance() {
+		PlayerClasses oldClasses = new PlayerClasses();
+		oldClasses.trySetClass(ClassRegistry.WARRIOR);
+		PlayerClasses newClasses = new PlayerClasses();
+
+		newClasses.copyFrom(oldClasses);
+
+		assertEquals(ClassRegistry.WARRIOR, newClasses.classId());
+	}
 }
