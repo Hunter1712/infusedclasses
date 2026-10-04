@@ -119,11 +119,16 @@ public class PlayerClasses {
 
 	/** Adds XP, banking one point per level-up. Returns levels gained for toast/sound. Pure. */
 	public int addKillXp(boolean meleeAffinity) {
+		return addXp(SkillTrees.xpForKill(meleeAffinity));
+	}
+
+	/** Raw XP grant (testing/admin path). Returns levels gained. Pure. */
+	public int addXp(int amount) {
 		SkillTrees.Progress p = progress();
 		if (p == null) {
 			return 0;
 		}
-		p.xp += SkillTrees.xpForKill(meleeAffinity);
+		p.xp += Math.max(0, amount);
 		int gained = 0;
 		while (p.level < SkillTrees.MAX_LEVEL && p.xp >= SkillTrees.xpForNextLevel(p.level)) {
 			p.xp -= SkillTrees.xpForNextLevel(p.level);

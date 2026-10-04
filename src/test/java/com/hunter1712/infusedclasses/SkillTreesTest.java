@@ -109,6 +109,17 @@ class SkillTreesTest {
 	}
 
 	@Test
+	void rawXpGrantsLevelsAndCapsAtTwenty() {
+		PlayerClasses classes = warrior();
+		int gained = classes.addXp(100000);
+		assertEquals(SkillTrees.MAX_LEVEL, classes.level());
+		assertEquals(SkillTrees.MAX_LEVEL - 1, classes.unspentPoints());
+		assertTrue(gained > 0);
+		assertEquals(0, classes.addXp(100000));
+		assertEquals(0, classes.addXp(-5));
+	}
+
+	@Test
 	void thickSkinCapsDecaysAndClears() {
 		SkillTrees.ThickSkin skin = new SkillTrees.ThickSkin();
 		for (int i = 0; i < 10; i++) {

@@ -1,5 +1,6 @@
 package com.hunter1712.infusedclasses;
 
+import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
@@ -41,6 +42,7 @@ public class InfusedClasses implements ModInitializer {
 		registerEvents();
 		registerReceivers();
 		registerCommands();
+		registerTestingCommands();
 	}
 
 	private static void registerPayloads() {
@@ -76,17 +78,7 @@ public class InfusedClasses implements ModInitializer {
 				boolean melee = ClassRegistry.WARRIOR.equals(PlayerClasses.of(player).classId()) && isMeleeAffinity(player);
 				int gained = PlayerClasses.of(player).addKillXp(melee);
 				if (gained > 0) {
-					PlayerClasses classes = PlayerClasses.of(player);
-					level.playSound(null, player.blockPosition(), SoundEvents.PLAYER_LEVELUP,
-							SoundSource.PLAYERS, 1.0F, 1.0F);
-					player.connection.send(new ClientboundSetTitleTextPacket(
-							Component.literal("Level " + classes.level()).withStyle(ChatFormatting.GOLD)));
-					player.connection.send(new ClientboundSetSubtitleTextPacket(
-							Component.literal(classes.unspentPoints() + " talent point"
-									+ (classes.unspentPoints() == 1 ? "" : "s") + " — /talents").withStyle(ChatFormatting.GRAY)));
-					player.displayClientMessage(Component.literal(
-							"Level " + classes.level() + " — " + classes.unspentPoints() + " talent point"
-									+ (classes.unspentPoints() == 1 ? "" : "s") + " (/talents)"), false);
+					levelUpFeedback(player);
 				}
 			}
 		});
@@ -212,6 +204,26 @@ public class InfusedClasses implements ModInitializer {
 										.executes(ctx -> respec(ctx.getSource(), EntityArgument.getPlayer(ctx, "target")))))));
 	}
 
+	/** Testing/admin extras. Separate registration so the main /talents chain stays untouched. */
+	private static void registerTestingCommands() {
+		CommandRegistrationCallback.EVENT.register((dispatcher, registry, env) ->
+				dispatcher.register(Commands.literal("talents")
+						.then(Commands.literal("xp")
+								.requires(source -> source.permissions().hasPermission(Permissions.COMMANDS_GAMEMASTER))
+								.then(Commands.argument("target", EntityArgument.player())
+										.then(Commands.argument("amount", IntegerArgumentType.integer(1, 100000))
+												.executes(ctx -> grantXp(ctx.getSource(),
+														EntityArgument.getPlayer(ctx, "target"),
+														IntegerArgumentType.getInteger(ctx, "amount"))))))
+						.then(Commands.literal("grant")
+								.requires(source -> source.permissions().hasPermission(Permissions.COMMANDS_GAMEMASTER))
+								.then(Commands.argument("target", EntityArgument.player())
+										.then(Commands.argument("points", IntegerArgumentType.integer(1, 100))
+												.executes(ctx -> grantPoints(ctx.getSource(),
+														EntityArgument.getPlayer(ctx, "target"),
+														IntegerArgumentType.getInteger(ctx, "points"))))))));
+	}
+
 	private static int respec(CommandSourceStack source, ServerPlayer player) {
 		PlayerClasses classes = PlayerClasses.of(player);
 		int refund = classes.respec();
@@ -220,6 +232,57 @@ public class InfusedClasses implements ModInitializer {
 		source.sendSuccess(
 				() -> Component.literal("Respec " + player.getName().getString() + ": refunded " + refund + " points"), true);
 		return 1;
+	}
+
+	/** Testing/admin: raw XP grant with normal level-up feedback. */
+	private static int grantXp(CommandSourceStack source, ServerPlayer player, int amount) {
+		PlayerClasses classes = PlayerClasses.of(player);
+		if (!classes.hasClass()) {
+			source.sendFailure(Component.literal("Target has no class"));
+			return 0;
+		}
+		int gained = classes.addXp(amount);
+		if (gained > 0) {
+			levelUpFeedback(player);
+		} else {
+			source.sendSuccess(
+					() -> Component.literal("Granted " + amount + " XP to " + player.getName().getString()
+							+ " (level " + classes.level() + ", " + classes.progress().xp + " XP)"), true);
+		}
+		return 1;
+	}
+
+	/** Testing/admin: unspent points straight in, no grind. */
+	private static int grantPoints(CommandSourceStack source, ServerPlayer player, int points) {
+		PlayerClasses classes = PlayerClasses.of(player);
+		if (!classes.hasClass()) {
+			source.sendFailure(Component.literal("Target has no class"));
+			return 0;
+		}
+		classes.progress().unspent += points;
+		classes.refresh(player);
+		sendTalentState(player);
+		source.sendSuccess(
+				() -> Component.literal("Granted " + points + " points to " + player.getName().getString()
+						+ " (" + classes.unspentPoints() + " unspent)"), true);
+		return 1;
+	}
+
+	/** Title plus sound plus chat on every level-up, kills and grants alike. */
+	static void levelUpFeedback(ServerPlayer player) {
+		PlayerClasses classes = PlayerClasses.of(player);
+		if (player.level() instanceof ServerLevel level) {
+			level.playSound(null, player.blockPosition(), SoundEvents.PLAYER_LEVELUP,
+					SoundSource.PLAYERS, 1.0F, 1.0F);
+		}
+		player.connection.send(new ClientboundSetTitleTextPacket(
+				Component.literal("Level " + classes.level()).withStyle(ChatFormatting.GOLD)));
+		player.connection.send(new ClientboundSetSubtitleTextPacket(
+				Component.literal(classes.unspentPoints() + " talent point"
+						+ (classes.unspentPoints() == 1 ? "" : "s") + " — /talents").withStyle(ChatFormatting.GRAY)));
+		player.displayClientMessage(Component.literal(
+				"Level " + classes.level() + " — " + classes.unspentPoints() + " talent point"
+						+ (classes.unspentPoints() == 1 ? "" : "s") + " (/talents)"), false);
 	}
 
 	private static int setClass(CommandSourceStack source, ServerPlayer player, Identifier id) {
