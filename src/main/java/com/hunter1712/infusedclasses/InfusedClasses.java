@@ -327,7 +327,7 @@ public class InfusedClasses implements ModInitializer {
 		return key != null && key.getPath().endsWith("_sword");
 	}
 
-	/** Validates class/gates/points server-side and chats the reason on denial. True when spent. */
+	/** Validates class/tiers/chain/points server-side and chats the reason on denial. True when a rank was spent. */
 	static boolean spendTalent(ServerPlayer player, String nodeId) {
 		PlayerClasses classes = PlayerClasses.of(player);
 		SkillTrees.Progress p = classes.progress();
@@ -339,9 +339,10 @@ public class InfusedClasses implements ModInitializer {
 			player.displayClientMessage(Component.literal("Warrior talents only in MVP").withStyle(ChatFormatting.RED), false);
 			return false;
 		}
-		String reason = SkillTrees.unlockRejectReason(p.unlocked, p.unspent, nodeId);
-		if (reason != null) {
-			player.displayClientMessage(Component.literal(reason).withStyle(ChatFormatting.RED), false);
+		SkillTrees.Check check = SkillTrees.check(p.ranks, p.unspent, nodeId);
+		if (!(check instanceof SkillTrees.Check.Ok)) {
+			player.displayClientMessage(
+					Component.literal(SkillTrees.describe(check, SkillTrees.byId(nodeId))).withStyle(ChatFormatting.RED), false);
 			return false;
 		}
 		classes.tryUnlock(nodeId);
@@ -368,6 +369,9 @@ public class InfusedClasses implements ModInitializer {
 		player.addEffect(new MobEffectInstance(MobEffects.STRENGTH, cry.strengthTicks(), cry.strengthAmp()));
 		if (cry.resistance()) {
 			player.addEffect(new MobEffectInstance(MobEffects.RESISTANCE, cry.resistTicks(), cry.resistAmp()));
+		}
+		if (cry.absorption()) {
+			player.addEffect(new MobEffectInstance(MobEffects.ABSORPTION, cry.strengthTicks(), cry.strengthAmp()));
 		}
 		if (player.level() instanceof ServerLevel level) {
 			level.playSound(null, player.blockPosition(), SoundEvents.RAVAGER_ROAR, SoundSource.PLAYERS, 1.0F, 1.0F);

@@ -35,7 +35,7 @@ public final class WarCryAbility {
 		if (def == null || !ClassRegistry.WARRIOR_ABILITY.equals(def.activeAbility())) {
 			return Result.wrongClass();
 		}
-		if (!classes.cooldowns().useWarCry(now)) {
+		if (!classes.cooldowns().useWarCry(now, SkillTrees.warCryCooldownMs(classes.unlockedNodes()))) {
 			return Result.onCooldown(classes.cooldowns().warCryRemaining(now));
 		}
 		return Result.fired();

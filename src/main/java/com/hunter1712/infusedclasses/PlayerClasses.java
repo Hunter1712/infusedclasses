@@ -101,7 +101,7 @@ public class PlayerClasses {
 
 	public Set<String> unlockedNodes() {
 		SkillTrees.Progress p = progress();
-		return p == null ? Set.of() : p.unlocked;
+		return p == null ? Set.of() : p.ranks.keySet();
 	}
 
 	public SkillTrees.ThickSkin thickSkin() {
@@ -139,35 +139,36 @@ public class PlayerClasses {
 		return gained;
 	}
 
-	/** Spends points on a node after class/gate/double-spend checks. Caller re-applies modifiers. Pure. */
+	/** Spends one rank on a node after class/tier/parent/points checks. Caller re-applies modifiers. Pure. */
 	public boolean tryUnlock(String nodeId) {
 		SkillTrees.Progress p = progress();
 		if (p == null || !ClassRegistry.WARRIOR.equals(classId)) {
 			return false;
 		}
 		SkillTrees.Node node = SkillTrees.byId(nodeId);
-		if (node == null || !SkillTrees.canUnlock(p.unlocked, p.unspent, nodeId)) {
+		if (node == null || !(SkillTrees.check(p.ranks, p.unspent, nodeId) instanceof SkillTrees.Check.Ok)) {
 			return false;
 		}
 		p.unspent -= node.cost();
-		p.unlocked.add(nodeId);
+		p.ranks.merge(nodeId, 1, Integer::sum);
 		return true;
 	}
 
-	/** Refunds all spent points. Caller re-applies base passives. Pure. */
+	/** Refunds all spent ranks. Caller re-applies base passives. Pure. */
 	public int respec() {
 		SkillTrees.Progress p = progress();
 		if (p == null) {
 			return 0;
 		}
-		int refund = SkillTrees.spentPoints(p.unlocked);
-		p.unlocked.clear();
+		int refund = SkillTrees.spentPoints(p.ranks);
+		p.ranks.clear();
 		p.unspent += refund;
 		return refund;
 	}
 
 	public List<Passive> treePassives() {
-		return SkillTrees.bonusesFor(progress() == null ? null : progress().unlocked);
+		SkillTrees.Progress p = progress();
+		return SkillTrees.bonusesFor(p == null ? null : p.ranks);
 	}
 
 	/** Strips old modifiers first so switches never stack. Returns def, null rejects unknown and locked ids. */
