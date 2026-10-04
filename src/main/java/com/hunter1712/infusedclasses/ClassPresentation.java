@@ -9,6 +9,11 @@ import java.util.List;
  * Pure presentation for class cards and tooltips. One seam for all renderers.
  */
 public final class ClassPresentation {
+	private static final int HEADER_COLOR = 0xFFFFFFFF;   // white for section headers
+	private static final int PASSIVE_COLOR = 0xFFBDBDBD;   // light gray for passive items
+	private static final int ABILITY_COLOR = 0xFF7ED6FF;   // blue for ability items
+	private static final int NOTICE_COLOR = 0xFFE8C15A;    // title gold for the coming-soon notice
+
 	private ClassPresentation() {
 	}
 
@@ -17,7 +22,26 @@ public final class ClassPresentation {
 		PASSIVE_HEADER, PASSIVE, ABILITY_HEADER, ABILITY, NOTICE
 	}
 
-	public record CardLine(String text, LineKind kind) {
+	/** The colour and weight a line draws with. Decided by line kind, never by its text. */
+	public record LineStyle(int color, boolean bold) {
+	}
+
+	/** One rendered card line, the section it belongs to, and the style it draws with. */
+	public record CardLine(String text, LineKind kind, int color, boolean bold) {
+		/** A line's style comes from its kind, so a renderer never has to read the line. */
+		public CardLine(String text, LineKind kind) {
+			this(text, kind, styleFor(kind).color(), styleFor(kind).bold());
+		}
+	}
+
+	/** Style per line kind: headers and the notice are bold, items are not. */
+	public static LineStyle styleFor(LineKind kind) {
+		return switch (kind) {
+			case PASSIVE_HEADER, ABILITY_HEADER -> new LineStyle(HEADER_COLOR, true);
+			case PASSIVE -> new LineStyle(PASSIVE_COLOR, false);
+			case ABILITY -> new LineStyle(ABILITY_COLOR, false);
+			case NOTICE -> new LineStyle(NOTICE_COLOR, true);
+		};
 	}
 
 	/** Picker subtitle under the title. */
