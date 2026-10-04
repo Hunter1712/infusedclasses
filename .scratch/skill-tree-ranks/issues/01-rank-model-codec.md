@@ -4,7 +4,7 @@
 
 **Blocked by:** None (pure data layer, testable standalone).
 
-**Status:** ready-for-agent
+**Status:** done
 
 - [x] Ranks accrue to max and reject beyond; respec refunds rank-times-cost
 - [x] Legacy saves fold into ranks with the Bulwark cap; unknown ids drop; high-level round-trips stay uncapped

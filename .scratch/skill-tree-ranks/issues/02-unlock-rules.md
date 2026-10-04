@@ -4,7 +4,7 @@
 
 **Blocked by:** 01 (needs the ranked node data to validate against).
 
-**Status:** ready-for-agent
+**Status:** done
 
 - [x] Below-tier spends reject; keystone-chain skips reject (augment without Thick Skin, capstone without Hold the Line)
 - [x] Thirteen-point rush path and twenty-point full clear both compute; Bulwark parity values assert per rank
