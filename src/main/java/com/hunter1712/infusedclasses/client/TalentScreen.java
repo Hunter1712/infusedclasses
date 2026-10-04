@@ -75,7 +75,7 @@ public class TalentScreen extends Screen {
 		for (SkillTrees.Node node : SkillTrees.NODES) {
 			maxRow = Math.max(maxRow, node.row());
 		}
-		int wantH = GRID_TOP + maxRow * PITCH_Y + 76;
+		int wantH = GRID_TOP + maxRow * PITCH_Y + 90;
 		cardH = Math.max(200, wantH);
 		jugLeft = width / 2 - (JUG_W + SIDE_W + GAP) / 2;
 		berLeft = jugLeft + JUG_W + GAP;
@@ -95,7 +95,7 @@ public class TalentScreen extends Screen {
 		respecW = font.width(label) + 16;
 		respecH = 16;
 		respecX = jugLeft + JUG_W / 2 - respecW / 2;
-		respecY = cardsTop + cardH - PAD - respecH;
+		respecY = cardsTop + cardH - PAD - respecH - 14;
 	}
 
 	@Override
@@ -167,15 +167,6 @@ public class TalentScreen extends Screen {
 		return RED;
 	}
 
-	private NodeSlot slotOf(String id) {
-		for (NodeSlot slot : slots) {
-			if (slot.node.id().equals(id)) {
-				return slot;
-			}
-		}
-		return null;
-	}
-
 	@Override
 	public void renderBackground(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
 		super.renderBackground(graphics, mouseX, mouseY, partialTick);
@@ -183,7 +174,6 @@ public class TalentScreen extends Screen {
 		drawCardFrame(graphics, jugLeft, cardsTop, JUG_W, cardH, JUGGERNAUT_ACCENT, false);
 		drawCardFrame(graphics, berLeft, cardsTop, SIDE_W, cardH, BERSERKER_ACCENT, true);
 		drawTierDividers(graphics);
-		drawEdges(graphics);
 	}
 
 	private void drawTierDividers(GuiGraphics graphics) {
@@ -211,49 +201,6 @@ public class TalentScreen extends Screen {
 		return node.bonus() == null && !node.parents().isEmpty() && node.tier() == 3;
 	}
 
-	private void drawEdges(GuiGraphics graphics) {
-		drawEdge(graphics, null, SkillTrees.WAR_CRY_NODE);
-		for (NodeSlot slot : slots) {
-			for (String parent : slot.node.parents()) {
-				drawEdge(graphics, parent, slot.node.id());
-			}
-		}
-	}
-
-	private void drawEdge(GuiGraphics graphics, String fromId, String toId) {
-		NodeSlot to = slotOf(toId);
-		if (to == null) {
-			return;
-		}
-		int color = stateColor(to.node);
-		int x2 = to.cx();
-		int y2 = to.y - 2;
-		int x1;
-		int y1;
-		if (fromId == null) {
-			x1 = x2;
-			y1 = cardsTop + 62;
-		} else {
-			NodeSlot from = slotOf(fromId);
-			if (from == null) {
-				return;
-			}
-			x1 = from.cx();
-			y1 = from.y + from.size + 1;
-		}
-		if (y2 <= y1) {
-			return;
-		}
-		if (x1 == x2) {
-			graphics.fill(x1 - 1, y1, x1 + 1, y2, color);
-			return;
-		}
-		int midY = y1 + (y2 - y1) / 2;
-		graphics.fill(x1 - 1, y1, x1 + 1, midY + 1, color);
-		graphics.fill(Math.min(x1, x2), midY, Math.max(x1, x2) + 1, midY + 1, color);
-		graphics.fill(x2 - 1, midY, x2 + 1, y2, color);
-	}
-
 	@Override
 	public void render(GuiGraphics graphics, int mouseX, int mouseY, float delta) {
 		super.render(graphics, mouseX, mouseY, delta);
@@ -270,6 +217,7 @@ public class TalentScreen extends Screen {
 			}
 		}
 		drawRespec(graphics, mouseX, mouseY);
+		drawNamePlates(graphics);
 		if (hovered != null) {
 			drawTooltip(graphics, hovered, mouseX, mouseY);
 		}
@@ -283,8 +231,25 @@ public class TalentScreen extends Screen {
 		String sub = "LV " + progress.level + " · " + progress.xp + "/" + next + " XP · "
 				+ progress.unspent + " PTS";
 		graphics.drawCenteredString(font, sub, cx, cardsTop + 32, GREY);
-		graphics.drawCenteredString(font, "WAR CRY · OWNED", cx, cardsTop + 46, UNLOCKED_BORDER);
-		graphics.fill(cx - 60, cardsTop + 57, cx + 60, cardsTop + 58, 0xFF3A3A3A);
+		int bx0 = cx - 70;
+		int by0 = cardsTop + 44;
+		int bx1 = bx0 + 140;
+		int by1 = by0 + 20;
+		graphics.fill(bx0, by0, bx1, by1, 0xE0141414);
+		graphics.fill(bx0, by0, bx1, by0 + 1, UNLOCKED_BORDER);
+		graphics.fill(bx0, by1 - 1, bx1, by1, UNLOCKED_BORDER);
+		graphics.fill(bx0, by0, bx0 + 1, by1, UNLOCKED_BORDER);
+		graphics.fill(bx1 - 1, by0, bx1, by1, UNLOCKED_BORDER);
+		try {
+			graphics.renderItem(new ItemStack(Items.GOAT_HORN), bx0 + 4, by0 + 2);
+		} catch (NoSuchMethodError | UnsupportedOperationException fallback) {
+			graphics.fill(bx0 + 4, by0 + 2, bx0 + 20, by0 + 18, UNLOCKED_BORDER);
+		}
+		graphics.drawString(font, "WAR CRY", bx0 + 24, by0 + 6, 0xFFFFFFFF, false);
+		String badge = "1/1";
+		int bw = font.width(badge) + 6;
+		graphics.fill(bx1 - bw + 2, by1 - 5, bx1 + 2, by1 + 6, 0xF0101010);
+		graphics.drawString(font, badge, bx1 - bw + 5, by1 - 3, UNLOCKED_BORDER, false);
 	}
 
 	private void drawLockedText(GuiGraphics graphics) {
@@ -318,19 +283,21 @@ public class TalentScreen extends Screen {
 		} catch (NoSuchMethodError | UnsupportedOperationException fallback) {
 			graphics.fill(x0 + 4, y0 + 4, x1 - 4, y1 - 4, stateColor(slot.node));
 		}
-		if (slot.node.maxRank() > 1) {
-			int filled = rank;
-			int total = slot.node.maxRank();
-			int pipW = 4;
-			int gap = 2;
-			int rowW = total * pipW + (total - 1) * gap;
-			int px = slot.cx() - rowW / 2;
-			int py = y1 + 3;
-			for (int i = 0; i < total; i++) {
-				int color = i < filled ? owned ? UNLOCKED_BORDER : 0xFFFFFFFF : 0xFF3A3A3A;
-				graphics.fill(px + i * (pipW + gap), py, px + i * (pipW + gap) + pipW, py + 2, color);
-			}
-		}
+		String badge = rank + "/" + slot.node.maxRank();
+		int color = owned ? UNLOCKED_BORDER : available ? 0xFFFFFFFF : 0xFF8A8A8A;
+		int bw = font.width(badge) + 6;
+		int bh = 11;
+		int bx = x1 - bw + 2;
+		int by = y1 - bh + 2;
+		graphics.fill(bx, by, bx + bw, by + bh, 0xF0101010);
+		graphics.drawString(font, badge, bx + 3, by + 2, color, false);
+	}
+
+	private void drawNamePlates(GuiGraphics graphics) {
+		graphics.drawCenteredString(font, "JUGGERNAUT", jugLeft + JUG_W / 2, cardsTop + cardH - 12,
+				JUGGERNAUT_ACCENT);
+		graphics.drawCenteredString(font, "BERSERKER", berLeft + SIDE_W / 2, cardsTop + cardH - 12,
+				0xFF8A8A8A);
 	}
 
 	private void drawRespec(GuiGraphics graphics, int mouseX, int mouseY) {

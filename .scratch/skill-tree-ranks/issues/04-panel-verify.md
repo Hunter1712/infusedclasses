@@ -7,7 +7,7 @@
 **Status:** ready-for-agent
 
 - [ ] Seven slots plus header read top-to-bottom with no scroll on common windows; small and big slots visually distinct
-- [ ] Tier dividers, pips, capstone frame, and child-colored edges render; tooltips carry name, rank, cost, and reject reason
+- [ ] Tier dividers, corner rank badges, action-skill banner, and name plates render; tooltips carry name, rank, cost, and reject reason
 - [ ] Respec refunds through the server path; denied picks, toast/sound, and locked-card dimming confirmed live
 - [ ] Screenshot matrix captured: fresh, mid-spend, and full-unlock at two window sizes; death and relog keep progress with stacks wiped
 - [ ] Full pure-logic suite green with no new texture assets in the repo
