@@ -9,6 +9,8 @@ import net.minecraft.world.entity.ai.attributes.Attribute;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 
+import java.util.Set;
+
 /** Adapter for {@link PassiveEffect}: makes the player's attributes agree with the decision. */
 public final class PassiveApplier {
 	private PassiveApplier() {
@@ -23,14 +25,45 @@ public final class PassiveApplier {
 		if (def == null) {
 			return;
 		}
-		boolean stacksMoved = runtime.tickDecay(def, now);
+		Set<ConditionalPassive> moved = runtime.tickDecayMoved(def, now);
 		for (ConditionalPassive passive : def.passives()) {
-			switch (PassiveEffect.planFor(passive, runtime.stacks(passive), stacksMoved)) {
+			switch (PassiveEffect.planFor(passive, runtime.stacks(passive), moved.contains(passive))) {
 				case PassiveEffect.Plan.Write(var wanted) -> write(player, wanted);
 				case PassiveEffect.Plan.Remove(var attribute, var modifierId) -> remove(player, attribute, modifierId);
 				case PassiveEffect.Plan.Skip() -> {
 				}
 			}
+		}
+	}
+
+	/**
+	 * Class switch: the new class's tick never visits the old passives, so their modifiers
+	 * would orphan. Removes what the old class earned but the new one does not carry, drops
+	 * the old stacks, and resets the cooldown: a new class starts empty.
+	 */
+	public static void onClassChanged(ServerPlayer player, PlayerRuntime runtime,
+			ClassDefinition oldDef, ClassDefinition newDef) {
+		if (oldDef == newDef) {
+			return;
+		}
+		if (oldDef != null) {
+			for (ConditionalPassive passive : oldDef.passives()) {
+				if (newDef == null || !newDef.passives().contains(passive)) {
+					remove(player, passive.attribute(), passive.modifierId());
+				}
+			}
+			runtime.clear(oldDef);
+		}
+		runtime.resetCooldowns();
+	}
+
+	/** Removes every modifier one class earned: testing and switch cleanup share it. */
+	public static void removeAll(ServerPlayer player, ClassDefinition def) {
+		if (def == null) {
+			return;
+		}
+		for (ConditionalPassive passive : def.passives()) {
+			remove(player, passive.attribute(), passive.modifierId());
 		}
 	}
 

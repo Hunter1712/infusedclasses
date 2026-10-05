@@ -11,15 +11,11 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 
-import java.util.Map;
-import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
-
 /** Server side. Authoritative: client sends intents, every decision happens here. */
 public class InfusedClasses implements ModInitializer {
 	static final String UNKNOWN_OR_LOCKED = "Unknown or locked class";
 	/** The transient half of per-player state, held here because it is not reachable from the player. */
-	private static final Map<UUID, PlayerRuntime> RUNTIMES = new ConcurrentHashMap<>();
+	private static final PlayerRuntimes RUNTIMES = new PlayerRuntimes();
 
 	@Override
 	public void onInitialize() {
@@ -48,12 +44,8 @@ public class InfusedClasses implements ModInitializer {
 			PlayerClassAccess.of(newPlayer).copyFrom(PlayerClassAccess.of(oldPlayer));
 			// Only the choice crosses. The old player's transient state is dropped, and the new
 			// player's starts empty, which is what a respawn has always done to it.
-			// Load-bearing ordering: both players share one UUID, so the old entry has to go
-			// before the new one is created. The other order would hand the respawned player the
-			// stacks their old body earned. This lives in wiring the suite does not cover, so it
-			// is marked rather than faked.
-			RUNTIMES.remove(oldPlayer.getUUID());
-			runtime(newPlayer);
+			// Load-bearing ordering lives in the runtime store: both players share one UUID.
+			RUNTIMES.respawn(newPlayer.getUUID());
 		});
 
 		ServerPlayConnectionEvents.DISCONNECT.register((handler, server) ->
@@ -92,7 +84,12 @@ public class InfusedClasses implements ModInitializer {
 	 * log out. Nothing in it is persisted, so none of it is ever written or copied.
 	 */
 	private static PlayerRuntime runtime(ServerPlayer player) {
-		return RUNTIMES.computeIfAbsent(player.getUUID(), id -> new PlayerRuntime());
+		return RUNTIMES.runtime(player.getUUID());
+	}
+
+	/** Switch path shared by the picker receiver and the admin command. */
+	static void onClassChanged(ServerPlayer player, ClassDefinition oldDef, ClassDefinition newDef) {
+		PassiveApplier.onClassChanged(player, runtime(player), oldDef, newDef);
 	}
 
 	private static void registerReceivers() {
@@ -100,28 +97,25 @@ public class InfusedClasses implements ModInitializer {
 				.execute(() -> {
 					ServerPlayer player = context.player();
 					PlayerClasses classes = PlayerClassAccess.of(player);
+					ClassDefinition oldDef = classes.currentDefinition();
 					ClassDefinition def = classes.trySetClass(payload.classId());
 					if (def == null) {
 						player.displayClientMessage(Component.literal(UNKNOWN_OR_LOCKED).withStyle(ChatFormatting.RED), false);
 						return;
 					}
+					PassiveApplier.onClassChanged(player, runtime(player), oldDef, def);
 						context.responseSender().sendPacket(new ClassConfirmedPayload());
 					player.displayClientMessage(Component.literal("Class: ").withStyle(ChatFormatting.GRAY)
 							.append(Component.literal(def.displayName()).withStyle(ChatFormatting.WHITE)), false);
 				}));
 
 		ServerPlayNetworking.registerGlobalReceiver(WarCryPayload.TYPE, (payload, context) -> context.server()
-				.execute(() -> warCry(context.player())));
-	}
-
-	static void warCry(ServerPlayer player) {
-		long now = System.currentTimeMillis();
-		PlayerClasses classes = PlayerClassAccess.of(player);
-		Cooldowns cooldowns = runtime(player).cooldowns();
-		WarCryAbility.Result result = WarCryAbility.trigger(classes.currentDefinition(), cooldowns, now);
-		if (result.kind() == WarCryAbility.Kind.FIRED) {
-			cooldowns.useWarCry(now);
-		}
-		AbilityApplier.apply(player, result);
+				.execute(() -> {
+					ServerPlayer player = context.player();
+					long now = System.currentTimeMillis();
+					PlayerClasses classes = PlayerClassAccess.of(player);
+					WarCryAbility.Result result = WarCryAbility.fire(classes.currentDefinition(), runtime(player), now);
+					AbilityApplier.apply(player, result);
+				}));
 	}
 }

@@ -27,8 +27,9 @@ public class InfusedClassesClient implements ClientModInitializer {
 		ClientPlayNetworking.registerGlobalReceiver(ClassConfirmedPayload.TYPE,
 				(ClassConfirmedPayload payload, ClientPlayNetworking.Context context) -> context.client()
 						.execute(() -> {
-							if (Minecraft.getInstance().screen instanceof ClassSelectScreen) {
-								Minecraft.getInstance().setScreen(null);
+							var mc = Minecraft.getInstance();
+							if (mc.screen instanceof ClassSelectScreen) {
+								mc.setScreen(null);
 							}
 						}));
 
@@ -36,7 +37,7 @@ public class InfusedClassesClient implements ClientModInitializer {
 				"key.infusedclasses.war_cry", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_R, KeyMapping.Category.GAMEPLAY));
 
 		ClientTickEvents.END_CLIENT_TICK.register(client -> {
-			if (client.player == null || warCryKey == null) {
+			if (client.player == null) {
 				return;
 			}
 			while (warCryKey.consumeClick()) {

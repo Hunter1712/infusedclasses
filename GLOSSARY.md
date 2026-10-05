@@ -27,7 +27,10 @@ _Avoid_: passive bonus, armor bonus, stack effect (the decision is not the thing
 The adapter that makes the player's attributes agree with the passive effect. It writes only when
 the applied value differs from the wanted one, following the decision's plan: write the wanted
 modifier, take off what dead stacks earned, or nothing. A tick that moved no stacks cannot have
-changed what should be on the player, so it needs no attribute write.
+changed what should be on the player, so it needs no attribute write. Movement travels per
+passive (`tickDecayMoved`), so a decayed passive never removes one sitting at zero; a class
+switch removes what the old class earned but the new one does not carry (`onClassChanged`),
+drops the old stacks and resets the cooldown.
 _Avoid_: passive system, stat updater
 
 **Applied outcome** (`WarCryAbility.Outcome`):
@@ -36,6 +39,8 @@ how long, at what amplifier, plus the sound and particle that go with it. War Cr
 for 160 ticks at amplifier 1, with `minecraft:strength`, `minecraft:entity.ravager.roar` and
 `minecraft:angry_villager`. It carries registry ids rather than registry objects, so it can be
 produced without a running game. It is the part of an ability result that gets applied; the gating is not.
+`trigger` gates read-only; `fire` gates and arms the transient runtime's cooldown together, so no
+caller can fire without arming, and rejected presses leave the cooldown untouched.
 _Avoid_: ability result (that is the whole decision, gating included), buff
 
 **Ability applier** (`AbilityApplier`):
@@ -94,7 +99,7 @@ _Avoid_: charge, level, rank
 **Cooldown** (`Cooldowns`):
 The wait after an ability fires, tracked per player, also transient. War Cry's is 30s
 (`WAR_CRY_MS`): `useWarCry` fires only when ready and reports it, `warCryRemaining` reports the
-milliseconds left, 0 when ready.
+milliseconds left, 0 when ready, `reset` readies it again for class switch and respawn.
 _Avoid_: timer
 
 ### Per-player state
@@ -127,11 +132,19 @@ belong to and the current time on each call, so it holds neither a clock nor a r
 choice, and it is owned per player by the server entry rather than stored on the player. Stacks live
 in definition-keyed maps with last-trigger timestamps: `stacks` reads one passive, `onTrigger` bumps
 every passive on the class whose trigger matches (unknown triggers, a missing class and trigger-less
-classes are inert, each bump re-stamps grace), `tickDecay` ticks every passive on the class past its
+classes are inert, each bump re-stamps grace), `tickDecayMoved` ticks every passive on the class past its
 own grace at its own rate (`(now - last) / 1000` past grace, times decay per second), advancing
 the last-trigger clock by the stacks decayed so an overdue second is never recounted, and reports
-whether any stacks moved.
+the set that moved (`tickDecay` is whether that set is non-empty). `clear` drops one class's
+stacks, `clearAll` drops everything, and the cooldown verbs (`warCryRemaining`, `tryUseWarCry`,
+`resetCooldowns`) keep callers from reaching through the mutable object.
 _Avoid_: player state, live state, runtime (too generic on its own)
+
+**Transient runtime store** (`PlayerRuntimes`):
+The one module that owns the transient runtime's lifetime: one per UUID, created on first use
+(`runtime`), dropped on logout (`remove`), empty again after a respawn (`respawn`, which removes
+before creating because both bodies share one UUID). Assertable with UUIDs alone, no player needed.
+_Avoid_: runtime map, session cache
 
 ### Presentation
 
@@ -178,29 +191,37 @@ _Avoid_: highlight
 
 **Picker button** (`ClassPresentation.ButtonData`, `buttonFor`):
 A card's button label and active state: `Locked`/inactive for a locked class, `Select`/active
-otherwise.
+otherwise. Its rect comes from the card renderer's button math, never the screen's.
 _Avoid_: select button
+
+**Card model** (`ClassPresentation.CardModel`, `cardFor`):
+The whole card in one decision: lines, style, accent, button and tooltip together, so the locked
+look is decided once instead of in five ternaries across callers.
+_Avoid_: card DTO, view model
 
 **Picker screen** (`client/ClassSelectScreen`):
 The picker itself: dimmed backdrop, one card per class in a row, one `Button` per card with its
 tooltip and active state, title, subtitle and the `Click a class to choose it` footer. It positions
-cards with the renderer's row math and checks hover through it; how a card draws is the card
-renderer's business. It never pauses and never closes on Esc.
+cards with the renderer's row math, sizes buttons with its button rect, and passes hover through;
+how a card draws is the card renderer's business, and what a card says is the card model's. It never pauses and never closes on Esc.
 _Avoid_: GUI, menu
 
 **Card renderer** (`client/ClassCardRenderer`):
 Everything one class card looks like: body, accent strip, border, hover highlight for unlocked
 cards, veil for locked ones, and the name, tagline, divider and card lines. It also owns the row
-math (width, x, top) and the hover hit-test the screen positions cards with. Each line draws with
+math (width, x, top), the button rect and the hover hit-test the screen positions cards with.
+Style is resolved once per card (`cardFor` for the whole card, `cardStyleFor` inside frame/body);
+the screen passes hover, never a style. Each line draws with
 the colour and weight it carries, so nothing here reads what a line says. Cards are 120x156 with
-10 inner padding.
+10 inner padding and a 20-high button.
 _Avoid_: card widget, draw helper
 
 ### Protocol and commands
 
 **Select intent** (`SelectClassPayload`):
 The client's `infusedclasses:select_class` intent: "I picked this class". The server validates it
-against the choice module; a rejected pick leaves the picker open for retry.
+against the choice module; a rejected pick leaves the picker open for retry. An accepted switch
+clears what the old class earned and resets the cooldown, so no stale modifier survives.
 _Avoid_: select packet
 
 **War cry intent** (`WarCryPayload`):
@@ -221,7 +242,8 @@ _Avoid_: confirm packet
 
 **Class command** (`ClassCommands`):
 The gamemaster-only `/class` wiring. `/class set <player> <class>` suggests registered ids, parses
-one word and validates in the choice module (`Unknown or locked class` on failure); `/class select
+one word and validates in the choice module (`Unknown or locked class` on failure); an accepted
+switch clears what the old class earned like the picker path does; `/class select
 <player>` is testing-only and reopens the picker for GUI iteration without bypassing the
 locked-class check.
 _Avoid_: admin command, cheat

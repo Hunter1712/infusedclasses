@@ -76,4 +76,17 @@ public final class WarCryAbility {
 		}
 		return Result.fired();
 	}
+
+	/**
+	 * Gate and arm together: the production path. Decides with {@link #trigger} and arms the
+	 * transient runtime's cooldown when it fires, so no caller can fire without arming.
+	 * Wrong-class and on-cooldown presses leave the cooldown untouched.
+	 */
+	public static Result fire(ClassDefinition def, PlayerRuntime runtime, long now) {
+		Result result = trigger(def, runtime.cooldowns(), now);
+		if (result.kind() == Kind.FIRED) {
+			runtime.tryUseWarCry(now);
+		}
+		return result;
+	}
 }

@@ -129,4 +129,21 @@ public final class ClassPresentation {
 
 	public record ButtonData(String label, boolean active) {
 	}
+
+	/**
+	 * Whole card in one decision: lines, style, accent, button and tooltip together, so the
+	 * locked look lives in one place instead of five ternaries across callers. The existing
+	 * entries delegate here conceptually; they stay as the seams tests pin.
+	 */
+	public record CardModel(List<CardLine> lines, CardStyle style, int accent, ButtonData button, String tooltip) {
+	}
+
+	public static CardModel cardFor(ClassDefinition def, boolean hovered) {
+		return new CardModel(
+				List.copyOf(cardLinesFor(def)),
+				cardStyleFor(def, hovered),
+				accentFor(def),
+				buttonFor(def),
+				tooltipFor(def));
+	}
 }

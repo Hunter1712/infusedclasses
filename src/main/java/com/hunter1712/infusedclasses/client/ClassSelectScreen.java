@@ -18,16 +18,12 @@ import java.util.List;
  */
 public class ClassSelectScreen extends Screen {
 	private static final int GAP = 12;
-	private static final int BUTTON_H = 20;
 
 	private static final int TITLE_COLOR = 0xFFE8C15A;
 	private static final int SUBTITLE_COLOR = 0xFF9A9A9A;
 	private static final int FOOTER_COLOR = 0xFF777777;
 
 	private List<ClassDefinition> classes = List.of();
-
-	record CardPos(int x, int y) {
-	}
 
 	protected ClassSelectScreen() {
 		super(Component.literal("Choose your class"));
@@ -38,17 +34,16 @@ public class ClassSelectScreen extends Screen {
 		classes = List.copyOf(ClassRegistry.all());
 		for (int i = 0; i < classes.size(); i++) {
 			ClassDefinition def = classes.get(i);
-			CardPos card = cardRect(i, classes.size());
-			int bx = card.x() + ClassCardRenderer.PAD;
-			int by = card.y() + ClassCardRenderer.HEIGHT - ClassCardRenderer.PAD - BUTTON_H;
-			int bw = ClassCardRenderer.WIDTH - ClassCardRenderer.PAD * 2;
-			ClassPresentation.ButtonData btn = ClassPresentation.buttonFor(def);
-			Component tip = Component.literal(ClassPresentation.tooltipFor(def));
-			Button button = Button.builder(Component.literal(btn.label()), b -> InfusedClassesClient.pickClass(def.id()))
-					.bounds(bx, by, bw, BUTTON_H)
+			int cardX = cardX(i, classes.size());
+			int cardY = ClassCardRenderer.cardsTop(height);
+			ClassCardRenderer.ButtonRect bounds = ClassCardRenderer.buttonRect(cardX, cardY);
+			ClassPresentation.CardModel model = ClassPresentation.cardFor(def, false);
+			Component tip = Component.literal(model.tooltip());
+			Button button = Button.builder(Component.literal(model.button().label()), b -> InfusedClassesClient.pickClass(def.id()))
+					.bounds(bounds.x(), bounds.y(), bounds.w(), bounds.h())
 					.tooltip(Tooltip.create(tip))
 					.build();
-			button.active = btn.active();
+			button.active = model.button().active();
 			addRenderableWidget(button);
 		}
 	}
@@ -58,8 +53,9 @@ public class ClassSelectScreen extends Screen {
 		super.renderBackground(graphics, mouseX, mouseY, partialTick);
 		graphics.fillGradient(0, 0, width, height, 0xC0101010, 0xD0101010);
 		for (int i = 0; i < classes.size(); i++) {
-			CardPos card = cardRect(i, classes.size());
-			ClassCardRenderer.drawFrame(graphics, card.x(), card.y(), classes.get(i), isHovering(card, mouseX, mouseY));
+			int cardX = cardX(i, classes.size());
+			int cardY = ClassCardRenderer.cardsTop(height);
+			ClassCardRenderer.drawFrame(graphics, cardX, cardY, classes.get(i), ClassCardRenderer.isHovering(cardX, cardY, mouseX, mouseY));
 		}
 	}
 
@@ -69,23 +65,18 @@ public class ClassSelectScreen extends Screen {
 		int top = ClassCardRenderer.cardsTop(height);
 		graphics.drawCenteredString(font, Component.literal("Choose your class").withStyle(s -> s.withBold(true)), width / 2, top - 44, TITLE_COLOR);
 		graphics.drawCenteredString(font, ClassPresentation.subtitle(), width / 2, top - 28, SUBTITLE_COLOR);
-		graphics.drawCenteredString(font, "\u00a7m                                           \u00a7r", width / 2, top - 17, SUBTITLE_COLOR);
 
 		for (int i = 0; i < classes.size(); i++) {
-			CardPos card = cardRect(i, classes.size());
+			int cardX = cardX(i, classes.size());
+			int cardY = ClassCardRenderer.cardsTop(height);
 			ClassDefinition def = classes.get(i);
-			ClassPresentation.CardStyle style = ClassPresentation.cardStyleFor(def, isHovering(card, mouseX, mouseY));
-			ClassCardRenderer.drawBody(graphics, font, card.x(), card.y(), def, style);
+			ClassCardRenderer.drawBody(graphics, font, cardX, cardY, def, ClassCardRenderer.isHovering(cardX, cardY, mouseX, mouseY));
 		}
 		graphics.drawCenteredString(font, "Click a class to choose it", width / 2, top + ClassCardRenderer.HEIGHT + 14, FOOTER_COLOR);
 	}
 
-	private CardPos cardRect(int index, int count) {
-		return new CardPos(ClassCardRenderer.cardX(index, count, width, GAP), ClassCardRenderer.cardsTop(height));
-	}
-
-	private static boolean isHovering(CardPos card, int mouseX, int mouseY) {
-		return ClassCardRenderer.isHovering(card.x(), card.y(), mouseX, mouseY);
+	private int cardX(int index, int count) {
+		return ClassCardRenderer.cardX(index, count, width, GAP);
 	}
 
 	@Override

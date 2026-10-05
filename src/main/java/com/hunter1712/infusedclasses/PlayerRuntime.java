@@ -1,7 +1,10 @@
 package com.hunter1712.infusedclasses;
 
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Transient per-player state: conditional-passive stacks and ability cooldowns. Nothing here is
@@ -24,6 +27,19 @@ public final class PlayerRuntime {
 
 	public Cooldowns cooldowns() {
 		return cooldowns;
+	}
+
+	/** Cooldown verbs, so callers stop reaching through the mutable object. */
+	public long warCryRemaining(long now) {
+		return cooldowns.warCryRemaining(now);
+	}
+
+	public boolean tryUseWarCry(long now) {
+		return cooldowns.useWarCry(now);
+	}
+
+	public void resetCooldowns() {
+		cooldowns.reset();
 	}
 
 	/** Current stacks for a passive, 0 when never triggered. */
@@ -52,10 +68,19 @@ public final class PlayerRuntime {
 	 * Decay rule: each passive's own grace period, then its own decay rate.
 	 */
 	public boolean tickDecay(ClassDefinition def, long now) {
+		return !tickDecayMoved(def, now).isEmpty();
+	}
+
+	/**
+	 * Per-passive movement: which passives lost stacks this tick. The applier needs the set,
+	 * not the global flag: a tick that decayed passive A must not remove passive B sitting at
+	 * zero. Unmodifiable, possibly empty, never null.
+	 */
+	public Set<ConditionalPassive> tickDecayMoved(ClassDefinition def, long now) {
 		if (def == null) {
-			return false;
+			return Set.of();
 		}
-		boolean anyChanged = false;
+		Set<ConditionalPassive> moved = new HashSet<>();
 		for (ConditionalPassive passive : def.passives()) {
 			int current = stacks(passive);
 			if (current <= 0) {
@@ -77,10 +102,27 @@ public final class PlayerRuntime {
 					if (passive.decayPerSecond() > 0) {
 						lastTriggerTime.put(passive, last + (removed * 1000L) / passive.decayPerSecond());
 					}
-					anyChanged = true;
+					moved.add(passive);
 				}
 			}
 		}
-		return anyChanged;
+		return Collections.unmodifiableSet(moved);
+	}
+
+	/** Drops stacks for one class's passives: class switch leaves no stale counts behind. */
+	public void clear(ClassDefinition def) {
+		if (def == null) {
+			return;
+		}
+		for (ConditionalPassive passive : def.passives()) {
+			passiveStacks.remove(passive);
+			lastTriggerTime.remove(passive);
+		}
+	}
+
+	/** Drops everything: respawn starts empty. */
+	public void clearAll() {
+		passiveStacks.clear();
+		lastTriggerTime.clear();
 	}
 }

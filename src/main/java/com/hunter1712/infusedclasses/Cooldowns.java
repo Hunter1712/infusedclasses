@@ -23,4 +23,9 @@ public final class Cooldowns {
 	public long warCryRemaining(long now) {
 		return Math.max(0L, warCryReadyAt - now);
 	}
+
+	/** Ready again immediately: class switch and respawn start empty. */
+	public void reset() {
+		warCryReadyAt = 0;
+	}
 }

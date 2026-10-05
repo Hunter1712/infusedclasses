@@ -18,6 +18,19 @@ public final class ClassCardRenderer {
 	public static final int WIDTH = 120;
 	public static final int HEIGHT = 156;
 	public static final int PAD = 10;
+	public static final int BUTTON_H = 20;
+
+	/** Button rect inside a card: the screen positions cards, never their internals. */
+	public record ButtonRect(int x, int y, int w, int h) {
+	}
+
+	public static ButtonRect buttonRect(int cardX, int cardY) {
+		return new ButtonRect(
+				cardX + PAD,
+				cardY + HEIGHT - PAD - BUTTON_H,
+				WIDTH - PAD * 2,
+				BUTTON_H);
+	}
 
 	private static final int ACCENT_H = 3;
 	private static final int BODY_COLOR = 0xE0141414;
@@ -47,11 +60,16 @@ public final class ClassCardRenderer {
 
 	/** Body, accent strip, border, hover highlight and locked veil. Drawn behind the widgets. */
 	public static void drawFrame(GuiGraphics graphics, int x, int y, ClassDefinition def, boolean hovered) {
-		ClassPresentation.CardStyle style = ClassPresentation.cardStyleFor(def, hovered);
+		drawFrame(graphics, x, y, ClassPresentation.cardStyleFor(def, hovered), ClassPresentation.accentFor(def));
+	}
+
+	/** Same frame from a pre-resolved style: one resolve per card, shared by frame and body. */
+	public static void drawFrame(GuiGraphics graphics, int x, int y,
+			ClassPresentation.CardStyle style, int accent) {
 		int x1 = x + WIDTH;
 		int y1 = y + HEIGHT;
 		graphics.fill(x, y, x1, y1, BODY_COLOR);
-		graphics.fill(x, y, x1, y + ACCENT_H, ClassPresentation.accentFor(def));
+		graphics.fill(x, y, x1, y + ACCENT_H, accent);
 		graphics.fill(x, y, x + 1, y1, style.borderColor());
 		graphics.fill(x1 - 1, y, x1, y1, style.borderColor());
 		graphics.fill(x, y, x1, y + 1, style.borderColor());
@@ -65,6 +83,12 @@ public final class ClassCardRenderer {
 	}
 
 	/** Name, tagline, divider and the card lines, each drawn with the style it carries. */
+	public static void drawBody(GuiGraphics graphics, Font font, int x, int y, ClassDefinition def,
+			boolean hovered) {
+		drawBody(graphics, font, x, y, def, ClassPresentation.cardStyleFor(def, hovered));
+	}
+
+	/** Same body from a pre-resolved style: the screen resolves once, the renderer draws. */
 	public static void drawBody(GuiGraphics graphics, Font font, int x, int y, ClassDefinition def,
 			ClassPresentation.CardStyle style) {
 		int cx = x + WIDTH / 2;

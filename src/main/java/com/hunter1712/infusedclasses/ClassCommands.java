@@ -54,8 +54,10 @@ public final class ClassCommands {
 
 	private static int setClass(CommandSourceStack source, ServerPlayer player, Identifier id) {
 		PlayerClasses classes = PlayerClassAccess.of(player);
+		ClassDefinition oldDef = classes.currentDefinition();
 		ClassDefinition def = classes.trySetClass(id);
 		if (def != null) {
+			InfusedClasses.onClassChanged(player, oldDef, def);
 			source.sendSuccess(() -> Component.literal("Set " + player.getName().getString()
 					+ " to " + def.displayName()), true);
 			return 1;

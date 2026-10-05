@@ -5,7 +5,6 @@
 	"name": "Infused Classes",
 	"description": "Character classes for Minecraft. Start as a Warrior: War Cry for damage, Bulwark armor when taking hits.",
 	"authors": ["hunter1712"],
-	"contact": {},
 	"license": "MIT",
 	"environment": "*",
 	"mixins": [
