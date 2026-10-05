@@ -30,15 +30,21 @@ The seam is drawn at the highest point that stays pure. A decision must not need
 attribute instance or a graphics object, so it names registry things as ids and keys
 (`Identifier`, `ResourceKey`) and the adapter is what resolves them.
 
-Three instances of this rule exist, and they are three instances of one rule, not three separate
+Four instances of this rule exist, and they are four instances of one rule, not four separate
 seams:
 
 - The **passive effect** (`PassiveEffect`) decides which attribute modifier a passive's stacks are
-  worth. The server entry applies it, writing only when the applied value differs from the wanted one.
-- The **applied outcome** (`WarCryAbility.Outcome` plus its chat line) decides what an ability press
-  should do. The server entry maps one result to one outcome.
-- The **card style** (`ClassPresentation.CardLine`) decides the colour and weight of a line, from the
-  line's kind. The card renderer draws it.
+  worth. `PassiveApplier` applies it: writing only when the applied value differs from the wanted
+  one, and removing only when stacks moved.
+- The **applied outcome** (`WarCryAbility.Outcome` plus its chat line, carried by
+  `WarCryAbility.Result` with its `Kind` and `remainingMs`) decides what an ability press
+  should do. `AbilityApplier` applies it — the single place an outcome reaches the player — and
+  the server entry maps one result to one `apply` call.
+- The **picker copy** (`ConditionalPassive.fullDesc`) decides what a passive's picker copy says,
+  generated from its own numbers. The tooltip and the tests read it; nobody rewords it.
+- The **card presentation** (`ClassPresentation`) decides everything a card shows from the
+  definition: line style per line kind, card lines, tooltip, subtitle, accent and button data.
+  The card renderer draws it without reading what a line says.
 
 An addition follows this shape rather than inventing an interface for itself. If a new decision needs
 a game object to describe its answer, the seam is in the wrong place — move the boundary down, do not
@@ -46,13 +52,14 @@ add a rule.
 
 ## Consequences
 
-- The test suite stays a description of behaviour: three decision surfaces to assert through, and no
+- The test suite stays a description of behaviour: four decision surfaces to assert through, and no
   new one per effect. Each is assertable in plain JUnit with no game bootstrap.
 - A rejected decision is an absent answer, not a sentinel: no modifier at zero stacks, no outcome on a
   wrong-class or on-cooldown press. An adapter can therefore stay trivial, and a null answer needs no
-  special handling.
-- Decisions own their own numbers. The stack-to-attribute value, the effect duration and amplifier, the
-  cooldown wording and its rounding, and the per-line colour and weight are all facts a test can pin,
+  special handling. A result with no outcome and nothing to say is a no-op.
+- Decisions own their own numbers. The stack-to-attribute value, the effect duration and amplifier
+  (Strength II, 160 ticks), the sound and particle ids, the cooldown wording and its rounding, the
+  passive copy wording, and the per-line colour and weight are all facts a test can pin,
   where before they were constants scattered through the code that applied them.
 - The cost: every effect has to be expressed as data and ids, and each adapter carries the resolution
   code. A new effect is a definition plus resolution in the adapter, not a new seam.

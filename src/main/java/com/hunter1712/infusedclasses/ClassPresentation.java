@@ -1,7 +1,5 @@
 package com.hunter1712.infusedclasses;
 
-import net.minecraft.resources.Identifier;
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -57,14 +55,11 @@ public final class ClassPresentation {
 		StringBuilder sb = new StringBuilder();
 		if (!def.passives().isEmpty()) {
 			for (ConditionalPassive p : def.passives()) {
-				sb.append(p.name()).append(": ").append(p.fullDesc()).append(" (max ").append(p.maxStacks()).append(" stacks). ");
+				sb.append("Passive: ").append(p.name()).append(" \u2014 ").append(p.fullDesc()).append(" ");
 			}
 		}
 		if (def.activeAbility() != null) {
-			// First ability line is the name (may include keybind); strip "(X)" suffix
-			String raw = def.abilityLines().getFirst();
-			String clean = raw.replaceAll("\\s*\\([^)]+\\)\\s*$", "").trim();
-			sb.append("Active: ").append(clean);
+			sb.append("Active: ").append(def.abilityName());
 			// Dedicated ability description field
 			if (def.abilityDesc() != null && !def.abilityDesc().isBlank()) {
 				sb.append(" — ").append(def.abilityDesc());
@@ -87,15 +82,12 @@ public final class ClassPresentation {
 		if (!def.passives().isEmpty()) {
 			lines.add(new CardLine("Passives", LineKind.PASSIVE_HEADER));
 			for (ConditionalPassive p : def.passives()) {
-				lines.add(new CardLine("  " + p.name(), LineKind.PASSIVE));
+				lines.add(new CardLine(p.name(), LineKind.PASSIVE));
 			}
 		}
 		if (def.activeAbility() != null) {
 			lines.add(new CardLine("Active", LineKind.ABILITY_HEADER));
-			// First ability line is the name (may include keybind); strip "(X)" suffix
-			String raw = def.abilityLines().getFirst();
-			String clean = raw.replaceAll("\\s*\\([^)]+\\)\\s*$", "").trim();
-			lines.add(new CardLine("  " + clean, LineKind.ABILITY));
+			lines.add(new CardLine(def.abilityName(), LineKind.ABILITY));
 		}
 		return lines;
 	}

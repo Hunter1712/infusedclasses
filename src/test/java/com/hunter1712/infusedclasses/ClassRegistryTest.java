@@ -42,7 +42,6 @@ class ClassRegistryTest {
 		assertEquals("Bulwark", bulwark.name());
 		assertEquals("on_hit_taken", bulwark.trigger());
 		assertEquals(10, bulwark.maxStacks());
-		assertFalse(bulwark.shortDesc().isBlank());
 		assertFalse(bulwark.fullDesc().isBlank());
 	}
 
@@ -50,7 +49,6 @@ class ClassRegistryTest {
 	void warriorPassiveCopySaysWhatItDoesToday() {
 		ConditionalPassive bulwark = ClassRegistry.byId(ClassRegistry.WARRIOR).passives().get(0);
 
-		assertEquals("+1 Armor per stack, up to 10", bulwark.shortDesc());
 		assertEquals("Taking a hit grants 1 stack (max 10). Each stack adds +1 armor. "
 				+ "After 5s without a hit, lose 1 stack per second.", bulwark.fullDesc());
 	}
@@ -62,7 +60,6 @@ class ClassRegistryTest {
 				Identifier.fromNamespaceAndPath("infusedclasses", "swift_speed"),
 				0.5, 3, 2);
 
-		assertEquals("+0.5 Movement speed per stack, up to 4", swift.shortDesc());
 		// An on_land passive is not described as a hit, and 2 stacks a second reads as stacks.
 		assertEquals("Each trigger grants 1 stack (max 4). Each stack adds +0.5 movement speed. "
 				+ "After 3s without a trigger, lose 2 stacks per second.", swift.fullDesc());

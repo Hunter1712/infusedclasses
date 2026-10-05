@@ -13,7 +13,7 @@ public record ClassDefinition(
 		Identifier activeAbility,
 		int accentColor,
 		String tagline,
-		List<String> abilityLines,
+		String abilityName,
 		String abilityDesc
 ) {
 }

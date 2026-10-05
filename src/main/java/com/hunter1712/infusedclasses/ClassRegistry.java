@@ -41,7 +41,7 @@ public final class ClassRegistry {
 				WARRIOR_ABILITY,
 				0xFFE74C3C,
 				"Frontline bruiser",
-				List.of("War Cry (R)", "Strength burst"),
+				"War Cry",
 				"Gives Strength II for 8s"));
 
 		register(new ClassDefinition(
@@ -52,8 +52,8 @@ public final class ClassRegistry {
 				null,
 				0xFF2ECC71,
 				"Wilds archer",
-				List.of(),
-				""));
+				null,
+				null));
 
 		register(new ClassDefinition(
 				Identifier.fromNamespaceAndPath("infusedclasses", "mage"),
@@ -63,8 +63,8 @@ public final class ClassRegistry {
 				null,
 				0xFF9B59B6,
 				"Arcane burst",
-				List.of(),
-				""));
+				null,
+				null));
 	}
 
 	private ClassRegistry() {
@@ -75,8 +75,13 @@ public final class ClassRegistry {
 			if (d.activeAbility() != null || !d.passives().isEmpty()) {
 				throw new IllegalArgumentException("Locked class " + d.id() + " must carry no ability and no passives");
 			}
+			if (d.abilityName() != null || d.abilityDesc() != null) {
+				throw new IllegalArgumentException("Locked class " + d.id() + " must carry no ability name or description");
+			}
 		} else if (d.activeAbility() == null) {
 			throw new IllegalArgumentException("Playable class " + d.id() + " must carry an ability");
+		} else if (d.abilityName() == null || d.abilityName().isBlank()) {
+			throw new IllegalArgumentException("Playable class " + d.id() + " must carry an ability name");
 		}
 		BY_ID.put(d.id(), d);
 	}

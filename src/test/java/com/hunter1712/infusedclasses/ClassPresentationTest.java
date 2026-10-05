@@ -17,7 +17,7 @@ class ClassPresentationTest {
 
 		assertEquals(0xFFE74C3C, warrior.accentColor());
 		assertEquals("Frontline bruiser", warrior.tagline());
-		assertEquals(List.of("War Cry (R)", "Strength burst"), warrior.abilityLines());
+		assertEquals("War Cry", warrior.abilityName());
 	}
 
 	@Test
@@ -48,7 +48,7 @@ class ClassPresentationTest {
 
 		ConditionalPassive bulwark = warrior.passives().get(0);
 		// Tooltip shows passive, then active name + dedicated description
-		assertTrue(tooltip.contains("Bulwark: " + bulwark.fullDesc() + " (max " + bulwark.maxStacks() + " stacks)"));
+		assertTrue(tooltip.contains("Passive: Bulwark \u2014 " + bulwark.fullDesc()));
 		assertTrue(tooltip.contains("Active: War Cry"));
 		assertTrue(tooltip.contains("Gives Strength II for 8s"));
 		assertTrue(tooltip.endsWith("Click to choose Warrior."));
@@ -63,7 +63,7 @@ class ClassPresentationTest {
 		ConditionalPassive bulwark = warrior.passives().get(0);
 		assertTrue(tooltip.contains(bulwark.name()));
 		assertTrue(tooltip.contains(bulwark.fullDesc()));
-		assertTrue(tooltip.contains("max " + bulwark.maxStacks() + " stacks"));
+		assertTrue(tooltip.contains("(max " + bulwark.maxStacks() + ")"));
 	}
 
 	@Test
@@ -92,7 +92,7 @@ class ClassPresentationTest {
 		assertEquals(ClassPresentation.LineKind.PASSIVE_HEADER, lines.get(0).kind());
 		assertEquals(0xFFFFFFFF, lines.get(0).style().color());
 		assertTrue(lines.get(0).style().bold());
-		assertEquals("  Bulwark", lines.get(1).text());
+		assertEquals("Bulwark", lines.get(1).text());
 		assertEquals(ClassPresentation.LineKind.PASSIVE, lines.get(1).kind());
 		assertEquals(0xFFBDBDBD, lines.get(1).style().color());
 		assertFalse(lines.get(1).style().bold());
@@ -101,7 +101,7 @@ class ClassPresentationTest {
 		assertEquals(ClassPresentation.LineKind.ABILITY_HEADER, lines.get(2).kind());
 		assertEquals(0xFFFFFFFF, lines.get(2).style().color());
 		assertTrue(lines.get(2).style().bold());
-		assertEquals("  War Cry", lines.get(3).text());
+		assertEquals("War Cry", lines.get(3).text());
 		assertEquals(ClassPresentation.LineKind.ABILITY, lines.get(3).kind());
 		assertEquals(0xFF7ED6FF, lines.get(3).style().color());
 		assertFalse(lines.get(3).style().bold());
@@ -180,7 +180,7 @@ class ClassPresentationTest {
 				customId, "Custom", false,
 				List.of(),
 				ClassRegistry.WARRIOR_ABILITY,
-				0xFFFFFF, "tag", List.of("Ability line"), "");
+				0xFFFFFF, "tag", "Ability line", "");
 
 		List<ClassPresentation.CardLine> lines = ClassPresentation.cardLinesFor(def);
 
@@ -190,7 +190,7 @@ class ClassPresentationTest {
 		assertEquals(ClassPresentation.LineKind.ABILITY_HEADER, lines.get(0).kind());
 		assertEquals(0xFFFFFFFF, lines.get(0).style().color());
 		assertTrue(lines.get(0).style().bold());
-		assertEquals("  Ability line", lines.get(1).text());
+		assertEquals("Ability line", lines.get(1).text());
 		assertEquals(ClassPresentation.LineKind.ABILITY, lines.get(1).kind());
 		assertEquals(0xFF7ED6FF, lines.get(1).style().color());
 		assertFalse(lines.get(1).style().bold());

@@ -26,11 +26,6 @@ public record ConditionalPassive(
 		int graceSeconds,
 		int decayPerSecond
 ) {
-	/** One-line card summary. Generated from the numbers so it cannot drift from behaviour. */
-	public String shortDesc() {
-		return "+" + amount(perStack) + " " + capitalized(word()) + " per stack, up to " + maxStacks;
-	}
-
 	/** Full picker copy. Generated from the numbers so it cannot drift from behaviour. */
 	public String fullDesc() {
 		return earnClause() + " (max " + maxStacks + "). Each stack adds +" + amount(perStack)
@@ -59,10 +54,6 @@ public record ConditionalPassive(
 	/** Attribute name as the copy spells it: "minecraft:armor_toughness" reads as "armor toughness". */
 	private String word() {
 		return attribute.identifier().getPath().replace('_', ' ');
-	}
-
-	private static String capitalized(String word) {
-		return Character.toUpperCase(word.charAt(0)) + word.substring(1);
 	}
 
 	/** Whole numbers read as "1", not "1.0", so the copy matches the game. */
