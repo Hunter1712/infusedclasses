@@ -1,5 +1,6 @@
 package com.hunter1712.infusedclasses.mixin;
 
+import com.hunter1712.infusedclasses.PlayerClassAccess;
 import com.hunter1712.infusedclasses.PlayerClasses;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.storage.ValueInput;

@@ -1,6 +1,5 @@
 package com.hunter1712.infusedclasses;
 
-import com.hunter1712.infusedclasses.mixin.PlayerClassAccess;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
