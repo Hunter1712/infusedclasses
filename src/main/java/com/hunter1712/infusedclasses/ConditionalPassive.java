@@ -28,11 +28,6 @@ public record ConditionalPassive(
 ) {
 	/** The only trigger the server entry feeds. One constant, so a rename cannot go silently inert. */
 	public static final String ON_HIT_TAKEN = "on_hit_taken";
-	/** Short picker copy for the card body. Generated from the numbers so it cannot drift. */
-	public String shortDesc() {
-		return "+" + amount(perStack) + " " + word() + " per stack";
-	}
-
 	/** Full picker copy. Generated from the numbers so it cannot drift from behaviour. */
 	public String fullDesc() {
 		return earnClause() + " (max " + maxStacks + "). Each stack adds +" + amount(perStack)

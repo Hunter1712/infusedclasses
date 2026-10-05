@@ -51,7 +51,6 @@ class ClassRegistryTest {
 
 		assertEquals("Taking a hit grants 1 stack (max 10). Each stack adds +1 armor. "
 				+ "After 5s without a hit, lose 1 stack per second.", bulwark.fullDesc());
-		assertEquals("+1 armor per stack", bulwark.shortDesc());
 	}
 
 	@Test
@@ -65,7 +64,6 @@ class ClassRegistryTest {
 		assertEquals("Each trigger grants 1 stack (max 4). Each stack adds +0.5 movement speed. "
 				+ "After 3s without a trigger, lose 2 stacks per second.", swift.fullDesc());
 		assertFalse(swift.fullDesc().contains("hit"));
-		assertEquals("+0.5 movement speed per stack", swift.shortDesc());
 	}
 
 	@Test

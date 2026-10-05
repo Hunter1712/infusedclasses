@@ -76,7 +76,7 @@ public final class ClassPresentation {
 		return sb.toString();
 	}
 
-	/** Lines shown in the card body: Passives header + name and short desc, then Active header + ability names. */
+	/** Lines shown in the card body: Passives header + name, then Active header + ability names. */
 	public static List<CardLine> cardLinesFor(ClassDefinition def) {
 		List<CardLine> lines = new ArrayList<>();
 		if (def.locked()) {
@@ -89,7 +89,6 @@ public final class ClassPresentation {
 		if (!def.passives().isEmpty()) {
 			for (ConditionalPassive p : def.passives()) {
 				lines.add(new CardLine(p.name(), LineKind.PASSIVE));
-				lines.add(new CardLine(p.shortDesc(), LineKind.PASSIVE));
 			}
 		} else {
 			lines.add(new CardLine("No passives yet", LineKind.PASSIVE));

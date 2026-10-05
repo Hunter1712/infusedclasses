@@ -96,19 +96,15 @@ class ClassPresentationTest {
 		assertEquals(ClassPresentation.LineKind.PASSIVE, lines.get(1).kind());
 		assertEquals(0xFFBDBDBD, lines.get(1).style().color());
 		assertFalse(lines.get(1).style().bold());
-		assertEquals(warrior.passives().get(0).shortDesc(), lines.get(2).text());
-		assertEquals(ClassPresentation.LineKind.PASSIVE, lines.get(2).kind());
-		assertEquals(0xFFBDBDBD, lines.get(2).style().color());
-		assertFalse(lines.get(2).style().bold());
 		// Active section
-		assertEquals("Active", lines.get(3).text());
-		assertEquals(ClassPresentation.LineKind.ABILITY_HEADER, lines.get(3).kind());
-		assertEquals(0xFFFFFFFF, lines.get(3).style().color());
-		assertTrue(lines.get(3).style().bold());
-		assertEquals("War Cry", lines.get(4).text());
-		assertEquals(ClassPresentation.LineKind.ABILITY, lines.get(4).kind());
-		assertEquals(0xFF7ED6FF, lines.get(4).style().color());
-		assertFalse(lines.get(4).style().bold());
+		assertEquals("Active", lines.get(2).text());
+		assertEquals(ClassPresentation.LineKind.ABILITY_HEADER, lines.get(2).kind());
+		assertEquals(0xFFFFFFFF, lines.get(2).style().color());
+		assertTrue(lines.get(2).style().bold());
+		assertEquals("War Cry", lines.get(3).text());
+		assertEquals(ClassPresentation.LineKind.ABILITY, lines.get(3).kind());
+		assertEquals(0xFF7ED6FF, lines.get(3).style().color());
+		assertFalse(lines.get(3).style().bold());
 	}
 
 	@Test
