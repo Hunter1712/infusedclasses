@@ -31,7 +31,7 @@ public final class ClassRegistry {
 				false,
 				List.of(new ConditionalPassive(
 						"Bulwark",
-						"on_hit_taken",
+						ConditionalPassive.ON_HIT_TAKEN,
 						10,
 						ARMOR,
 						Identifier.fromNamespaceAndPath(ClassPackets.MOD_ID, "bulwark_armor"),

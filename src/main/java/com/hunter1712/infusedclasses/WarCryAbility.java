@@ -65,13 +65,14 @@ public final class WarCryAbility {
 	private WarCryAbility() {
 	}
 
-	/** Fires when the current class carries the War Cry ability and is off cooldown. */
+	/** Fires when the current class carries the War Cry ability and is off cooldown. Read-only: firing advances the cooldown, and only the caller does that. */
 	public static Result trigger(ClassDefinition def, Cooldowns cooldowns, long now) {
 		if (def == null || !ClassRegistry.WARRIOR_ABILITY.equals(def.activeAbility())) {
 			return Result.wrongClass();
 		}
-		if (!cooldowns.useWarCry(now)) {
-			return Result.onCooldown(cooldowns.warCryRemaining(now));
+		long remaining = cooldowns.warCryRemaining(now);
+		if (remaining > 0) {
+			return Result.onCooldown(remaining);
 		}
 		return Result.fired();
 	}

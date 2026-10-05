@@ -15,27 +15,22 @@ public final class PassiveApplier {
 	}
 
 	/**
+	 * One tick for one player: decay stacks, then make the attributes agree with the plan.
 	 * Idempotent: an attribute is only written when what is applied differs from what should be,
 	 * so the modifier is created once and left alone while the stacks hold still.
 	 */
-	public static void apply(ServerPlayer player, ClassDefinition def, PlayerRuntime runtime,
-			boolean stacksMoved) {
+	public static void apply(ServerPlayer player, ClassDefinition def, PlayerRuntime runtime, long now) {
 		if (def == null) {
 			return;
 		}
+		boolean stacksMoved = runtime.tickDecay(def, now);
 		for (ConditionalPassive passive : def.passives()) {
-			PassiveEffect.Modifier wanted = PassiveEffect.forStacks(passive, runtime.stacks(passive));
-			if (wanted == null) {
-				// No decision means no stacks. The only thing that can still be on the player is
-				// a modifier those stacks earned, and only the definition knows the id it was
-				// written under, so this is the one path that reads the passive rather than the
-				// decision. There is no decision to be inconsistent with here.
-				if (stacksMoved) {
-					remove(player, passive.attribute(), passive.modifierId());
+			switch (PassiveEffect.planFor(passive, runtime.stacks(passive), stacksMoved)) {
+				case PassiveEffect.Plan.Write(var wanted) -> write(player, wanted);
+				case PassiveEffect.Plan.Remove(var attribute, var modifierId) -> remove(player, attribute, modifierId);
+				case PassiveEffect.Plan.Skip() -> {
 				}
-				continue;
 			}
-			write(player, wanted);
 		}
 	}
 

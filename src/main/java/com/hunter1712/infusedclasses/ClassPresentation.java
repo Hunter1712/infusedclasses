@@ -11,6 +11,12 @@ public final class ClassPresentation {
 	private static final int PASSIVE_COLOR = 0xFFBDBDBD;   // light gray for passive items
 	private static final int ABILITY_COLOR = 0xFF7ED6FF;   // blue for ability items
 	private static final int NOTICE_COLOR = 0xFFE8C15A;    // title gold for the coming-soon notice
+	private static final int BORDER_COLOR = 0xFF3A3A3A;
+	private static final int HOVER_BORDER_COLOR = 0xFF8A8A8A;
+	private static final int HOVER_WASH_COLOR = 0x14FFFFFF;
+	private static final int LOCKED_VEIL_COLOR = 0x50000000;
+	private static final int NAME_COLOR = 0xFFFFFFFF;
+	private static final int NAME_LOCKED_COLOR = 0xFF8A8A8A;
 
 	private ClassPresentation() {
 	}
@@ -70,7 +76,7 @@ public final class ClassPresentation {
 		return sb.toString();
 	}
 
-	/** Lines shown in the card body: Passives header + names, then Active header + ability names. */
+	/** Lines shown in the card body: Passives header + name and short desc, then Active header + ability names. */
 	public static List<CardLine> cardLinesFor(ClassDefinition def) {
 		List<CardLine> lines = new ArrayList<>();
 		if (def.locked()) {
@@ -79,11 +85,14 @@ public final class ClassPresentation {
 			lines.add(new CardLine("COMING SOON", LineKind.NOTICE));
 			return lines;
 		}
+		lines.add(new CardLine("Passives", LineKind.PASSIVE_HEADER));
 		if (!def.passives().isEmpty()) {
-			lines.add(new CardLine("Passives", LineKind.PASSIVE_HEADER));
 			for (ConditionalPassive p : def.passives()) {
 				lines.add(new CardLine(p.name(), LineKind.PASSIVE));
+				lines.add(new CardLine(p.shortDesc(), LineKind.PASSIVE));
 			}
+		} else {
+			lines.add(new CardLine("No passives yet", LineKind.PASSIVE));
 		}
 		if (def.activeAbility() != null) {
 			lines.add(new CardLine("Active", LineKind.ABILITY_HEADER));
@@ -95,6 +104,22 @@ public final class ClassPresentation {
 	/** Accent color for card top strip (grey for locked). */
 	public static int accentFor(ClassDefinition def) {
 		return def.locked() ? 0xFF555555 : def.accentColor();
+	}
+
+	/**
+	 * The whole locked/unlocked look of a card: border, hover wash, locked veil and name
+	 * colour. A null wash or veil means that layer is skipped. Decided here so the renderer
+	 * applies it without reading the definition's locked flag itself.
+	 */
+	public record CardStyle(int borderColor, Integer washColor, Integer veilColor, int nameColor) {
+	}
+
+	public static CardStyle cardStyleFor(ClassDefinition def, boolean hovered) {
+		if (def.locked()) {
+			return new CardStyle(BORDER_COLOR, null, LOCKED_VEIL_COLOR, NAME_LOCKED_COLOR);
+		}
+		return new CardStyle(hovered ? HOVER_BORDER_COLOR : BORDER_COLOR,
+				hovered ? HOVER_WASH_COLOR : null, null, NAME_COLOR);
 	}
 
 	/** Button label and active state. */

@@ -21,43 +21,55 @@ public final class ClassCardRenderer {
 
 	private static final int ACCENT_H = 3;
 	private static final int BODY_COLOR = 0xE0141414;
-	private static final int BORDER_COLOR = 0xFF3A3A3A;
-	private static final int HOVER_BORDER_COLOR = 0xFF8A8A8A;
-	private static final int HOVER_WASH_COLOR = 0x14FFFFFF;
-	private static final int LOCKED_VEIL_COLOR = 0x50000000;
 	private static final int DIVIDER_COLOR = 0xFF3A3A3A;
-	private static final int NAME_COLOR = 0xFFFFFFFF;
-	private static final int NAME_LOCKED_COLOR = 0xFF8A8A8A;
 	private static final int TAGLINE_COLOR = 0xFFB0A67E;
 
 	private ClassCardRenderer() {
 	}
 
+	/** Row math next to the metrics it uses, so the screen never repeats them. Pure ints. */
+	public static int rowWidth(int count, int gap) {
+		return count * WIDTH + (count - 1) * gap;
+	}
+
+	public static int cardX(int index, int count, int screenWidth, int gap) {
+		return screenWidth / 2 - rowWidth(count, gap) / 2 + index * (WIDTH + gap);
+	}
+
+	public static int cardsTop(int screenHeight) {
+		return Math.max(64, screenHeight / 2 - HEIGHT / 2 + 12);
+	}
+
+	public static boolean isHovering(int cardX, int cardY, int mouseX, int mouseY) {
+		return mouseX >= cardX && mouseX < cardX + WIDTH
+				&& mouseY >= cardY && mouseY < cardY + HEIGHT;
+	}
+
 	/** Body, accent strip, border, hover highlight and locked veil. Drawn behind the widgets. */
 	public static void drawFrame(GuiGraphics graphics, int x, int y, ClassDefinition def, boolean hovered) {
+		ClassPresentation.CardStyle style = ClassPresentation.cardStyleFor(def, hovered);
 		int x1 = x + WIDTH;
 		int y1 = y + HEIGHT;
-		int accent = ClassPresentation.accentFor(def);
 		graphics.fill(x, y, x1, y1, BODY_COLOR);
-		graphics.fill(x, y, x1, y + ACCENT_H, accent);
-		int border = hovered && !def.locked() ? HOVER_BORDER_COLOR : BORDER_COLOR;
-		graphics.fill(x, y, x + 1, y1, border);
-		graphics.fill(x1 - 1, y, x1, y1, border);
-		graphics.fill(x, y, x1, y + 1, border);
-		graphics.fill(x, y1 - 1, x1, y1, border);
-		if (hovered && !def.locked()) {
-			graphics.fill(x + 1, y + ACCENT_H, x1 - 1, y1 - 1, HOVER_WASH_COLOR);
+		graphics.fill(x, y, x1, y + ACCENT_H, ClassPresentation.accentFor(def));
+		graphics.fill(x, y, x + 1, y1, style.borderColor());
+		graphics.fill(x1 - 1, y, x1, y1, style.borderColor());
+		graphics.fill(x, y, x1, y + 1, style.borderColor());
+		graphics.fill(x, y1 - 1, x1, y1, style.borderColor());
+		if (style.washColor() != null) {
+			graphics.fill(x + 1, y + ACCENT_H, x1 - 1, y1 - 1, style.washColor());
 		}
-		if (def.locked()) {
-			graphics.fill(x + 1, y + ACCENT_H, x1 - 1, y1 - 1, LOCKED_VEIL_COLOR);
+		if (style.veilColor() != null) {
+			graphics.fill(x + 1, y + ACCENT_H, x1 - 1, y1 - 1, style.veilColor());
 		}
 	}
 
 	/** Name, tagline, divider and the card lines, each drawn with the style it carries. */
-	public static void drawBody(GuiGraphics graphics, Font font, int x, int y, ClassDefinition def) {
+	public static void drawBody(GuiGraphics graphics, Font font, int x, int y, ClassDefinition def,
+			ClassPresentation.CardStyle style) {
 		int cx = x + WIDTH / 2;
 		int ty = y + 10;
-		graphics.drawCenteredString(font, def.displayName(), cx, ty, def.locked() ? NAME_LOCKED_COLOR : NAME_COLOR);
+		graphics.drawCenteredString(font, def.displayName(), cx, ty, style.nameColor());
 		ty += 11;
 		graphics.drawCenteredString(font, def.tagline(), cx, ty, TAGLINE_COLOR);
 		ty += 12;

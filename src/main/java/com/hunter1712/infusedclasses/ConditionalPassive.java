@@ -26,6 +26,13 @@ public record ConditionalPassive(
 		int graceSeconds,
 		int decayPerSecond
 ) {
+	/** The only trigger the server entry feeds. One constant, so a rename cannot go silently inert. */
+	public static final String ON_HIT_TAKEN = "on_hit_taken";
+	/** Short picker copy for the card body. Generated from the numbers so it cannot drift. */
+	public String shortDesc() {
+		return "+" + amount(perStack) + " " + word() + " per stack";
+	}
+
 	/** Full picker copy. Generated from the numbers so it cannot drift from behaviour. */
 	public String fullDesc() {
 		return earnClause() + " (max " + maxStacks + "). Each stack adds +" + amount(perStack)
@@ -48,7 +55,7 @@ public record ConditionalPassive(
 	}
 
 	private boolean isHitTrigger() {
-		return "on_hit_taken".equals(trigger);
+		return ON_HIT_TAKEN.equals(trigger);
 	}
 
 	/** Attribute name as the copy spells it: "minecraft:armor_toughness" reads as "armor toughness". */

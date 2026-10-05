@@ -65,10 +65,11 @@ public class InfusedClasses implements ModInitializer {
 			}
 			PlayerClasses classes = PlayerClassAccess.of(player);
 			// Classless players are inert, and cost nothing: no transient state is made for them.
-			if (!classes.hasClass()) {
+			ClassDefinition def = classes.currentDefinition();
+			if (def == null) {
 				return;
 			}
-			runtime(player).onTrigger(classes.currentDefinition(), "on_hit_taken", System.currentTimeMillis());
+			runtime(player).onTrigger(def, ConditionalPassive.ON_HIT_TAKEN, System.currentTimeMillis());
 		});
 
 		// Server tick: decay conditional passive stacks, then put their effect on the player.
@@ -76,13 +77,11 @@ public class InfusedClasses implements ModInitializer {
 			long now = System.currentTimeMillis();
 			for (ServerPlayer player : server.getPlayerList().getPlayers()) {
 				PlayerClasses classes = PlayerClassAccess.of(player);
-				if (!classes.hasClass()) {
+				ClassDefinition def = classes.currentDefinition();
+				if (def == null) {
 					continue;
 				}
-				ClassDefinition def = classes.currentDefinition();
-				PlayerRuntime runtime = runtime(player);
-				boolean stacksMoved = runtime.tickDecay(def, now);
-				PassiveApplier.apply(player, def, runtime, stacksMoved);
+				PassiveApplier.apply(player, def, runtime(player), now);
 			}
 		});
 	}
@@ -116,8 +115,13 @@ public class InfusedClasses implements ModInitializer {
 	}
 
 	static void warCry(ServerPlayer player) {
+		long now = System.currentTimeMillis();
 		PlayerClasses classes = PlayerClassAccess.of(player);
-		AbilityApplier.apply(player, WarCryAbility.trigger(classes.currentDefinition(),
-				runtime(player).cooldowns(), System.currentTimeMillis()));
+		Cooldowns cooldowns = runtime(player).cooldowns();
+		WarCryAbility.Result result = WarCryAbility.trigger(classes.currentDefinition(), cooldowns, now);
+		if (result.kind() == WarCryAbility.Kind.FIRED) {
+			cooldowns.useWarCry(now);
+		}
+		AbilityApplier.apply(player, result);
 	}
 }

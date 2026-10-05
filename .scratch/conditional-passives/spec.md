@@ -24,14 +24,14 @@ Delete the old flat-stat passive pipeline entirely. Introduce a new conditional-
 ## Implementation Decisions
 
 - Deep-clean removal: `Passive`, `ClassAttributes` (and its display/formatting helpers), `ClassApplier`, `ServerModifiers`, the `ModifierSink` seam, and passive-specific tests are deleted. `ClassDefinition` drops its `List<Passive>` field.
-- Replacement: `ClassDefinition` gains `List<ConditionalPassive> passives`. New record shape per spec discussion: `ConditionalPassive(String name, String trigger, String shortDesc, String fullDesc, int maxStacks)`.
+- Replacement: `ClassDefinition` gains `List<ConditionalPassive> passives`. Record shape: `ConditionalPassive(String name, String trigger, int maxStacks, ResourceKey<Attribute> attribute, Identifier modifierId, double perStack, int graceSeconds, int decayPerSecond)` with `shortDesc()` and `fullDesc()` generated from those numbers, so the copy cannot drift from behaviour.
 - Warrior's flat +8 health, +4 armor, +2 toughness, -10% speed are gone. Warrior becomes active-ability-only plus one conditional passive.
 - Warrior conditional passive is named `Bulwark`, trigger string `on_hit_taken`, effect `+1 armor` per stack, max 10 stacks. Decay rule: when no hit arrives for more than 5 seconds, lose 1 stack per second.
 - Trigger evaluation is modeled around open-ended `String` keys. Only `on_hit_taken` is implemented now; unknown triggers are inert and ignored.
 - Stack state is transient per-player and held alongside the player's selected class state, not persisted to NBT.
 - The bonus is applied by a small helper that replaces the previous modifier on each stack change: value becomes `stacks * 1.0` on `minecraft:armor` with `ADD_VALUE`. This is a live attribute edit, not a persistent class stat.
-- `PlayerMixin` remains the owner for transient class state and NBT read/write of the selected class. Add a server-side hook for player hurt (and a tick path for decay) to feed the conditional passive pipeline.
-- Locked classes: picker still shows `Passives: ???`, `Ability: ???`, `COMING SOON`. Unlocked: each passive renders as its name then short description; missing passives render `No passives yet`.
+- `PlayerMixin` holds the choice slot per player and the NBT read/write of the selected class. The server entry owns one transient runtime per player plus the hurt hook and tick path that feed the conditional passive pipeline.
+- Locked classes: picker still shows `Passives: ???`, `Active: ???`, `COMING SOON`. Unlocked: each passive renders as its name then short description; missing passives render `No passives yet`.
 - Picker subtitle becomes "Your choice shapes your ability". Tooltip joins passive full-description text the same way ability lines are joined today.
 - UI render path treats passive lines distinctly from ability lines, no longer relying on `ClassAttributes.display`.
 

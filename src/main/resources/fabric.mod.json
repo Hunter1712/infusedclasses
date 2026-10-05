@@ -3,7 +3,7 @@
 	"id": "infusedclasses",
 	"version": "${version}",
 	"name": "Infused Classes",
-	"description": "Character classes for Minecraft. Start as a Warrior: more health, armor and toughness, slower, War Cry for damage.",
+	"description": "Character classes for Minecraft. Start as a Warrior: War Cry for damage, Bulwark armor when taking hits.",
 	"authors": ["hunter1712"],
 	"contact": {},
 	"license": "MIT",

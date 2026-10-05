@@ -1,6 +1,6 @@
 # Spec: Class System (Warrior)
 
-Status: ready-for-agent
+Status: done
 
 ## Problem Statement
 
@@ -8,7 +8,7 @@ Minecraft has no character classes: every player plays identically. Player wants
 
 ## Solution
 
-A Fabric mod that detects a player's first join, shows a class-selection GUI, persists the choice on the player, and applies class passives (attribute modifiers) plus one keybind-triggered active ability per class. Warrior ships first: buffed health/armor, slower movement, War Cry as the damage tool. Other classes appear greyed out in the GUI.
+A Fabric mod that detects a player's first join, shows a class-selection GUI, persists the choice on the player, and applies one keybind-triggered active ability per class plus conditional combat passives. Warrior ships first: War Cry as the damage tool + Bulwark armor when taking hits (no flat stats — see `conditional-passives/spec.md`). Other classes appear greyed out in the GUI.
 
 ## User Stories
 
@@ -16,10 +16,10 @@ A Fabric mod that detects a player's first join, shows a class-selection GUI, pe
 2. As a new player, I want Warrior available and other classes visibly listed but locked, so that I know more classes are coming.
 3. As a player, I want my class choice to persist across logouts and relogs, so that I keep my class.
 4. As a server admin, I want class changes possible via command, so that I can fix mistakes.
-5. As a Warrior, I want increased max health, so that I feel tankier.
-6. As a Warrior, I want increased armor, so that I take less damage.
+5. As a Warrior, I want increased max health, so that I feel tankier. [SUPERSEDED by `conditional-passives/spec.md` — no flat stats]
+6. As a Warrior, I want increased armor, so that I take less damage. [SUPERSEDED — see Bulwark in `conditional-passives/spec.md`]
 7. As a Warrior, I want War Cry as my melee damage tool (no flat melee bonus), so that melee feels like my role.
-8. As a Warrior, I want slightly reduced movement speed, so that the class has a real weakness.
+8. As a Warrior, I want slightly reduced movement speed, so that the class has a real weakness. [SUPERSEDED by `conditional-passives/spec.md` — no flat stats]
 9. As a Warrior, I want a War Cry active ability on a keybind, so that I have an active tool.
 10. As a Warrior, I want War Cry to grant a temporary Strength buff, so that it feels powerful.
 11. As a Warrior, I want a cooldown on War Cry, so that it can't be spammed.
@@ -36,12 +36,12 @@ A Fabric mod that detects a player's first join, shows a class-selection GUI, pe
 - Class choice persisted in player NBT (`entity data`), travels with the player; also covered by player data backups.
 - First-join detection: server checks player's NBT on join; if unset, flag client to open the class GUI. GUI is a client screen listing all classes; locked ones greyed.
 - On selection, client sends choice to server; server writes NBT, applies modifiers, closes GUI.
-- Passives implemented as attribute modifiers on the player (`max_health`, armor, armor_toughness, `movement_speed` negative; no `attack_damage` — War Cry is the damage tool). Old class modifiers removed by namespacing modifier identifiers per class.
+- Passives: SUPERSEDED by `conditional-passives/spec.md`. Flat attribute modifiers (`max_health`, armor, armor_toughness, `movement_speed`) removed. Warrior is now active-ability-only plus conditional `Bulwark`.
 - Active ability: client keybind sends packet to server; server validates class + cooldown, applies effect (Strength II, 8s), starts 30s cooldown tracked server-side, sends particles/sound to the player.
 - War Cry cooldown feedback via action bar message (remaining seconds on cooldown, shout confirmation on fire). An item-cooldown-style HUD visual is deferred.
 - Admin command `/class set <player> <class>` sets class, strips previous modifiers, applies new. `/class select <player>` reopens the picker for GUI iteration; picking stays server-validated.
 - MP-correct throughout: server authoritative; client only sends intents.
-- Warrior baseline: +8 max health points (+4 hearts), armor/toughness bonus, -10% movement speed. No flat damage bonus — War Cry is the damage tool.
+- Warrior baseline: SUPERSEDED. No flat stats. Warrior is War Cry + Bulwark (`on_hit_taken`, +1 armor/stack, max 10) per `conditional-passives/spec.md`. No flat damage bonus — War Cry is the damage tool.
 
 ## Testing Decisions
 
@@ -60,5 +60,5 @@ A Fabric mod that detects a player's first join, shows a class-selection GUI, pe
 
 ## Further Notes
 
-- Baseline numbers from planning: "+4 max hearts" was shorthand; final documented as increased max health via `max_health` attribute modifier — exact value recorded in code and this spec kept as source of intent.
+- Baseline numbers from planning: "+4 max hearts" was shorthand; final documented as increased max health via `max_health` attribute modifier — SUPERSEDED by `conditional-passives/spec.md`, which removed all flat stats.
 - Session decisions: repo folder renamed to `infusedclasses` (rename may need manual completion if the OS lock persists).

@@ -123,6 +123,24 @@ class ConditionalPassiveStacksTest {
 	}
 
 	@Test
+	void sequentialTicksDecayOneStackPerSecondWithoutAcceleration() {
+		PlayerRuntime runtime = new PlayerRuntime();
+		long base = System.currentTimeMillis();
+		for (int i = 0; i < 5; i++) {
+			runtime.onTrigger(warrior(), "on_hit_taken", base);
+		}
+		assertEquals(5, runtime.stacks(bulwark()));
+
+		// Tick at +6s drops 1 stack, tick at +7s drops 1 more (not 2)
+		assertTrue(runtime.tickDecay(warrior(), base + 6_000));
+		assertEquals(4, runtime.stacks(bulwark()));
+		assertTrue(runtime.tickDecay(warrior(), base + 7_000));
+		assertEquals(3, runtime.stacks(bulwark()));
+		assertTrue(runtime.tickDecay(warrior(), base + 8_000));
+		assertEquals(2, runtime.stacks(bulwark()));
+	}
+
+	@Test
 	void newTriggerResetsGraceTimer() {
 		PlayerRuntime runtime = new PlayerRuntime();
 		long base = System.currentTimeMillis();

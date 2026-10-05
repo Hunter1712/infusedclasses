@@ -50,6 +50,6 @@ public final class PlayerClasses {
 
 	/** Copies the persisted choice to a fresh instance (respawn). The choice is all it copies. */
 	public void copyFrom(PlayerClasses other) {
-		readId(other == null ? null : other.writeId());
+		classId = other == null ? null : other.classId;
 	}
 }

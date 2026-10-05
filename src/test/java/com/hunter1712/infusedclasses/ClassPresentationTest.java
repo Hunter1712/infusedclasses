@@ -96,15 +96,19 @@ class ClassPresentationTest {
 		assertEquals(ClassPresentation.LineKind.PASSIVE, lines.get(1).kind());
 		assertEquals(0xFFBDBDBD, lines.get(1).style().color());
 		assertFalse(lines.get(1).style().bold());
+		assertEquals(warrior.passives().get(0).shortDesc(), lines.get(2).text());
+		assertEquals(ClassPresentation.LineKind.PASSIVE, lines.get(2).kind());
+		assertEquals(0xFFBDBDBD, lines.get(2).style().color());
+		assertFalse(lines.get(2).style().bold());
 		// Active section
-		assertEquals("Active", lines.get(2).text());
-		assertEquals(ClassPresentation.LineKind.ABILITY_HEADER, lines.get(2).kind());
-		assertEquals(0xFFFFFFFF, lines.get(2).style().color());
-		assertTrue(lines.get(2).style().bold());
-		assertEquals("War Cry", lines.get(3).text());
-		assertEquals(ClassPresentation.LineKind.ABILITY, lines.get(3).kind());
-		assertEquals(0xFF7ED6FF, lines.get(3).style().color());
-		assertFalse(lines.get(3).style().bold());
+		assertEquals("Active", lines.get(3).text());
+		assertEquals(ClassPresentation.LineKind.ABILITY_HEADER, lines.get(3).kind());
+		assertEquals(0xFFFFFFFF, lines.get(3).style().color());
+		assertTrue(lines.get(3).style().bold());
+		assertEquals("War Cry", lines.get(4).text());
+		assertEquals(ClassPresentation.LineKind.ABILITY, lines.get(4).kind());
+		assertEquals(0xFF7ED6FF, lines.get(4).style().color());
+		assertFalse(lines.get(4).style().bold());
 	}
 
 	@Test
@@ -141,6 +145,38 @@ class ClassPresentationTest {
 				ClassPresentation.styleFor(ClassPresentation.LineKind.ABILITY));
 		assertEquals(new ClassPresentation.LineStyle(0xFFE8C15A, true),
 				ClassPresentation.styleFor(ClassPresentation.LineKind.NOTICE));
+	}
+
+	@Test
+	void lockedCardIsVeiledNeverHighlighted() {
+		ClassDefinition ranger = ClassRegistry.byId(
+				net.minecraft.resources.Identifier.fromNamespaceAndPath("infusedclasses", "ranger"));
+
+		for (boolean hovered : new boolean[] { false, true }) {
+			ClassPresentation.CardStyle style = ClassPresentation.cardStyleFor(ranger, hovered);
+
+			assertEquals(0xFF3A3A3A, style.borderColor());
+			assertNull(style.washColor());
+			assertEquals(0x50000000, style.veilColor());
+			assertEquals(0xFF8A8A8A, style.nameColor());
+		}
+	}
+
+	@Test
+	void unlockedCardHighlightsOnlyOnHover() {
+		ClassDefinition warrior = ClassRegistry.byId(ClassRegistry.WARRIOR);
+
+		ClassPresentation.CardStyle plain = ClassPresentation.cardStyleFor(warrior, false);
+		assertEquals(0xFF3A3A3A, plain.borderColor());
+		assertNull(plain.washColor());
+		assertNull(plain.veilColor());
+		assertEquals(0xFFFFFFFF, plain.nameColor());
+
+		ClassPresentation.CardStyle hovered = ClassPresentation.cardStyleFor(warrior, true);
+		assertEquals(0xFF8A8A8A, hovered.borderColor());
+		assertEquals(0x14FFFFFF, hovered.washColor());
+		assertNull(hovered.veilColor());
+		assertEquals(0xFFFFFFFF, hovered.nameColor());
 	}
 
 	@Test
@@ -184,15 +220,20 @@ class ClassPresentationTest {
 
 		List<ClassPresentation.CardLine> lines = ClassPresentation.cardLinesFor(def);
 
-		// No passives section at all when empty
-		assertTrue(lines.stream().noneMatch(l -> l.text().equals("No passives yet")));
-		assertEquals("Active", lines.get(0).text());
-		assertEquals(ClassPresentation.LineKind.ABILITY_HEADER, lines.get(0).kind());
-		assertEquals(0xFFFFFFFF, lines.get(0).style().color());
-		assertTrue(lines.get(0).style().bold());
-		assertEquals("Ability line", lines.get(1).text());
-		assertEquals(ClassPresentation.LineKind.ABILITY, lines.get(1).kind());
-		assertEquals(0xFF7ED6FF, lines.get(1).style().color());
+		// Empty passives render the placeholder under the header (08)
+		assertEquals("Passives", lines.get(0).text());
+		assertEquals(ClassPresentation.LineKind.PASSIVE_HEADER, lines.get(0).kind());
+		assertEquals("No passives yet", lines.get(1).text());
+		assertEquals(ClassPresentation.LineKind.PASSIVE, lines.get(1).kind());
+		assertEquals(0xFFBDBDBD, lines.get(1).style().color());
 		assertFalse(lines.get(1).style().bold());
+		assertEquals("Active", lines.get(2).text());
+		assertEquals(ClassPresentation.LineKind.ABILITY_HEADER, lines.get(2).kind());
+		assertEquals(0xFFFFFFFF, lines.get(2).style().color());
+		assertTrue(lines.get(2).style().bold());
+		assertEquals("Ability line", lines.get(3).text());
+		assertEquals(ClassPresentation.LineKind.ABILITY, lines.get(3).kind());
+		assertEquals(0xFF7ED6FF, lines.get(3).style().color());
+		assertFalse(lines.get(3).style().bold());
 	}
 }

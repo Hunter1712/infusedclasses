@@ -8,6 +8,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * The stack-to-attribute mapping, asserted as a decision. Plain JUnit: no player, level,
@@ -66,5 +67,18 @@ class PassiveEffectTest {
 		assertEquals(speed, wanted.attribute());
 		assertEquals(Identifier.fromNamespaceAndPath("infusedclasses", "swift_speed"), wanted.modifierId());
 		assertEquals(1.5, wanted.amount());
+	}
+
+	@Test
+	void stacksWriteTheirModifier() {
+		assertTrue(PassiveEffect.planFor(BULWARK, 3, false) instanceof PassiveEffect.Plan.Write write
+				&& write.wanted().amount() == 3.0);
+	}
+
+	@Test
+	void deadStacksRemoveOnlyWhenTheyMoved() {
+		assertTrue(PassiveEffect.planFor(BULWARK, 0, true) instanceof PassiveEffect.Plan.Remove);
+		assertTrue(PassiveEffect.planFor(BULWARK, 0, false) instanceof PassiveEffect.Plan.Skip);
+		assertTrue(PassiveEffect.planFor(null, 0, true) instanceof PassiveEffect.Plan.Skip);
 	}
 }

@@ -70,7 +70,13 @@ public final class PlayerRuntime {
 				int decayed = (int) ((elapsedSec - passive.graceSeconds()) * passive.decayPerSecond());
 				int next = Math.max(0, current - decayed);
 				if (next != current) {
+					int removed = current - next;
 					passiveStacks.put(passive, next);
+					// Advance the clock by the stacks just decayed so the next tick counts a fresh
+					// second per stack instead of re-counting the same overdue seconds (07: no acceleration).
+					if (passive.decayPerSecond() > 0) {
+						lastTriggerTime.put(passive, last + (removed * 1000L) / passive.decayPerSecond());
+					}
 					anyChanged = true;
 				}
 			}

@@ -66,31 +66,26 @@ public class ClassSelectScreen extends Screen {
 	@Override
 	public void render(GuiGraphics graphics, int mouseX, int mouseY, float delta) {
 		super.render(graphics, mouseX, mouseY, delta);
-		int top = cardsTop();
+		int top = ClassCardRenderer.cardsTop(height);
 		graphics.drawCenteredString(font, Component.literal("Choose your class").withStyle(s -> s.withBold(true)), width / 2, top - 44, TITLE_COLOR);
 		graphics.drawCenteredString(font, ClassPresentation.subtitle(), width / 2, top - 28, SUBTITLE_COLOR);
 		graphics.drawCenteredString(font, "\u00a7m                                           \u00a7r", width / 2, top - 17, SUBTITLE_COLOR);
 
 		for (int i = 0; i < classes.size(); i++) {
 			CardPos card = cardRect(i, classes.size());
-			ClassCardRenderer.drawBody(graphics, font, card.x(), card.y(), classes.get(i));
+			ClassDefinition def = classes.get(i);
+			ClassPresentation.CardStyle style = ClassPresentation.cardStyleFor(def, isHovering(card, mouseX, mouseY));
+			ClassCardRenderer.drawBody(graphics, font, card.x(), card.y(), def, style);
 		}
 		graphics.drawCenteredString(font, "Click a class to choose it", width / 2, top + ClassCardRenderer.HEIGHT + 14, FOOTER_COLOR);
 	}
 
 	private CardPos cardRect(int index, int count) {
-		int rowW = count * ClassCardRenderer.WIDTH + (count - 1) * GAP;
-		int x = width / 2 - rowW / 2 + index * (ClassCardRenderer.WIDTH + GAP);
-		return new CardPos(x, cardsTop());
-	}
-
-	private int cardsTop() {
-		return Math.max(64, height / 2 - ClassCardRenderer.HEIGHT / 2 + 12);
+		return new CardPos(ClassCardRenderer.cardX(index, count, width, GAP), ClassCardRenderer.cardsTop(height));
 	}
 
 	private static boolean isHovering(CardPos card, int mouseX, int mouseY) {
-		return mouseX >= card.x() && mouseX < card.x() + ClassCardRenderer.WIDTH
-				&& mouseY >= card.y() && mouseY < card.y() + ClassCardRenderer.HEIGHT;
+		return ClassCardRenderer.isHovering(card.x(), card.y(), mouseX, mouseY);
 	}
 
 	@Override

@@ -19,6 +19,22 @@ public final class PassiveEffect {
 	}
 
 	/**
+	 * What a tick should do about one passive: write the modifier its stacks call for, take off
+	 * what dead stacks earned, or nothing. The stacks-moved flag is the tick's own decay answer:
+	 * a tick that moved no stacks cannot have changed what should be on the player.
+	 */
+	public sealed interface Plan {
+		record Write(Modifier wanted) implements Plan {
+		}
+
+		record Remove(ResourceKey<Attribute> attribute, Identifier modifierId) implements Plan {
+		}
+
+		record Skip() implements Plan {
+		}
+	}
+
+	/**
 	 * The modifier the passive's current stacks call for, or null when it should carry none.
 	 * Zero or fewer stacks grant nothing. The cap is the stack state's job, not this one's.
 	 */
@@ -27,5 +43,21 @@ public final class PassiveEffect {
 			return null;
 		}
 		return new Modifier(passive.attribute(), passive.modifierId(), stacks * passive.perStack());
+	}
+
+	/**
+	 * The whole answer for one passive this tick, so the adapter never reads the passive
+	 * behind the decision's back. No stacks plus no movement means nothing to do; no stacks
+	 * after movement means taking off what those stacks earned.
+	 */
+	public static Plan planFor(ConditionalPassive passive, int stacks, boolean stacksMoved) {
+		Modifier wanted = forStacks(passive, stacks);
+		if (wanted != null) {
+			return new Plan.Write(wanted);
+		}
+		if (stacksMoved && passive != null) {
+			return new Plan.Remove(passive.attribute(), passive.modifierId());
+		}
+		return new Plan.Skip();
 	}
 }

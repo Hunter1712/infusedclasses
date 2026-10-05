@@ -1,6 +1,6 @@
 # Spec: Ponytail Cleanup (Class System)
 
-Status: ready-for-agent
+Status: done
 
 ## Problem Statement
 
