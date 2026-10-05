@@ -47,6 +47,11 @@ public final class PlayerRuntime {
 		return passiveStacks.getOrDefault(passive, 0);
 	}
 
+	/** Last-trigger millis for a passive, null when never triggered. The sync signal counts from it. */
+	public Long lastTrigger(ConditionalPassive passive) {
+		return lastTriggerTime.get(passive);
+	}
+
 	/** Bumps every passive on the given class whose trigger matches.
 	 *  Unknown triggers, a missing class and trigger-less classes are inert. */
 	public void onTrigger(ClassDefinition def, String trigger, long now) {
@@ -65,7 +70,7 @@ public final class PlayerRuntime {
 	 * Ticks decay for all passives on the given class, and says whether any stacks moved. A
 	 * caller that puts the effect on the player needs that: a tick which moved no stacks cannot
 	 * have changed what should be on the player, so it needs no attribute write.
-	 * Decay rule: each passive's own grace period, then its own decay rate.
+	 * Decay rule: past its own grace, a passive drops every stack at once.
 	 */
 	public boolean tickDecay(ClassDefinition def, long now) {
 		return !tickDecayMoved(def, now).isEmpty();
@@ -74,7 +79,8 @@ public final class PlayerRuntime {
 	/**
 	 * Per-passive movement: which passives lost stacks this tick. The applier needs the set,
 	 * not the global flag: a tick that decayed passive A must not remove passive B sitting at
-	 * zero. Unmodifiable, possibly empty, never null.
+	 * zero. Unmodifiable, possibly empty, never null. Past grace every stack drops at once,
+	 * vanilla-style: there is no per-second bleed.
 	 */
 	public Set<ConditionalPassive> tickDecayMoved(ClassDefinition def, long now) {
 		if (def == null) {
@@ -90,20 +96,10 @@ public final class PlayerRuntime {
 			if (last == null) {
 				continue;
 			}
-			long elapsedSec = (now - last) / 1000;
-			if (elapsedSec > passive.graceSeconds()) {
-				int decayed = (int) ((elapsedSec - passive.graceSeconds()) * passive.decayPerSecond());
-				int next = Math.max(0, current - decayed);
-				if (next != current) {
-					int removed = current - next;
-					passiveStacks.put(passive, next);
-					// Advance the clock by the stacks just decayed so the next tick counts a fresh
-					// second per stack instead of re-counting the same overdue seconds (07: no acceleration).
-					if (passive.decayPerSecond() > 0) {
-						lastTriggerTime.put(passive, last + (removed * 1000L) / passive.decayPerSecond());
-					}
-					moved.add(passive);
-				}
+			if ((now - last) > passive.graceSeconds() * 1000L) {
+				passiveStacks.put(passive, 0);
+				lastTriggerTime.remove(passive);
+				moved.add(passive);
 			}
 		}
 		return Collections.unmodifiableSet(moved);

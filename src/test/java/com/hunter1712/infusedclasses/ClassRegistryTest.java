@@ -50,7 +50,7 @@ class ClassRegistryTest {
 		ConditionalPassive bulwark = ClassRegistry.byId(ClassRegistry.WARRIOR).passives().get(0);
 
 		assertEquals("Taking a hit grants 1 stack (max 10). Each stack adds +1 armor. "
-				+ "After 5s without a hit, lose 1 stack per second.", bulwark.fullDesc());
+				+ "After 5s without a hit, lose all stacks.", bulwark.fullDesc());
 	}
 
 	@Test
@@ -58,11 +58,11 @@ class ClassRegistryTest {
 		ConditionalPassive swift = new ConditionalPassive("Swift", "on_land", 4,
 				ResourceKey.create(Registries.ATTRIBUTE, Identifier.withDefaultNamespace("movement_speed")),
 				Identifier.fromNamespaceAndPath("infusedclasses", "swift_speed"),
-				0.5, 3, 2);
+				0.5, 3);
 
-		// An on_land passive is not described as a hit, and 2 stacks a second reads as stacks.
+		// An on_land passive is not described as a hit, and the drop reads as instant.
 		assertEquals("Each trigger grants 1 stack (max 4). Each stack adds +0.5 movement speed. "
-				+ "After 3s without a trigger, lose 2 stacks per second.", swift.fullDesc());
+				+ "After 3s without a trigger, lose all stacks.", swift.fullDesc());
 		assertFalse(swift.fullDesc().contains("hit"));
 	}
 

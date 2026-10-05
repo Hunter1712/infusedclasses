@@ -5,7 +5,7 @@ import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.entity.ai.attributes.Attribute;
 
 /**
- * Reactive conditional passive: event-triggered stacks, a cap, decay after a grace period, and
+ * Reactive conditional passive: event-triggered stacks, a cap, a grace period, and
  * the attribute those stacks are worth. Plain data, no game bootstrap needed, so tests assert on
  * it directly. The picker copy is generated from these numbers, so it can say what the passive
  * does but never an earning event its trigger does not carry.
@@ -13,8 +13,7 @@ import net.minecraft.world.entity.ai.attributes.Attribute;
  * @param attribute which attribute the stacks add to, as a registry key rather than a live holder
  * @param modifierId identifier the passive's modifier is written under
  * @param perStack what one stack contributes to that attribute
- * @param graceSeconds seconds after the last trigger before stacks start decaying
- * @param decayPerSecond stacks lost per second once the grace period is up
+ * @param graceSeconds seconds after the last trigger before all stacks drop at once
  */
 public record ConditionalPassive(
 		String name,
@@ -23,16 +22,14 @@ public record ConditionalPassive(
 		ResourceKey<Attribute> attribute,
 		Identifier modifierId,
 		double perStack,
-		int graceSeconds,
-		int decayPerSecond
+		int graceSeconds
 ) {
 	/** The only trigger the server entry feeds. One constant, so a rename cannot go silently inert. */
 	public static final String ON_HIT_TAKEN = "on_hit_taken";
 	/** Full picker copy. Generated from the numbers so it cannot drift from behaviour. */
 	public String fullDesc() {
 		return earnClause() + " (max " + maxStacks + "). Each stack adds +" + amount(perStack)
-				+ " " + word() + ". After " + graceSeconds + "s " + idleClause() + ", lose "
-				+ stacks(decayPerSecond) + " per second.";
+				+ " " + word() + ". After " + graceSeconds + "s " + idleClause() + ", lose all stacks.";
 	}
 
 	/**
@@ -61,10 +58,5 @@ public record ConditionalPassive(
 	/** Whole numbers read as "1", not "1.0", so the copy matches the game. */
 	private static String amount(double value) {
 		return value == Math.rint(value) ? Long.toString((long) value) : Double.toString(value);
-	}
-
-	/** Decay rate in stacks, pluralised: "lose 1 stack", "lose 2 stacks". */
-	private static String stacks(int decayPerSecond) {
-		return decayPerSecond + (decayPerSecond == 1 ? " stack" : " stacks");
 	}
 }

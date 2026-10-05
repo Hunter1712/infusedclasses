@@ -47,7 +47,7 @@ Finally, record the domain vocabulary so the next reader does not have to infer 
 23. As an agent, I want existing tests to keep passing without being rewritten wholesale, so that the refactor is provably behaviour-preserving.
 24. As an agent, I want the pure decision to be reachable without constructing game types, so that tests run in plain JUnit.
 25. As a player, I want Bulwark to grant exactly one armor per stack, capped at ten stacks, so that nothing changes about how the class plays.
-26. As a player, I want stacks to decay one per second after five seconds without a hit, so that nothing changes about how the class plays.
+26. As a player, I want every stack to drop at once five seconds after my last hit, so that the bonus ends cleanly instead of bleeding out.
 27. As a player, I want War Cry to still give Strength for eight seconds on a thirty-second cooldown, so that nothing changes about how the class plays.
 28. As a player, I want the picker to look and read exactly as it does now, so that nothing changes about how the game looks.
 29. As a player, I want a locked class to stay unselectable, so that nothing changes about progression.

@@ -123,7 +123,20 @@ class ConditionalPassiveStacksTest {
 	}
 
 	@Test
-	void sequentialTicksDecayOneStackPerSecondWithoutAcceleration() {
+	void dropFiresPastGraceMillisNotTruncatedSeconds() {
+		PlayerRuntime runtime = new PlayerRuntime();
+		long base = 1_000_000L;
+		runtime.onTrigger(warrior(), ConditionalPassive.ON_HIT_TAKEN, base);
+
+		// Exactly 5s: still grace, the client agrees. Past it by a millisecond: gone on both.
+		assertFalse(runtime.tickDecay(warrior(), base + 5_000));
+		assertEquals(1, runtime.stacks(bulwark()));
+		assertTrue(runtime.tickDecay(warrior(), base + 5_001));
+		assertEquals(0, runtime.stacks(bulwark()));
+	}
+
+	@Test
+	void pastGraceDropsEveryStackAtOnce() {
 		PlayerRuntime runtime = new PlayerRuntime();
 		long base = System.currentTimeMillis();
 		for (int i = 0; i < 5; i++) {
@@ -131,13 +144,10 @@ class ConditionalPassiveStacksTest {
 		}
 		assertEquals(5, runtime.stacks(bulwark()));
 
-		// Tick at +6s drops 1 stack, tick at +7s drops 1 more (not 2)
+		// Tick at +6s drops all 5 at once; the next tick has nothing left to move.
 		assertTrue(runtime.tickDecay(warrior(), base + 6_000));
-		assertEquals(4, runtime.stacks(bulwark()));
-		assertTrue(runtime.tickDecay(warrior(), base + 7_000));
-		assertEquals(3, runtime.stacks(bulwark()));
-		assertTrue(runtime.tickDecay(warrior(), base + 8_000));
-		assertEquals(2, runtime.stacks(bulwark()));
+		assertEquals(0, runtime.stacks(bulwark()));
+		assertFalse(runtime.tickDecay(warrior(), base + 7_000));
 	}
 
 	@Test
@@ -158,9 +168,9 @@ class ConditionalPassiveStacksTest {
 	}
 
 	@Test
-	void capGraceAndDecayRateComeFromThePassiveNotFromThisModule() {
+	void capAndGraceComeFromThePassiveNotFromThisModule() {
 		ConditionalPassive swift = new ConditionalPassive("Swift", "on_land", 4, ClassRegistry.ARMOR,
-				Identifier.fromNamespaceAndPath("infusedclasses", "swift_armor"), 0.5, 2, 2);
+				Identifier.fromNamespaceAndPath("infusedclasses", "swift_armor"), 0.5, 2);
 		ClassDefinition def = withPassives(swift);
 		PlayerRuntime runtime = new PlayerRuntime();
 		long base = System.currentTimeMillis();
@@ -171,14 +181,14 @@ class ConditionalPassiveStacksTest {
 		assertEquals(4, runtime.stacks(swift)); // its own cap, not the ten Bulwark allows
 
 		assertFalse(runtime.tickDecay(def, base + 2_000)); // still inside its own two-second grace
-		assertTrue(runtime.tickDecay(def, base + 3_000)); // one second past grace, two per second
-		assertEquals(2, runtime.stacks(swift));
+		assertTrue(runtime.tickDecay(def, base + 3_000)); // past grace, every stack drops at once
+		assertEquals(0, runtime.stacks(swift));
 	}
 
 	@Test
 	void eachPassiveIsCountedSeparatelyAndOnlyForItsOwnTrigger() {
 		ConditionalPassive swift = new ConditionalPassive("Swift", "on_land", 4, ClassRegistry.ARMOR,
-				Identifier.fromNamespaceAndPath("infusedclasses", "swift_armor"), 0.5, 2, 2);
+				Identifier.fromNamespaceAndPath("infusedclasses", "swift_armor"), 0.5, 2);
 		ClassDefinition def = withPassives(bulwark(), swift);
 		PlayerRuntime runtime = new PlayerRuntime();
 		long base = System.currentTimeMillis();

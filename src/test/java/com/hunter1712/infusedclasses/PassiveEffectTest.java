@@ -59,8 +59,7 @@ class PassiveEffectTest {
 				speed,
 				Identifier.fromNamespaceAndPath("infusedclasses", "swift_speed"),
 				0.5,
-				3,
-				2);
+				3);
 
 		PassiveEffect.Modifier wanted = PassiveEffect.forStacks(swift, 3);
 

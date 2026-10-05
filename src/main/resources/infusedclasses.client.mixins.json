@@ -1,0 +1,12 @@
+{
+	"required": true,
+	"package": "com.hunter1712.infusedclasses.mixin.client",
+	"compatibilityLevel": "JAVA_21",
+	"environment": "client",
+	"mixins": [
+		"ContainerScreenAccess"
+	],
+	"injectors": {
+		"defaultRequire": 1
+	}
+}

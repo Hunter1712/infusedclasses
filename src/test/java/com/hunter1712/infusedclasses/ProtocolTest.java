@@ -13,14 +13,15 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class ProtocolTest {
 	@Test
-	void fourDistinctNamespacedChannels() {
+	void fiveDistinctNamespacedChannels() {
 		Set<Identifier> ids = new HashSet<>(Set.of(
 				SelectClassPayload.TYPE.id(),
 				OpenClassScreenPayload.TYPE.id(),
 				WarCryPayload.TYPE.id(),
-				ClassConfirmedPayload.TYPE.id()));
+				ClassConfirmedPayload.TYPE.id(),
+				PassiveStacksPayload.TYPE.id()));
 
-		assertEquals(4, ids.size());
+		assertEquals(5, ids.size());
 		for (Identifier id : ids) {
 			assertEquals(ClassPackets.MOD_ID, id.getNamespace());
 		}

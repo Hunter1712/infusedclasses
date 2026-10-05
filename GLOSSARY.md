@@ -61,7 +61,7 @@ The decision of what a conditional passive's picker copy says, generated from it
 cannot drift from behaviour. The card body uses the short form (`+1 armor per stack`); the tooltip
 uses the full form. Only the trigger the mod emits is described as an event ("Taking a hit
 grants 1 stack" for `on_hit_taken`); any other trigger reads as the bare trigger. Whole numbers read
-as `1`, not `1.0`, and the decay rate is pluralised (`1 stack`, `2 stacks`).
+as `1`, not `1.0`, and the drop reads as instant (`lose all stacks`).
 _Avoid_: description, lore text
 
 ### Classes, passives and stacks
@@ -83,17 +83,17 @@ _Avoid_: unavailable class, future class, hidden class
 
 **Conditional passive** (`ConditionalPassive`):
 A passive that earns stacks when a named trigger fires, rather than always being on. It carries its
-own numbers — stack cap, attribute, per-stack value, grace period, decay rate — and its picker copy
+own numbers — stack cap, attribute, per-stack value, grace period — and its picker copy
 is generated from those numbers so the copy cannot claim something the behaviour does not do.
 Bulwark, the Warrior passive, is `on_hit_taken`, max 10, `minecraft:armor` under
-`infusedclasses:bulwark_armor`, +1.0 per stack, 5s grace, 1 per second.
+`infusedclasses:bulwark_armor`, +1.0 per stack, 5s grace, all stacks drop at once after.
 _Avoid_: buff, stackable stat
 
 **Stack**:
 One earned increment of a conditional passive, counted per player and capped at that passive's
 maximum. Stacks are keyed by the passive definition, never by its name, so a passive is addressed
-by what it is rather than by what it is called. They decay after a grace period and are transient:
-they do not survive relog or respawn.
+by what it is rather than by what it is called. Past the grace period every stack drops
+at once, vanilla-style, and stacks are transient: they do not survive relog or respawn.
 _Avoid_: charge, level, rank
 
 **Cooldown** (`Cooldowns`):
@@ -132,11 +132,9 @@ belong to and the current time on each call, so it holds neither a clock nor a r
 choice, and it is owned per player by the server entry rather than stored on the player. Stacks live
 in definition-keyed maps with last-trigger timestamps: `stacks` reads one passive, `onTrigger` bumps
 every passive on the class whose trigger matches (unknown triggers, a missing class and trigger-less
-classes are inert, each bump re-stamps grace), `tickDecayMoved` ticks every passive on the class past its
-own grace at its own rate (`(now - last) / 1000` past grace, times decay per second), advancing
-the last-trigger clock by the stacks decayed so an overdue second is never recounted, and reports
-the set that moved (`tickDecay` is whether that set is non-empty). `clear` drops one class's
-stacks, `clearAll` drops everything, and the cooldown verbs (`warCryRemaining`, `tryUseWarCry`,
+classes are inert, each bump re-stamps grace), `tickDecayMoved` drops every stack of each
+passive on the class past its own grace, and reports the set that moved (`tickDecay` is
+whether that set is non-empty). `clear` drops one class's stacks, `clearAll` drops everything, and the cooldown verbs (`warCryRemaining`, `tryUseWarCry`,
 `resetCooldowns`) keep callers from reaching through the mutable object.
 _Avoid_: player state, live state, runtime (too generic on its own)
 
@@ -216,6 +214,23 @@ the colour and weight it carries, so nothing here reads what a line says. Cards 
 10 inner padding and a 20-high button.
 _Avoid_: card widget, draw helper
 
+**HUD row** (`PassiveHud.Row`):
+One effect-like row for a conditional passive holding stacks: a `Name <ROMAN>` title
+with stacks N reading as level N, a `+N armor` subline, the seconds-left grace countdown,
+the bar fraction draining that same grace, and the hidden flag.
+A pure decision: the overlay draws whatever it returns verbatim, as a vanilla HUD
+strip icon plus a vanilla-metric inventory box (`Name <ROMAN>`, `mm:ss`). No real
+effect is registered, so milk and clear never touch it.
+_Avoid_: effect, buff row
+
+**Client stacks store** (`ClientPassiveStacks`):
+The client's last synced stacks entries, one per passive, keyed by passive name. The
+name is the wire form of the definition key: definitions cannot cross the wire, so the
+signal carries names and the store files under them; the server runtime stays
+definition-keyed. The store ticks the countdown down locally between server messages,
+and every signal replaces the whole store, so a missing name clears instead of lingering.
+_Avoid_: client cache
+
 ### Protocol and commands
 
 **Select intent** (`SelectClassPayload`):
@@ -247,6 +262,14 @@ switch clears what the old class earned like the picker path does; `/class selec
 <player>` is testing-only and reopens the picker for GUI iteration without bypassing the
 locked-class check.
 _Avoid_: admin command, cheat
+
+**Stacks signal** (`PassiveStacksPayload`):
+The server's `infusedclasses:passive_stacks` signal: "these are the stacks now". Sent only
+when a passive's stack count changes — hit bump, decay tick that moved, class-switch and
+respawn clears — carrying one entry per passive: passive name, stacks, per-stack value,
+grace seconds, and millis-until-decay at send time. An empty list means clear. The client
+stores the last entries and interpolates the countdown; it never writes attributes.
+_Avoid_: stacks packet, sync packet
 
 ## Decisions
 

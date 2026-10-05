@@ -6,7 +6,7 @@ Warrior currently ships with flat attribute passives: +8 max health, +4 armor, +
 
 ## Solution
 
-Delete the old flat-stat passive pipeline entirely. Introduce a new conditional-passive model: each passive is event-triggered, accumulates up to a cap, decays after a grace period, and live-applies an attribute bonus proportional to current stacks. Start with one Warrior passive, "Bulwark": when Warrior takes damage, gain 1 armor stack; stacks apply +1 armor each up to 10; after 5 seconds without a new hit, lose 1 stack per second.
+Delete the old flat-stat passive pipeline entirely. Introduce a new conditional-passive model: each passive is event-triggered, accumulates up to a cap, decays after a grace period, and live-applies an attribute bonus proportional to current stacks. Start with one Warrior passive, "Bulwark": when Warrior takes damage, gain 1 armor stack; stacks apply +1 armor each up to 10; 5 seconds without a new hit drops every stack at once.
 
 ## User Stories
 
@@ -24,9 +24,9 @@ Delete the old flat-stat passive pipeline entirely. Introduce a new conditional-
 ## Implementation Decisions
 
 - Deep-clean removal: `Passive`, `ClassAttributes` (and its display/formatting helpers), `ClassApplier`, `ServerModifiers`, the `ModifierSink` seam, and passive-specific tests are deleted. `ClassDefinition` drops its `List<Passive>` field.
-- Replacement: `ClassDefinition` gains `List<ConditionalPassive> passives`. Record shape: `ConditionalPassive(String name, String trigger, int maxStacks, ResourceKey<Attribute> attribute, Identifier modifierId, double perStack, int graceSeconds, int decayPerSecond)` with `shortDesc()` and `fullDesc()` generated from those numbers, so the copy cannot drift from behaviour.
+- Replacement: `ClassDefinition` gains `List<ConditionalPassive> passives`. Record shape: `ConditionalPassive(String name, String trigger, int maxStacks, ResourceKey<Attribute> attribute, Identifier modifierId, double perStack, int graceSeconds)` with `shortDesc()` and `fullDesc()` generated from those numbers, so the copy cannot drift from behaviour.
 - Warrior's flat +8 health, +4 armor, +2 toughness, -10% speed are gone. Warrior becomes active-ability-only plus one conditional passive.
-- Warrior conditional passive is named `Bulwark`, trigger string `on_hit_taken`, effect `+1 armor` per stack, max 10 stacks. Decay rule: when no hit arrives for more than 5 seconds, lose 1 stack per second.
+- Warrior conditional passive is named `Bulwark`, trigger string `on_hit_taken`, effect `+1 armor` per stack, max 10 stacks. Decay rule: more than 5 seconds without a hit drops every stack at once.
 - Trigger evaluation is modeled around open-ended `String` keys. Only `on_hit_taken` is implemented now; unknown triggers are inert and ignored.
 - Stack state is transient per-player and held alongside the player's selected class state, not persisted to NBT.
 - The bonus is applied by a small helper that replaces the previous modifier on each stack change: value becomes `stacks * 1.0` on `minecraft:armor` with `ADD_VALUE`. This is a live attribute edit, not a persistent class stat.

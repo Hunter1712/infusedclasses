@@ -19,11 +19,12 @@ public final class PassiveApplier {
 	/**
 	 * One tick for one player: decay stacks, then make the attributes agree with the plan.
 	 * Idempotent: an attribute is only written when what is applied differs from what should be,
-	 * so the modifier is created once and left alone while the stacks hold still.
+	 * so the modifier is created once and left alone while the stacks hold still. Returns the
+	 * passives that moved, so callers never re-derive it.
 	 */
-	public static void apply(ServerPlayer player, ClassDefinition def, PlayerRuntime runtime, long now) {
+	public static Set<ConditionalPassive> apply(ServerPlayer player, ClassDefinition def, PlayerRuntime runtime, long now) {
 		if (def == null) {
-			return;
+			return Set.of();
 		}
 		Set<ConditionalPassive> moved = runtime.tickDecayMoved(def, now);
 		for (ConditionalPassive passive : def.passives()) {
@@ -34,6 +35,7 @@ public final class PassiveApplier {
 				}
 			}
 		}
+		return moved;
 	}
 
 	/**

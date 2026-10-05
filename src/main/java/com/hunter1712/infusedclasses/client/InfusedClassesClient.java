@@ -2,14 +2,18 @@ package com.hunter1712.infusedclasses.client;
 
 import com.hunter1712.infusedclasses.ClassConfirmedPayload;
 import com.hunter1712.infusedclasses.OpenClassScreenPayload;
+import com.hunter1712.infusedclasses.PassiveStacksPayload;
 import com.hunter1712.infusedclasses.SelectClassPayload;
 import com.hunter1712.infusedclasses.WarCryPayload;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
+import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
+import net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
+import net.minecraft.resources.Identifier;
 import com.mojang.blaze3d.platform.InputConstants;
 import org.lwjgl.glfw.GLFW;
 
@@ -24,6 +28,7 @@ public class InfusedClassesClient implements ClientModInitializer {
 						.execute(() -> context.client().setScreen(new ClassSelectScreen())));
 
 		// Picker closes only on server confirm, so a rejected pick stays open for retry.
+		// The confirm never touches the stacks store, so mid-fight rows survive it.
 		ClientPlayNetworking.registerGlobalReceiver(ClassConfirmedPayload.TYPE,
 				(ClassConfirmedPayload payload, ClientPlayNetworking.Context context) -> context.client()
 						.execute(() -> {
@@ -32,6 +37,14 @@ public class InfusedClassesClient implements ClientModInitializer {
 								mc.setScreen(null);
 							}
 						}));
+
+		ClientPlayNetworking.registerGlobalReceiver(PassiveStacksPayload.TYPE,
+				(PassiveStacksPayload payload, ClientPlayNetworking.Context context) -> context.client()
+						.execute(() -> ClientPassiveStacks.setAll(payload.entries(), System.currentTimeMillis())));
+
+		HudElementRegistry.attachElementAfter(VanillaHudElements.STATUS_EFFECTS,
+				Identifier.fromNamespaceAndPath("infusedclasses", "passive_hud"),
+				PassiveHudOverlay::render);
 
 		warCryKey = KeyBindingHelper.registerKeyBinding(new KeyMapping(
 				"key.infusedclasses.war_cry", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_R, KeyMapping.Category.GAMEPLAY));
@@ -46,7 +59,7 @@ public class InfusedClassesClient implements ClientModInitializer {
 		});
 	}
 
-	public static void pickClass(net.minecraft.resources.Identifier id) {
+	public static void pickClass(Identifier id) {
 		ClientPlayNetworking.send(new SelectClassPayload(id));
 	}
 }

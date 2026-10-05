@@ -24,7 +24,7 @@ class PlayerRuntimeDeepeningTest {
 	@Test
 	void decayedPassiveMovesWithoutTouchingIdleOne() {
 		ConditionalPassive swift = new ConditionalPassive("Swift", "on_land", 4, ClassRegistry.ARMOR,
-				Identifier.fromNamespaceAndPath("infusedclasses", "swift_armor"), 0.5, 2, 2);
+				Identifier.fromNamespaceAndPath("infusedclasses", "swift_armor"), 0.5, 2);
 		ClassDefinition def = withPassives(bulwark(), swift);
 		PlayerRuntime runtime = new PlayerRuntime();
 		long base = 1_000_000L;
@@ -43,7 +43,7 @@ class PlayerRuntimeDeepeningTest {
 	@Test
 	void clearDropsOnlyThatClassStacks() {
 		ConditionalPassive swift = new ConditionalPassive("Swift", "on_land", 4, ClassRegistry.ARMOR,
-				Identifier.fromNamespaceAndPath("infusedclasses", "swift_armor"), 0.5, 2, 2);
+				Identifier.fromNamespaceAndPath("infusedclasses", "swift_armor"), 0.5, 2);
 		ClassDefinition both = withPassives(bulwark(), swift);
 		PlayerRuntime runtime = new PlayerRuntime();
 		long base = 1_000_000L;
