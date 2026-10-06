@@ -126,7 +126,15 @@ on every alive hostile within 16 blocks (`RADIUS_BLOCKS`), on its own 60s lane. 
 no Bulwark cost — and pure debuff, no self buff. Decided in the trigger/fire gate-and-arm
 shape; the effect ids ride in the decision and the adapter resolves them, announces
 `War Cry!` in red, and writes the effects. Rejected presses leave the lane untouched.
+Like every cast, firing roots the caster briefly (see `Spellcast`).
 _Avoid_: damage button, second spender
+
+**Spellcast** (`Spellcast`):
+The casting commitment shared by every active: firing any ability lays a short heavy
+self-slow — Slowness III for 2s (`SLOW_TICKS`, `SLOW_AMPLIFIER`) — so casting roots you.
+Identical on all casts, one learnable rule; fizzles and rejects cost nothing, and the
+picker copy discloses it from these constants.
+_Avoid_: cast time, wind-up
 
 **Second Wind** (`SecondWindAbility`):
 The Warrior's Bulwark spender on `G`: heals `stacks * 1.0 HP` and consumes every Bulwark stack

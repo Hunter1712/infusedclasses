@@ -1,10 +1,16 @@
 package com.hunter1712.infusedclasses;
 
+import net.minecraft.core.Holder;
 import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.effect.MobEffect;
+import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.phys.Vec3;
 
 /**
@@ -19,9 +25,12 @@ public final class AbilityApplier {
 		if (result.healHp() > 0) {
 			player.heal(result.healHp());
 			if (player.level() instanceof ServerLevel level) {
-				Vec3 at = player.position();
+			Vec3 at = player.position();
 			heartPuff(level, at.x, at.y + 1.0, at.z);
 			}
+		}
+		if (result.kind() == SecondWindAbility.Kind.FIRED) {
+			applyCastSlow(player);
 		}
 		announce(player, result.announcement());
 	}
@@ -36,6 +45,16 @@ public final class AbilityApplier {
 			line = line.withStyle(announcement.style());
 		}
 		player.displayClientMessage(line, true);
+	}
+
+	/** Casting commitment: brief self-slow, identical on every active. Shared, not duplicated. */
+	static void applyCastSlow(ServerPlayer player) {
+		Holder<MobEffect> holder = player.registryAccess().lookupOrThrow(Registries.MOB_EFFECT)
+				.get(ResourceKey.create(Registries.MOB_EFFECT, Spellcast.SLOWNESS))
+				.orElse(null);
+		if (holder != null) {
+			player.addEffect(new MobEffectInstance(holder, Spellcast.SLOW_TICKS, Spellcast.SLOW_AMPLIFIER));
+		}
 	}
 
 	/** Hearts for the heal: forced past the particle limiter, so Minimal sees them too. Counts are manual-check only, not JUnit. */

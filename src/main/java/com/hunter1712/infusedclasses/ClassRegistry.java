@@ -66,12 +66,14 @@ public final class ClassRegistry {
 								WarCryAbility.NAME,
 								"Weakens and slows hostiles within " + (int) WarCryAbility.RADIUS_BLOCKS
 										+ " blocks for " + (WarCryAbility.EFFECT_TICKS / 20) + "s (R, "
-										+ (Cooldowns.WAR_CRY_MS / 1000) + "s)."),
+										+ (Cooldowns.WAR_CRY_MS / 1000) + "s). Roots you for "
+										+ (Spellcast.SLOW_TICKS / 20) + "s."),
 						new ClassDefinition.ActiveAbility(
 								SecondWindAbility.NAME,
 								"Heals " + SecondWindAbility.HP_PER_STACK
 										+ " HP per Bulwark stack, consumes stacks (G, "
-										+ (Cooldowns.SECOND_WIND_MS / 1000) + "s)."))));
+										+ (Cooldowns.SECOND_WIND_MS / 1000) + "s). Roots you for "
+										+ (Spellcast.SLOW_TICKS / 20) + "s."))));
 
 		register(new ClassDefinition(
 				Identifier.fromNamespaceAndPath("infusedclasses", "ranger"),

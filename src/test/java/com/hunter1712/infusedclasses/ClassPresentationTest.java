@@ -57,6 +57,7 @@ class ClassPresentationTest {
 		assertTrue(tooltip.contains("Active: Second Wind \u2014 Heals"));
 		assertTrue(tooltip.contains("(G, " + (Cooldowns.SECOND_WIND_MS / 1000) + "s)"));
 		assertTrue(tooltip.contains(SecondWindAbility.HP_PER_STACK + " HP per Bulwark stack"));
+		assertTrue(tooltip.contains("Roots you for " + (Spellcast.SLOW_TICKS / 20) + "s"));
 		assertTrue(tooltip.endsWith("Click to choose Warrior."));
 	}
 

@@ -35,6 +35,7 @@ public final class WarCryApplier {
 		if (result.kind() != WarCryAbility.Kind.FIRED) {
 			return;
 		}
+		AbilityApplier.applyCastSlow(player);
 		if (!(player.level() instanceof ServerLevel level)) {
 			return;
 		}
