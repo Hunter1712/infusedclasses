@@ -3,7 +3,6 @@ package com.hunter1712.infusedclasses;
 import net.minecraft.ChatFormatting;
 import net.minecraft.resources.Identifier;
 
-import java.util.Locale;
 /**
  * War Cry ability decisions. Pure: gating by active ability plus cooldown, and the
  * description of what the result makes the server entry do. No live player needed,
@@ -48,15 +47,14 @@ public final class WarCryAbility {
 
 		public static Result onCooldown(long remainingMs) {
 			// Unstyled on purpose: this line has never carried a colour of its own.
-			return new Result(Kind.ON_COOLDOWN, remainingMs, null,
-					new ChatLine(NAME + ": " + String.format(Locale.ROOT, "%.0fs", remainingMs / 1000.0), null));
+			return new Result(Kind.ON_COOLDOWN, remainingMs, null, ChatLine.cooldown(NAME, remainingMs));
 		}
 	}
 
 	private WarCryAbility() {
 	}
 
-	/** Fires when the current class carries the War Cry ability and is off cooldown. Read-only: firing advances the cooldown, and only the caller does that. */
+	/** Decides firing when the current class carries the War Cry ability and is off cooldown. Pure and read-only: only {@link #fire} arms the cooldown. */
 	public static Result trigger(ClassDefinition def, Cooldowns cooldowns, long now) {
 		if (def == null || !ClassRegistry.WARRIOR_ABILITY.equals(def.activeAbility())) {
 			return Result.wrongClass();

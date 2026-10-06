@@ -78,7 +78,7 @@ final class ServerEvents {
 				// Edge-triggered clock clear: a Warrior whose Strength died (milk, death, timeout)
 				// zeroes the row once, so banked ticks can never be resurrected by a later beacon.
 				if (ClassRegistry.WARRIOR_ABILITY.equals(def.activeAbility())
-						&& runtime.warCrySignal().pollLost(player.hasEffect(MobEffects.STRENGTH))) {
+						&& runtime.pollWarCryLost(player.hasEffect(MobEffects.STRENGTH))) {
 					ServerSignals.sendWarCry(player, 0);
 				}
 			}

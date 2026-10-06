@@ -58,7 +58,7 @@ public class InfusedClasses implements ModInitializer {
 		// The old stacks just dropped to zero: send both sides so no old row sticks around.
 		ServerSignals.sendStacksForSwitch(player, oldDef, newDef, runtime);
 		// A new class starts with no War Cry, so no old row sticks around either.
-		runtime.warCrySignal().clear();
+		runtime.clearWarCrySignal();
 		ServerSignals.sendWarCry(player, 0);
 	}
 
@@ -82,7 +82,7 @@ public class InfusedClasses implements ModInitializer {
 				attacker.getRandom().nextFloat()));
 		// The applier owns the effect and the puff; a true answer means the clock is worth sending.
 		if (AbilityApplier.applyExtension(attacker, victim, next)) {
-			runtime(attacker).warCrySignal().markSent();
+			runtime(attacker).markWarCrySent();
 			ServerSignals.sendWarCry(attacker, next);
 		}
 	}
@@ -112,7 +112,7 @@ public class InfusedClasses implements ModInitializer {
 					WarCryAbility.Result result = WarCryAbility.fire(classes.currentDefinition(), runtime(player), now);
 					AbilityApplier.apply(player, result);
 					if (result.kind() == WarCryAbility.Kind.FIRED) {
-						runtime(player).warCrySignal().markSent();
+						runtime(player).markWarCrySent();
 						ServerSignals.sendWarCry(player, WarCryAbility.EFFECT_TICKS);
 					}
 				}));

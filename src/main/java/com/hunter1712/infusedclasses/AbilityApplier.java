@@ -1,5 +1,6 @@
 package com.hunter1712.infusedclasses;
 
+import net.minecraft.core.Holder;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.core.particles.SimpleParticleType;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -8,6 +9,7 @@ import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundSource;
+import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.LivingEntity;
@@ -26,7 +28,7 @@ public final class AbilityApplier {
 		WarCryAbility.Outcome outcome = result.outcome();
 		if (outcome != null) {
 			BuiltInRegistries.MOB_EFFECT.get(outcome.effect()).ifPresent(effect ->
-					player.addEffect(new MobEffectInstance(effect, outcome.durationTicks(), outcome.amplifier())));
+					player.addEffect(warCryEffect(effect, outcome.durationTicks(), outcome.amplifier())));
 			if (player.level() instanceof ServerLevel level) {
 				BuiltInRegistries.SOUND_EVENT.getOptional(outcome.sound()).ifPresent(sound ->
 						level.playSound(null, player.blockPosition(), sound, SoundSource.PLAYERS, 1.0F, 1.0F));
@@ -60,12 +62,21 @@ public final class AbilityApplier {
 		if (nextTicks <= 0) {
 			return false;
 		}
-		attacker.addEffect(new MobEffectInstance(MobEffects.STRENGTH, nextTicks, WarCryAbility.EFFECT_AMPLIFIER));
+		attacker.addEffect(warCryEffect(MobEffects.STRENGTH, nextTicks, WarCryAbility.EFFECT_AMPLIFIER));
 		if (attacker.level() instanceof ServerLevel level) {
 			Vec3 at = victim.position();
 			critPuff(level, at.x, at.y + 1.0, at.z);
 		}
 		return true;
+	}
+
+	/**
+	 * War Cry's Strength without its vanilla box: the damage lives in the real effect (milk
+	 * clears it, beacons stack under it) while the War Cry row is the only display. Iconless
+	 * effects skip vanilla's HUD strip; the inventory list is filtered by the client mixin.
+	 */
+	private static MobEffectInstance warCryEffect(Holder<MobEffect> effect, int durationTicks, int amplifier) {
+		return new MobEffectInstance(effect, durationTicks, amplifier, false, true, false);
 	}
 
 	/** One announcement path for every ability result: null says nothing. */

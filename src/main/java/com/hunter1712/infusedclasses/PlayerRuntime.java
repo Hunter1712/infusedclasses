@@ -54,9 +54,17 @@ public final class PlayerRuntime {
 		cooldowns.reset();
 	}
 
-	/** The War Cry clock flag: marked on every signal, polled edge-triggered on effect loss. */
-	public WarCrySignal warCrySignal() {
-		return warCrySignal;
+	/** War Cry clock: marked on every signal, cleared on switch, polled edge-triggered on effect loss. */
+	public void markWarCrySent() {
+		warCrySignal.markSent();
+	}
+
+	public void clearWarCrySignal() {
+		warCrySignal.clear();
+	}
+
+	public boolean pollWarCryLost(boolean effectLive) {
+		return warCrySignal.pollLost(effectLive);
 	}
 
 	/** Current stacks for a passive, 0 when never triggered. */

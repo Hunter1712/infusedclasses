@@ -10,8 +10,8 @@
 - [x] `GLOSSARY.md` records `proc`, `Second Wind`, `War Cry extension` if those terms stick; docs touched only where behavior changed
 - [ ] In-game check via `gradle deployClient` plus `/class select <player>`: hold Strength II with charged swings, confirm per-victim rolls and indefinite upkeep while aggressive, and that death/milk/disengaging ends it
 - [ ] In-game check: Second Wind at 0 stacks prints `No Bulwark` and burns no cooldown; at 5/10 stacks heals 5/10 HP, drops armor to zero, and the Bulwark row clears; `R` and `G` cooldowns advance independently
-- [ ] In-game check: War Cry row shows seconds-left plus drain bar, updates on fire and every proc, never covers Bulwark, and the vanilla Strength icon remains alongside
-- [x] No balance changes beyond 25% / +2s / 1.0 HP-per-stack / 30s / 60s; no deterministic/pity procs, no soft caps, no vanilla-icon suppression
+- [ ] In-game check: War Cry row shows seconds-left plus drain bar, updates on fire and every proc, never covers Bulwark, and no vanilla Strength box shows alongside (iconless effect plus inventory filter)
+- [x] No balance changes beyond 25% / +2s / 1.0 HP-per-stack / 30s / 60s; no deterministic/pity procs, no soft caps
 
 ## Comments
 

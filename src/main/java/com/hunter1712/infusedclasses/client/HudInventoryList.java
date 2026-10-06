@@ -38,7 +38,10 @@ final class HudInventoryList {
 			return;
 		}
 		int maxW = room >= 120 ? room - 7 : 32;
-		int vanillaRows = mc.player.getActiveEffects().size();
+		// Shown effects only: iconless ones (War Cry's own Strength) are filtered from
+		// vanilla's list by the client mixin, so they must not reserve a row here either.
+		int vanillaRows = (int) mc.player.getActiveEffects().stream()
+				.filter(effect -> effect.showIcon()).count();
 		int step = vanillaRows > 5 ? 132 / (vanillaRows - 1) : ROW_STEP;
 		Font font = mc.font;
 		int row = 0;

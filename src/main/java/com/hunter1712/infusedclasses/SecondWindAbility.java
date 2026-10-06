@@ -2,8 +2,6 @@ package com.hunter1712.infusedclasses;
 
 import net.minecraft.ChatFormatting;
 
-import java.util.Locale;
-
 /**
  * Second Wind decisions: the Warrior's Bulwark spender on {@code G}. Pure, mirroring the
  * {@link WarCryAbility} trigger/fire gate-and-arm shape: heals {@code stacks * HP_PER_STACK} and
@@ -41,8 +39,7 @@ public final class SecondWindAbility {
 
 		public static Result onCooldown(long remainingMs) {
 			// Unstyled on purpose, like the War Cry cooldown line.
-			return new Result(Kind.ON_COOLDOWN, remainingMs, 0, false,
-					new ChatLine(NAME + ": " + String.format(Locale.ROOT, "%.0fs", remainingMs / 1000.0), null));
+			return new Result(Kind.ON_COOLDOWN, remainingMs, 0, false, ChatLine.cooldown(NAME, remainingMs));
 		}
 
 		public static Result noBulwark() {
@@ -75,7 +72,7 @@ public final class SecondWindAbility {
 		return null;
 	}
 
-	/** Fires for Warriors off cooldown holding stacks. Zero stacks fizzles before the cooldown is even read. Read-only: firing advances the cooldown, and only the caller does that. */
+	/** Decides firing for Warriors off cooldown holding stacks. Zero stacks fizzles before the cooldown is even read. Pure and read-only: only {@link #fire} arms the cooldown. */
 	public static Result trigger(ClassDefinition def, Cooldowns cooldowns, int stacks, long now) {
 		if (def == null || !ClassRegistry.WARRIOR_ABILITY.equals(def.activeAbility())) {
 			return Result.wrongClass();
