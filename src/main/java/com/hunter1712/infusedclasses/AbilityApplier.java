@@ -20,7 +20,7 @@ public final class AbilityApplier {
 			player.heal(result.healHp());
 			if (player.level() instanceof ServerLevel level) {
 				Vec3 at = player.position();
-				critPuff(level, at.x, at.y + 1.0, at.z);
+			heartPuff(level, at.x, at.y + 1.0, at.z);
 			}
 		}
 		announce(player, result.announcement());
@@ -38,8 +38,8 @@ public final class AbilityApplier {
 		player.displayClientMessage(line, true);
 	}
 
-	/** One small crit puff. Counts are manual-check only, not JUnit. */
-	private static void critPuff(ServerLevel level, double x, double y, double z) {
-		level.sendParticles(ParticleTypes.CRIT, x, y, z, 8, 0.3, 0.3, 0.3, 0.2);
+	/** Hearts for the heal: forced past the particle limiter, so Minimal sees them too. Counts are manual-check only, not JUnit. */
+	private static void heartPuff(ServerLevel level, double x, double y, double z) {
+		level.sendParticles(ParticleTypes.HEART, true, true, x, y, z, 12, 0.3, 0.3, 0.3, 0.0);
 	}
 }

@@ -59,8 +59,8 @@ public final class WarCryApplier {
 							holder, WarCryAbility.EFFECT_TICKS, WarCryAbility.AMPLIFIER));
 				}
 				Vec3 over = mob.position();
-				level.sendParticles(ParticleTypes.ANGRY_VILLAGER,
-						over.x, over.y + mob.getBbHeight() + 0.3, over.z, 6, 0.3, 0.2, 0.3, 0.0);
+				level.sendParticles(ParticleTypes.ANGRY_VILLAGER, true, true,
+						over.x, over.y + mob.getBbHeight() + 0.3, over.z, 12, 0.3, 0.2, 0.3, 0.0);
 			}
 		}
 	}
