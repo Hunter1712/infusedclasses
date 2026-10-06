@@ -24,3 +24,7 @@ re-checks behind the decision. Effect, puff, and heal land in `AbilityApplier` (
 path, one puff helper); consume moved to `PassiveApplier.consumeStacks`, which reports whether
 the stacks signal went stale. Jar deployed; in-game feel (keybinds, farm upkeep, puff size) is
 the 05 manual pass.
+
+Triage: stays ready-for-human, narrowed — the attacker-hook / War Cry half is moot (deleted,
+spec superseded). The Second Wind half (G keybind, heal fire path) survives and is still
+covered by `SecondWindAbilityTest`; only its in-game press remains for a human.

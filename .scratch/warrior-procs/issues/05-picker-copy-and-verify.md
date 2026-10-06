@@ -22,3 +22,7 @@ binding; glossary gains proc / Second Wind / War Cry extension / war cry signal,
 terms plus updated Cooldown/Class/intent entries, no new ADR (decide-then-apply already covers
 it). `gradle deployClient` succeeded — jar live in the 1.21.11 instance mods. The three in-game
 checks above need a human in the client: `/class select <player>` to reopen the picker.
+
+Triage: stays ready-for-human, narrowed — the two War Cry checks are moot (deleted, spec
+superseded). The Second Wind check (0-stack fizzle, 5/10-stack heal, independent cooldowns)
+is still open, plus the Berserk feel pass (damage/speed rising as HP falls, picker copy).

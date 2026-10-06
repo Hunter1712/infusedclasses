@@ -4,7 +4,7 @@
 
 **Blocked by:** 03 (needs the fire and proc emission points)
 
-**Status:** ready-for-human
+**Status:** wontfix
 
 - [x] New S2C payload (e.g. war-cry expiry ticks) registered in `InfusedClasses.registerPayloads`; emitted on War Cry fire and on every extension proc, plus cleared on class switch / respawn / effect loss so no stale row sticks around
 - [x] Pure row decision mirroring `PassiveHud.rowFor` shape: title `War Cry`, seconds-left from expiry ticks, drain-bar fraction, hidden flag at zero/missing; covered in plain JUnit with no player or graphics object
@@ -22,3 +22,6 @@ edge-triggered when a signalled effect dies (flag + `pollWarCrySignalLost` on th
 in booleans), so banked ticks cannot be resurrected by a later beacon; the overlay's effect gate
 stays as a backstop. Switch/respawn zero the signal; respawn skips the packet for classless
 players. `ProtocolTest` updated 5 → 7 channels. Overlay pixels are the 05 manual pass.
+
+Triage: wontfix — the War Cry row, signal, and store were deleted, spec superseded;
+the in-game verification never happened and is now moot.

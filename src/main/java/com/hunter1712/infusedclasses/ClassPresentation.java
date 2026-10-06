@@ -59,10 +59,8 @@ public final class ClassPresentation {
 			return "Coming soon";
 		}
 		StringBuilder sb = new StringBuilder();
-		if (!def.passives().isEmpty()) {
-			for (ConditionalPassive p : def.passives()) {
-				sb.append("Passive: ").append(p.name()).append(" \u2014 ").append(p.fullDesc()).append(" ");
-			}
+		for (ConditionalPassive p : def.passives()) {
+			sb.append("Passive: ").append(p.name()).append(" \u2014 ").append(p.fullDesc()).append(" ");
 		}
 		for (HpScaledPassive hp : def.hpPassives()) {
 			sb.append("Passive: ").append(hp.name()).append(" \u2014 ").append(hp.fullDesc()).append(" ");

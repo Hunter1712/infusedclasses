@@ -4,7 +4,7 @@
 
 **Blocked by:** None (can start immediately)
 
-**Status:** ready-for-human
+**Status:** wontfix
 
 - [x] New pure decision, e.g. `WarCryExtension.extendRoll(hasEffect, remainingTicks, roll)` or equivalent shape, with rate `0.25` and extension `+40 ticks (2s)` as named constants next to the decision
 - [x] Fires only when charged plus effect live plus `roll < 0.25`; uncharged swings, missing/cleared Strength (milk/death), non-Warrior attackers, and rolls at/above rate all yield no extension
@@ -18,3 +18,6 @@
 Implemented as `WarCryExtension` (`PROC_RATE`, `EXTEND_TICKS`) returning the new duration or 0;
 signature carries `isWarrior`/`fullyCharged` in as well so the adapter never re-checks behind the
 decision. `WarCryExtensionTest`: 4 tests green, full suite 110 pass, jar deployed via `gradle deployClient`.
+
+Triage: wontfix — War Cry and its extension were deleted, spec superseded; the in-game
+verification never happened and is now moot.
