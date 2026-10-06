@@ -107,6 +107,26 @@ public final class PassiveApplier {
 		return consumeStacks(player, runtime, SecondWindAbility.bulwarkOf(def));
 	}
 
+	/**
+	 * Builder grant by class: War Cry's shout credits the priced passive, capped and
+	 * grace re-stamped through the trigger path. The single path for the builder, mirroring
+	 * {@link #consumeSpent}: the entry forwards the result, never resolves. Only a fired
+	 * shout grants; rejects and a missing priced passive do nothing.
+	 */
+	public static void grantWarCryStacks(PlayerRuntime runtime, ClassDefinition def,
+			WarCryAbility.Result result, long now) {
+		if (result == null || result.kind() != WarCryAbility.Kind.FIRED) {
+			return;
+		}
+		ConditionalPassive bulwark = SecondWindAbility.bulwarkOf(def);
+		if (bulwark == null) {
+			return;
+		}
+		for (int i = 0; i < WarCryAbility.BUILDER_STACKS; i++) {
+			runtime.onTrigger(def, bulwark.trigger(), now);
+		}
+	}
+
 	/** Writes exactly what the decision names, and only when it differs from what is applied. */
 	private static void write(ServerPlayer player, PassiveEffect.Modifier wanted) {
 		AttributeInstance instance = attribute(player, wanted.attribute());

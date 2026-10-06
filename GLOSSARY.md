@@ -35,15 +35,16 @@ _Avoid_: passive system, stat updater
 
 **Applied outcome** (`SecondWindAbility.Result`):
 The description an ability decision returns of what should be applied to the player: how much
-to heal, whether to consume stacks, plus the announcement that goes with it.
+to shield, whether to consume stacks, plus the announcement that goes with it.
 `trigger` gates read-only; `fire` gates and arms the transient runtime's cooldown together, so no
 caller can fire without arming, and rejected presses leave the cooldown untouched.
 _Avoid_: ability result (that is the whole decision, gating included), buff
 
 **Ability applier** (`AbilityApplier`):
-The adapter that is the single place an ability outcome reaches the player: heal, crit puff,
-plus the announcement on the action bar. A result with nothing to restore and nothing
-to say — a wrong-class, on-cooldown or no-stacks press — heals nothing.
+The adapter that is the single place an ability outcome reaches the player: shield, hearts
+puff,
+plus the announcement on the action bar. A result with nothing to grant and nothing
+to say — a wrong-class, on-cooldown or no-stacks press — shields nothing.
 _Avoid_: ability system, effect handler
 
 **Chat line** (`ChatLine`):
@@ -71,9 +72,9 @@ active). A class is data: it carries no player and no state of its own. Warrior 
 playable class today: `Warrior`, War Cry (`infusedclasses:war_cry`) plus Second Wind
 (`infusedclasses:second_wind`), accent `0xFFE74C3C`,
 tagline `Frontline bruiser`, actives `War Cry` and `Second Wind`, with picker copy
-generated from the ability constants (debuff shout; Bulwark spender), so the numbers
-cannot drift from behaviour. Warrior also carries the one always-on stat: a flat +20 max-health
-bonus (40 HP total), kept because the comeback kit needs time to matter.
+generated from the ability constants (builder shout; Bulwark spender), so the numbers
+cannot drift from behaviour. Warrior carries no max-health bonus (vanilla 20 HP): the
+Second Wind shield below is the survival tool, and it leaves live HP low so Berserk stays hot.
 _Avoid_: character class definition, build
 
 **Locked class**:
@@ -92,15 +93,17 @@ _Avoid_: ability (ambiguous with the gating id), spell
 A passive that earns stacks when a named trigger fires, rather than always being on. It carries its
 own numbers — stack cap, attribute, per-stack value, grace period — and its picker copy
 is generated from those numbers so the copy cannot claim something the behaviour does not do.
-Bulwark, the Warrior passive, is `on_hit_taken`, max 10, `minecraft:armor` under
-`infusedclasses:bulwark_armor`, +1.0 per stack, 5s grace, all stacks drop at once after.
+Bulwark, the Warrior passive, is `on_hit_taken`, max 20, `minecraft:armor` under
+`infusedclasses:bulwark_armor`, +0.5 per stack, 5s grace, all stacks drop at once after.
 _Avoid_: buff, stackable stat
 
 **Berserk** (`HpScaledPassive`):
 The Warrior's HP-scaled passive pair: missing HP maps to stepped buckets, 10% per step
-over 10 steps, each step adding a fixed bonus — +0.4 attack damage
-(`infusedclasses:berserk_damage`, max +4.0) and +0.08 attack speed
-(`infusedclasses:berserk_speed`, max +0.8). Zero bonus at full HP, max at 0 HP.
+over 10 steps, each step adding a fixed bonus — +0.3 attack damage
+(`infusedclasses:berserk_damage`, max +3.0) and +0.05 attack speed
+(`infusedclasses:berserk_speed`, max +0.5). Zero bonus at full HP, max at 0 HP.
+The pair reads as one `Berserk` line on the card and tooltip (see `HpScaledPassive.group`),
+with both bonus descs joined, so one passive never looks like two.
 Recomputed every tick from live HP, transient and never saved; Second Wind spends
 Bulwark only and never touches it.
 _Avoid_: rage, frenzy stacks
@@ -114,16 +117,16 @@ _Avoid_: charge, level, rank
 
 **Cooldown** (`Cooldowns`):
 The wait after an ability fires, tracked per player, also transient. Two independent lanes:
-War Cry's 60s (`WAR_CRY_MS`) and Second Wind's 60s (`SECOND_WIND_MS`): `useWarCry` /
+War Cry's 20s (`WAR_CRY_MS`) and Second Wind's 60s (`SECOND_WIND_MS`): `useWarCry` /
 `useSecondWind` fire only when their own lane is ready and report it, `warCryRemaining` /
 `secondWindRemaining` report the milliseconds left, 0 when ready, `reset` readies both again
 for class switch and respawn.
 _Avoid_: timer
 
 **War Cry** (`WarCryAbility`):
-The Warrior's debuff shout on `R`: lays Weakness I and Slowness I for 8s (`EFFECT_TICKS`)
-on every alive hostile within 16 blocks (`RADIUS_BLOCKS`), on its own 60s lane. Free —
-no Bulwark cost — and pure debuff, no self buff. Decided in the trigger/fire gate-and-arm
+The Warrior's debuff shout on `R`: lays Weakness I and Slowness I for 10s (`EFFECT_TICKS`)
+on every alive hostile within 16 blocks (`RADIUS_BLOCKS`), on its own 20s lane. Builder —
+firing also grants 5 Bulwark (`BUILDER_STACKS`), the opener that starts the spend loop. Decided in the trigger/fire gate-and-arm
 shape; the effect ids ride in the decision and the adapter resolves them, announces
 `War Cry!` in red, and writes the effects. Rejected presses leave the lane untouched.
 Like every cast, firing roots the caster briefly (see `Spellcast`).
@@ -137,8 +140,11 @@ picker copy discloses it from these constants.
 _Avoid_: cast time, wind-up
 
 **Second Wind** (`SecondWindAbility`):
-The Warrior's Bulwark spender on `G`: heals `stacks * 1.0 HP` and consumes every Bulwark stack
-plus the armor they granted, on its own 60s lane. Zero stacks fizzles with a `No Bulwark` line
+The Warrior's Bulwark spender on `G`: grants `stacks * 1.0 HP` absorption for 10s
+(`ABSORPTION_TICKS`, via the vanilla effect, trimmed to the exact shield) and consumes
+every Bulwark stack
+plus the armor they granted, on its own 60s lane. Live HP is untouched, so Berserk stays
+hot through the shield. Zero stacks fizzles with a `No Bulwark` line
 and arms nothing. Decided in the trigger/fire gate-and-arm shape; the spent passive is
 found by trigger rather than position, and the consume flag rides in the result: the entry asks
 the passive applier to consume that passive.
@@ -211,7 +217,8 @@ _Avoid_: magic string
 
 **Card lines** (`ClassPresentation.cardLinesFor`):
 The lines a card body shows. A locked class shows `Passives: ???`, `Active: ???` and `COMING SOON`;
-an unlocked class shows a `Passives` header plus each passive's name, or the
+an unlocked class shows a `Passives` header plus each passive's name (HP-scaled passives
+sharing a group read as one line), or the
 header plus `No passives yet` when it has none, and an `Active` header plus one line per active.
 _Avoid_: card text
 

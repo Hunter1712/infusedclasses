@@ -5,7 +5,7 @@ package com.hunter1712.infusedclasses;
  * can be asserted on directly.
  */
 public final class Cooldowns {
-	public static final long WAR_CRY_MS = 60_000L;
+	public static final long WAR_CRY_MS = 20_000L;
 	public static final long SECOND_WIND_MS = 60_000L;
 
 	private long warCryReadyAt;
@@ -25,7 +25,7 @@ public final class Cooldowns {
 		return Math.max(0L, warCryReadyAt - now);
 	}
 
-	/** @return true if the heal fired; false if still on cooldown. */
+	/** @return true if Second Wind fired; false if still on cooldown. */
 	public boolean useSecondWind(long now) {
 		if (now < secondWindReadyAt) {
 			return false;

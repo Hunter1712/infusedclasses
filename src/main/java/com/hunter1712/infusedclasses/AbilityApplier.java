@@ -20,19 +20,18 @@ public final class AbilityApplier {
 	private AbilityApplier() {
 	}
 
-	/** A Second Wind result: heals what the decision names, puffs the healed player, then says what it says. Consume (stacks, armor) is the passive applier's job. */
-	public static void apply(ServerPlayer player, SecondWindAbility.Result result) {
-		if (result.healHp() > 0) {
-			player.heal(result.healHp());
-			if (player.level() instanceof ServerLevel level) {
-			Vec3 at = player.position();
-			heartPuff(level, at.x, at.y + 1.0, at.z);
-			}
-		}
+	/**
+	 * A Second Wind result: shields what the decision names, puffs the shielded player, then says what it says.
+	 * Consume (stacks, armor) is the passive applier's job. Reports whether the shield landed: nothing owed
+	 * means nothing lost, so the entry only spends stacks on a real shield.
+	 */
+	public static boolean apply(ServerPlayer player, SecondWindAbility.Result result) {
+		boolean shielded = result.shieldHp() <= 0 || shield(player, result.shieldHp());
 		if (result.kind() == SecondWindAbility.Kind.FIRED) {
 			applyCastSlow(player);
 		}
 		announce(player, result.announcement());
+		return shielded;
 	}
 
 	/** One announcement path for every ability result: null says nothing. Shared with the War Cry adapter. */
@@ -49,16 +48,43 @@ public final class AbilityApplier {
 
 	/** Casting commitment: brief self-slow, identical on every active. Shared, not duplicated. */
 	static void applyCastSlow(ServerPlayer player) {
-		Holder<MobEffect> holder = player.registryAccess().lookupOrThrow(Registries.MOB_EFFECT)
-				.get(ResourceKey.create(Registries.MOB_EFFECT, Spellcast.SLOWNESS))
-				.orElse(null);
+		Holder<MobEffect> holder = effectHolder(player, Spellcast.SLOWNESS);
 		if (holder != null) {
 			player.addEffect(new MobEffectInstance(holder, Spellcast.SLOW_TICKS, Spellcast.SLOW_AMPLIFIER));
 		}
 	}
 
-	/** Hearts for the heal: forced past the particle limiter, so Minimal sees them too. Counts are manual-check only, not JUnit. */
+	/** Hearts for the shield: forced past the particle limiter, so Minimal sees them too. Counts are manual-check only, not JUnit. */
 	private static void heartPuff(ServerLevel level, double x, double y, double z) {
 		level.sendParticles(ParticleTypes.HEART, true, true, x, y, z, 12, 0.3, 0.3, 0.3, 0.0);
+	}
+
+	/**
+	 * The shield itself: the vanilla effect carries the 10s window and raises the absorption cap
+	 * by 4 HP/level, then the exact amount trims its quantized grant to stacks x 1.0
+	 * (amplifierFor guarantees the grant always reaches). Reports whether it landed: a missing
+	 * effect must never cost stacks. Expiry needs no scheduler: it drops the effect's cap
+	 * modifier and vanilla clamps the pool to the new max (0), so the shield dies with the icon.
+	 */
+	private static boolean shield(ServerPlayer player, float shieldHp) {
+		Holder<MobEffect> holder = effectHolder(player, SecondWindAbility.ABSORPTION);
+		if (holder == null) {
+			return false;
+		}
+		player.addEffect(new MobEffectInstance(holder, SecondWindAbility.ABSORPTION_TICKS,
+				SecondWindAbility.amplifierFor(shieldHp)));
+		player.setAbsorptionAmount(shieldHp);
+		if (player.level() instanceof ServerLevel level) {
+			Vec3 at = player.position();
+			heartPuff(level, at.x, at.y + 1.0, at.z);
+		}
+		return true;
+	}
+
+	/** One holder lookup for every effect this adapter lays: ids ride in decisions, holders resolve here. */
+	private static Holder<MobEffect> effectHolder(ServerPlayer player, Identifier id) {
+		return player.registryAccess().lookupOrThrow(Registries.MOB_EFFECT)
+				.get(ResourceKey.create(Registries.MOB_EFFECT, id))
+				.orElse(null);
 	}
 }

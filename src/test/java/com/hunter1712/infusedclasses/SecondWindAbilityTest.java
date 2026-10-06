@@ -30,10 +30,19 @@ class SecondWindAbilityTest {
 	}
 
 	@Test
-	void healMathAtZeroFiveTen() {
-		assertEquals(0, SecondWindAbility.healAmount(0));
-		assertEquals(5.0F, SecondWindAbility.healAmount(5));
-		assertEquals(10.0F, SecondWindAbility.healAmount(10));
+	void shieldMathAtZeroFiveTwenty() {
+		assertEquals(0, SecondWindAbility.shieldAmount(0));
+		assertEquals(5.0F, SecondWindAbility.shieldAmount(5));
+		assertEquals(20.0F, SecondWindAbility.shieldAmount(20));
+	}
+
+	@Test
+	void shieldWindowAndAmplifierCoverTheStacks() {
+		assertEquals(200, SecondWindAbility.ABSORPTION_TICKS);
+		assertEquals(0, SecondWindAbility.amplifierFor(1.0F));
+		assertEquals(0, SecondWindAbility.amplifierFor(4.0F));
+		assertEquals(1, SecondWindAbility.amplifierFor(5.0F));
+		assertEquals(4, SecondWindAbility.amplifierFor(20.0F));
 	}
 
 	@Test
@@ -53,12 +62,12 @@ class SecondWindAbilityTest {
 	}
 
 	@Test
-	void fireHealsAndArmsOnlyItsOwnLane() {
+	void fireShieldsAndArmsOnlyItsOwnLane() {
 		PlayerRuntime runtime = withStacks(5, 0);
 		SecondWindAbility.Result result = SecondWindAbility.fire(warriorDef(), runtime, 0);
 
 		assertEquals(SecondWindAbility.Kind.FIRED, result.kind());
-		assertEquals(5.0F, result.healHp());
+		assertEquals(5.0F, result.shieldHp());
 		assertTrue(result.consume());
 		assertEquals(Cooldowns.SECOND_WIND_MS, runtime.secondWindRemaining(0));
 	}
@@ -70,7 +79,7 @@ class SecondWindAbilityTest {
 
 		assertEquals(SecondWindAbility.Kind.NO_BULWARK, result.kind());
 		assertEquals("No Bulwark", result.announcement().text());
-		assertEquals(0, result.healHp());
+		assertEquals(0, result.shieldHp());
 		assertFalse(result.consume());
 		assertEquals(0, runtime.secondWindRemaining(0));
 	}

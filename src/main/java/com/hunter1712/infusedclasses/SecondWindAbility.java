@@ -1,19 +1,25 @@
 package com.hunter1712.infusedclasses;
 
 import net.minecraft.ChatFormatting;
+import net.minecraft.resources.Identifier;
 
 /**
  * Second Wind decisions: the Warrior's Bulwark spender on {@code G}. Pure gate-and-arm shape:
- * heals {@code stacks * HP_PER_STACK} and
- * consumes every Bulwark stack, on its own 60s lane. Zero stacks
+ * shields {@code stacks * HP_PER_STACK} absorption HP for {@code ABSORPTION_TICKS} and
+ * consumes every Bulwark stack, on its own 60s lane. Live HP is untouched, so Berserk
+ * stays hot while the shield holds. Zero stacks
  * fizzles with a {@code No Bulwark} line and arms nothing. The consume plan rides in the result
  * ({@link Result#consume()}): the entry asks the passive applier to consume the trigger-found
  * passive.
  */
 public final class SecondWindAbility {
 	public static final String NAME = "Second Wind";
-	/** HP per Bulwark stack: half a heart each, 10 HP at full stacks. */
+	/** Absorption HP per Bulwark stack: half a heart each, 20 HP at full stacks. */
 	public static final float HP_PER_STACK = 1.0F;
+	/** Shield window in ticks: 10 seconds, carried by the vanilla absorption effect. */
+	public static final int ABSORPTION_TICKS = 200;
+	/** Vanilla absorption effect id, resolved by the adapter; its 4 HP/level cap and expiry carry the window. */
+	public static final Identifier ABSORPTION = Identifier.withDefaultNamespace("absorption");
 
 	public enum Kind {
 		FIRED,
@@ -23,13 +29,13 @@ public final class SecondWindAbility {
 	}
 
 	/**
-	 * What firing should do. Heal is 0 when nothing is restored; consume is true only on fire,
+	 * What firing should do. Shield is 0 when nothing is granted; consume is true only on fire,
 	 * telling the adapter to drop every Bulwark stack; announcement is null only for wrong-class
 	 * presses, which stay silent.
 	 */
-	public record Result(Kind kind, long remainingMs, float healHp, boolean consume, ChatLine announcement) {
-		public static Result fired(float healHp) {
-			return new Result(Kind.FIRED, 0, healHp, true,
+	public record Result(Kind kind, long remainingMs, float shieldHp, boolean consume, ChatLine announcement) {
+		public static Result fired(float shieldHp) {
+			return new Result(Kind.FIRED, 0, shieldHp, true,
 					new ChatLine(NAME + "!", ChatFormatting.GREEN));
 		}
 
@@ -51,9 +57,18 @@ public final class SecondWindAbility {
 	private SecondWindAbility() {
 	}
 
-	/** HP for a stack count: half a heart per stack, nothing at zero or below. */
-	public static float healAmount(int stacks) {
+	/** Shield HP for a stack count: half a heart per stack, nothing at zero or below. */
+	public static float shieldAmount(int stacks) {
 		return stacks <= 0 ? 0 : stacks * HP_PER_STACK;
+	}
+
+	/**
+	 * Effect amplifier covering a shield: vanilla grants 4 HP per level, so the smallest level
+	 * whose grant reaches the shield (1 HP → 0, 5 HP → 1, 20 HP → 4). The adapter trims the
+	 * grant down to the exact shield right after, so the icon never promises less than it holds.
+	 */
+	public static int amplifierFor(float shieldHp) {
+		return Math.max(0, (int) Math.ceil(shieldHp / 4.0F) - 1);
 	}
 
 	/**
@@ -84,7 +99,7 @@ public final class SecondWindAbility {
 		if (remaining > 0) {
 			return Result.onCooldown(remaining);
 		}
-		return Result.fired(healAmount(stacks));
+		return Result.fired(shieldAmount(stacks));
 	}
 
 	/**

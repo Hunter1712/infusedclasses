@@ -7,20 +7,22 @@ import java.util.List;
 
 /**
  * War Cry decisions: the Warrior's debuff shout on {@code R}. Pure gate-and-arm shape
- * mirroring Second Wind, minus the stacks: a free shout on its own 60s lane laying
- * Weakness I and Slowness I on hostiles in radius. Effect ids, not holders, so the
+ * mirroring Second Wind, minus the stacks: a builder shout on its own 20s lane laying
+ * Weakness I and Slowness I on hostiles in radius, plus 5 Bulwark. Effect ids, not holders, so the
  * decision stays bootstrap-free and the adapter resolves them.
  */
 public final class WarCryAbility {
 	public static final String NAME = "War Cry";
 	/** Shout radius in blocks: about one chunk. */
 	public static final double RADIUS_BLOCKS = 16.0;
-	/** Debuff window in ticks: 8 seconds. */
-	public static final int EFFECT_TICKS = 160;
+	/** Debuff window in ticks: 10 seconds. */
+	public static final int EFFECT_TICKS = 200;
 	public static final Identifier WEAKNESS = Identifier.withDefaultNamespace("weakness");
 	public static final Identifier SLOWNESS = Identifier.withDefaultNamespace("slowness");
 	/** Amplifier for both effects: level I. */
 	public static final int AMPLIFIER = 0;
+	/** Bulwark credited on a fired shout: the opener seeds what hits build and G spends. */
+	public static final int BUILDER_STACKS = 5;
 
 	/** The shout's payload, fixed: Weakness I plus Slowness I for the window. Ticks and
 	 * amplifier are shared constants, so the effects travel as bare ids. */

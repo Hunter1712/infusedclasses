@@ -3,7 +3,7 @@
 	"id": "infusedclasses",
 	"version": "${version}",
 	"name": "Infused Classes",
-	"description": "Character classes for Minecraft. Start as a Warrior: Second Wind heal plus Bulwark armor when taking hits.",
+	"description": "Character classes for Minecraft. Start as a Warrior: War Cry opener, Bulwark armor when taking hits, Second Wind shield to spend it.",
 	"authors": ["hunter1712"],
 	"license": "MIT",
 	"environment": "*",

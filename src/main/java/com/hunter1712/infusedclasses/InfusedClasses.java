@@ -78,6 +78,8 @@ public class InfusedClasses implements ModInitializer {
 					PlayerRuntime runtime = runtime(player);
 					WarCryAbility.Result result = WarCryAbility.fire(def, runtime, now);
 					WarCryApplier.apply(player, result);
+					// The shout builds what the spender spends: the grant resolves in the applier.
+					PassiveApplier.grantWarCryStacks(runtime, def, result, now);
 				}));
 
 		ServerPlayNetworking.registerGlobalReceiver(SecondWindPayload.TYPE, (payload, context) -> context.server()
@@ -88,9 +90,9 @@ public class InfusedClasses implements ModInitializer {
 					ClassDefinition def = classes.currentDefinition();
 					PlayerRuntime runtime = runtime(player);
 					SecondWindAbility.Result result = SecondWindAbility.fire(def, runtime, now);
-					AbilityApplier.apply(player, result);
-					// The adapter consumes only the priced passive.
-					if (result.consume()) {
+					boolean shielded = AbilityApplier.apply(player, result);
+					// The adapter consumes only the priced passive, and only when the shield landed.
+					if (result.consume() && shielded) {
 						PassiveApplier.consumeSpent(player, runtime, def);
 					}
 				}));

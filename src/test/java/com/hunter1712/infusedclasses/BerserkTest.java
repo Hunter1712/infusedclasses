@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -59,24 +60,24 @@ class BerserkTest {
 
 	@Test
 	void bonusIsBucketTimesPerStep() {
-		assertEquals(2.0, PassiveEffect.forBucket(damage(), 5).amount());
-		assertEquals(4.0, PassiveEffect.forBucket(damage(), 10).amount());
-		assertEquals(0.4, PassiveEffect.forBucket(speed(), 5).amount());
-		assertEquals(0.8, PassiveEffect.forBucket(speed(), 10).amount());
+		assertEquals(1.5, PassiveEffect.forBucket(damage(), 5).amount());
+		assertEquals(3.0, PassiveEffect.forBucket(damage(), 10).amount());
+		assertEquals(0.25, PassiveEffect.forBucket(speed(), 5).amount());
+		assertEquals(0.5, PassiveEffect.forBucket(speed(), 10).amount());
 	}
 
 	@Test
 	void bonusNeverExceedsTheCap() {
-		assertEquals(4.0, PassiveEffect.forBucket(damage(), 11).amount());
-		assertEquals(0.8, PassiveEffect.forBucket(speed(), 99).amount());
+		assertEquals(3.0, PassiveEffect.forBucket(damage(), 11).amount());
+		assertEquals(0.5, PassiveEffect.forBucket(speed(), 99).amount());
 	}
 
 	@Test
 	void healingShrinksTheBonus() {
 		assertEquals(5, HpScaledPassive.bucket(10, 20));
 		assertEquals(1, HpScaledPassive.bucket(18, 20));
-		assertEquals(2.0, PassiveEffect.forBucket(damage(), 5).amount());
-		assertEquals(0.4, PassiveEffect.forBucket(damage(), 1).amount());
+		assertEquals(1.5, PassiveEffect.forBucket(damage(), 5).amount());
+		assertEquals(0.3, PassiveEffect.forBucket(damage(), 1).amount());
 	}
 
 	@Test
@@ -96,22 +97,23 @@ class BerserkTest {
 
 		assertEquals(2, pair.size());
 		assertEquals("Berserk Damage", pair.get(0).name());
-		assertEquals(0.4, pair.get(0).perStep());
+		assertEquals("Berserk", pair.get(0).group());
+		assertEquals(0.3, pair.get(0).perStep());
 		assertEquals("Berserk Speed", pair.get(1).name());
-		assertEquals(0.08, pair.get(1).perStep());
+		assertEquals(0.05, pair.get(1).perStep());
 
 		ConditionalPassive bulwark = warrior().passives().get(0);
 		assertEquals(1, warrior().passives().size());
 		assertEquals("Bulwark", bulwark.name());
 		assertEquals(ConditionalPassive.ON_HIT_TAKEN, bulwark.trigger());
-		assertEquals(10, bulwark.maxStacks());
+		assertEquals(20, bulwark.maxStacks());
 	}
 
 	@Test
 	void copyIsGeneratedFromTheNumbers() {
-		assertEquals("Each 10% missing HP grants +0.4 attack damage (max +4 at 0 HP).",
+		assertEquals("Each 10% missing HP grants +0.3 attack damage (max +3 at 0 HP).",
 				damage().fullDesc());
-		assertEquals("Each 10% missing HP grants +0.08 attack speed (max +0.8 at 0 HP).",
+		assertEquals("Each 10% missing HP grants +0.05 attack speed (max +0.5 at 0 HP).",
 				speed().fullDesc());
 	}
 
@@ -120,12 +122,12 @@ class BerserkTest {
 		List<ClassPresentation.CardLine> lines = ClassPresentation.cardLinesFor(warrior());
 		List<String> names = lines.stream().map(ClassPresentation.CardLine::text).toList();
 
-		assertTrue(names.contains("Berserk Damage"));
-		assertTrue(names.contains("Berserk Speed"));
+		assertTrue(names.contains("Berserk"));
+		assertFalse(names.contains("Berserk Damage"));
+		assertFalse(names.contains("Berserk Speed"));
 
 		String tooltip = ClassPresentation.tooltipFor(warrior());
-		assertTrue(tooltip.contains("Passive: Berserk Damage \u2014 " + damage().fullDesc()));
-		assertTrue(tooltip.contains("Passive: Berserk Speed \u2014 " + speed().fullDesc()));
+		assertTrue(tooltip.contains("Passive: Berserk \u2014 " + damage().fullDesc() + " " + speed().fullDesc()));
 	}
 
 	@Test

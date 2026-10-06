@@ -32,11 +32,11 @@ class ConditionalPassiveStacksTest {
 		PlayerRuntime runtime = new PlayerRuntime();
 		long base = System.currentTimeMillis();
 
-		for (int i = 0; i < 15; i++) {
+		for (int i = 0; i < 25; i++) {
 			runtime.onTrigger(warrior(), "on_hit_taken", base);
 		}
 
-		assertEquals(10, runtime.stacks(bulwark()));
+		assertEquals(20, runtime.stacks(bulwark()));
 	}
 
 	@Test
@@ -178,7 +178,7 @@ class ConditionalPassiveStacksTest {
 		for (int i = 0; i < 6; i++) {
 			runtime.onTrigger(def, "on_land", base);
 		}
-		assertEquals(4, runtime.stacks(swift)); // its own cap, not the ten Bulwark allows
+		assertEquals(4, runtime.stacks(swift)); // its own cap, not the twenty Bulwark allows
 
 		assertTrue(runtime.tickDecayMoved(def, base + 2_000).isEmpty()); // still inside its own two-second grace
 		assertFalse(runtime.tickDecayMoved(def, base + 3_000).isEmpty()); // past grace, every stack drops at once

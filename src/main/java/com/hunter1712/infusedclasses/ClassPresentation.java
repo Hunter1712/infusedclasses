@@ -1,7 +1,9 @@
 package com.hunter1712.infusedclasses;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Pure presentation for class cards and tooltips. One seam for all renderers.
@@ -62,8 +64,11 @@ public final class ClassPresentation {
 		for (ConditionalPassive p : def.passives()) {
 			sb.append("Passive: ").append(p.name()).append(" \u2014 ").append(p.fullDesc()).append(" ");
 		}
-		for (HpScaledPassive hp : def.hpPassives()) {
-			sb.append("Passive: ").append(hp.name()).append(" \u2014 ").append(hp.fullDesc()).append(" ");
+		for (Map.Entry<String, List<HpScaledPassive>> entry : groupedHp(def).entrySet()) {
+			sb.append("Passive: ").append(entry.getKey()).append(" \u2014 ");
+			for (HpScaledPassive hp : entry.getValue()) {
+				sb.append(hp.fullDesc()).append(" ");
+			}
 		}
 		for (ClassDefinition.ActiveAbility a : def.actives()) {
 			sb.append("Active: ").append(a.name()).append(" \u2014 ").append(a.desc()).append(" ");
@@ -72,7 +77,7 @@ public final class ClassPresentation {
 		return sb.toString();
 	}
 
-	/** Lines shown in the card body: Passives header + one line per passive, then Active header + one line per active. */
+	/** Lines shown in the card body: Passives header + one line per passive (one per HP-scaled family), then Active header + one line per active. */
 	public static List<CardLine> cardLinesFor(ClassDefinition def) {
 		List<CardLine> lines = new ArrayList<>();
 		if (def.locked()) {
@@ -86,8 +91,8 @@ public final class ClassPresentation {
 			for (ConditionalPassive p : def.passives()) {
 				lines.add(new CardLine(p.name(), LineKind.PASSIVE));
 			}
-			for (HpScaledPassive hp : def.hpPassives()) {
-				lines.add(new CardLine(hp.name(), LineKind.PASSIVE));
+			for (String group : groupedHp(def).keySet()) {
+				lines.add(new CardLine(group, LineKind.PASSIVE));
 			}
 		} else {
 			lines.add(new CardLine("No passives yet", LineKind.PASSIVE));
@@ -99,6 +104,15 @@ public final class ClassPresentation {
 			}
 		}
 		return lines;
+	}
+
+	/** HP-scaled passives read as one entry per family, in first-appearance order. */
+	private static Map<String, List<HpScaledPassive>> groupedHp(ClassDefinition def) {
+		Map<String, List<HpScaledPassive>> groups = new LinkedHashMap<>();
+		for (HpScaledPassive hp : def.hpPassives()) {
+			groups.computeIfAbsent(hp.group(), k -> new ArrayList<>()).add(hp);
+		}
+		return groups;
 	}
 
 	/** Accent color for card top strip (grey for locked). */

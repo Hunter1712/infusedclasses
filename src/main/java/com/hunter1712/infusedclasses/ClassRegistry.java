@@ -41,23 +41,25 @@ public final class ClassRegistry {
 				List.of(new ConditionalPassive(
 						"Bulwark",
 						ConditionalPassive.ON_HIT_TAKEN,
-						10,
+						20,
 						ARMOR,
 						Identifier.fromNamespaceAndPath(ClassPackets.MOD_ID, "bulwark_armor"),
-						1.0,
+						0.5,
 						5)),
 				List.of(
 						new HpScaledPassive(
 								"Berserk Damage",
 								ATTACK_DAMAGE,
 								Identifier.fromNamespaceAndPath(ClassPackets.MOD_ID, "berserk_damage"),
-								0.4),
+								0.3,
+								"Berserk"),
 						new HpScaledPassive(
 								"Berserk Speed",
 								ATTACK_SPEED,
 								Identifier.fromNamespaceAndPath(ClassPackets.MOD_ID, "berserk_speed"),
-								0.08)),
-				20.0,
+								0.05,
+								"Berserk")),
+				0.0,
 				List.of(WAR_CRY_ABILITY, SECOND_WIND_ABILITY),
 				0xFFE74C3C,
 				"Frontline bruiser",
@@ -66,12 +68,14 @@ public final class ClassRegistry {
 								WarCryAbility.NAME,
 								"Weakens and slows hostiles within " + (int) WarCryAbility.RADIUS_BLOCKS
 										+ " blocks for " + (WarCryAbility.EFFECT_TICKS / 20) + "s (R, "
-										+ (Cooldowns.WAR_CRY_MS / 1000) + "s). Roots you for "
+										+ (Cooldowns.WAR_CRY_MS / 1000) + "s). Grants "
+										+ WarCryAbility.BUILDER_STACKS + " Bulwark. Roots you for "
 										+ (Spellcast.SLOW_TICKS / 20) + "s."),
 						new ClassDefinition.ActiveAbility(
 								SecondWindAbility.NAME,
-								"Heals " + SecondWindAbility.HP_PER_STACK
-										+ " HP per Bulwark stack, consumes stacks (G, "
+								"Shields " + SecondWindAbility.HP_PER_STACK
+										+ " HP per Bulwark stack for " + (SecondWindAbility.ABSORPTION_TICKS / 20)
+										+ "s, consumes stacks (G, "
 										+ (Cooldowns.SECOND_WIND_MS / 1000) + "s). Roots you for "
 										+ (Spellcast.SLOW_TICKS / 20) + "s."))));
 

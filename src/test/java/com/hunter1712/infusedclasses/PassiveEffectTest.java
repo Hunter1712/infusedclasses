@@ -38,7 +38,7 @@ class PassiveEffectTest {
 
 		assertEquals(ClassRegistry.ARMOR, wanted.attribute());
 		assertEquals(Identifier.fromNamespaceAndPath("infusedclasses", "bulwark_armor"), wanted.modifierId());
-		assertEquals(1.0, wanted.amount());
+		assertEquals(0.5, wanted.amount());
 	}
 
 	@Test
@@ -71,7 +71,7 @@ class PassiveEffectTest {
 	@Test
 	void stacksWriteTheirModifier() {
 		assertTrue(PassiveEffect.planFor(BULWARK, 3, false) instanceof PassiveEffect.Plan.Write write
-				&& write.wanted().amount() == 3.0);
+				&& write.wanted().amount() == 1.5);
 	}
 
 	@Test

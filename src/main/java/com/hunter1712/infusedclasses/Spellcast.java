@@ -9,7 +9,7 @@ import net.minecraft.resources.Identifier;
  */
 public final class Spellcast {
 	public static final Identifier SLOWNESS = Identifier.withDefaultNamespace("slowness");
-	/** Root window in ticks: 1 second, inside the shout's 8s and gone long before any lane. */
+	/** Root window in ticks: 1 second, inside the shout's 10s and gone long before any lane. */
 	public static final int SLOW_TICKS = 20;
 	/** Amplifier for the root: Slowness III — planted feet, still mobile. */
 	public static final int SLOW_AMPLIFIER = 2;

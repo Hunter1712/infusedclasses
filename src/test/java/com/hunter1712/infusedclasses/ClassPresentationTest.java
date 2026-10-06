@@ -54,7 +54,7 @@ class ClassPresentationTest {
 		assertTrue(tooltip.contains("Passive: Bulwark \u2014 " + bulwark.fullDesc()));
 		assertTrue(tooltip.contains("Active: War Cry \u2014 Weakens and slows hostiles"));
 		assertTrue(tooltip.contains("(R, " + (Cooldowns.WAR_CRY_MS / 1000) + "s)"));
-		assertTrue(tooltip.contains("Active: Second Wind \u2014 Heals"));
+		assertTrue(tooltip.contains("Active: Second Wind \u2014 Shields"));
 		assertTrue(tooltip.contains("(G, " + (Cooldowns.SECOND_WIND_MS / 1000) + "s)"));
 		assertTrue(tooltip.contains(SecondWindAbility.HP_PER_STACK + " HP per Bulwark stack"));
 		assertTrue(tooltip.contains("Roots you for " + (Spellcast.SLOW_TICKS / 20) + "s"));
@@ -103,27 +103,23 @@ class ClassPresentationTest {
 		assertEquals(ClassPresentation.LineKind.PASSIVE, lines.get(1).kind());
 		assertEquals(0xFFBDBDBD, lines.get(1).style().color());
 		assertFalse(lines.get(1).style().bold());
-		assertEquals("Berserk Damage", lines.get(2).text());
+		assertEquals("Berserk", lines.get(2).text());
 		assertEquals(ClassPresentation.LineKind.PASSIVE, lines.get(2).kind());
 		assertEquals(0xFFBDBDBD, lines.get(2).style().color());
 		assertFalse(lines.get(2).style().bold());
-		assertEquals("Berserk Speed", lines.get(3).text());
-		assertEquals(ClassPresentation.LineKind.PASSIVE, lines.get(3).kind());
-		assertEquals(0xFFBDBDBD, lines.get(3).style().color());
-		assertFalse(lines.get(3).style().bold());
 		// Active section
-		assertEquals("Active", lines.get(4).text());
-		assertEquals(ClassPresentation.LineKind.ABILITY_HEADER, lines.get(4).kind());
-		assertEquals(0xFFFFFFFF, lines.get(4).style().color());
-		assertTrue(lines.get(4).style().bold());
-		assertEquals("War Cry", lines.get(5).text());
+		assertEquals("Active", lines.get(3).text());
+		assertEquals(ClassPresentation.LineKind.ABILITY_HEADER, lines.get(3).kind());
+		assertEquals(0xFFFFFFFF, lines.get(3).style().color());
+		assertTrue(lines.get(3).style().bold());
+		assertEquals("War Cry", lines.get(4).text());
+		assertEquals(ClassPresentation.LineKind.ABILITY, lines.get(4).kind());
+		assertEquals(0xFF7ED6FF, lines.get(4).style().color());
+		assertFalse(lines.get(4).style().bold());
+		assertEquals("Second Wind", lines.get(5).text());
 		assertEquals(ClassPresentation.LineKind.ABILITY, lines.get(5).kind());
 		assertEquals(0xFF7ED6FF, lines.get(5).style().color());
 		assertFalse(lines.get(5).style().bold());
-		assertEquals("Second Wind", lines.get(6).text());
-		assertEquals(ClassPresentation.LineKind.ABILITY, lines.get(6).kind());
-		assertEquals(0xFF7ED6FF, lines.get(6).style().color());
-		assertFalse(lines.get(6).style().bold());
 	}
 
 	@Test

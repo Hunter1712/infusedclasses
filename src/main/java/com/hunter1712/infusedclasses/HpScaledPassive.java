@@ -13,12 +13,15 @@ import net.minecraft.world.entity.ai.attributes.Attribute;
  * @param attribute which attribute the bucket adds to, as a registry key rather than a live holder
  * @param modifierId identifier the passive's modifier is written under
  * @param perStep what one step (10% missing HP) contributes to that attribute
+ * @param group the family this reads as on the card and tooltip: passives sharing
+ * a group render as one line with their picker copy joined, so a pair never reads as two passives
  */
 public record HpScaledPassive(
 		String name,
 		ResourceKey<Attribute> attribute,
 		Identifier modifierId,
-		double perStep
+		double perStep,
+		String group
 ) {
 	/** Missing-HP steps: 10% each, 10 total, zero bonus at full HP, max at 0 HP. */
 	public static final int STEPS = 10;

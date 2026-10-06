@@ -34,8 +34,8 @@ class ClassRegistryTest {
 	}
 
 	@Test
-	void warriorDoublesMaxHealthWhileLockedCarriesNone() {
-		assertEquals(20.0, ClassRegistry.byId(ClassRegistry.WARRIOR).maxHealthBonus());
+	void warriorCarriesNoHealthBonusWhileLockedCarriesNone() {
+		assertEquals(0.0, ClassRegistry.byId(ClassRegistry.WARRIOR).maxHealthBonus());
 
 		for (ClassDefinition def : ClassRegistry.all()) {
 			if (def.locked()) {
@@ -52,7 +52,7 @@ class ClassRegistryTest {
 		ConditionalPassive bulwark = passives.get(0);
 		assertEquals("Bulwark", bulwark.name());
 		assertEquals("on_hit_taken", bulwark.trigger());
-		assertEquals(10, bulwark.maxStacks());
+		assertEquals(20, bulwark.maxStacks());
 		assertFalse(bulwark.fullDesc().isBlank());
 	}
 
@@ -60,7 +60,7 @@ class ClassRegistryTest {
 	void warriorPassiveCopySaysWhatItDoesToday() {
 		ConditionalPassive bulwark = ClassRegistry.byId(ClassRegistry.WARRIOR).passives().get(0);
 
-		assertEquals("Taking a hit grants 1 stack (max 10). Each stack adds +1 armor. "
+		assertEquals("Taking a hit grants 1 stack (max 20). Each stack adds +0.5 armor. "
 				+ "After 5s without a hit, lose all stacks.", bulwark.fullDesc());
 	}
 
