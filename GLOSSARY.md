@@ -71,7 +71,8 @@ active). A class is data: it carries no player and no state of its own. Warrior 
 playable class today: `Warrior`, Second Wind (`infusedclasses:second_wind`), accent `0xFFE74C3C`,
 tagline `Frontline bruiser`, actives `Second Wind` only, with picker copy
 generated from the ability constants (Bulwark spender), so the numbers
-cannot drift from behaviour.
+cannot drift from behaviour. Warrior also carries the one always-on stat: a flat +20 max-health
+bonus (40 HP total), kept because the comeback kit needs time to matter.
 _Avoid_: character class definition, build
 
 **Locked class**:

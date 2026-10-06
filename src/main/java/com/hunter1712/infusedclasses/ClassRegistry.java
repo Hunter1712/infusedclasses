@@ -25,6 +25,10 @@ public final class ClassRegistry {
 			ResourceKey.create(Registries.ATTRIBUTE, Identifier.withDefaultNamespace("attack_damage"));
 	public static final ResourceKey<Attribute> ATTACK_SPEED =
 			ResourceKey.create(Registries.ATTRIBUTE, Identifier.withDefaultNamespace("attack_speed"));
+	public static final ResourceKey<Attribute> MAX_HEALTH =
+			ResourceKey.create(Registries.ATTRIBUTE, Identifier.withDefaultNamespace("max_health"));
+	public static final Identifier BONUS_HEALTH_ID =
+			Identifier.fromNamespaceAndPath(ClassPackets.MOD_ID, "bonus_health");
 
 	private static final Map<Identifier, ClassDefinition> BY_ID = new LinkedHashMap<>();
 
@@ -52,6 +56,7 @@ public final class ClassRegistry {
 								ATTACK_SPEED,
 								Identifier.fromNamespaceAndPath(ClassPackets.MOD_ID, "berserk_speed"),
 								0.08)),
+				20.0,
 				SECOND_WIND_ABILITY,
 				0xFFE74C3C,
 				"Frontline bruiser",
@@ -68,6 +73,7 @@ public final class ClassRegistry {
 				true,
 				List.of(),
 				List.of(),
+				0.0,
 				null,
 				0xFF2ECC71,
 				"Wilds archer",
@@ -79,6 +85,7 @@ public final class ClassRegistry {
 				true,
 				List.of(),
 				List.of(),
+				0.0,
 				null,
 				0xFF9B59B6,
 				"Arcane burst",
@@ -90,7 +97,8 @@ public final class ClassRegistry {
 
 	private static void register(ClassDefinition d) {
 		if (d.locked()) {
-			if (d.activeAbility() != null || !d.passives().isEmpty() || !d.hpPassives().isEmpty()) {
+			if (d.activeAbility() != null || !d.passives().isEmpty() || !d.hpPassives().isEmpty()
+					|| d.maxHealthBonus() != 0) {
 				throw new IllegalArgumentException("Locked class " + d.id() + " must carry no ability and no passives");
 			}
 			if (!d.actives().isEmpty()) {

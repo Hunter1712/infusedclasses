@@ -34,6 +34,17 @@ class ClassRegistryTest {
 	}
 
 	@Test
+	void warriorDoublesMaxHealthWhileLockedCarriesNone() {
+		assertEquals(20.0, ClassRegistry.byId(ClassRegistry.WARRIOR).maxHealthBonus());
+
+		for (ClassDefinition def : ClassRegistry.all()) {
+			if (def.locked()) {
+				assertEquals(0.0, def.maxHealthBonus(), def.id() + " locked must carry no health bonus");
+			}
+		}
+	}
+
+	@Test
 	void warriorCarriesBulwarkConditionalPassive() {
 		List<ConditionalPassive> passives = ClassRegistry.byId(ClassRegistry.WARRIOR).passives();
 

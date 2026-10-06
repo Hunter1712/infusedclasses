@@ -19,7 +19,7 @@ class PlayerRuntimeDeepeningTest {
 
 	private static ClassDefinition withPassives(ConditionalPassive... passives) {
 		return new ClassDefinition(Identifier.fromNamespaceAndPath("infusedclasses", "test"), "Test", false,
-				List.of(passives), List.of(), null, 0, "", List.of());
+				List.of(passives), List.of(), 0.0, null, 0, "", List.of());
 	}
 
 	@Test

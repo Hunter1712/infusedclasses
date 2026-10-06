@@ -36,6 +36,13 @@ class BerserkTest {
 	}
 
 	@Test
+	void bucketsScaleWithTheBiggerPool() {
+		assertEquals(0, HpScaledPassive.bucket(40, 40));
+		assertEquals(5, HpScaledPassive.bucket(20, 40));
+		assertEquals(10, HpScaledPassive.bucket(0, 40));
+	}
+
+	@Test
 	void bucketsClampPastTheEnds() {
 		assertEquals(0, HpScaledPassive.bucket(25, 20));
 		assertEquals(10, HpScaledPassive.bucket(-3, 20));

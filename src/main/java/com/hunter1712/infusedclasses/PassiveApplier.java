@@ -45,6 +45,15 @@ public final class PassiveApplier {
 				remove(player, hp.attribute(), hp.modifierId());
 			}
 		}
+		// Bonus pool: flat max-HP per class, Warrior-only today. The write early-out
+		// covers no-op ticks; a zero bonus removes, so the tick self-heals within one
+		// tick of any switch — no onClassChanged handling needed.
+		if (def.maxHealthBonus() > 0) {
+			write(player, new PassiveEffect.Modifier(
+					ClassRegistry.MAX_HEALTH, ClassRegistry.BONUS_HEALTH_ID, def.maxHealthBonus()));
+		} else {
+			remove(player, ClassRegistry.MAX_HEALTH, ClassRegistry.BONUS_HEALTH_ID);
+		}
 	}
 
 	/**

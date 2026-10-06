@@ -224,6 +224,7 @@ class ClassPresentationTest {
 				customId, "Custom", false,
 				List.of(),
 				List.of(),
+				0.0,
 				ClassRegistry.SECOND_WIND_ABILITY,
 				0xFFFFFF, "tag",
 				List.of(new ClassDefinition.ActiveAbility("Ability line", "Does a thing.")));

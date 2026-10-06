@@ -43,13 +43,13 @@ class SecondWindAbilityTest {
 		ConditionalPassive bulwark = ClassRegistry.byId(ClassRegistry.WARRIOR).passives().get(0);
 		ClassDefinition shuffled = new ClassDefinition(
 				Identifier.fromNamespaceAndPath("infusedclasses", "test"), "Test", false,
-				List.of(swift, bulwark), List.of(), ClassRegistry.SECOND_WIND_ABILITY, 0, "", List.of());
+				List.of(swift, bulwark), List.of(), 0.0, ClassRegistry.SECOND_WIND_ABILITY, 0, "", List.of());
 
 		assertEquals(bulwark, SecondWindAbility.bulwarkOf(shuffled));
 		assertNull(SecondWindAbility.bulwarkOf(null));
 		assertNull(SecondWindAbility.bulwarkOf(new ClassDefinition(
 				Identifier.fromNamespaceAndPath("infusedclasses", "empty"), "Empty", false,
-				List.of(), List.of(), ClassRegistry.SECOND_WIND_ABILITY, 0, "", List.of())));
+				List.of(), List.of(), 0.0, ClassRegistry.SECOND_WIND_ABILITY, 0, "", List.of())));
 	}
 
 	@Test

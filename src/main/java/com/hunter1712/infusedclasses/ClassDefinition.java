@@ -4,13 +4,14 @@ import net.minecraft.resources.Identifier;
 
 import java.util.List;
 
-/** A character class: id, display name, playable yet, conditional passives, HP-scaled passives, active ability id, picker presentation. */
+/** A character class: id, display name, playable yet, conditional passives, HP-scaled passives, bonus max health, active ability id, picker presentation. */
 public record ClassDefinition(
 		Identifier id,
 		String displayName,
 		boolean locked,
 		List<ConditionalPassive> passives,
 		List<HpScaledPassive> hpPassives,
+		double maxHealthBonus,
 		Identifier activeAbility,
 		int accentColor,
 		String tagline,
