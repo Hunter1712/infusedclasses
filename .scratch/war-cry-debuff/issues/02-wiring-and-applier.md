@@ -17,3 +17,7 @@ One javap catch: no class-based scan overload exists in this mapping, so the ada
 
 Review follow-up: holders now resolve once per shout (not per mob), and the `Debuff`
 record collapsed to bare ids since ticks/amplifier are shared constants.
+
+Feel fix: fired shouts now play the ravager roar at the caster (even on whiffs) and puff
+angry-villager particles over each debuffed mob. Adapter-only, hardcoded like the heal's
+crit puff — counts and volume are manual-check, not JUnit.

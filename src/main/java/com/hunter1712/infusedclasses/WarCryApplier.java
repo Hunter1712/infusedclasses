@@ -1,15 +1,20 @@
 package com.hunter1712.infusedclasses;
 
 import net.minecraft.core.Holder;
+import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.monster.Monster;
 import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.Vec3;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -24,12 +29,19 @@ public final class WarCryApplier {
 	private WarCryApplier() {
 	}
 
-	/** A fired shout: say it, then debuff the pack. Anything unfired has nothing to apply. */
+	/** A fired shout: say it, roar, then debuff the pack. Anything unfired has nothing to apply. */
 	public static void apply(ServerPlayer player, WarCryAbility.Result result) {
 		if (result.kind() != WarCryAbility.Kind.FIRED) {
 			return;
 		}
 		AbilityApplier.announce(player, result.announcement());
+		if (!(player.level() instanceof ServerLevel level)) {
+			return;
+		}
+		// The press must land even on a whiff: sound always, particles per victim.
+		Vec3 at = player.position();
+		level.playSound(null, at.x, at.y, at.z,
+				SoundEvents.RAVAGER_ROAR, SoundSource.PLAYERS, 1.0F, 1.0F);
 		// Holders resolve once per shout, not per mob: the registry answers the same twice.
 		List<Holder<MobEffect>> holders = new ArrayList<>();
 		for (Identifier id : WarCryAbility.DEBUFF_EFFECTS) {
@@ -46,6 +58,9 @@ public final class WarCryApplier {
 					mob.addEffect(new MobEffectInstance(
 							holder, WarCryAbility.EFFECT_TICKS, WarCryAbility.AMPLIFIER));
 				}
+				Vec3 over = mob.position();
+				level.sendParticles(ParticleTypes.ANGRY_VILLAGER,
+						over.x, over.y + mob.getBbHeight() + 0.3, over.z, 6, 0.3, 0.2, 0.3, 0.0);
 			}
 		}
 	}
