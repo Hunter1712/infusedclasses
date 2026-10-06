@@ -49,17 +49,17 @@ The adapter that is the single place an ability outcome reaches the player: effe
 to say — a wrong-class or on-cooldown press — is a no-op.
 _Avoid_: ability system, effect handler
 
-**Chat line** (`WarCryAbility.ChatLine`):
+**Chat line** (`ChatLine`):
 The text and the chat style an ability decision returns for the server entry to send verbatim,
 including the remaining-seconds message for a press on cooldown. War Cry's fire line is `War Cry!`
 in red; its cooldown line is `War Cry: %.0fs` with no style of its own, rounded with `%.0f`. Its
 wording, rounding and locale are decided with the ability, not formatted by whoever sends it.
 _Avoid_: message, notification
 
-**Picker copy** (`ConditionalPassive.shortDesc`, `fullDesc`):
+**Picker copy** (`ConditionalPassive.fullDesc`):
 The decision of what a conditional passive's picker copy says, generated from its own numbers so it
-cannot drift from behaviour. The card body uses the short form (`+1 armor per stack`); the tooltip
-uses the full form. Only the trigger the mod emits is described as an event ("Taking a hit
+cannot drift from behaviour. The card body shows the passive name only; the tooltip uses the full
+form. Only the trigger the mod emits is described as an event ("Taking a hit
 grants 1 stack" for `on_hit_taken`); any other trigger reads as the bare trigger. Whole numbers read
 as `1`, not `1.0`, and the drop reads as instant (`lose all stacks`).
 _Avoid_: description, lore text
@@ -70,8 +70,9 @@ _Avoid_: description, lore text
 A playable archetype, registered once with its id, display name, locked flag, passives, active
 ability id, accent colour, tagline, ability name and ability description. A class is data: it carries
 no player and no state of its own. Warrior is the one playable class today: `Warrior`, War Cry
-(`infusedclasses:war_cry`), accent `0xFFE74C3C`, tagline `Frontline bruiser`, ability `War Cry`
-with `Gives Strength II for 8s`.
+(`infusedclasses:war_cry`), accent `0xFFE74C3C`, tagline `Frontline bruiser`, abilities
+`War Cry + Second Wind` with the picker copy generated from the ability constants (Strength II
+window plus Bulwark spender), so the numbers cannot drift from behaviour.
 _Avoid_: character class definition, build
 
 **Locked class**:
@@ -97,10 +98,34 @@ at once, vanilla-style, and stacks are transient: they do not survive relog or r
 _Avoid_: charge, level, rank
 
 **Cooldown** (`Cooldowns`):
-The wait after an ability fires, tracked per player, also transient. War Cry's is 30s
-(`WAR_CRY_MS`): `useWarCry` fires only when ready and reports it, `warCryRemaining` reports the
-milliseconds left, 0 when ready, `reset` readies it again for class switch and respawn.
+The wait after an ability fires, tracked per player, also transient. Two independent lanes:
+War Cry's 30s (`WAR_CRY_MS`) and Second Wind's 60s (`SECOND_WIND_MS`): `useWarCry` /
+`useSecondWind` fire only when their own lane is ready and report it, `warCryRemaining` /
+`secondWindRemaining` report the milliseconds left, 0 when ready, `reset` readies both again
+for class switch and respawn.
 _Avoid_: timer
+
+**War Cry extension** (`WarCryExtension`):
+The proc that grows War Cry's Strength window: a fully-charged Warrior melee hit while War Cry's
+own Strength is live (amplifier 1, never a beacon's) rolls 25% (`PROC_RATE`) per eligible victim —
+players and hostile mobs only — to add 2s (`EXTEND_TICKS`) to the remaining duration,
+with no cap. Decided purely as the new duration or 0 for no proc, from one `Hit` carrying every
+gate; the live effect duration is the source of truth, never a timestamp.
+_Avoid_: refresh, extend buff
+
+**Second Wind** (`SecondWindAbility`):
+The Warrior's Bulwark spender on `G`: heals `stacks * 1.0 HP` and consumes every Bulwark stack
+plus the armor they granted, on its own 60s lane. Zero stacks fizzles with a `No Bulwark` line
+and arms nothing. Decided in the War Cry trigger/fire gate-and-arm shape; the spent passive is
+found by trigger rather than position, and the consume flag rides in the result: the entry asks
+the passive applier to consume that passive and resends the stacks signal when it moved.
+_Avoid_: heal button, second ability
+
+**Proc**:
+One rolled extension or spender event: a War Cry extension roll per victim, or a Second Wind
+fire. Procs are decided purely and applied in adapters, like everything else; the charge gate
+is the only throttle, and farm upkeep is intended Warrior fantasy, tuning later.
+_Avoid_: trigger (that is the passive's earning event), crit
 
 ### Per-player state
 
@@ -134,8 +159,11 @@ in definition-keyed maps with last-trigger timestamps: `stacks` reads one passiv
 every passive on the class whose trigger matches (unknown triggers, a missing class and trigger-less
 classes are inert, each bump re-stamps grace), `tickDecayMoved` drops every stack of each
 passive on the class past its own grace, and reports the set that moved (`tickDecay` is
-whether that set is non-empty). `clear` drops one class's stacks, `clearAll` drops everything, and the cooldown verbs (`warCryRemaining`, `tryUseWarCry`,
-`resetCooldowns`) keep callers from reaching through the mutable object.
+whether that set is non-empty). `clear` drops one class's stacks, `clearAll` drops everything,
+the cooldown verbs (`warCryRemaining`, `tryUseWarCry`,
+`secondWindRemaining`, `tryUseSecondWind`, `resetCooldowns`) keep callers from reaching through the mutable object,
+and the clock flag (`WarCrySignal`: `markSent`/`clear`/`pollLost`) lets the server tick clear
+the War Cry row edge-triggered on effect loss.
 _Avoid_: player state, live state, runtime (too generic on its own)
 
 **Transient runtime store** (`PlayerRuntimes`):
@@ -169,7 +197,7 @@ _Avoid_: magic string
 
 **Card lines** (`ClassPresentation.cardLinesFor`):
 The lines a card body shows. A locked class shows `Passives: ???`, `Active: ???` and `COMING SOON`;
-an unlocked class shows a `Passives` header plus each passive's name and short description, or the
+an unlocked class shows a `Passives` header plus each passive's name, or the
 header plus `No passives yet` when it has none, and an `Active` header plus the ability name.
 _Avoid_: card text
 
@@ -242,8 +270,14 @@ _Avoid_: select packet
 **War cry intent** (`WarCryPayload`):
 The client's `infusedclasses:war_cry` intent: "I pressed the War Cry key", sent while the `R` key
 (`key.infusedclasses.war_cry`) is consumed each client tick. The server validates class and
-cooldown.
+cooldown, and a fire feeds the War Cry clock.
 _Avoid_: ability packet, key packet
+
+**Second wind intent** (`SecondWindPayload`):
+The client's `infusedclasses:second_wind` intent: "I pressed the Second Wind key", sent while
+the `G` key (`key.infusedclasses.second_wind`) is consumed each client tick. The server
+validates class, stacks and cooldown; rejected presses leave both cooldowns untouched.
+_Avoid_: heal packet, key packet
 
 **Picker signal** (`OpenClassScreenPayload`):
 The server's `infusedclasses:open_class_screen` signal telling the client to open the picker. Sent
@@ -270,6 +304,26 @@ respawn clears — carrying one entry per passive: passive name, stacks, per-sta
 grace seconds, and millis-until-decay at send time. An empty list means clear. The client
 stores the last entries and interpolates the countdown; it never writes attributes.
 _Avoid_: stacks packet, sync packet
+
+**War cry signal** (`WarCryExpiryPayload`):
+The server's `infusedclasses:war_cry_expiry` signal: remaining Strength ticks, sent on War Cry
+fire and every extension proc, zeroed on class switch, respawn, and edge-triggered on effect
+loss (milk, death, timeout), so banked ticks can never be resurrected by a later beacon.
+Classless players cost no packet. Beacon Strength never feeds it: only War Cry's own Strength
+at amplifier 1 arms a proc, and only fire and proc events send.
+_Avoid_: buff packet, timer sync
+
+**War cry row** (`PassiveHud.warCryRow`):
+One effect-like row for War Cry's Strength window, in the same `Row` shape as the passive rows:
+a `War Cry` title with no level (Strength II is implied), seconds-left from the signalled ticks,
+and the bar full at a fresh 8s window. Hidden at zero ticks, and hidden while no Strength
+effect is live as a backstop, so a row never outlives its buff.
+_Avoid_: buff row, timer row
+
+**Client war cry store** (`ClientWarCry`):
+The client's last War Cry clock signal, ticked down locally at 20 ticks a second between server
+messages. Every signal replaces the whole store, so zero clears instead of lingering.
+_Avoid_: client cache
 
 ## Decisions
 

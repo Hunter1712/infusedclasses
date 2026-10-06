@@ -59,14 +59,28 @@ public final class PassiveApplier {
 		runtime.resetCooldowns();
 	}
 
-	/** Removes every modifier one class earned: testing and switch cleanup share it. */
-	public static void removeAll(ServerPlayer player, ClassDefinition def) {
-		if (def == null) {
-			return;
+	/**
+	 * Spender consume: drops the one passive's stacks and timestamp and takes the armor they
+	 * earned off the player. Reports whether anything was consumed, so the entry knows the stacks
+	 * signal went stale and is worth re-sending. Nothing held means nothing done. Only the priced
+	 * passive is touched: a second stacker on the class keeps every stack.
+	 */
+	public static boolean consumeStacks(ServerPlayer player, PlayerRuntime runtime, ConditionalPassive passive) {
+		if (passive == null || runtime.stacks(passive) <= 0) {
+			return false;
 		}
-		for (ConditionalPassive passive : def.passives()) {
-			remove(player, passive.attribute(), passive.modifierId());
-		}
+		runtime.clear(passive);
+		remove(player, passive.attribute(), passive.modifierId());
+		return true;
+	}
+
+	/**
+	 * Spender consume by class: resolves the priced passive by trigger and consumes it. The
+	 * single path for Second Wind, so the entry never looks the passive up itself: one
+	 * trigger scan in the decision, one here, and never one in the entry.
+	 */
+	public static boolean consumeSpent(ServerPlayer player, PlayerRuntime runtime, ClassDefinition def) {
+		return consumeStacks(player, runtime, SecondWindAbility.bulwarkOf(def));
 	}
 
 	/** Writes exactly what the decision names, and only when it differs from what is applied. */

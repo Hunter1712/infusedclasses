@@ -17,7 +17,7 @@ class ClassPresentationTest {
 
 		assertEquals(0xFFE74C3C, warrior.accentColor());
 		assertEquals("Frontline bruiser", warrior.tagline());
-		assertEquals("War Cry", warrior.abilityName());
+		assertEquals("War Cry + Second Wind", warrior.abilityName());
 	}
 
 	@Test
@@ -47,10 +47,14 @@ class ClassPresentationTest {
 		String tooltip = ClassPresentation.tooltipFor(warrior);
 
 		ConditionalPassive bulwark = warrior.passives().get(0);
-		// Tooltip shows passive, then active name + dedicated description
+		// Tooltip shows passive, then both actives with honest numbers generated from the constants
 		assertTrue(tooltip.contains("Passive: Bulwark \u2014 " + bulwark.fullDesc()));
-		assertTrue(tooltip.contains("Active: War Cry"));
-		assertTrue(tooltip.contains("Gives Strength II for 8s"));
+		assertTrue(tooltip.contains("Active: War Cry + Second Wind"));
+		assertTrue(tooltip.contains("Gives Strength II for " + (WarCryAbility.EFFECT_TICKS / 20) + "s"));
+		assertTrue(tooltip.contains((int) (WarCryExtension.PROC_RATE * 100) + "%"));
+		assertTrue(tooltip.contains("+" + (WarCryExtension.EXTEND_TICKS / 20) + "s"));
+		assertTrue(tooltip.contains("Second Wind (G, " + (Cooldowns.SECOND_WIND_MS / 1000) + "s)"));
+		assertTrue(tooltip.contains(SecondWindAbility.HP_PER_STACK + " HP per Bulwark stack"));
 		assertTrue(tooltip.endsWith("Click to choose Warrior."));
 	}
 
@@ -101,7 +105,7 @@ class ClassPresentationTest {
 		assertEquals(ClassPresentation.LineKind.ABILITY_HEADER, lines.get(2).kind());
 		assertEquals(0xFFFFFFFF, lines.get(2).style().color());
 		assertTrue(lines.get(2).style().bold());
-		assertEquals("War Cry", lines.get(3).text());
+		assertEquals("War Cry + Second Wind", lines.get(3).text());
 		assertEquals(ClassPresentation.LineKind.ABILITY, lines.get(3).kind());
 		assertEquals(0xFF7ED6FF, lines.get(3).style().color());
 		assertFalse(lines.get(3).style().bold());

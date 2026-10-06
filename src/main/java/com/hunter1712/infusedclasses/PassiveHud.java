@@ -13,6 +13,8 @@ import java.util.function.ToIntFunction;
 public final class PassiveHud {
 	/** Effects-group icon only, never a loaded texture; the adapter resolves it. */
 	public static final String ICON = "minecraft:resistance";
+	/** War Cry row icon: Strength II is implied, so the title carries no level. */
+	public static final String WAR_CRY_ICON = "minecraft:strength";
 
 	private PassiveHud() {
 	}
@@ -52,6 +54,19 @@ public final class PassiveHud {
 		return new Row(ICON, passive.name() + " " + roman(stacks),
 				"+" + amount(stacks * passive.perStack()) + " " + word(passive),
 				(int) Math.ceil(left), fraction, false);
+	}
+
+	/**
+	 * One row for War Cry's Strength window: title without the level, seconds-left from the
+	 * signalled ticks, and the bar full at a fresh 8s window so extended upkeep reads as full.
+	 * Hidden at zero or fewer ticks; beacon Strength never feeds this, only fire and proc events do.
+	 */
+	public static Row warCryRow(int ticksLeft) {
+		if (ticksLeft <= 0) {
+			return new Row(WAR_CRY_ICON, "", "", 0, 0f, true);
+		}
+		float fraction = Math.min(1f, ticksLeft / (float) WarCryAbility.EFFECT_TICKS);
+		return new Row(WAR_CRY_ICON, "War Cry", "Strength", (ticksLeft + 19) / 20, fraction, false);
 	}
 
 	/** Only stacks above zero, in the order the class carries them. */

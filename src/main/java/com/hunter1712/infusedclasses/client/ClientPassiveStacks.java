@@ -1,6 +1,7 @@
 package com.hunter1712.infusedclasses.client;
 
 import com.hunter1712.infusedclasses.ConditionalPassive;
+import com.hunter1712.infusedclasses.PassiveExpiry;
 import com.hunter1712.infusedclasses.PassiveStacksPayload;
 
 import java.util.LinkedHashMap;
@@ -55,7 +56,7 @@ public final class ClientPassiveStacks {
 		if (stored == null) {
 			return 0;
 		}
-		if (now - stored.atMillis - stored.millisUntilDecayAtSend > 0) {
+		if (PassiveExpiry.locallyExpired(stored.atMillis, stored.millisUntilDecayAtSend, now)) {
 			return 0;
 		}
 		return stored.stacks;
@@ -67,6 +68,6 @@ public final class ClientPassiveStacks {
 		if (stored == null) {
 			return 0;
 		}
-		return Math.max(0, stored.millisUntilDecayAtSend - (now - stored.atMillis));
+		return PassiveExpiry.tickedMillisUntil(stored.atMillis, stored.millisUntilDecayAtSend, now);
 	}
 }

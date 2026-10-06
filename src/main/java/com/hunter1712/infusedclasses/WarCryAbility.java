@@ -4,7 +4,6 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.resources.Identifier;
 
 import java.util.Locale;
-
 /**
  * War Cry ability decisions. Pure: gating by active ability plus cooldown, and the
  * description of what the result makes the server entry do. No live player needed,
@@ -24,14 +23,6 @@ public final class WarCryAbility {
 		FIRED,
 		WRONG_CLASS,
 		ON_COOLDOWN
-	}
-
-	/**
-	 * A chat line the entry sends verbatim: the text, and the chat style it shows in. A null style
-	 * is a decision too: the line goes out unstyled and inherits whatever the client shows by
-	 * default, which is what the cooldown line has always done.
-	 */
-	public record ChatLine(String text, ChatFormatting style) {
 	}
 
 	/**

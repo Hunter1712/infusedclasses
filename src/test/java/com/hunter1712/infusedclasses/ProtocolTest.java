@@ -13,15 +13,17 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class ProtocolTest {
 	@Test
-	void fiveDistinctNamespacedChannels() {
+	void sevenDistinctNamespacedChannels() {
 		Set<Identifier> ids = new HashSet<>(Set.of(
 				SelectClassPayload.TYPE.id(),
 				OpenClassScreenPayload.TYPE.id(),
 				WarCryPayload.TYPE.id(),
+				SecondWindPayload.TYPE.id(),
 				ClassConfirmedPayload.TYPE.id(),
-				PassiveStacksPayload.TYPE.id()));
+				PassiveStacksPayload.TYPE.id(),
+				WarCryExpiryPayload.TYPE.id()));
 
-		assertEquals(5, ids.size());
+		assertEquals(7, ids.size());
 		for (Identifier id : ids) {
 			assertEquals(ClassPackets.MOD_ID, id.getNamespace());
 		}
@@ -58,6 +60,23 @@ class ProtocolTest {
 			ClassConfirmedPayload.STREAM_CODEC.encode(buf, new ClassConfirmedPayload());
 			ClassConfirmedPayload decoded3 = ClassConfirmedPayload.STREAM_CODEC.decode(buf);
 			assertEquals(new ClassConfirmedPayload(), decoded3);
+
+			buf.clear();
+			SecondWindPayload.STREAM_CODEC.encode(buf, new SecondWindPayload());
+			SecondWindPayload decoded4 = SecondWindPayload.STREAM_CODEC.decode(buf);
+			assertEquals(new SecondWindPayload(), decoded4);
+		} finally {
+			buf.release();
+		}
+	}
+
+	@Test
+	void warCryExpiryCodecRoundTrips() {
+		ByteBuf buf = Unpooled.buffer();
+		try {
+			WarCryExpiryPayload original = new WarCryExpiryPayload(200);
+			WarCryExpiryPayload.STREAM_CODEC.encode(buf, original);
+			assertEquals(original, WarCryExpiryPayload.STREAM_CODEC.decode(buf));
 		} finally {
 			buf.release();
 		}

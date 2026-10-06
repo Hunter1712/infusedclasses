@@ -12,8 +12,9 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * All classes. Adding a class = one definition here. Warrior is active-ability-only plus
- * one conditional passive; War Cry is the damage tool, no flat melee bonus.
+ * All classes. Adding a class = one definition here. Warrior carries War Cry plus Second Wind
+ * on separate cooldown lanes and one conditional passive (Bulwark); War Cry stays the damage
+ * tool, no flat melee bonus.
  */
 public final class ClassRegistry {
 	public static final Identifier WARRIOR = Identifier.fromNamespaceAndPath("infusedclasses", "warrior");
@@ -40,8 +41,13 @@ public final class ClassRegistry {
 				WARRIOR_ABILITY,
 				0xFFE74C3C,
 				"Frontline bruiser",
-				"War Cry",
-				"Gives Strength II for 8s"));
+				"War Cry + Second Wind",
+				"Gives Strength II for " + (WarCryAbility.EFFECT_TICKS / 20) + "s (R, "
+						+ (Cooldowns.WAR_CRY_MS / 1000) + "s). Charged hits extend +"
+						+ (WarCryExtension.EXTEND_TICKS / 20) + "s at "
+						+ (int) (WarCryExtension.PROC_RATE * 100) + "% per victim, no cap. Second Wind (G, "
+						+ (Cooldowns.SECOND_WIND_MS / 1000) + "s): heals " + SecondWindAbility.HP_PER_STACK
+						+ " HP per Bulwark stack, consumes stacks."));
 
 		register(new ClassDefinition(
 				Identifier.fromNamespaceAndPath("infusedclasses", "ranger"),

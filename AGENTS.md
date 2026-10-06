@@ -34,5 +34,5 @@ Client-visible changes ship with `gradle deployClient`: it rebuilds, copies the 
 `Select-Object -First N` (no `-FirstLines`). No `python3` assume — inspect jars with .NET (`System.IO.Compression.ZipFile`) or Gradle.
 PowerShell-safe tail/head: `Select-Object -First N` / `Select-Object -Last N`; use `2>$null` instead of `/dev/null`, never bare `| tail` or `| head`.
 Edit files with the edit tool; never rewrite file contents through the shell (redirection, `Set-Content`, `Out-File`).
-Resolve Fabric/vanilla signatures with `javap` against jars under `~/.gradle/caches/modules-2` (javap lives in the JDK's `bin`; quote the spaces).
+Resolve Fabric/vanilla signatures with `javap`: the merged jar lives under `~/.gradle/caches/fabric-loom/minecraftMaven` (glob `minecraft-merged-1.21.11-*.jar`, the hash rots), and `javap.exe` under `C:\Program Files\Java\<jdk>\bin` (`JAVA_HOME` is empty here — resolve it, quote the spaces).
 Target is Minecraft 1.21.11: prefer `Button` widgets over `Screen` input/tooltip overrides — the 1.21 input and tooltip signatures drifted and Buttons compile first try.

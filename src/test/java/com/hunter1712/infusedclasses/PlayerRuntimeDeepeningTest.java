@@ -8,6 +8,7 @@ import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /** Per-passive decay and switch cleanup: the C2 deepening. */
@@ -54,6 +55,23 @@ class PlayerRuntimeDeepeningTest {
 		runtime.clear(withPassives(bulwark()));
 
 		assertEquals(0, runtime.stacks(bulwark()));
+		assertEquals(1, runtime.stacks(swift));
+	}
+
+	@Test
+	void clearDropsOnlyThePricedPassive() {
+		ConditionalPassive swift = new ConditionalPassive("Swift", "on_land", 4, ClassRegistry.ARMOR,
+				Identifier.fromNamespaceAndPath("infusedclasses", "swift_armor"), 0.5, 2);
+		ClassDefinition both = withPassives(bulwark(), swift);
+		PlayerRuntime runtime = new PlayerRuntime();
+		long base = 1_000_000L;
+		runtime.onTrigger(both, "on_hit_taken", base);
+		runtime.onTrigger(both, "on_land", base);
+
+		runtime.clear(bulwark());
+
+		assertEquals(0, runtime.stacks(bulwark()));
+		assertNull(runtime.lastTrigger(bulwark()));
 		assertEquals(1, runtime.stacks(swift));
 	}
 

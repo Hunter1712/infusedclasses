@@ -19,6 +19,9 @@ import java.util.Set;
 public final class PlayerRuntime {
 	// ponytail: cooldowns reset on relog, persist to NBT if the reset becomes an exploit.
 	private final Cooldowns cooldowns = new Cooldowns();
+	// Whether the client may hold banked War Cry ticks. Edge-triggered, so the tick clears the
+	// row once on effect loss; the signal owns the flag, this only holds it.
+	private final WarCrySignal warCrySignal = new WarCrySignal();
 	// Conditional-passive stacks: keyed by the passive definition, never by its name, so a
 	// passive is addressed by what it is rather than by what it is called.
 	private final Map<ConditionalPassive, Integer> passiveStacks = new HashMap<>();
@@ -38,8 +41,21 @@ public final class PlayerRuntime {
 		return cooldowns.useWarCry(now);
 	}
 
+	public long secondWindRemaining(long now) {
+		return cooldowns.secondWindRemaining(now);
+	}
+
+	public boolean tryUseSecondWind(long now) {
+		return cooldowns.useSecondWind(now);
+	}
+
 	public void resetCooldowns() {
 		cooldowns.reset();
+	}
+
+	/** The War Cry clock flag: marked on every signal, polled edge-triggered on effect loss. */
+	public WarCrySignal warCrySignal() {
+		return warCrySignal;
 	}
 
 	/** Current stacks for a passive, 0 when never triggered. */
@@ -92,11 +108,7 @@ public final class PlayerRuntime {
 			if (current <= 0) {
 				continue;
 			}
-			Long last = lastTriggerTime.get(passive);
-			if (last == null) {
-				continue;
-			}
-			if ((now - last) > passive.graceSeconds() * 1000L) {
+			if (PassiveExpiry.expired(lastTriggerTime.get(passive), passive.graceSeconds(), now)) {
 				passiveStacks.put(passive, 0);
 				lastTriggerTime.remove(passive);
 				moved.add(passive);
@@ -111,9 +123,17 @@ public final class PlayerRuntime {
 			return;
 		}
 		for (ConditionalPassive passive : def.passives()) {
-			passiveStacks.remove(passive);
-			lastTriggerTime.remove(passive);
+			clear(passive);
 		}
+	}
+
+	/** Drops one passive's stacks and timestamp: a spender consumes only what it priced. */
+	public void clear(ConditionalPassive passive) {
+		if (passive == null) {
+			return;
+		}
+		passiveStacks.remove(passive);
+		lastTriggerTime.remove(passive);
 	}
 
 	/** Drops everything: respawn starts empty. */

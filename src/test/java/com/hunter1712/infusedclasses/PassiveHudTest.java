@@ -52,6 +52,32 @@ class PassiveHudTest {
 	}
 
 	@Test
+	void warCryRowShowsSecondsLeftAndDrainBar() {
+		PassiveHud.Row fresh = PassiveHud.warCryRow(160);
+		assertEquals("War Cry", fresh.title());
+		assertEquals("Strength", fresh.subline());
+		assertEquals("minecraft:strength", fresh.iconId());
+		assertEquals(8, fresh.secondsLeft());
+		assertEquals(1f, fresh.barFraction(), 0.001f);
+		assertFalse(fresh.hidden());
+
+		PassiveHud.Row mid = PassiveHud.warCryRow(100);
+		assertEquals(5, mid.secondsLeft());
+		assertEquals(100f / 160f, mid.barFraction(), 0.001f);
+	}
+
+	@Test
+	void warCryRowCapsTheBarAndHidesAtZero() {
+		PassiveHud.Row extended = PassiveHud.warCryRow(400);
+		assertEquals(20, extended.secondsLeft());
+		assertEquals(1f, extended.barFraction(), 0.001f);
+		assertFalse(extended.hidden());
+
+		assertTrue(PassiveHud.warCryRow(0).hidden());
+		assertTrue(PassiveHud.warCryRow(-40).hidden());
+	}
+
+	@Test
 	void onlyPositiveStacksInRegistryOrder() {
 		ConditionalPassive swift = new ConditionalPassive("Swift", "on_land", 4, ClassRegistry.ARMOR,
 				Identifier.fromNamespaceAndPath("infusedclasses", "swift_armor"), 0.5, 2);

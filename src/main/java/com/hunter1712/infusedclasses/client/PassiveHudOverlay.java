@@ -2,10 +2,8 @@ package com.hunter1712.infusedclasses.client;
 
 import com.hunter1712.infusedclasses.ConditionalPassive;
 import com.hunter1712.infusedclasses.PassiveHud;
-import com.hunter1712.infusedclasses.mixin.client.ContainerScreenAccess;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.Gui;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
@@ -15,7 +13,6 @@ import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 
 import java.util.List;
-import java.util.Locale;
 
 /**
  * Thin client overlay: draws verbatim whatever the row decision returns, in vanilla's
@@ -29,16 +26,11 @@ import java.util.Locale;
  * sent entries, so "no class" and "no stacks" share the empty check.
  */
 public final class PassiveHudOverlay {
-	// Same sprites vanilla draws: HUD slots plus inventory list boxes.
+	// Same sprite vanilla draws for HUD slots.
 	private static final Identifier SLOT_BACKGROUND =
 			Identifier.withDefaultNamespace("hud/effect_background");
-	private static final Identifier BOX_BACKGROUND =
-			Identifier.withDefaultNamespace("container/inventory/effect_background");
 
 	private static final int SLOT = 25;
-	private static final int ROW_STEP = 33;
-	private static final int BOX_H = 32;
-	private static final int MARGIN = 4;
 
 	private PassiveHudOverlay() {
 	}
@@ -53,18 +45,22 @@ public final class PassiveHudOverlay {
 		}
 		long now = System.currentTimeMillis();
 		List<ConditionalPassive> visible = PassiveHud.visibleInRegistryOrder(p -> ClientPassiveStacks.stacksFor(p, now));
-		if (visible.isEmpty()) {
+		// Backstop: no effect means no row even with ticks banked; the server zeroes the signal edge-triggered on effect loss.
+		// Beacon Strength alone means no row too: only fire and proc signals feed the ticks.
+		int warCryTicks = mc.player.hasEffect(MobEffects.STRENGTH) ? ClientWarCry.ticksLeft(now) : 0;
+		PassiveHud.Row warCry = PassiveHud.warCryRow(warCryTicks);
+		if (visible.isEmpty() && warCry.hidden()) {
 			return;
 		}
 		if (mc.screen instanceof AbstractContainerScreen<?> containers) {
-			renderList(graphics, mc, containers, visible, now);
+			HudInventoryList.render(graphics, mc, containers, visible, warCry, now);
 		} else if (mc.screen == null) {
-			renderStrip(graphics, mc, visible);
+			renderStrip(graphics, mc, visible, warCry);
 		}
 	}
 
 	/** HUD: icon slots continuing the beneficial strip leftward. No text, like vanilla. */
-	private static void renderStrip(GuiGraphics graphics, Minecraft mc, List<ConditionalPassive> visible) {
+	private static void renderStrip(GuiGraphics graphics, Minecraft mc, List<ConditionalPassive> visible, PassiveHud.Row warCry) {
 		int beneficial = 0;
 		for (MobEffectInstance effect : mc.player.getActiveEffects()) {
 			if (effect.showIcon() && effect.getEffect().value().isBeneficial()) {
@@ -81,72 +77,38 @@ public final class PassiveHudOverlay {
 				continue;
 			}
 			int x = graphics.guiWidth() - SLOT * (beneficial + slot + 1);
-			graphics.blitSprite(RenderPipelines.GUI_TEXTURED, SLOT_BACKGROUND, x, 1, 24, 24);
-			Identifier sprite = spriteFor(row.iconId());
-			if (sprite != null) {
-				graphics.blitSprite(RenderPipelines.GUI_TEXTURED, sprite, x + 3, 4, 18, 18);
-			}
+			drawSlot(graphics, x, row.iconId());
 			slot++;
+		}
+		if (!warCry.hidden()) {
+			int x = graphics.guiWidth() - SLOT * (beneficial + slot + 1);
+			drawSlot(graphics, x, warCry.iconId());
 		}
 	}
 
-	/** The one icon the decision can name today; unknown ids leave the frame empty. */
-	private static Identifier spriteFor(String iconId) {
-		if (!PassiveHud.ICON.equals(iconId)) {
-			return null;
+	/** One HUD slot: background frame plus the decided icon, like vanilla. */
+	private static void drawSlot(GuiGraphics graphics, int x, String iconId) {
+		graphics.blitSprite(RenderPipelines.GUI_TEXTURED, SLOT_BACKGROUND, x, 1, 24, 24);
+		Identifier sprite = spriteFor(iconId);
+		if (sprite != null) {
+			graphics.blitSprite(RenderPipelines.GUI_TEXTURED, sprite, x + 3, 4, 18, 18);
 		}
+	}
+
+	/** The icons the decisions can name; unknown ids leave the frame empty. */
+	static Identifier spriteFor(String iconId) {
 		try {
-			return Gui.getMobEffectSprite(MobEffects.RESISTANCE);
+			if (PassiveHud.ICON.equals(iconId)) {
+				return Gui.getMobEffectSprite(MobEffects.RESISTANCE);
+			}
+			if (PassiveHud.WAR_CRY_ICON.equals(iconId)) {
+				return Gui.getMobEffectSprite(MobEffects.STRENGTH);
+			}
 		} catch (RuntimeException missing) {
 			return null;
 		}
+		return null;
 	}
 
-	/** Inventory: vanilla-metric boxes appended below vanilla's own list rows. */
-	private static void renderList(GuiGraphics graphics, Minecraft mc, AbstractContainerScreen<?> screen,
-			List<ConditionalPassive> visible, long now) {
-		ContainerScreenAccess geometry = (ContainerScreenAccess) screen;
-		int x = geometry.infusedclasses$leftPos() + geometry.infusedclasses$imageWidth() + 2;
-		int room = graphics.guiWidth() - x;
-		if (room < 32) {
-			return;
-		}
-		int maxW = room >= 120 ? room - 7 : 32;
-		int vanillaRows = mc.player.getActiveEffects().size();
-		int step = vanillaRows > 5 ? 132 / (vanillaRows - 1) : ROW_STEP;
-		Font font = mc.font;
-		int row = 0;
-		for (ConditionalPassive passive : visible) {
-			PassiveHud.Row decided = PassiveHud.rowFor(passive,
-					ClientPassiveStacks.stacksFor(passive, now),
-					ClientPassiveStacks.millisUntilDecay(passive.name(), now));
-			if (decided.hidden()) {
-				continue;
-			}
-			int y = geometry.infusedclasses$topPos() + step * (vanillaRows + row);
-			drawBox(graphics, font, x, y, maxW, decided);
-			row++;
-		}
-	}
-
-	/** One vanilla inventory row: background box sized off the text, icon, name, `mm:ss`. */
-	private static void drawBox(GuiGraphics graphics, Font font, int x, int y, int maxW, PassiveHud.Row row) {
-		String title = row.title();
-		String duration = duration(row.secondsLeft());
-		int w = Math.min(maxW, Math.max(32 + font.width(title) + 7, 32 + font.width(duration) + 7));
-		graphics.blitSprite(RenderPipelines.GUI_TEXTURED, BOX_BACKGROUND, x, y, w, BOX_H);
-		Identifier sprite = spriteFor(row.iconId());
-		if (sprite != null) {
-			graphics.blitSprite(RenderPipelines.GUI_TEXTURED, sprite, x + 7, y + 7, 18, 18);
-		}
-		if (w > 32 + 7) {
-			graphics.drawString(font, title, x + 32, y + 7, 0xFFFFFFFF);
-			graphics.drawString(font, duration, x + 32, y + 16, 0xFF808080);
-		}
-	}
-
-	/** Vanilla duration read: `7` renders as `00:07`. */
-	private static String duration(int secondsLeft) {
-		return String.format(Locale.ROOT, "%02d:%02d", secondsLeft / 60, secondsLeft % 60);
-	}
+	/** Inventory: vanilla-metric boxes live in the list layout; the strip keeps this file small. */
 }

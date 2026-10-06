@@ -3,7 +3,9 @@ package com.hunter1712.infusedclasses.client;
 import com.hunter1712.infusedclasses.ClassConfirmedPayload;
 import com.hunter1712.infusedclasses.OpenClassScreenPayload;
 import com.hunter1712.infusedclasses.PassiveStacksPayload;
+import com.hunter1712.infusedclasses.SecondWindPayload;
 import com.hunter1712.infusedclasses.SelectClassPayload;
+import com.hunter1712.infusedclasses.WarCryExpiryPayload;
 import com.hunter1712.infusedclasses.WarCryPayload;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
@@ -17,9 +19,10 @@ import net.minecraft.resources.Identifier;
 import com.mojang.blaze3d.platform.InputConstants;
 import org.lwjgl.glfw.GLFW;
 
-/** Client: opens picker on server signal, sends class pick and War Cry key as intents. */
+/** Client: opens picker on server signal, sends class pick and ability keys as intents. */
 public class InfusedClassesClient implements ClientModInitializer {
 	private static KeyMapping warCryKey;
+	private static KeyMapping secondWindKey;
 
 	@Override
 	public void onInitializeClient() {
@@ -42,12 +45,18 @@ public class InfusedClassesClient implements ClientModInitializer {
 				(PassiveStacksPayload payload, ClientPlayNetworking.Context context) -> context.client()
 						.execute(() -> ClientPassiveStacks.setAll(payload.entries(), System.currentTimeMillis())));
 
+		ClientPlayNetworking.registerGlobalReceiver(WarCryExpiryPayload.TYPE,
+				(WarCryExpiryPayload payload, ClientPlayNetworking.Context context) -> context.client()
+						.execute(() -> ClientWarCry.set(payload.expiryTicks(), System.currentTimeMillis())));
+
 		HudElementRegistry.attachElementAfter(VanillaHudElements.STATUS_EFFECTS,
 				Identifier.fromNamespaceAndPath("infusedclasses", "passive_hud"),
 				PassiveHudOverlay::render);
 
 		warCryKey = KeyBindingHelper.registerKeyBinding(new KeyMapping(
 				"key.infusedclasses.war_cry", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_R, KeyMapping.Category.GAMEPLAY));
+		secondWindKey = KeyBindingHelper.registerKeyBinding(new KeyMapping(
+				"key.infusedclasses.second_wind", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_G, KeyMapping.Category.GAMEPLAY));
 
 		ClientTickEvents.END_CLIENT_TICK.register(client -> {
 			if (client.player == null) {
@@ -55,6 +64,9 @@ public class InfusedClassesClient implements ClientModInitializer {
 			}
 			while (warCryKey.consumeClick()) {
 				ClientPlayNetworking.send(new WarCryPayload());
+			}
+			while (secondWindKey.consumeClick()) {
+				ClientPlayNetworking.send(new SecondWindPayload());
 			}
 		});
 	}

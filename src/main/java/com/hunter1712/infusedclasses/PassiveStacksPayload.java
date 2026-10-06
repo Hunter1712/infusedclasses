@@ -72,12 +72,8 @@ public record PassiveStacksPayload(List<Entry> entries) implements CustomPacketP
 		List<Entry> out = new ArrayList<>(def.passives().size());
 		for (ConditionalPassive passive : def.passives()) {
 			int stacks = runtime.stacks(passive);
-			Long last = runtime.lastTrigger(passive);
-			long until = 0;
-			if (last != null && stacks > 0) {
-				until = Math.max(0, last + passive.graceSeconds() * 1000L - now);
-			}
-			out.add(new Entry(passive.name(), stacks, passive.perStack(), passive.graceSeconds(), until));
+			out.add(new Entry(passive.name(), stacks, passive.perStack(), passive.graceSeconds(),
+					PassiveExpiry.millisUntil(runtime.lastTrigger(passive), passive.graceSeconds(), stacks, now)));
 		}
 		return List.copyOf(out);
 	}

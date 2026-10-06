@@ -1,0 +1,114 @@
+package com.hunter1712.infusedclasses;
+
+import net.minecraft.resources.Identifier;
+import org.junit.jupiter.api.Test;
+
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+class SecondWindAbilityTest {
+	private static PlayerClasses warrior() {
+		PlayerClasses classes = new PlayerClasses();
+		classes.readId("infusedclasses:warrior");
+		return classes;
+	}
+
+	private static ClassDefinition warriorDef() {
+		return warrior().currentDefinition();
+	}
+
+	private static PlayerRuntime withStacks(int stacks, long now) {
+		PlayerRuntime runtime = new PlayerRuntime();
+		for (int i = 0; i < stacks; i++) {
+			runtime.onTrigger(warriorDef(), ConditionalPassive.ON_HIT_TAKEN, now);
+		}
+		return runtime;
+	}
+
+	@Test
+	void healMathAtZeroFiveTen() {
+		assertEquals(0, SecondWindAbility.healAmount(0));
+		assertEquals(5.0F, SecondWindAbility.healAmount(5));
+		assertEquals(10.0F, SecondWindAbility.healAmount(10));
+	}
+
+	@Test
+	void spendsTheHitTakenPassiveWhateverItsPosition() {
+		ConditionalPassive swift = new ConditionalPassive("Swift", "on_land", 4, ClassRegistry.ARMOR,
+				Identifier.fromNamespaceAndPath("infusedclasses", "swift_armor"), 0.5, 2);
+		ConditionalPassive bulwark = ClassRegistry.byId(ClassRegistry.WARRIOR).passives().get(0);
+		ClassDefinition shuffled = new ClassDefinition(
+				Identifier.fromNamespaceAndPath("infusedclasses", "test"), "Test", false,
+				List.of(swift, bulwark), ClassRegistry.WARRIOR_ABILITY, 0, "", "", "");
+
+		assertEquals(bulwark, SecondWindAbility.bulwarkOf(shuffled));
+		assertNull(SecondWindAbility.bulwarkOf(null));
+		assertNull(SecondWindAbility.bulwarkOf(new ClassDefinition(
+				Identifier.fromNamespaceAndPath("infusedclasses", "empty"), "Empty", false,
+				List.of(), ClassRegistry.WARRIOR_ABILITY, 0, "", "", "")));
+	}
+
+	@Test
+	void fireHealsAndArmsOnlyItsOwnLane() {
+		PlayerRuntime runtime = withStacks(5, 0);
+		SecondWindAbility.Result result = SecondWindAbility.fire(warriorDef(), runtime, 0);
+
+		assertEquals(SecondWindAbility.Kind.FIRED, result.kind());
+		assertEquals(5.0F, result.healHp());
+		assertTrue(result.consume());
+		assertEquals(Cooldowns.SECOND_WIND_MS, runtime.secondWindRemaining(0));
+		assertEquals(0, runtime.warCryRemaining(0));
+	}
+
+	@Test
+	void fizzleBurnsNothing() {
+		PlayerRuntime runtime = withStacks(0, 0);
+		SecondWindAbility.Result result = SecondWindAbility.fire(warriorDef(), runtime, 0);
+
+		assertEquals(SecondWindAbility.Kind.NO_BULWARK, result.kind());
+		assertEquals("No Bulwark", result.announcement().text());
+		assertEquals(0, result.healHp());
+		assertFalse(result.consume());
+		assertEquals(0, runtime.secondWindRemaining(0));
+	}
+
+	@Test
+	void wrongClassSilentAndUntouched() {
+		PlayerRuntime runtime = withStacks(5, 0);
+		SecondWindAbility.Result result = SecondWindAbility.fire(null, runtime, 0);
+
+		assertEquals(SecondWindAbility.Kind.WRONG_CLASS, result.kind());
+		assertNull(result.announcement());
+		assertEquals(0, runtime.secondWindRemaining(0));
+	}
+
+	@Test
+	void cooldownIndependentAndNeverRearmedByRejects() {
+		PlayerRuntime runtime = withStacks(5, 0);
+		runtime.tryUseWarCry(0);
+		assertEquals(0, runtime.secondWindRemaining(0));
+
+		SecondWindAbility.fire(warriorDef(), runtime, 1_000);
+		SecondWindAbility.Result second = SecondWindAbility.fire(warriorDef(), runtime, 16_000);
+
+		assertEquals(SecondWindAbility.Kind.ON_COOLDOWN, second.kind());
+		assertEquals(45_000, second.remainingMs());
+		assertEquals(45_000, runtime.secondWindRemaining(16_000));
+		assertEquals(14_000, runtime.warCryRemaining(16_000));
+	}
+
+	@Test
+	void resetReadiesBothLanes() {
+		PlayerRuntime runtime = withStacks(5, 0);
+		runtime.tryUseWarCry(0);
+		runtime.tryUseSecondWind(0);
+		runtime.resetCooldowns();
+
+		assertEquals(0, runtime.warCryRemaining(0));
+		assertEquals(0, runtime.secondWindRemaining(0));
+	}
+}
