@@ -64,19 +64,14 @@ public final class ClassPresentation {
 				sb.append("Passive: ").append(p.name()).append(" \u2014 ").append(p.fullDesc()).append(" ");
 			}
 		}
-		if (def.activeAbility() != null) {
-			sb.append("Active: ").append(def.abilityName());
-			// Dedicated ability description field
-			if (def.abilityDesc() != null && !def.abilityDesc().isBlank()) {
-				sb.append(" — ").append(def.abilityDesc());
-			}
-			sb.append(". ");
+		for (ClassDefinition.ActiveAbility a : def.actives()) {
+			sb.append("Active: ").append(a.name()).append(" \u2014 ").append(a.desc()).append(" ");
 		}
 		sb.append("Click to choose ").append(def.displayName()).append(".");
 		return sb.toString();
 	}
 
-	/** Lines shown in the card body: Passives header + name, then Active header + ability names. */
+	/** Lines shown in the card body: Passives header + one line per passive, then Active header + one line per active. */
 	public static List<CardLine> cardLinesFor(ClassDefinition def) {
 		List<CardLine> lines = new ArrayList<>();
 		if (def.locked()) {
@@ -93,9 +88,11 @@ public final class ClassPresentation {
 		} else {
 			lines.add(new CardLine("No passives yet", LineKind.PASSIVE));
 		}
-		if (def.activeAbility() != null) {
+		if (!def.actives().isEmpty()) {
 			lines.add(new CardLine("Active", LineKind.ABILITY_HEADER));
-			lines.add(new CardLine(def.abilityName(), LineKind.ABILITY));
+			for (ClassDefinition.ActiveAbility a : def.actives()) {
+				lines.add(new CardLine(a.name(), LineKind.ABILITY));
+			}
 		}
 		return lines;
 	}

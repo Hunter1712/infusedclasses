@@ -15,7 +15,8 @@
 
 ## Comments
 
-Copy: Warrior ability renamed `War Cry + Second Wind`, description built from the 01/02/Cooldown
+Copy: Warrior actives listed as `War Cry` and `Second Wind` (one card line and one
+tooltip entry each), each description built from the 01/02/Cooldown
 constants (tooltip test asserts every number against the constants); `en_us.json` gains the `G`
 binding; glossary gains proc / Second Wind / War Cry extension / war cry signal, row, and store
 terms plus updated Cooldown/Class/intent entries, no new ADR (decide-then-apply already covers

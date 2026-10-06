@@ -13,8 +13,10 @@ public record ClassDefinition(
 		Identifier activeAbility,
 		int accentColor,
 		String tagline,
-		String abilityName,
-		String abilityDesc
+		List<ActiveAbility> actives
 ) {
+	/** One active on a card: its list line plus its tooltip description. Names never join with "+". */
+	public record ActiveAbility(String name, String desc) {
+	}
 }
 

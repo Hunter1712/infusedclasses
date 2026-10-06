@@ -41,13 +41,18 @@ public final class ClassRegistry {
 				WARRIOR_ABILITY,
 				0xFFE74C3C,
 				"Frontline bruiser",
-				"War Cry + Second Wind",
-				"Gives Strength II for " + (WarCryAbility.EFFECT_TICKS / 20) + "s (R, "
-						+ (Cooldowns.WAR_CRY_MS / 1000) + "s). Charged hits extend +"
-						+ (WarCryExtension.EXTEND_TICKS / 20) + "s at "
-						+ (int) (WarCryExtension.PROC_RATE * 100) + "% per victim, no cap. Second Wind (G, "
-						+ (Cooldowns.SECOND_WIND_MS / 1000) + "s): heals " + SecondWindAbility.HP_PER_STACK
-						+ " HP per Bulwark stack, consumes stacks."));
+				List.of(
+						new ClassDefinition.ActiveAbility(
+								WarCryAbility.NAME,
+								"Gives Strength II for " + (WarCryAbility.EFFECT_TICKS / 20) + "s (R, "
+										+ (Cooldowns.WAR_CRY_MS / 1000) + "s). Charged hits extend +"
+										+ (WarCryExtension.EXTEND_TICKS / 20) + "s at "
+										+ (int) (WarCryExtension.PROC_RATE * 100) + "% per victim, no cap."),
+						new ClassDefinition.ActiveAbility(
+								SecondWindAbility.NAME,
+								"Heals " + SecondWindAbility.HP_PER_STACK
+										+ " HP per Bulwark stack, consumes stacks (G, "
+										+ (Cooldowns.SECOND_WIND_MS / 1000) + "s)."))));
 
 		register(new ClassDefinition(
 				Identifier.fromNamespaceAndPath("infusedclasses", "ranger"),
@@ -57,8 +62,7 @@ public final class ClassRegistry {
 				null,
 				0xFF2ECC71,
 				"Wilds archer",
-				null,
-				null));
+				List.of()));
 
 		register(new ClassDefinition(
 				Identifier.fromNamespaceAndPath("infusedclasses", "mage"),
@@ -68,8 +72,7 @@ public final class ClassRegistry {
 				null,
 				0xFF9B59B6,
 				"Arcane burst",
-				null,
-				null));
+				List.of()));
 	}
 
 	private ClassRegistry() {
@@ -80,13 +83,13 @@ public final class ClassRegistry {
 			if (d.activeAbility() != null || !d.passives().isEmpty()) {
 				throw new IllegalArgumentException("Locked class " + d.id() + " must carry no ability and no passives");
 			}
-			if (d.abilityName() != null || d.abilityDesc() != null) {
-				throw new IllegalArgumentException("Locked class " + d.id() + " must carry no ability name or description");
+			if (!d.actives().isEmpty()) {
+				throw new IllegalArgumentException("Locked class " + d.id() + " must carry no actives");
 			}
 		} else if (d.activeAbility() == null) {
 			throw new IllegalArgumentException("Playable class " + d.id() + " must carry an ability");
-		} else if (d.abilityName() == null || d.abilityName().isBlank()) {
-			throw new IllegalArgumentException("Playable class " + d.id() + " must carry an ability name");
+		} else if (d.actives().isEmpty()) {
+			throw new IllegalArgumentException("Playable class " + d.id() + " must carry at least one active");
 		}
 		BY_ID.put(d.id(), d);
 	}

@@ -68,19 +68,25 @@ _Avoid_: description, lore text
 
 **Class** (`ClassDefinition`):
 A playable archetype, registered once with its id, display name, locked flag, passives, active
-ability id, accent colour, tagline, ability name and ability description. A class is data: it carries
-no player and no state of its own. Warrior is the one playable class today: `Warrior`, War Cry
-(`infusedclasses:war_cry`), accent `0xFFE74C3C`, tagline `Frontline bruiser`, abilities
-`War Cry + Second Wind` with the picker copy generated from the ability constants (Strength II
-window plus Bulwark spender), so the numbers cannot drift from behaviour.
+ability id, accent colour, tagline and the actives list (one name plus picker description per
+active). A class is data: it carries no player and no state of its own. Warrior is the one
+playable class today: `Warrior`, War Cry (`infusedclasses:war_cry`), accent `0xFFE74C3C`,
+tagline `Frontline bruiser`, actives `War Cry` and `Second Wind`, each with picker copy
+generated from the ability constants (Strength II window; Bulwark spender), so the numbers
+cannot drift from behaviour.
 _Avoid_: character class definition, build
 
 **Locked class**:
-A registered class that cannot be chosen yet. It carries no passives and no ability, and the registry
-rejects a locked definition that does; a playable definition without an ability is rejected the same
+A registered class that cannot be chosen yet. It carries no passives and no actives, and the registry
+rejects a locked definition that does; a playable definition without an active is rejected the same
 way. A locked class still carries picker text — accent, tagline — and is still shown in the picker.
 Ranger and Mage are the two locked classes today.
 _Avoid_: unavailable class, future class, hidden class
+
+**Active** (`ClassDefinition.ActiveAbility`):
+One playable active on a class card: its list line plus its tooltip description. A class carries
+one per active — Warrior carries War Cry and Second Wind — so names never join with `+`.
+_Avoid_: ability (ambiguous with the gating id), spell
 
 **Conditional passive** (`ConditionalPassive`):
 A passive that earns stacks when a named trigger fires, rather than always being on. It carries its
@@ -196,13 +202,13 @@ _Avoid_: magic string
 **Card lines** (`ClassPresentation.cardLinesFor`):
 The lines a card body shows. A locked class shows `Passives: ???`, `Active: ???` and `COMING SOON`;
 an unlocked class shows a `Passives` header plus each passive's name, or the
-header plus `No passives yet` when it has none, and an `Active` header plus the ability name.
+header plus `No passives yet` when it has none, and an `Active` header plus one line per active.
 _Avoid_: card text
 
 **Card tooltip** (`ClassPresentation.tooltipFor`):
 The select button's tooltip. A locked class reads `Coming soon`; an unlocked class joins its
-passives (`Passive: <name> — <picker copy>`) and its active (`Active: <ability name> — <ability
-description>`) and ends `Click to choose <display>.`
+passives (`Passive: <name> — <picker copy>`) and one `Active: <name> — <description>` entry
+per active, and ends `Click to choose <display>.`
 _Avoid_: hover text
 
 **Picker subtitle** (`ClassPresentation.subtitle`):

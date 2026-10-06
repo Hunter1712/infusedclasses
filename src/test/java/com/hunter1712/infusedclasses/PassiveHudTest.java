@@ -82,7 +82,7 @@ class PassiveHudTest {
 		ConditionalPassive swift = new ConditionalPassive("Swift", "on_land", 4, ClassRegistry.ARMOR,
 				Identifier.fromNamespaceAndPath("infusedclasses", "swift_armor"), 0.5, 2);
 		ClassDefinition def = new ClassDefinition(Identifier.fromNamespaceAndPath("infusedclasses", "test"),
-				"Test", false, List.of(bulwark(), swift), null, 0, "", "", "");
+				"Test", false, List.of(bulwark(), swift), null, 0, "", List.of());
 		assertEquals(List.of(swift),
 				PassiveHud.visiblePassives(def, p -> p.name().equals("Swift") ? 2 : 0));
 		assertEquals(List.of(bulwark()),
