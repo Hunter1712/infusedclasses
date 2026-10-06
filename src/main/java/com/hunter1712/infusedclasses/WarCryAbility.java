@@ -22,14 +22,9 @@ public final class WarCryAbility {
 	/** Amplifier for both effects: level I. */
 	public static final int AMPLIFIER = 0;
 
-	/** One effect the shout lays: which effect id, for how long, at what amplifier. */
-	public record Debuff(Identifier id, int ticks, int amplifier) {
-	}
-
-	/** The shout's payload, fixed: Weakness I plus Slowness I for the window. */
-	public static final List<Debuff> DEBUFFS = List.of(
-			new Debuff(WEAKNESS, EFFECT_TICKS, AMPLIFIER),
-			new Debuff(SLOWNESS, EFFECT_TICKS, AMPLIFIER));
+	/** The shout's payload, fixed: Weakness I plus Slowness I for the window. Ticks and
+	 * amplifier are shared constants, so the effects travel as bare ids. */
+	public static final List<Identifier> DEBUFF_EFFECTS = List.of(WEAKNESS, SLOWNESS);
 
 	public enum Kind {
 		FIRED,

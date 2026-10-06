@@ -14,3 +14,6 @@
 ## Comments
 
 One javap catch: no class-based scan overload exists in this mapping, so the adapter uses `getEntities(except, box, predicate)` with an `instanceof Monster` predicate plus a compiler-forced re-check for the cast. `AbilityApplier.announce` widened private→package; Second Wind path untouched.
+
+Review follow-up: holders now resolve once per shout (not per mob), and the `Debuff`
+record collapsed to bare ids since ticks/amplifier are shared constants.

@@ -105,7 +105,7 @@ public final class ClassRegistry {
 		if (d.locked()) {
 			if (!d.activeAbilities().isEmpty() || !d.passives().isEmpty() || !d.hpPassives().isEmpty()
 					|| d.maxHealthBonus() != 0) {
-				throw new IllegalArgumentException("Locked class " + d.id() + " must carry no ability and no passives");
+				throw new IllegalArgumentException("Locked class " + d.id() + " must carry no abilities, passives, or health bonus");
 			}
 			if (!d.actives().isEmpty()) {
 				throw new IllegalArgumentException("Locked class " + d.id() + " must carry no actives");

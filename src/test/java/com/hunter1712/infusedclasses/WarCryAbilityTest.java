@@ -20,11 +20,10 @@ class WarCryAbilityTest {
 	@Test
 	void shoutCarriesBothDebuffsForTheWindow() {
 		assertEquals(
-				List.of(
-						new WarCryAbility.Debuff(WarCryAbility.WEAKNESS, 160, 0),
-						new WarCryAbility.Debuff(WarCryAbility.SLOWNESS, 160, 0)),
-				WarCryAbility.DEBUFFS);
+				List.of(WarCryAbility.WEAKNESS, WarCryAbility.SLOWNESS),
+				WarCryAbility.DEBUFF_EFFECTS);
 		assertEquals(160, WarCryAbility.EFFECT_TICKS);
+		assertEquals(0, WarCryAbility.AMPLIFIER);
 		assertEquals(16.0, WarCryAbility.RADIUS_BLOCKS);
 	}
 
