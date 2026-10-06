@@ -29,12 +29,12 @@ public final class WarCryApplier {
 	private WarCryApplier() {
 	}
 
-	/** A fired shout: say it, roar, then debuff the pack. Anything unfired has nothing to apply. */
+	/** A fired shout: say it, roar, then debuff the pack. Rejects still say their line. */
 	public static void apply(ServerPlayer player, WarCryAbility.Result result) {
+		AbilityApplier.announce(player, result.announcement());
 		if (result.kind() != WarCryAbility.Kind.FIRED) {
 			return;
 		}
-		AbilityApplier.announce(player, result.announcement());
 		if (!(player.level() instanceof ServerLevel level)) {
 			return;
 		}

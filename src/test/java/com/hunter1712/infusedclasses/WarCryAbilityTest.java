@@ -46,6 +46,7 @@ class WarCryAbilityTest {
 
 		assertEquals(WarCryAbility.Kind.ON_COOLDOWN, second.kind());
 		assertEquals(45_000, second.remainingMs());
+		assertEquals("War Cry: 45s", second.announcement().text());
 		assertEquals(45_000, runtime.warCryRemaining(16_000));
 		assertEquals(0, runtime.secondWindRemaining(16_000));
 	}
