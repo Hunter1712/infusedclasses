@@ -15,3 +15,5 @@ Slowness, identical on War Cry and Second Wind, disclosed in picker copy.
 ## Comments
 
 Shipped. Second Wind fizzle applies no slow (FIRED-gated); War Cry slow lands with the debuffs. 95 green, jar deployed.
+
+Follow-up: tuned to 20 ticks (1s) per playtest — copy and tooltip follow the constant.

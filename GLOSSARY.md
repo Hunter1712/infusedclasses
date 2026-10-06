@@ -131,7 +131,7 @@ _Avoid_: damage button, second spender
 
 **Spellcast** (`Spellcast`):
 The casting commitment shared by every active: firing any ability lays a short heavy
-self-slow — Slowness III for 2s (`SLOW_TICKS`, `SLOW_AMPLIFIER`) — so casting roots you.
+self-slow — Slowness III for 1s (`SLOW_TICKS`, `SLOW_AMPLIFIER`) — so casting roots you.
 Identical on all casts, one learnable rule; fizzles and rejects cost nothing, and the
 picker copy discloses it from these constants.
 _Avoid_: cast time, wind-up
