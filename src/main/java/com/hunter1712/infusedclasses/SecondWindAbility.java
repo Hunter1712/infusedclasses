@@ -3,12 +3,12 @@ package com.hunter1712.infusedclasses;
 import net.minecraft.ChatFormatting;
 
 /**
- * Second Wind decisions: the Warrior's Bulwark spender on {@code G}. Pure, mirroring the
- * {@link WarCryAbility} trigger/fire gate-and-arm shape: heals {@code stacks * HP_PER_STACK} and
- * consumes every Bulwark stack, on its own 60s lane independent of War Cry's 30s. Zero stacks
+ * Second Wind decisions: the Warrior's Bulwark spender on {@code G}. Pure gate-and-arm shape:
+ * heals {@code stacks * HP_PER_STACK} and
+ * consumes every Bulwark stack, on its own 60s lane. Zero stacks
  * fizzles with a {@code No Bulwark} line and arms nothing. The consume plan rides in the result
  * ({@link Result#consume()}): the entry asks the passive applier to consume the trigger-found
- * passive and resends the stacks signal when it moved.
+ * passive.
  */
 public final class SecondWindAbility {
 	public static final String NAME = "Second Wind";
@@ -38,7 +38,7 @@ public final class SecondWindAbility {
 		}
 
 		public static Result onCooldown(long remainingMs) {
-			// Unstyled on purpose, like the War Cry cooldown line.
+			// Unstyled on purpose: this line has never carried a colour of its own.
 			return new Result(Kind.ON_COOLDOWN, remainingMs, 0, false, ChatLine.cooldown(NAME, remainingMs));
 		}
 
@@ -74,7 +74,7 @@ public final class SecondWindAbility {
 
 	/** Decides firing for Warriors off cooldown holding stacks. Zero stacks fizzles before the cooldown is even read. Pure and read-only: only {@link #fire} arms the cooldown. */
 	public static Result trigger(ClassDefinition def, Cooldowns cooldowns, int stacks, long now) {
-		if (def == null || !ClassRegistry.WARRIOR_ABILITY.equals(def.activeAbility())) {
+		if (def == null || !ClassRegistry.SECOND_WIND_ABILITY.equals(def.activeAbility())) {
 			return Result.wrongClass();
 		}
 		if (stacks <= 0) {
@@ -90,7 +90,7 @@ public final class SecondWindAbility {
 	/**
 	 * Gate and arm together: the production path. Resolves the spent stacks from the runtime
 	 * itself, decides with {@link #trigger}, and arms the transient runtime's Second Wind lane
-	 * when it fires. Rejected presses leave both lanes untouched.
+	 * when it fires. Rejected presses leave the lane untouched.
 	 */
 	public static Result fire(ClassDefinition def, PlayerRuntime runtime, long now) {
 		ConditionalPassive spent = bulwarkOf(def);

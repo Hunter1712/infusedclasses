@@ -1,4 +1,4 @@
-Status: done
+Status: superseded — effect-row HUD deleted; vanilla armor bar is the Bulwark display, no stacks signal.
 
 ## Problem Statement
 

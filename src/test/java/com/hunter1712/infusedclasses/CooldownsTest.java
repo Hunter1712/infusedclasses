@@ -9,25 +9,25 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class CooldownsTest {
 	@Test
 	void firstUseFires() {
-		assertTrue(new Cooldowns().useWarCry(0));
+		assertTrue(new Cooldowns().useSecondWind(0));
 	}
 
 	@Test
 	void secondUseInsideCooldownRejected() {
 		Cooldowns cooldowns = new Cooldowns();
-		cooldowns.useWarCry(0);
+		cooldowns.useSecondWind(0);
 
-		assertFalse(cooldowns.useWarCry(Cooldowns.WAR_CRY_MS - 1));
-		assertTrue(cooldowns.useWarCry(Cooldowns.WAR_CRY_MS));
+		assertFalse(cooldowns.useSecondWind(Cooldowns.SECOND_WIND_MS - 1));
+		assertTrue(cooldowns.useSecondWind(Cooldowns.SECOND_WIND_MS));
 	}
 
 	@Test
 	void remainingCountsDownAndClampsAtZero() {
 		Cooldowns cooldowns = new Cooldowns();
-		cooldowns.useWarCry(1_000);
+		cooldowns.useSecondWind(1_000);
 
-		assertEquals(30_000, cooldowns.warCryRemaining(1_000));
-		assertEquals(15_000, cooldowns.warCryRemaining(16_000));
-		assertEquals(0, cooldowns.warCryRemaining(99_000));
+		assertEquals(60_000, cooldowns.secondWindRemaining(1_000));
+		assertEquals(45_000, cooldowns.secondWindRemaining(16_000));
+		assertEquals(0, cooldowns.secondWindRemaining(99_000));
 	}
 }

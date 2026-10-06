@@ -1,6 +1,6 @@
 # Spec: Warrior procs (War Cry extension + Bulwark heal)
 
-Status: ready-for-agent
+Status: superseded — War Cry + extension deleted, Bulwark HUD deleted; Warrior keeps Bulwark armor + Second Wind only until a new offence active lands.
 
 ## Problem Statement
 

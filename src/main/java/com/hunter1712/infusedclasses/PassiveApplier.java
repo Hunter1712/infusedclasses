@@ -19,12 +19,11 @@ public final class PassiveApplier {
 	/**
 	 * One tick for one player: decay stacks, then make the attributes agree with the plan.
 	 * Idempotent: an attribute is only written when what is applied differs from what should be,
-	 * so the modifier is created once and left alone while the stacks hold still. Returns the
-	 * passives that moved, so callers never re-derive it.
+	 * so the modifier is created once and left alone while the stacks hold still.
 	 */
-	public static Set<ConditionalPassive> apply(ServerPlayer player, ClassDefinition def, PlayerRuntime runtime, long now) {
+	public static void apply(ServerPlayer player, ClassDefinition def, PlayerRuntime runtime, long now) {
 		if (def == null) {
-			return Set.of();
+			return;
 		}
 		Set<ConditionalPassive> moved = runtime.tickDecayMoved(def, now);
 		for (ConditionalPassive passive : def.passives()) {
@@ -35,7 +34,17 @@ public final class PassiveApplier {
 				}
 			}
 		}
-		return moved;
+		// Berserk: no stacks, no grace. Recomputed from live HP every tick; the write
+		// early-out below already covers no-op ticks, bucket 0 removes like dead stacks.
+		int bucket = HpScaledPassive.bucket(player.getHealth(), player.getMaxHealth());
+		for (HpScaledPassive hp : def.hpPassives()) {
+			PassiveEffect.Modifier wanted = PassiveEffect.forBucket(hp, bucket);
+			if (wanted != null) {
+				write(player, wanted);
+			} else {
+				remove(player, hp.attribute(), hp.modifierId());
+			}
+		}
 	}
 
 	/**
@@ -54,6 +63,12 @@ public final class PassiveApplier {
 					remove(player, passive.attribute(), passive.modifierId());
 				}
 			}
+			// Berserk holds no stacks to clear, only the modifiers come off.
+			for (HpScaledPassive hp : oldDef.hpPassives()) {
+				if (newDef == null || !newDef.hpPassives().contains(hp)) {
+					remove(player, hp.attribute(), hp.modifierId());
+				}
+			}
 			runtime.clear(oldDef);
 		}
 		runtime.resetCooldowns();
@@ -61,9 +76,9 @@ public final class PassiveApplier {
 
 	/**
 	 * Spender consume: drops the one passive's stacks and timestamp and takes the armor they
-	 * earned off the player. Reports whether anything was consumed, so the entry knows the stacks
-	 * signal went stale and is worth re-sending. Nothing held means nothing done. Only the priced
-	 * passive is touched: a second stacker on the class keeps every stack.
+	 * earned off the player. Reports whether anything was consumed. Nothing held means
+	 * nothing done. Only the priced passive is touched: a second stacker on the class
+	 * keeps every stack.
 	 */
 	public static boolean consumeStacks(ServerPlayer player, PlayerRuntime runtime, ConditionalPassive passive) {
 		if (passive == null || runtime.stacks(passive) <= 0) {

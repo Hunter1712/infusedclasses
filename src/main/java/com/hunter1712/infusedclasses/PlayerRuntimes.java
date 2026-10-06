@@ -30,8 +30,4 @@ public final class PlayerRuntimes {
 		backing.remove(id);
 		runtime(id);
 	}
-
-	int size() {
-		return backing.size();
-	}
 }

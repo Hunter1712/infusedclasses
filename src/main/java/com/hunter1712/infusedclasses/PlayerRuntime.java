@@ -19,9 +19,6 @@ import java.util.Set;
 public final class PlayerRuntime {
 	// ponytail: cooldowns reset on relog, persist to NBT if the reset becomes an exploit.
 	private final Cooldowns cooldowns = new Cooldowns();
-	// Whether the client may hold banked War Cry ticks. Edge-triggered, so the tick clears the
-	// row once on effect loss; the signal owns the flag, this only holds it.
-	private final WarCrySignal warCrySignal = new WarCrySignal();
 	// Conditional-passive stacks: keyed by the passive definition, never by its name, so a
 	// passive is addressed by what it is rather than by what it is called.
 	private final Map<ConditionalPassive, Integer> passiveStacks = new HashMap<>();
@@ -33,14 +30,6 @@ public final class PlayerRuntime {
 	}
 
 	/** Cooldown verbs: arming runs through here, so no caller reaches through the mutable object. */
-	public long warCryRemaining(long now) {
-		return cooldowns.warCryRemaining(now);
-	}
-
-	public boolean tryUseWarCry(long now) {
-		return cooldowns.useWarCry(now);
-	}
-
 	public long secondWindRemaining(long now) {
 		return cooldowns.secondWindRemaining(now);
 	}
@@ -54,25 +43,12 @@ public final class PlayerRuntime {
 		cooldowns.reset();
 	}
 
-	/** War Cry clock: marked on every signal, cleared on switch, polled edge-triggered on effect loss. */
-	public void markWarCrySent() {
-		warCrySignal.markSent();
-	}
-
-	public void clearWarCrySignal() {
-		warCrySignal.clear();
-	}
-
-	public boolean pollWarCryLost(boolean effectLive) {
-		return warCrySignal.pollLost(effectLive);
-	}
-
 	/** Current stacks for a passive, 0 when never triggered. */
 	public int stacks(ConditionalPassive passive) {
 		return passiveStacks.getOrDefault(passive, 0);
 	}
 
-	/** Last-trigger millis for a passive, null when never triggered. The sync signal counts from it. */
+	/** Last-trigger millis for a passive, null when never triggered. Decay counts from it. */
 	public Long lastTrigger(ConditionalPassive passive) {
 		return lastTriggerTime.get(passive);
 	}

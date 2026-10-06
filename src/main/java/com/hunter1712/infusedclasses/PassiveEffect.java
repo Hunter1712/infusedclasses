@@ -35,6 +35,19 @@ public final class PassiveEffect {
 	}
 
 	/**
+	 * The modifier the passive's current bucket calls for, or null when it should carry none.
+	 * Bucket 0 grants nothing: an absent modifier, never a zero-valued one. Above-cap
+	 * buckets grant the cap: the bucket math already clamps, this holds the promise anyway.
+	 */
+	public static Modifier forBucket(HpScaledPassive passive, int bucket) {
+		if (passive == null || bucket <= 0) {
+			return null;
+		}
+		int capped = Math.min(bucket, HpScaledPassive.STEPS);
+		return new Modifier(passive.attribute(), passive.modifierId(), capped * passive.perStep());
+	}
+
+	/**
 	 * The modifier the passive's current stacks call for, or null when it should carry none.
 	 * Zero or fewer stacks grant nothing. The cap is the stack state's job, not this one's.
 	 */

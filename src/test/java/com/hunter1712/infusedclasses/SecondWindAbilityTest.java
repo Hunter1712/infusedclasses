@@ -43,13 +43,13 @@ class SecondWindAbilityTest {
 		ConditionalPassive bulwark = ClassRegistry.byId(ClassRegistry.WARRIOR).passives().get(0);
 		ClassDefinition shuffled = new ClassDefinition(
 				Identifier.fromNamespaceAndPath("infusedclasses", "test"), "Test", false,
-				List.of(swift, bulwark), ClassRegistry.WARRIOR_ABILITY, 0, "", List.of());
+				List.of(swift, bulwark), List.of(), ClassRegistry.SECOND_WIND_ABILITY, 0, "", List.of());
 
 		assertEquals(bulwark, SecondWindAbility.bulwarkOf(shuffled));
 		assertNull(SecondWindAbility.bulwarkOf(null));
 		assertNull(SecondWindAbility.bulwarkOf(new ClassDefinition(
 				Identifier.fromNamespaceAndPath("infusedclasses", "empty"), "Empty", false,
-				List.of(), ClassRegistry.WARRIOR_ABILITY, 0, "", List.of())));
+				List.of(), List.of(), ClassRegistry.SECOND_WIND_ABILITY, 0, "", List.of())));
 	}
 
 	@Test
@@ -61,7 +61,6 @@ class SecondWindAbilityTest {
 		assertEquals(5.0F, result.healHp());
 		assertTrue(result.consume());
 		assertEquals(Cooldowns.SECOND_WIND_MS, runtime.secondWindRemaining(0));
-		assertEquals(0, runtime.warCryRemaining(0));
 	}
 
 	@Test
@@ -89,7 +88,6 @@ class SecondWindAbilityTest {
 	@Test
 	void cooldownIndependentAndNeverRearmedByRejects() {
 		PlayerRuntime runtime = withStacks(5, 0);
-		runtime.tryUseWarCry(0);
 		assertEquals(0, runtime.secondWindRemaining(0));
 
 		SecondWindAbility.fire(warriorDef(), runtime, 1_000);
@@ -98,17 +96,14 @@ class SecondWindAbilityTest {
 		assertEquals(SecondWindAbility.Kind.ON_COOLDOWN, second.kind());
 		assertEquals(45_000, second.remainingMs());
 		assertEquals(45_000, runtime.secondWindRemaining(16_000));
-		assertEquals(14_000, runtime.warCryRemaining(16_000));
 	}
 
 	@Test
-	void resetReadiesBothLanes() {
+	void resetReadiesTheLane() {
 		PlayerRuntime runtime = withStacks(5, 0);
-		runtime.tryUseWarCry(0);
 		runtime.tryUseSecondWind(0);
 		runtime.resetCooldowns();
 
-		assertEquals(0, runtime.warCryRemaining(0));
 		assertEquals(0, runtime.secondWindRemaining(0));
 	}
 }

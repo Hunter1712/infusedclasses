@@ -12,16 +12,19 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * All classes. Adding a class = one definition here. Warrior carries War Cry plus Second Wind
- * on separate cooldown lanes and one conditional passive (Bulwark); War Cry stays the damage
- * tool, no flat melee bonus.
+ * All classes. Adding a class = one definition here. Warrior carries Second Wind
+ * plus one conditional passive (Bulwark) and the Berserk HP-scaled pair.
  */
 public final class ClassRegistry {
 	public static final Identifier WARRIOR = Identifier.fromNamespaceAndPath("infusedclasses", "warrior");
-	public static final Identifier WARRIOR_ABILITY = Identifier.fromNamespaceAndPath("infusedclasses", "war_cry");
+	public static final Identifier SECOND_WIND_ABILITY = Identifier.fromNamespaceAndPath("infusedclasses", "second_wind");
 	/** ponytail: attribute ids rather than vanilla holders, so the passive stays bootstrap-free. */
 	public static final ResourceKey<Attribute> ARMOR =
 			ResourceKey.create(Registries.ATTRIBUTE, Identifier.withDefaultNamespace("armor"));
+	public static final ResourceKey<Attribute> ATTACK_DAMAGE =
+			ResourceKey.create(Registries.ATTRIBUTE, Identifier.withDefaultNamespace("attack_damage"));
+	public static final ResourceKey<Attribute> ATTACK_SPEED =
+			ResourceKey.create(Registries.ATTRIBUTE, Identifier.withDefaultNamespace("attack_speed"));
 
 	private static final Map<Identifier, ClassDefinition> BY_ID = new LinkedHashMap<>();
 
@@ -38,16 +41,21 @@ public final class ClassRegistry {
 						Identifier.fromNamespaceAndPath(ClassPackets.MOD_ID, "bulwark_armor"),
 						1.0,
 						5)),
-				WARRIOR_ABILITY,
+				List.of(
+						new HpScaledPassive(
+								"Berserk Damage",
+								ATTACK_DAMAGE,
+								Identifier.fromNamespaceAndPath(ClassPackets.MOD_ID, "berserk_damage"),
+								0.4),
+						new HpScaledPassive(
+								"Berserk Speed",
+								ATTACK_SPEED,
+								Identifier.fromNamespaceAndPath(ClassPackets.MOD_ID, "berserk_speed"),
+								0.08)),
+				SECOND_WIND_ABILITY,
 				0xFFE74C3C,
 				"Frontline bruiser",
 				List.of(
-						new ClassDefinition.ActiveAbility(
-								WarCryAbility.NAME,
-								"Gives Strength II for " + (WarCryAbility.EFFECT_TICKS / 20) + "s (R, "
-										+ (Cooldowns.WAR_CRY_MS / 1000) + "s). Charged hits extend +"
-										+ (WarCryExtension.EXTEND_TICKS / 20) + "s at "
-										+ (int) (WarCryExtension.PROC_RATE * 100) + "% per victim, no cap."),
 						new ClassDefinition.ActiveAbility(
 								SecondWindAbility.NAME,
 								"Heals " + SecondWindAbility.HP_PER_STACK
@@ -59,6 +67,7 @@ public final class ClassRegistry {
 				"Ranger",
 				true,
 				List.of(),
+				List.of(),
 				null,
 				0xFF2ECC71,
 				"Wilds archer",
@@ -68,6 +77,7 @@ public final class ClassRegistry {
 				Identifier.fromNamespaceAndPath("infusedclasses", "mage"),
 				"Mage",
 				true,
+				List.of(),
 				List.of(),
 				null,
 				0xFF9B59B6,
@@ -80,7 +90,7 @@ public final class ClassRegistry {
 
 	private static void register(ClassDefinition d) {
 		if (d.locked()) {
-			if (d.activeAbility() != null || !d.passives().isEmpty()) {
+			if (d.activeAbility() != null || !d.passives().isEmpty() || !d.hpPassives().isEmpty()) {
 				throw new IllegalArgumentException("Locked class " + d.id() + " must carry no ability and no passives");
 			}
 			if (!d.actives().isEmpty()) {

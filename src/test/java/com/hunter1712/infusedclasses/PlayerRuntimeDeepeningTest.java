@@ -19,7 +19,7 @@ class PlayerRuntimeDeepeningTest {
 
 	private static ClassDefinition withPassives(ConditionalPassive... passives) {
 		return new ClassDefinition(Identifier.fromNamespaceAndPath("infusedclasses", "test"), "Test", false,
-				List.of(passives), null, 0, "", List.of());
+				List.of(passives), List.of(), null, 0, "", List.of());
 	}
 
 	@Test
@@ -78,10 +78,10 @@ class PlayerRuntimeDeepeningTest {
 	@Test
 	void cooldownVerbsArmWithoutExposingMutation() {
 		PlayerRuntime runtime = new PlayerRuntime();
-		assertEquals(0, runtime.warCryRemaining(0));
-		assertTrue(runtime.tryUseWarCry(0));
-		assertEquals(Cooldowns.WAR_CRY_MS, runtime.warCryRemaining(0));
+		assertEquals(0, runtime.secondWindRemaining(0));
+		assertTrue(runtime.tryUseSecondWind(0));
+		assertEquals(Cooldowns.SECOND_WIND_MS, runtime.secondWindRemaining(0));
 		runtime.resetCooldowns();
-		assertEquals(0, runtime.warCryRemaining(0));
+		assertEquals(0, runtime.secondWindRemaining(0));
 	}
 }

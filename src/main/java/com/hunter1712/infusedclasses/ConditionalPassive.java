@@ -52,11 +52,16 @@ public record ConditionalPassive(
 
 	/** Attribute name as the copy spells it: "minecraft:armor_toughness" reads as "armor toughness". */
 	private String word() {
+		return wordFor(attribute);
+	}
+
+	/** Attribute name as the copy spells it: "minecraft:armor_toughness" reads as "armor toughness". */
+	static String wordFor(ResourceKey<Attribute> attribute) {
 		return attribute.identifier().getPath().replace('_', ' ');
 	}
 
 	/** Whole numbers read as "1", not "1.0", so the copy matches the game. */
-	private static String amount(double value) {
+	static String amount(double value) {
 		return value == Math.rint(value) ? Long.toString((long) value) : Double.toString(value);
 	}
 }

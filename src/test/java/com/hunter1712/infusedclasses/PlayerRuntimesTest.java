@@ -38,7 +38,6 @@ class PlayerRuntimesTest {
 		UUID id = UUID.randomUUID();
 		PlayerRuntime old = store.runtime(id);
 		old.onTrigger(ClassRegistry.byId(ClassRegistry.WARRIOR), "on_hit_taken", 0);
-		old.tryUseWarCry(0);
 
 		store.respawn(id);
 
@@ -46,6 +45,5 @@ class PlayerRuntimesTest {
 		assertNotSame(old, fresh);
 		assertEquals(0, fresh.stacks(
 				ClassRegistry.byId(ClassRegistry.WARRIOR).passives().get(0)));
-		assertEquals(0, fresh.warCryRemaining(0));
 	}
 }

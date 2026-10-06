@@ -17,7 +17,7 @@ class ClassPresentationTest {
 
 		assertEquals(0xFFE74C3C, warrior.accentColor());
 		assertEquals("Frontline bruiser", warrior.tagline());
-		assertEquals(List.of("War Cry", "Second Wind"),
+		assertEquals(List.of("Second Wind"),
 				warrior.actives().stream().map(ClassDefinition.ActiveAbility::name).toList());
 	}
 
@@ -29,6 +29,7 @@ class ClassPresentationTest {
 			}
 			assertNull(def.activeAbility(), def.id() + " locked must carry no ability");
 			assertTrue(def.passives().isEmpty(), def.id() + " locked must carry no passives");
+			assertTrue(def.hpPassives().isEmpty(), def.id() + " locked must carry no HP-scaled passives");
 			assertTrue(def.actives().isEmpty(), def.id() + " locked must carry no actives");
 		}
 	}
@@ -51,11 +52,7 @@ class ClassPresentationTest {
 		ConditionalPassive bulwark = warrior.passives().get(0);
 		// Tooltip shows passive, then one Active entry per active with honest numbers from the constants
 		assertTrue(tooltip.contains("Passive: Bulwark \u2014 " + bulwark.fullDesc()));
-		assertTrue(tooltip.contains("Active: War Cry \u2014 Gives Strength II"));
 		assertTrue(tooltip.contains("Active: Second Wind \u2014 Heals"));
-		assertTrue(tooltip.contains("Gives Strength II for " + (WarCryAbility.EFFECT_TICKS / 20) + "s"));
-		assertTrue(tooltip.contains((int) (WarCryExtension.PROC_RATE * 100) + "%"));
-		assertTrue(tooltip.contains("+" + (WarCryExtension.EXTEND_TICKS / 20) + "s"));
 		assertTrue(tooltip.contains("(G, " + (Cooldowns.SECOND_WIND_MS / 1000) + "s)"));
 		assertTrue(tooltip.contains(SecondWindAbility.HP_PER_STACK + " HP per Bulwark stack"));
 		assertTrue(tooltip.endsWith("Click to choose Warrior."));
@@ -103,19 +100,23 @@ class ClassPresentationTest {
 		assertEquals(ClassPresentation.LineKind.PASSIVE, lines.get(1).kind());
 		assertEquals(0xFFBDBDBD, lines.get(1).style().color());
 		assertFalse(lines.get(1).style().bold());
-		// Active section
-		assertEquals("Active", lines.get(2).text());
-		assertEquals(ClassPresentation.LineKind.ABILITY_HEADER, lines.get(2).kind());
-		assertEquals(0xFFFFFFFF, lines.get(2).style().color());
-		assertTrue(lines.get(2).style().bold());
-		assertEquals("War Cry", lines.get(3).text());
-		assertEquals(ClassPresentation.LineKind.ABILITY, lines.get(3).kind());
-		assertEquals(0xFF7ED6FF, lines.get(3).style().color());
+		assertEquals("Berserk Damage", lines.get(2).text());
+		assertEquals(ClassPresentation.LineKind.PASSIVE, lines.get(2).kind());
+		assertEquals(0xFFBDBDBD, lines.get(2).style().color());
+		assertFalse(lines.get(2).style().bold());
+		assertEquals("Berserk Speed", lines.get(3).text());
+		assertEquals(ClassPresentation.LineKind.PASSIVE, lines.get(3).kind());
+		assertEquals(0xFFBDBDBD, lines.get(3).style().color());
 		assertFalse(lines.get(3).style().bold());
-		assertEquals("Second Wind", lines.get(4).text());
-		assertEquals(ClassPresentation.LineKind.ABILITY, lines.get(4).kind());
-		assertEquals(0xFF7ED6FF, lines.get(4).style().color());
-		assertFalse(lines.get(4).style().bold());
+		// Active section
+		assertEquals("Active", lines.get(4).text());
+		assertEquals(ClassPresentation.LineKind.ABILITY_HEADER, lines.get(4).kind());
+		assertEquals(0xFFFFFFFF, lines.get(4).style().color());
+		assertTrue(lines.get(4).style().bold());
+		assertEquals("Second Wind", lines.get(5).text());
+		assertEquals(ClassPresentation.LineKind.ABILITY, lines.get(5).kind());
+		assertEquals(0xFF7ED6FF, lines.get(5).style().color());
+		assertFalse(lines.get(5).style().bold());
 	}
 
 	@Test
@@ -222,7 +223,8 @@ class ClassPresentationTest {
 		ClassDefinition def = new ClassDefinition(
 				customId, "Custom", false,
 				List.of(),
-				ClassRegistry.WARRIOR_ABILITY,
+				List.of(),
+				ClassRegistry.SECOND_WIND_ABILITY,
 				0xFFFFFF, "tag",
 				List.of(new ClassDefinition.ActiveAbility("Ability line", "Does a thing.")));
 

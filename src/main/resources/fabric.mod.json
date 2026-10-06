@@ -3,13 +3,12 @@
 	"id": "infusedclasses",
 	"version": "${version}",
 	"name": "Infused Classes",
-	"description": "Character classes for Minecraft. Start as a Warrior: War Cry for damage, Bulwark armor when taking hits.",
+	"description": "Character classes for Minecraft. Start as a Warrior: Second Wind heal plus Bulwark armor when taking hits.",
 	"authors": ["hunter1712"],
 	"license": "MIT",
 	"environment": "*",
 	"mixins": [
-		"infusedclasses.mixins.json",
-		"infusedclasses.client.mixins.json"
+		"infusedclasses.mixins.json"
 	],
 	"entrypoints": {
 		"main": [

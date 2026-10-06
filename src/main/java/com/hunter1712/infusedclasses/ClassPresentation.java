@@ -64,6 +64,9 @@ public final class ClassPresentation {
 				sb.append("Passive: ").append(p.name()).append(" \u2014 ").append(p.fullDesc()).append(" ");
 			}
 		}
+		for (HpScaledPassive hp : def.hpPassives()) {
+			sb.append("Passive: ").append(hp.name()).append(" \u2014 ").append(hp.fullDesc()).append(" ");
+		}
 		for (ClassDefinition.ActiveAbility a : def.actives()) {
 			sb.append("Active: ").append(a.name()).append(" \u2014 ").append(a.desc()).append(" ");
 		}
@@ -81,9 +84,12 @@ public final class ClassPresentation {
 			return lines;
 		}
 		lines.add(new CardLine("Passives", LineKind.PASSIVE_HEADER));
-		if (!def.passives().isEmpty()) {
+		if (!def.passives().isEmpty() || !def.hpPassives().isEmpty()) {
 			for (ConditionalPassive p : def.passives()) {
 				lines.add(new CardLine(p.name(), LineKind.PASSIVE));
+			}
+			for (HpScaledPassive hp : def.hpPassives()) {
+				lines.add(new CardLine(hp.name(), LineKind.PASSIVE));
 			}
 		} else {
 			lines.add(new CardLine("No passives yet", LineKind.PASSIVE));
