@@ -158,11 +158,9 @@ choice, and it is owned per player by the server entry rather than stored on the
 in definition-keyed maps with last-trigger timestamps: `stacks` reads one passive, `onTrigger` bumps
 every passive on the class whose trigger matches (unknown triggers, a missing class and trigger-less
 classes are inert, each bump re-stamps grace), `tickDecayMoved` drops every stack of each
-passive on the class past its own grace, and reports the set that moved (`tickDecay` is
-whether that set is non-empty). `clear` drops one class's stacks, `clearAll` drops everything,
-the cooldown verbs (`warCryRemaining`, `tryUseWarCry`,
-`secondWindRemaining`, `tryUseSecondWind`, `resetCooldowns`) keep callers from reaching through the mutable object,
-and the clock flag (`WarCrySignal`: `markSent`/`clear`/`pollLost`) lets the server tick clear
+passive on the class past its own grace, and reports the set that moved. `clear` drops one class's
+stacks; cooldowns go through the lane verbs, armed only by ability `fire` and reset by the adapter
+on switch, and the clock flag (`WarCrySignal`: `markSent`/`clear`/`pollLost`) lets the server tick clear
 the War Cry row edge-triggered on effect loss.
 _Avoid_: player state, live state, runtime (too generic on its own)
 

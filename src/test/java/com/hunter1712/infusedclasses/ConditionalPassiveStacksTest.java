@@ -87,7 +87,7 @@ class ConditionalPassiveStacksTest {
 		runtime.onTrigger(warrior(), "on_hit_taken", base);
 
 		// Tick at 4 seconds after trigger - still in grace period
-		boolean changed = runtime.tickDecay(warrior(), base + 4_000);
+		boolean changed = !runtime.tickDecayMoved(warrior(), base + 4_000).isEmpty();
 
 		assertFalse(changed);
 		assertEquals(1, runtime.stacks(bulwark()));
@@ -100,7 +100,7 @@ class ConditionalPassiveStacksTest {
 		runtime.onTrigger(warrior(), "on_hit_taken", base);
 
 		// Tick at 6 seconds after trigger - 1 second past grace, should lose 1
-		boolean changed = runtime.tickDecay(warrior(), base + 6_000);
+		boolean changed = !runtime.tickDecayMoved(warrior(), base + 6_000).isEmpty();
 
 		assertTrue(changed);
 		assertEquals(0, runtime.stacks(bulwark()));
@@ -116,7 +116,7 @@ class ConditionalPassiveStacksTest {
 		assertEquals(5, runtime.stacks(bulwark()));
 
 		// Tick at 10 seconds after trigger - 5 seconds past grace, should lose 5
-		boolean changed = runtime.tickDecay(warrior(), base + 10_000);
+		boolean changed = !runtime.tickDecayMoved(warrior(), base + 10_000).isEmpty();
 
 		assertTrue(changed);
 		assertEquals(0, runtime.stacks(bulwark()));
@@ -129,9 +129,9 @@ class ConditionalPassiveStacksTest {
 		runtime.onTrigger(warrior(), ConditionalPassive.ON_HIT_TAKEN, base);
 
 		// Exactly 5s: still grace, the client agrees. Past it by a millisecond: gone on both.
-		assertFalse(runtime.tickDecay(warrior(), base + 5_000));
+		assertTrue(runtime.tickDecayMoved(warrior(), base + 5_000).isEmpty());
 		assertEquals(1, runtime.stacks(bulwark()));
-		assertTrue(runtime.tickDecay(warrior(), base + 5_001));
+		assertFalse(runtime.tickDecayMoved(warrior(), base + 5_001).isEmpty());
 		assertEquals(0, runtime.stacks(bulwark()));
 	}
 
@@ -145,9 +145,9 @@ class ConditionalPassiveStacksTest {
 		assertEquals(5, runtime.stacks(bulwark()));
 
 		// Tick at +6s drops all 5 at once; the next tick has nothing left to move.
-		assertTrue(runtime.tickDecay(warrior(), base + 6_000));
+		assertFalse(runtime.tickDecayMoved(warrior(), base + 6_000).isEmpty());
 		assertEquals(0, runtime.stacks(bulwark()));
-		assertFalse(runtime.tickDecay(warrior(), base + 7_000));
+		assertTrue(runtime.tickDecayMoved(warrior(), base + 7_000).isEmpty());
 	}
 
 	@Test
@@ -157,12 +157,12 @@ class ConditionalPassiveStacksTest {
 		runtime.onTrigger(warrior(), "on_hit_taken", base);
 
 		// Advance 4 seconds, then trigger again
-		runtime.tickDecay(warrior(), base + 4_000);
+		runtime.tickDecayMoved(warrior(), base + 4_000);
 		runtime.onTrigger(warrior(), "on_hit_taken", base + 4_000); // should reset grace
 
 		// Now advance 4 more seconds (8 total from first hit, 4 from second)
 		// Since second hit reset grace, still in grace period
-		runtime.tickDecay(warrior(), base + 8_000);
+		runtime.tickDecayMoved(warrior(), base + 8_000);
 
 		assertEquals(2, runtime.stacks(bulwark()));
 	}
@@ -180,8 +180,8 @@ class ConditionalPassiveStacksTest {
 		}
 		assertEquals(4, runtime.stacks(swift)); // its own cap, not the ten Bulwark allows
 
-		assertFalse(runtime.tickDecay(def, base + 2_000)); // still inside its own two-second grace
-		assertTrue(runtime.tickDecay(def, base + 3_000)); // past grace, every stack drops at once
+		assertTrue(runtime.tickDecayMoved(def, base + 2_000).isEmpty()); // still inside its own two-second grace
+		assertFalse(runtime.tickDecayMoved(def, base + 3_000).isEmpty()); // past grace, every stack drops at once
 		assertEquals(0, runtime.stacks(swift));
 	}
 

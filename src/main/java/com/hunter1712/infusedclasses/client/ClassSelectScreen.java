@@ -19,6 +19,8 @@ import java.util.List;
 public class ClassSelectScreen extends Screen {
 	private static final int GAP = 12;
 
+	private static final String TITLE = "Choose your class";
+
 	private static final int TITLE_COLOR = 0xFFE8C15A;
 	private static final int SUBTITLE_COLOR = 0xFF9A9A9A;
 	private static final int FOOTER_COLOR = 0xFF777777;
@@ -26,7 +28,7 @@ public class ClassSelectScreen extends Screen {
 	private List<ClassDefinition> classes = List.of();
 
 	protected ClassSelectScreen() {
-		super(Component.literal("Choose your class"));
+		super(Component.literal(TITLE));
 	}
 
 	@Override
@@ -55,7 +57,10 @@ public class ClassSelectScreen extends Screen {
 		for (int i = 0; i < classes.size(); i++) {
 			int cardX = cardX(i, classes.size());
 			int cardY = ClassCardRenderer.cardsTop(height);
-			ClassCardRenderer.drawFrame(graphics, cardX, cardY, classes.get(i), ClassCardRenderer.isHovering(cardX, cardY, mouseX, mouseY));
+			ClassDefinition def = classes.get(i);
+			boolean hovered = ClassCardRenderer.isHovering(cardX, cardY, mouseX, mouseY);
+			ClassCardRenderer.drawFrame(graphics, cardX, cardY,
+					ClassPresentation.cardStyleFor(def, hovered), ClassPresentation.accentFor(def));
 		}
 	}
 
@@ -63,14 +68,16 @@ public class ClassSelectScreen extends Screen {
 	public void render(GuiGraphics graphics, int mouseX, int mouseY, float delta) {
 		super.render(graphics, mouseX, mouseY, delta);
 		int top = ClassCardRenderer.cardsTop(height);
-		graphics.drawCenteredString(font, Component.literal("Choose your class").withStyle(s -> s.withBold(true)), width / 2, top - 44, TITLE_COLOR);
+		graphics.drawCenteredString(font, Component.literal(TITLE).withStyle(s -> s.withBold(true)), width / 2, top - 44, TITLE_COLOR);
 		graphics.drawCenteredString(font, ClassPresentation.subtitle(), width / 2, top - 28, SUBTITLE_COLOR);
 
 		for (int i = 0; i < classes.size(); i++) {
 			int cardX = cardX(i, classes.size());
 			int cardY = ClassCardRenderer.cardsTop(height);
 			ClassDefinition def = classes.get(i);
-			ClassCardRenderer.drawBody(graphics, font, cardX, cardY, def, ClassCardRenderer.isHovering(cardX, cardY, mouseX, mouseY));
+			boolean hovered = ClassCardRenderer.isHovering(cardX, cardY, mouseX, mouseY);
+			ClassCardRenderer.drawBody(graphics, font, cardX, cardY, def,
+					ClassPresentation.cardStyleFor(def, hovered));
 		}
 		graphics.drawCenteredString(font, "Click a class to choose it", width / 2, top + ClassCardRenderer.HEIGHT + 14, FOOTER_COLOR);
 	}

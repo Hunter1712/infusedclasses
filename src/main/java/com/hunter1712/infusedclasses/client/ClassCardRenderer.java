@@ -59,11 +59,6 @@ public final class ClassCardRenderer {
 	}
 
 	/** Body, accent strip, border, hover highlight and locked veil. Drawn behind the widgets. */
-	public static void drawFrame(GuiGraphics graphics, int x, int y, ClassDefinition def, boolean hovered) {
-		drawFrame(graphics, x, y, ClassPresentation.cardStyleFor(def, hovered), ClassPresentation.accentFor(def));
-	}
-
-	/** Same frame from a pre-resolved style: one resolve per card, shared by frame and body. */
 	public static void drawFrame(GuiGraphics graphics, int x, int y,
 			ClassPresentation.CardStyle style, int accent) {
 		int x1 = x + WIDTH;
@@ -83,12 +78,6 @@ public final class ClassCardRenderer {
 	}
 
 	/** Name, tagline, divider and the card lines, each drawn with the style it carries. */
-	public static void drawBody(GuiGraphics graphics, Font font, int x, int y, ClassDefinition def,
-			boolean hovered) {
-		drawBody(graphics, font, x, y, def, ClassPresentation.cardStyleFor(def, hovered));
-	}
-
-	/** Same body from a pre-resolved style: the screen resolves once, the renderer draws. */
 	public static void drawBody(GuiGraphics graphics, Font font, int x, int y, ClassDefinition def,
 			ClassPresentation.CardStyle style) {
 		int cx = x + WIDTH / 2;

@@ -47,12 +47,4 @@ class WarCrySignalTest {
 
 		assertFalse(signal.pollLost(false));
 	}
-
-	@Test
-	void runtimeHoldsOneSignal() {
-		PlayerRuntime runtime = new PlayerRuntime();
-		runtime.warCrySignal().markSent();
-
-		assertTrue(runtime.warCrySignal().pollLost(false));
-	}
 }

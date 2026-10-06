@@ -32,7 +32,7 @@ public final class PlayerRuntime {
 		return cooldowns;
 	}
 
-	/** Cooldown verbs, so callers stop reaching through the mutable object. */
+	/** Cooldown verbs: arming runs through here, so no caller reaches through the mutable object. */
 	public long warCryRemaining(long now) {
 		return cooldowns.warCryRemaining(now);
 	}
@@ -49,6 +49,7 @@ public final class PlayerRuntime {
 		return cooldowns.useSecondWind(now);
 	}
 
+	/** Reset for class switch: a new class starts empty. The adapter calls this, not ability callers. */
 	public void resetCooldowns() {
 		cooldowns.reset();
 	}
@@ -80,16 +81,6 @@ public final class PlayerRuntime {
 				lastTriggerTime.put(passive, now);
 			}
 		}
-	}
-
-	/**
-	 * Ticks decay for all passives on the given class, and says whether any stacks moved. A
-	 * caller that puts the effect on the player needs that: a tick which moved no stacks cannot
-	 * have changed what should be on the player, so it needs no attribute write.
-	 * Decay rule: past its own grace, a passive drops every stack at once.
-	 */
-	public boolean tickDecay(ClassDefinition def, long now) {
-		return !tickDecayMoved(def, now).isEmpty();
 	}
 
 	/**
@@ -134,11 +125,5 @@ public final class PlayerRuntime {
 		}
 		passiveStacks.remove(passive);
 		lastTriggerTime.remove(passive);
-	}
-
-	/** Drops everything: respawn starts empty. */
-	public void clearAll() {
-		passiveStacks.clear();
-		lastTriggerTime.clear();
 	}
 }
