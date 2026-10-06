@@ -26,8 +26,8 @@ public final class AbilityApplier {
 		announce(player, result.announcement());
 	}
 
-	/** One announcement path for every ability result: null says nothing. */
-	private static void announce(ServerPlayer player, ChatLine announcement) {
+	/** One announcement path for every ability result: null says nothing. Shared with the War Cry adapter. */
+	static void announce(ServerPlayer player, ChatLine announcement) {
 		if (announcement == null) {
 			return;
 		}

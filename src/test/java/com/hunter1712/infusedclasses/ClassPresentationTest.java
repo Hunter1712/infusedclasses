@@ -17,7 +17,7 @@ class ClassPresentationTest {
 
 		assertEquals(0xFFE74C3C, warrior.accentColor());
 		assertEquals("Frontline bruiser", warrior.tagline());
-		assertEquals(List.of("Second Wind"),
+		assertEquals(List.of("War Cry", "Second Wind"),
 				warrior.actives().stream().map(ClassDefinition.ActiveAbility::name).toList());
 	}
 
@@ -27,7 +27,7 @@ class ClassPresentationTest {
 			if (!def.locked()) {
 				continue;
 			}
-			assertNull(def.activeAbility(), def.id() + " locked must carry no ability");
+			assertTrue(def.activeAbilities().isEmpty(), def.id() + " locked must carry no ability");
 			assertTrue(def.passives().isEmpty(), def.id() + " locked must carry no passives");
 			assertTrue(def.hpPassives().isEmpty(), def.id() + " locked must carry no HP-scaled passives");
 			assertTrue(def.actives().isEmpty(), def.id() + " locked must carry no actives");
@@ -52,6 +52,8 @@ class ClassPresentationTest {
 		ConditionalPassive bulwark = warrior.passives().get(0);
 		// Tooltip shows passive, then one Active entry per active with honest numbers from the constants
 		assertTrue(tooltip.contains("Passive: Bulwark \u2014 " + bulwark.fullDesc()));
+		assertTrue(tooltip.contains("Active: War Cry \u2014 Weakens and slows hostiles"));
+		assertTrue(tooltip.contains("(R, " + (Cooldowns.WAR_CRY_MS / 1000) + "s)"));
 		assertTrue(tooltip.contains("Active: Second Wind \u2014 Heals"));
 		assertTrue(tooltip.contains("(G, " + (Cooldowns.SECOND_WIND_MS / 1000) + "s)"));
 		assertTrue(tooltip.contains(SecondWindAbility.HP_PER_STACK + " HP per Bulwark stack"));
@@ -113,10 +115,14 @@ class ClassPresentationTest {
 		assertEquals(ClassPresentation.LineKind.ABILITY_HEADER, lines.get(4).kind());
 		assertEquals(0xFFFFFFFF, lines.get(4).style().color());
 		assertTrue(lines.get(4).style().bold());
-		assertEquals("Second Wind", lines.get(5).text());
+		assertEquals("War Cry", lines.get(5).text());
 		assertEquals(ClassPresentation.LineKind.ABILITY, lines.get(5).kind());
 		assertEquals(0xFF7ED6FF, lines.get(5).style().color());
 		assertFalse(lines.get(5).style().bold());
+		assertEquals("Second Wind", lines.get(6).text());
+		assertEquals(ClassPresentation.LineKind.ABILITY, lines.get(6).kind());
+		assertEquals(0xFF7ED6FF, lines.get(6).style().color());
+		assertFalse(lines.get(6).style().bold());
 	}
 
 	@Test
@@ -225,7 +231,7 @@ class ClassPresentationTest {
 				List.of(),
 				List.of(),
 				0.0,
-				ClassRegistry.SECOND_WIND_ABILITY,
+				List.of(ClassRegistry.SECOND_WIND_ABILITY),
 				0xFFFFFF, "tag",
 				List.of(new ClassDefinition.ActiveAbility("Ability line", "Does a thing.")));
 

@@ -23,6 +23,7 @@ public class InfusedClasses implements ModInitializer {
 
 	private static void registerPayloads() {
 		PayloadTypeRegistry.playC2S().register(SelectClassPayload.TYPE, SelectClassPayload.STREAM_CODEC);
+		PayloadTypeRegistry.playC2S().register(WarCryPayload.TYPE, WarCryPayload.STREAM_CODEC);
 		PayloadTypeRegistry.playC2S().register(SecondWindPayload.TYPE, SecondWindPayload.STREAM_CODEC);
 		PayloadTypeRegistry.playS2C().register(OpenClassScreenPayload.TYPE, OpenClassScreenPayload.STREAM_CODEC);
 		PayloadTypeRegistry.playS2C().register(ClassConfirmedPayload.TYPE, ClassConfirmedPayload.STREAM_CODEC);
@@ -66,6 +67,17 @@ public class InfusedClasses implements ModInitializer {
 						context.responseSender().sendPacket(new ClassConfirmedPayload());
 					player.displayClientMessage(Component.literal("Class: ").withStyle(ChatFormatting.GRAY)
 							.append(Component.literal(def.displayName()).withStyle(ChatFormatting.WHITE)), false);
+				}));
+
+		ServerPlayNetworking.registerGlobalReceiver(WarCryPayload.TYPE, (payload, context) -> context.server()
+				.execute(() -> {
+					ServerPlayer player = context.player();
+					long now = System.currentTimeMillis();
+					PlayerClasses classes = PlayerClassAccess.of(player);
+					ClassDefinition def = classes.currentDefinition();
+					PlayerRuntime runtime = runtime(player);
+					WarCryAbility.Result result = WarCryAbility.fire(def, runtime, now);
+					WarCryApplier.apply(player, result);
 				}));
 
 		ServerPlayNetworking.registerGlobalReceiver(SecondWindPayload.TYPE, (payload, context) -> context.server()

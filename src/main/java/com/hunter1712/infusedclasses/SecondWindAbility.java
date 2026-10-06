@@ -74,7 +74,7 @@ public final class SecondWindAbility {
 
 	/** Decides firing for Warriors off cooldown holding stacks. Zero stacks fizzles before the cooldown is even read. Pure and read-only: only {@link #fire} arms the cooldown. */
 	public static Result trigger(ClassDefinition def, Cooldowns cooldowns, int stacks, long now) {
-		if (def == null || !ClassRegistry.SECOND_WIND_ABILITY.equals(def.activeAbility())) {
+		if (def == null || !def.activeAbilities().contains(ClassRegistry.SECOND_WIND_ABILITY)) {
 			return Result.wrongClass();
 		}
 		if (stacks <= 0) {

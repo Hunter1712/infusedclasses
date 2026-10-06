@@ -66,11 +66,12 @@ _Avoid_: description, lore text
 
 **Class** (`ClassDefinition`):
 A playable archetype, registered once with its id, display name, locked flag, passives, active
-ability id, accent colour, tagline and the actives list (one name plus picker description per
+ability ids, accent colour, tagline and the actives list (one name plus picker description per
 active). A class is data: it carries no player and no state of its own. Warrior is the one
-playable class today: `Warrior`, Second Wind (`infusedclasses:second_wind`), accent `0xFFE74C3C`,
-tagline `Frontline bruiser`, actives `Second Wind` only, with picker copy
-generated from the ability constants (Bulwark spender), so the numbers
+playable class today: `Warrior`, War Cry (`infusedclasses:war_cry`) plus Second Wind
+(`infusedclasses:second_wind`), accent `0xFFE74C3C`,
+tagline `Frontline bruiser`, actives `War Cry` and `Second Wind`, with picker copy
+generated from the ability constants (debuff shout; Bulwark spender), so the numbers
 cannot drift from behaviour. Warrior also carries the one always-on stat: a flat +20 max-health
 bonus (40 HP total), kept because the comeback kit needs time to matter.
 _Avoid_: character class definition, build
@@ -84,7 +85,7 @@ _Avoid_: unavailable class, future class, hidden class
 
 **Active** (`ClassDefinition.ActiveAbility`):
 One playable active on a class card: its list line plus its tooltip description. A class carries
-one per active — Warrior carries Second Wind — so names never join with `+`.
+one per active — Warrior carries War Cry and Second Wind — so names never join with `+`.
 _Avoid_: ability (ambiguous with the gating id), spell
 
 **Conditional passive** (`ConditionalPassive`):
@@ -112,11 +113,20 @@ at once, vanilla-style, and stacks are transient: they do not survive relog or r
 _Avoid_: charge, level, rank
 
 **Cooldown** (`Cooldowns`):
-The wait after an ability fires, tracked per player, also transient. One lane:
-Second Wind's 60s (`SECOND_WIND_MS`): `useSecondWind` fires only when ready and reports it,
-`secondWindRemaining` reports the milliseconds left, 0 when ready, `reset` readies it again
+The wait after an ability fires, tracked per player, also transient. Two independent lanes:
+War Cry's 60s (`WAR_CRY_MS`) and Second Wind's 60s (`SECOND_WIND_MS`): `useWarCry` /
+`useSecondWind` fire only when their own lane is ready and report it, `warCryRemaining` /
+`secondWindRemaining` report the milliseconds left, 0 when ready, `reset` readies both again
 for class switch and respawn.
 _Avoid_: timer
+
+**War Cry** (`WarCryAbility`):
+The Warrior's debuff shout on `R`: lays Weakness I and Slowness I for 8s (`EFFECT_TICKS`)
+on every alive hostile within 16 blocks (`RADIUS_BLOCKS`), on its own 60s lane. Free —
+no Bulwark cost — and pure debuff, no self buff. Decided in the trigger/fire gate-and-arm
+shape; the effect ids ride in the decision and the adapter resolves them, announces
+`War Cry!` in red, and writes the effects. Rejected presses leave the lane untouched.
+_Avoid_: damage button, second spender
 
 **Second Wind** (`SecondWindAbility`):
 The Warrior's Bulwark spender on `G`: heals `stacks * 1.0 HP` and consumes every Bulwark stack
@@ -245,6 +255,12 @@ The client's `infusedclasses:select_class` intent: "I picked this class". The se
 against the choice module; a rejected pick leaves the picker open for retry. An accepted switch
 clears what the old class earned and resets the cooldown, so no stale modifier survives.
 _Avoid_: select packet
+
+**War cry intent** (`WarCryPayload`):
+The client's `infusedclasses:war_cry` intent: "I pressed the War Cry key", sent while
+the `R` key (`key.infusedclasses.war_cry`) is consumed each client tick. The server
+validates class and cooldown; rejected presses leave the lane untouched.
+_Avoid_: shout packet, key packet
 
 **Second wind intent** (`SecondWindPayload`):
 The client's `infusedclasses:second_wind` intent: "I pressed the Second Wind key", sent while

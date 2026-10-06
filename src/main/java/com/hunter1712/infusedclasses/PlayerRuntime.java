@@ -30,6 +30,14 @@ public final class PlayerRuntime {
 	}
 
 	/** Cooldown verbs: arming runs through here, so no caller reaches through the mutable object. */
+	public long warCryRemaining(long now) {
+		return cooldowns.warCryRemaining(now);
+	}
+
+	public boolean tryUseWarCry(long now) {
+		return cooldowns.useWarCry(now);
+	}
+
 	public long secondWindRemaining(long now) {
 		return cooldowns.secondWindRemaining(now);
 	}

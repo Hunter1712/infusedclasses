@@ -17,6 +17,7 @@ import java.util.Map;
  */
 public final class ClassRegistry {
 	public static final Identifier WARRIOR = Identifier.fromNamespaceAndPath("infusedclasses", "warrior");
+	public static final Identifier WAR_CRY_ABILITY = Identifier.fromNamespaceAndPath("infusedclasses", "war_cry");
 	public static final Identifier SECOND_WIND_ABILITY = Identifier.fromNamespaceAndPath("infusedclasses", "second_wind");
 	/** ponytail: attribute ids rather than vanilla holders, so the passive stays bootstrap-free. */
 	public static final ResourceKey<Attribute> ARMOR =
@@ -57,10 +58,15 @@ public final class ClassRegistry {
 								Identifier.fromNamespaceAndPath(ClassPackets.MOD_ID, "berserk_speed"),
 								0.08)),
 				20.0,
-				SECOND_WIND_ABILITY,
+				List.of(WAR_CRY_ABILITY, SECOND_WIND_ABILITY),
 				0xFFE74C3C,
 				"Frontline bruiser",
 				List.of(
+						new ClassDefinition.ActiveAbility(
+								WarCryAbility.NAME,
+								"Weakens and slows hostiles within " + (int) WarCryAbility.RADIUS_BLOCKS
+										+ " blocks for " + (WarCryAbility.EFFECT_TICKS / 20) + "s (R, "
+										+ (Cooldowns.WAR_CRY_MS / 1000) + "s)."),
 						new ClassDefinition.ActiveAbility(
 								SecondWindAbility.NAME,
 								"Heals " + SecondWindAbility.HP_PER_STACK
@@ -74,7 +80,7 @@ public final class ClassRegistry {
 				List.of(),
 				List.of(),
 				0.0,
-				null,
+				List.of(),
 				0xFF2ECC71,
 				"Wilds archer",
 				List.of()));
@@ -86,7 +92,7 @@ public final class ClassRegistry {
 				List.of(),
 				List.of(),
 				0.0,
-				null,
+				List.of(),
 				0xFF9B59B6,
 				"Arcane burst",
 				List.of()));
@@ -97,14 +103,14 @@ public final class ClassRegistry {
 
 	private static void register(ClassDefinition d) {
 		if (d.locked()) {
-			if (d.activeAbility() != null || !d.passives().isEmpty() || !d.hpPassives().isEmpty()
+			if (!d.activeAbilities().isEmpty() || !d.passives().isEmpty() || !d.hpPassives().isEmpty()
 					|| d.maxHealthBonus() != 0) {
 				throw new IllegalArgumentException("Locked class " + d.id() + " must carry no ability and no passives");
 			}
 			if (!d.actives().isEmpty()) {
 				throw new IllegalArgumentException("Locked class " + d.id() + " must carry no actives");
 			}
-		} else if (d.activeAbility() == null) {
+		} else if (d.activeAbilities().isEmpty()) {
 			throw new IllegalArgumentException("Playable class " + d.id() + " must carry an ability");
 		} else if (d.actives().isEmpty()) {
 			throw new IllegalArgumentException("Playable class " + d.id() + " must carry at least one active");

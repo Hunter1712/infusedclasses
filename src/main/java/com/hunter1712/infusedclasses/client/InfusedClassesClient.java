@@ -4,6 +4,7 @@ import com.hunter1712.infusedclasses.ClassConfirmedPayload;
 import com.hunter1712.infusedclasses.OpenClassScreenPayload;
 import com.hunter1712.infusedclasses.SecondWindPayload;
 import com.hunter1712.infusedclasses.SelectClassPayload;
+import com.hunter1712.infusedclasses.WarCryPayload;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
@@ -16,6 +17,7 @@ import org.lwjgl.glfw.GLFW;
 
 /** Client: opens picker on server signal, sends class pick and ability keys as intents. */
 public class InfusedClassesClient implements ClientModInitializer {
+	private static KeyMapping warCryKey;
 	private static KeyMapping secondWindKey;
 
 	@Override
@@ -34,12 +36,17 @@ public class InfusedClassesClient implements ClientModInitializer {
 							}
 						}));
 
+		warCryKey = KeyBindingHelper.registerKeyBinding(new KeyMapping(
+				"key.infusedclasses.war_cry", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_R, KeyMapping.Category.GAMEPLAY));
 		secondWindKey = KeyBindingHelper.registerKeyBinding(new KeyMapping(
 				"key.infusedclasses.second_wind", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_G, KeyMapping.Category.GAMEPLAY));
 
 		ClientTickEvents.END_CLIENT_TICK.register(client -> {
 			if (client.player == null) {
 				return;
+			}
+			while (warCryKey.consumeClick()) {
+				ClientPlayNetworking.send(new WarCryPayload());
 			}
 			while (secondWindKey.consumeClick()) {
 				ClientPlayNetworking.send(new SecondWindPayload());

@@ -1,0 +1,48 @@
+package com.hunter1712.infusedclasses;
+
+import net.minecraft.core.Holder;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.effect.MobEffect;
+import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.monster.Monster;
+import net.minecraft.world.phys.AABB;
+
+/**
+ * Adapter for {@link WarCryAbility}: the single place a shout reaches the world. Announces
+ * on the shouter's action bar, then lays each carried debuff on every alive hostile in
+ * radius. Players never match the predicate and the caster is the scan's except-arg, so
+ * only hostile mobs eat it. Vanilla overwrite semantics: re-shouting refreshes.
+ */
+public final class WarCryApplier {
+	private WarCryApplier() {
+	}
+
+	/** A fired shout: say it, then debuff the pack. Anything unfired has nothing to apply. */
+	public static void apply(ServerPlayer player, WarCryAbility.Result result) {
+		if (result.kind() != WarCryAbility.Kind.FIRED) {
+			return;
+		}
+		AbilityApplier.announce(player, result.announcement());
+		AABB shout = player.getBoundingBox().inflate(WarCryAbility.RADIUS_BLOCKS);
+		for (Entity entity : player.level().getEntities(player, shout,
+				e -> e instanceof Monster && e.isAlive())) {
+			if (entity instanceof Monster mob) {
+				for (WarCryAbility.Debuff debuff : WarCryAbility.DEBUFFS) {
+					Holder<MobEffect> holder = effect(player, debuff.id());
+					if (holder != null) {
+						mob.addEffect(new MobEffectInstance(holder, debuff.ticks(), debuff.amplifier()));
+					}
+				}
+			}
+		}
+	}
+
+	private static Holder<MobEffect> effect(ServerPlayer player, net.minecraft.resources.Identifier id) {
+		return player.registryAccess().lookupOrThrow(Registries.MOB_EFFECT)
+				.get(ResourceKey.create(Registries.MOB_EFFECT, id))
+				.orElse(null);
+	}
+}
