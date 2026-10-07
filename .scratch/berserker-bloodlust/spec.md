@@ -1,6 +1,6 @@
 # Spec: Berserker Bloodlust (rename + War Cry replacement)
 
-Status: ready-for-agent
+Status: superseded — implemented in 2545677, removed by the juggernaut inversion (fe24f6d); see `.scratch/juggernaut-rush-rend/spec.md`.
 
 ## Problem Statement
 

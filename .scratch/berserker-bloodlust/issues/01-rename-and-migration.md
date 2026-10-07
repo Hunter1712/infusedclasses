@@ -4,7 +4,7 @@ Spec: `.scratch/berserker-bloodlust/spec.md`
 
 **Blocked by:** None (can start immediately).
 
-**Status:** ready-for-human
+**Status:** wontfix
 
 ## Task
 
@@ -36,4 +36,6 @@ per-steps, lanes) is byte-identical after this ticket:
 
 ## Comments
 
-None yet.
+Triage: wontfix — superseded by juggernaut-rush-rend: implemented in 2545677,
+then removed in fe24f6d, which renames Berserker→Juggernaut and replaces
+Bloodlust/Second Wind with Rush/Rend. See `.scratch/juggernaut-rush-rend/spec.md`.

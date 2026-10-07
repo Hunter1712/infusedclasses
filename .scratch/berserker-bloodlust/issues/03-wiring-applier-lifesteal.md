@@ -4,7 +4,7 @@ Spec: `.scratch/berserker-bloodlust/spec.md`
 
 **Blocked by:** 02 (needs the decision + lane).
 
-**Status:** ready-for-human
+**Status:** wontfix
 
 ## Task
 
@@ -39,4 +39,6 @@ War Cry scan with a self buff + attacker hook:
 
 ## Comments
 
-None yet.
+Triage: wontfix — superseded by juggernaut-rush-rend: implemented in 2545677,
+then removed in fe24f6d, which renames Berserker→Juggernaut and replaces
+Bloodlust/Second Wind with Rush/Rend. See `.scratch/juggernaut-rush-rend/spec.md`.

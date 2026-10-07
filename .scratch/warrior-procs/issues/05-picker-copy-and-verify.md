@@ -4,7 +4,7 @@
 
 **Blocked by:** 03, 04
 
-**Status:** ready-for-human
+**Status:** wontfix
 
 - [x] Picker card/tooltip for Warrior describes War Cry extension (25% per charged hit, +2s, no cap) and Second Wind (`G`, 60s, half heart per Bulwark stack, consumes stacks); copy generated from or checked against the 01/02 constants so numbers cannot drift
 - [x] `GLOSSARY.md` records `proc`, `Second Wind`, `War Cry extension` if those terms stick; docs touched only where behavior changed
@@ -26,3 +26,7 @@ checks above need a human in the client: `/class select <player>` to reopen the 
 Triage: stays ready-for-human, narrowed — the two War Cry checks are moot (deleted, spec
 superseded). The Second Wind check (0-stack fizzle, 5/10-stack heal, independent cooldowns)
 is still open, plus the Berserk feel pass (damage/speed rising as HP falls, picker copy).
+
+Triage: wontfix — the remaining Second Wind checks and the Berserk feel pass are
+moot: Second Wind deleted and Berserk→Fury→Vigor renamed twice over in the
+juggernaut inversion (fe24f6d).

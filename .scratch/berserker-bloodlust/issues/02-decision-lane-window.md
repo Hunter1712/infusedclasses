@@ -4,7 +4,7 @@ Spec: `.scratch/berserker-bloodlust/spec.md`
 
 **Blocked by:** 01 (needs the Berserker ids).
 
-**Status:** ready-for-human
+**Status:** wontfix
 
 ## Task
 
@@ -39,4 +39,6 @@ gate-and-arm shape plus the HP gate:
 
 ## Comments
 
-None yet.
+Triage: wontfix — superseded by juggernaut-rush-rend: implemented in 2545677,
+then removed in fe24f6d, which renames Berserker→Juggernaut and replaces
+Bloodlust/Second Wind with Rush/Rend. See `.scratch/juggernaut-rush-rend/spec.md`.

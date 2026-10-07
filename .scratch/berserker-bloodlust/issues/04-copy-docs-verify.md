@@ -4,7 +4,7 @@ Spec: `.scratch/berserker-bloodlust/spec.md`
 
 **Blocked by:** 03 (needs the wired ability).
 
-**Status:** ready-for-human
+**Status:** wontfix
 
 ## Task
 
@@ -36,3 +36,6 @@ live 1.21.11 instance. Manual checklist left for human: `/class select <player>`
 `R` above 5 hearts fizzles free, `R` under 5 hearts roars + roots 1s + grants
 bucket Bulwark + heals on melee for 10s, `G` shield unchanged, old warrior NBT
 loads as Berserker (review fixes applied: applier-routed heal, derived copy, FuryTest rename, bucket-0 case, honest fire, berserker helpers).
+
+Triage: wontfix — the above implementation shipped in 2545677 but was removed in
+fe24f6d (juggernaut inversion); the manual checklist is moot.

@@ -4,7 +4,7 @@
 
 **Blocked by:** None (can start immediately)
 
-**Status:** ready-for-human
+**Status:** wontfix
 
 - [x] New pure decision, e.g. `SecondWindAbility`, with `healAmount(stacks) = stacks * 1.0 HP` asserted at 0/5/10 stacks
 - [x] Zero stacks yields a fizzle result (chat line `No Bulwark`, no heal, no consume); wrong-class and on-cooldown presses likewise leave cooldowns untouched
@@ -21,3 +21,6 @@ the result, announcement reuses `WarCryAbility.ChatLine`). Fizzle is checked bef
 read so a 0-stack fat-finger reports `No Bulwark` either way. `SecondWindAbilityTest`: 6 tests
 green, full suite 110 pass. Fixed one self-found bug on the way: `onCooldown` dropped the
 remaining time (hardcoded 0); the independence test caught it.
+
+Triage: wontfix — Second Wind was deleted in the juggernaut inversion (fe24f6d);
+the decision this ticket built no longer exists.

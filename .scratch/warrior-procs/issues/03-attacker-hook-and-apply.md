@@ -4,7 +4,7 @@
 
 **Blocked by:** 01, 02
 
-**Status:** ready-for-human
+**Status:** wontfix
 
 - [x] `AFTER_DAMAGE` handler splits cleanly: victim path keeps the existing Bulwark `on_hit_taken` bump; attacker path checks source player is a Warrior with a live Strength instance and `getAttackStrengthScale == 1.0` (exact 1.21.11 signature confirmed via `javap` against the cached jar at implementation time)
 - [x] Extension applies via `addEffect` at amplifier 1 for `remaining + 40` ticks per proc, one roll per victim; hostile mobs and players both roll (farm upkeep is intended fantasy, tuning later)
@@ -28,3 +28,6 @@ the 05 manual pass.
 Triage: stays ready-for-human, narrowed — the attacker-hook / War Cry half is moot (deleted,
 spec superseded). The Second Wind half (G keybind, heal fire path) survives and is still
 covered by `SecondWindAbilityTest`; only its in-game press remains for a human.
+
+Triage: wontfix — the narrowed Second Wind half died with it in the juggernaut
+inversion (fe24f6d): Second Wind deleted, heal path replaced by Rend empower.
