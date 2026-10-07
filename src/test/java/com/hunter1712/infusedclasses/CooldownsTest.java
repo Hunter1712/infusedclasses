@@ -34,15 +34,15 @@ class CooldownsTest {
 	@Test
 	void lanesAdvanceIndependentlyAndResetTogether() {
 		Cooldowns cooldowns = new Cooldowns();
-		cooldowns.useWarCry(0);
+		cooldowns.useBloodlust(0);
 
-		assertEquals(Cooldowns.WAR_CRY_MS, cooldowns.warCryRemaining(0));
+		assertEquals(Cooldowns.BLOODLUST_MS, cooldowns.bloodlustRemaining(0));
 		assertEquals(0, cooldowns.secondWindRemaining(0));
 		assertTrue(cooldowns.useSecondWind(0));
 
 		cooldowns.reset();
 
-		assertEquals(0, cooldowns.warCryRemaining(0));
+		assertEquals(0, cooldowns.bloodlustRemaining(0));
 		assertEquals(0, cooldowns.secondWindRemaining(0));
 	}
 }

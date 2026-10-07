@@ -11,20 +11,20 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class SecondWindAbilityTest {
-	private static PlayerClasses warrior() {
+	private static PlayerClasses berserker() {
 		PlayerClasses classes = new PlayerClasses();
-		classes.readId("infusedclasses:warrior");
+		classes.readId("infusedclasses:berserker");
 		return classes;
 	}
 
-	private static ClassDefinition warriorDef() {
-		return warrior().currentDefinition();
+	private static ClassDefinition berserkerDef() {
+		return berserker().currentDefinition();
 	}
 
 	private static PlayerRuntime withStacks(int stacks, long now) {
 		PlayerRuntime runtime = new PlayerRuntime();
 		for (int i = 0; i < stacks; i++) {
-			runtime.onTrigger(warriorDef(), ConditionalPassive.ON_HIT_TAKEN, now);
+			runtime.onTrigger(berserkerDef(), ConditionalPassive.ON_HIT_TAKEN, now);
 		}
 		return runtime;
 	}
@@ -49,7 +49,7 @@ class SecondWindAbilityTest {
 	void spendsTheHitTakenPassiveWhateverItsPosition() {
 		ConditionalPassive swift = new ConditionalPassive("Swift", "on_land", 4, ClassRegistry.ARMOR,
 				Identifier.fromNamespaceAndPath("infusedclasses", "swift_armor"), 0.5, 2);
-		ConditionalPassive bulwark = ClassRegistry.byId(ClassRegistry.WARRIOR).passives().get(0);
+		ConditionalPassive bulwark = ClassRegistry.byId(ClassRegistry.BERSERKER).passives().get(0);
 		ClassDefinition shuffled = new ClassDefinition(
 				Identifier.fromNamespaceAndPath("infusedclasses", "test"), "Test", false,
 				List.of(swift, bulwark), List.of(), 0.0, List.of(ClassRegistry.SECOND_WIND_ABILITY), 0, "", List.of());
@@ -64,7 +64,7 @@ class SecondWindAbilityTest {
 	@Test
 	void fireShieldsAndArmsOnlyItsOwnLane() {
 		PlayerRuntime runtime = withStacks(5, 0);
-		SecondWindAbility.Result result = SecondWindAbility.fire(warriorDef(), runtime, 0);
+		SecondWindAbility.Result result = SecondWindAbility.fire(berserkerDef(), runtime, 0);
 
 		assertEquals(SecondWindAbility.Kind.FIRED, result.kind());
 		assertEquals(5.0F, result.shieldHp());
@@ -75,7 +75,7 @@ class SecondWindAbilityTest {
 	@Test
 	void fizzleBurnsNothing() {
 		PlayerRuntime runtime = withStacks(0, 0);
-		SecondWindAbility.Result result = SecondWindAbility.fire(warriorDef(), runtime, 0);
+		SecondWindAbility.Result result = SecondWindAbility.fire(berserkerDef(), runtime, 0);
 
 		assertEquals(SecondWindAbility.Kind.NO_BULWARK, result.kind());
 		assertEquals("No Bulwark", result.announcement().text());
@@ -99,8 +99,8 @@ class SecondWindAbilityTest {
 		PlayerRuntime runtime = withStacks(5, 0);
 		assertEquals(0, runtime.secondWindRemaining(0));
 
-		SecondWindAbility.fire(warriorDef(), runtime, 1_000);
-		SecondWindAbility.Result second = SecondWindAbility.fire(warriorDef(), runtime, 16_000);
+		SecondWindAbility.fire(berserkerDef(), runtime, 1_000);
+		SecondWindAbility.Result second = SecondWindAbility.fire(berserkerDef(), runtime, 16_000);
 
 		assertEquals(SecondWindAbility.Kind.ON_COOLDOWN, second.kind());
 		assertEquals(45_000, second.remainingMs());

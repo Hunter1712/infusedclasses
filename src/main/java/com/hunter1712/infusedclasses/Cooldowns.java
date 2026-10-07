@@ -5,24 +5,24 @@ package com.hunter1712.infusedclasses;
  * can be asserted on directly.
  */
 public final class Cooldowns {
-	public static final long WAR_CRY_MS = 20_000L;
+	public static final long BLOODLUST_MS = 30_000L;
 	public static final long SECOND_WIND_MS = 60_000L;
 
-	private long warCryReadyAt;
+	private long bloodlustReadyAt;
 	private long secondWindReadyAt;
 
-	/** @return true if the shout fired; false if still on cooldown. Independent of Second Wind. */
-	public boolean useWarCry(long now) {
-		if (now < warCryReadyAt) {
+	/** @return true if Bloodlust fired; false if still on cooldown. Independent of Second Wind. */
+	public boolean useBloodlust(long now) {
+		if (now < bloodlustReadyAt) {
 			return false;
 		}
-		warCryReadyAt = now + WAR_CRY_MS;
+		bloodlustReadyAt = now + BLOODLUST_MS;
 		return true;
 	}
 
 	/** Milliseconds left, 0 when ready. Zero means ready. */
-	public long warCryRemaining(long now) {
-		return Math.max(0L, warCryReadyAt - now);
+	public long bloodlustRemaining(long now) {
+		return Math.max(0L, bloodlustReadyAt - now);
 	}
 
 	/** @return true if Second Wind fired; false if still on cooldown. */
@@ -41,7 +41,7 @@ public final class Cooldowns {
 
 	/** Ready again immediately: class switch and respawn start empty. */
 	public void reset() {
-		warCryReadyAt = 0;
+		bloodlustReadyAt = 0;
 		secondWindReadyAt = 0;
 	}
 }

@@ -4,9 +4,9 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.resources.Identifier;
 
 /**
- * Second Wind decisions: the Warrior's Bulwark spender on {@code G}. Pure gate-and-arm shape:
+ * Second Wind decisions: the Berserker's Bulwark spender on {@code G}. Pure gate-and-arm shape:
  * shields {@code stacks * HP_PER_STACK} absorption HP for {@code ABSORPTION_TICKS} and
- * consumes every Bulwark stack, on its own 60s lane. Live HP is untouched, so Berserk
+ * consumes every Bulwark stack, on its own 60s lane. Live HP is untouched, so Fury
  * stays hot while the shield holds. Zero stacks
  * fizzles with a {@code No Bulwark} line and arms nothing. The consume plan rides in the result
  * ({@link Result#consume()}): the entry asks the passive applier to consume the trigger-found
@@ -87,7 +87,7 @@ public final class SecondWindAbility {
 		return null;
 	}
 
-	/** Decides firing for Warriors off cooldown holding stacks. Zero stacks fizzles before the cooldown is even read. Pure and read-only: only {@link #fire} arms the cooldown. */
+	/** Decides firing for Berserkers off cooldown holding stacks. Zero stacks fizzles before the cooldown is even read. Pure and read-only: only {@link #fire} arms the cooldown. */
 	public static Result trigger(ClassDefinition def, Cooldowns cooldowns, int stacks, long now) {
 		if (def == null || !def.activeAbilities().contains(ClassRegistry.SECOND_WIND_ABILITY)) {
 			return Result.wrongClass();

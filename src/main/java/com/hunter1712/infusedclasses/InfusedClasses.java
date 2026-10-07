@@ -23,7 +23,7 @@ public class InfusedClasses implements ModInitializer {
 
 	private static void registerPayloads() {
 		PayloadTypeRegistry.playC2S().register(SelectClassPayload.TYPE, SelectClassPayload.STREAM_CODEC);
-		PayloadTypeRegistry.playC2S().register(WarCryPayload.TYPE, WarCryPayload.STREAM_CODEC);
+		PayloadTypeRegistry.playC2S().register(BloodlustPayload.TYPE, BloodlustPayload.STREAM_CODEC);
 		PayloadTypeRegistry.playC2S().register(SecondWindPayload.TYPE, SecondWindPayload.STREAM_CODEC);
 		PayloadTypeRegistry.playS2C().register(OpenClassScreenPayload.TYPE, OpenClassScreenPayload.STREAM_CODEC);
 		PayloadTypeRegistry.playS2C().register(ClassConfirmedPayload.TYPE, ClassConfirmedPayload.STREAM_CODEC);
@@ -69,17 +69,18 @@ public class InfusedClasses implements ModInitializer {
 							.append(Component.literal(def.displayName()).withStyle(ChatFormatting.WHITE)), false);
 				}));
 
-		ServerPlayNetworking.registerGlobalReceiver(WarCryPayload.TYPE, (payload, context) -> context.server()
+		ServerPlayNetworking.registerGlobalReceiver(BloodlustPayload.TYPE, (payload, context) -> context.server()
 				.execute(() -> {
 					ServerPlayer player = context.player();
 					long now = System.currentTimeMillis();
 					PlayerClasses classes = PlayerClassAccess.of(player);
 					ClassDefinition def = classes.currentDefinition();
 					PlayerRuntime runtime = runtime(player);
-					WarCryAbility.Result result = WarCryAbility.fire(def, runtime, now);
-					WarCryApplier.apply(player, result);
-					// The shout builds what the spender spends: the grant resolves in the applier.
-					PassiveApplier.grantWarCryStacks(runtime, def, result, now);
+					int bucket = HpScaledPassive.bucket(player.getHealth(), player.getMaxHealth());
+					BloodlustAbility.Result result = BloodlustAbility.fire(def, runtime, bucket, now);
+					BloodlustApplier.apply(player, result);
+					// The opener seeds what the spender spends: the grant resolves in the applier.
+					PassiveApplier.grantBloodlustStacks(runtime, def, result, now);
 				}));
 
 		ServerPlayNetworking.registerGlobalReceiver(SecondWindPayload.TYPE, (payload, context) -> context.server()

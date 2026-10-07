@@ -12,13 +12,13 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ClassPresentationTest {
 	@Test
-	void warriorPresentationMatchesPickerIntent() {
-		ClassDefinition warrior = ClassRegistry.byId(ClassRegistry.WARRIOR);
+	void berserkerPresentationMatchesPickerIntent() {
+		ClassDefinition berserker = ClassRegistry.byId(ClassRegistry.BERSERKER);
 
-		assertEquals(0xFFE74C3C, warrior.accentColor());
-		assertEquals("Frontline bruiser", warrior.tagline());
-		assertEquals(List.of("War Cry", "Second Wind"),
-				warrior.actives().stream().map(ClassDefinition.ActiveAbility::name).toList());
+		assertEquals(0xFFE74C3C, berserker.accentColor());
+		assertEquals("Frontline bruiser", berserker.tagline());
+		assertEquals(List.of("Bloodlust", "Second Wind"),
+				berserker.actives().stream().map(ClassDefinition.ActiveAbility::name).toList());
 	}
 
 	@Test
@@ -44,30 +44,32 @@ class ClassPresentationTest {
 	}
 
 	@Test
-	void warriorTooltipJoinsAbilityLines() {
-		ClassDefinition warrior = ClassRegistry.byId(ClassRegistry.WARRIOR);
+	void berserkerTooltipJoinsAbilityLines() {
+		ClassDefinition berserker = ClassRegistry.byId(ClassRegistry.BERSERKER);
 
-		String tooltip = ClassPresentation.tooltipFor(warrior);
+		String tooltip = ClassPresentation.tooltipFor(berserker);
 
-		ConditionalPassive bulwark = warrior.passives().get(0);
+		ConditionalPassive bulwark = berserker.passives().get(0);
 		// Tooltip shows passive, then one Active entry per active with honest numbers from the constants
 		assertTrue(tooltip.contains("Passive: Bulwark \u2014 " + bulwark.fullDesc()));
-		assertTrue(tooltip.contains("Active: War Cry \u2014 Weakens and slows hostiles"));
-		assertTrue(tooltip.contains("(R, " + (Cooldowns.WAR_CRY_MS / 1000) + "s)"));
+		assertTrue(tooltip.contains("Active: Bloodlust \u2014 Opens a"));
+		assertTrue(tooltip.contains("(R, " + (Cooldowns.BLOODLUST_MS / 1000) + "s)"));
+		assertTrue(tooltip.contains("bucket x 2%"));
+		assertTrue(tooltip.contains("max 2 HP"));
 		assertTrue(tooltip.contains("Active: Second Wind \u2014 Shields"));
 		assertTrue(tooltip.contains("(G, " + (Cooldowns.SECOND_WIND_MS / 1000) + "s)"));
 		assertTrue(tooltip.contains(SecondWindAbility.HP_PER_STACK + " HP per Bulwark stack"));
 		assertTrue(tooltip.contains("Roots you for " + (Spellcast.SLOW_TICKS / 20) + "s"));
-		assertTrue(tooltip.endsWith("Click to choose Warrior."));
+		assertTrue(tooltip.endsWith("Click to choose Berserker."));
 	}
 
 	@Test
-	void warriorTooltipIncludesMaxStacks() {
-		ClassDefinition warrior = ClassRegistry.byId(ClassRegistry.WARRIOR);
+	void berserkerTooltipIncludesMaxStacks() {
+		ClassDefinition berserker = ClassRegistry.byId(ClassRegistry.BERSERKER);
 
-		String tooltip = ClassPresentation.tooltipFor(warrior);
+		String tooltip = ClassPresentation.tooltipFor(berserker);
 
-		ConditionalPassive bulwark = warrior.passives().get(0);
+		ConditionalPassive bulwark = berserker.passives().get(0);
 		assertTrue(tooltip.contains(bulwark.name()));
 		assertTrue(tooltip.contains(bulwark.fullDesc()));
 		assertTrue(tooltip.contains("(max " + bulwark.maxStacks() + ")"));
@@ -89,10 +91,10 @@ class ClassPresentationTest {
 	}
 
 	@Test
-	void warriorCardLinesIncludePassivesAndAbilities() {
-		ClassDefinition warrior = ClassRegistry.byId(ClassRegistry.WARRIOR);
+	void berserkerCardLinesIncludePassivesAndAbilities() {
+		ClassDefinition berserker = ClassRegistry.byId(ClassRegistry.BERSERKER);
 
-		List<ClassPresentation.CardLine> lines = ClassPresentation.cardLinesFor(warrior);
+		List<ClassPresentation.CardLine> lines = ClassPresentation.cardLinesFor(berserker);
 
 		// Passives section
 		assertEquals("Passives", lines.get(0).text());
@@ -103,7 +105,7 @@ class ClassPresentationTest {
 		assertEquals(ClassPresentation.LineKind.PASSIVE, lines.get(1).kind());
 		assertEquals(0xFFBDBDBD, lines.get(1).style().color());
 		assertFalse(lines.get(1).style().bold());
-		assertEquals("Berserk", lines.get(2).text());
+		assertEquals("Fury", lines.get(2).text());
 		assertEquals(ClassPresentation.LineKind.PASSIVE, lines.get(2).kind());
 		assertEquals(0xFFBDBDBD, lines.get(2).style().color());
 		assertFalse(lines.get(2).style().bold());
@@ -112,7 +114,7 @@ class ClassPresentationTest {
 		assertEquals(ClassPresentation.LineKind.ABILITY_HEADER, lines.get(3).kind());
 		assertEquals(0xFFFFFFFF, lines.get(3).style().color());
 		assertTrue(lines.get(3).style().bold());
-		assertEquals("War Cry", lines.get(4).text());
+		assertEquals("Bloodlust", lines.get(4).text());
 		assertEquals(ClassPresentation.LineKind.ABILITY, lines.get(4).kind());
 		assertEquals(0xFF7ED6FF, lines.get(4).style().color());
 		assertFalse(lines.get(4).style().bold());
@@ -175,15 +177,15 @@ class ClassPresentationTest {
 
 	@Test
 	void unlockedCardHighlightsOnlyOnHover() {
-		ClassDefinition warrior = ClassRegistry.byId(ClassRegistry.WARRIOR);
+		ClassDefinition berserker = ClassRegistry.byId(ClassRegistry.BERSERKER);
 
-		ClassPresentation.CardStyle plain = ClassPresentation.cardStyleFor(warrior, false);
+		ClassPresentation.CardStyle plain = ClassPresentation.cardStyleFor(berserker, false);
 		assertEquals(0xFF3A3A3A, plain.borderColor());
 		assertNull(plain.washColor());
 		assertNull(plain.veilColor());
 		assertEquals(0xFFFFFFFF, plain.nameColor());
 
-		ClassPresentation.CardStyle hovered = ClassPresentation.cardStyleFor(warrior, true);
+		ClassPresentation.CardStyle hovered = ClassPresentation.cardStyleFor(berserker, true);
 		assertEquals(0xFF8A8A8A, hovered.borderColor());
 		assertEquals(0x14FFFFFF, hovered.washColor());
 		assertNull(hovered.veilColor());
@@ -204,20 +206,20 @@ class ClassPresentationTest {
 	void lockedAccentIsGrey() {
 		ClassDefinition ranger = ClassRegistry.byId(
 				net.minecraft.resources.Identifier.fromNamespaceAndPath("infusedclasses", "ranger"));
-		ClassDefinition warrior = ClassRegistry.byId(ClassRegistry.WARRIOR);
+		ClassDefinition berserker = ClassRegistry.byId(ClassRegistry.BERSERKER);
 
 		assertEquals(0xFF555555, ClassPresentation.accentFor(ranger));
-		assertEquals(0xFFE74C3C, ClassPresentation.accentFor(warrior));
+		assertEquals(0xFFE74C3C, ClassPresentation.accentFor(berserker));
 	}
 
 	@Test
 	void buttonForLockedIsInactive() {
 		ClassDefinition ranger = ClassRegistry.byId(
 				net.minecraft.resources.Identifier.fromNamespaceAndPath("infusedclasses", "ranger"));
-		ClassDefinition warrior = ClassRegistry.byId(ClassRegistry.WARRIOR);
+		ClassDefinition berserker = ClassRegistry.byId(ClassRegistry.BERSERKER);
 
 		assertEquals(new ClassPresentation.ButtonData("Locked", false), ClassPresentation.buttonFor(ranger));
-		assertEquals(new ClassPresentation.ButtonData("Select", true), ClassPresentation.buttonFor(warrior));
+		assertEquals(new ClassPresentation.ButtonData("Select", true), ClassPresentation.buttonFor(berserker));
 	}
 
 	@Test

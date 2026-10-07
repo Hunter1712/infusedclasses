@@ -28,6 +28,9 @@ public final class PlayerClasses {
 	}
 
 	public void readId(String id) {
+		if ("infusedclasses:warrior".equals(id)) {
+			id = "infusedclasses:berserker";
+		}
 		Identifier parsed = id == null ? null : Identifier.tryParse(id);
 		ClassDefinition def = parsed == null ? null : ClassRegistry.byId(parsed);
 		classId = def == null ? null : def.id();

@@ -16,12 +16,12 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ClassRegistryTest {
 	@Test
-	void warriorIsKnownAndUnlocked() {
-		ClassDefinition warrior = ClassRegistry.byId(ClassRegistry.WARRIOR);
+	void berserkerIsKnownAndUnlocked() {
+		ClassDefinition berserker = ClassRegistry.byId(ClassRegistry.BERSERKER);
 
-		assertNotNull(warrior);
-		assertFalse(warrior.locked());
-		assertEquals("Warrior", warrior.displayName());
+		assertNotNull(berserker);
+		assertFalse(berserker.locked());
+		assertEquals("Berserker", berserker.displayName());
 	}
 
 	@Test
@@ -34,8 +34,8 @@ class ClassRegistryTest {
 	}
 
 	@Test
-	void warriorCarriesNoHealthBonusWhileLockedCarriesNone() {
-		assertEquals(0.0, ClassRegistry.byId(ClassRegistry.WARRIOR).maxHealthBonus());
+	void berserkerCarriesNoHealthBonusWhileLockedCarriesNone() {
+		assertEquals(0.0, ClassRegistry.byId(ClassRegistry.BERSERKER).maxHealthBonus());
 
 		for (ClassDefinition def : ClassRegistry.all()) {
 			if (def.locked()) {
@@ -45,8 +45,8 @@ class ClassRegistryTest {
 	}
 
 	@Test
-	void warriorCarriesBulwarkConditionalPassive() {
-		List<ConditionalPassive> passives = ClassRegistry.byId(ClassRegistry.WARRIOR).passives();
+	void berserkerCarriesBulwarkConditionalPassive() {
+		List<ConditionalPassive> passives = ClassRegistry.byId(ClassRegistry.BERSERKER).passives();
 
 		assertEquals(1, passives.size());
 		ConditionalPassive bulwark = passives.get(0);
@@ -57,8 +57,8 @@ class ClassRegistryTest {
 	}
 
 	@Test
-	void warriorPassiveCopySaysWhatItDoesToday() {
-		ConditionalPassive bulwark = ClassRegistry.byId(ClassRegistry.WARRIOR).passives().get(0);
+	void berserkerPassiveCopySaysWhatItDoesToday() {
+		ConditionalPassive bulwark = ClassRegistry.byId(ClassRegistry.BERSERKER).passives().get(0);
 
 		assertEquals("Taking a hit grants 1 stack (max 20). Each stack adds +0.5 armor. "
 				+ "After 5s without a hit, lose all stacks.", bulwark.fullDesc());
@@ -82,9 +82,13 @@ class ClassRegistryTest {
 		PlayerClasses classes = new PlayerClasses();
 
 		assertNull(classes.writeId());
+		classes.readId("infusedclasses:berserker");
+		assertEquals(ClassRegistry.BERSERKER, classes.classId());
+		assertEquals("infusedclasses:berserker", classes.writeId());
+
 		classes.readId("infusedclasses:warrior");
-		assertEquals(ClassRegistry.WARRIOR, classes.classId());
-		assertEquals("infusedclasses:warrior", classes.writeId());
+		assertEquals(ClassRegistry.BERSERKER, classes.classId());
+		assertEquals("infusedclasses:berserker", classes.writeId());
 
 		classes.readId("infusedclasses:bard");
 		assertNull(classes.classId());

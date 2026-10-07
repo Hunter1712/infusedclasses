@@ -34,7 +34,7 @@ public final class PassiveApplier {
 				}
 			}
 		}
-		// Berserk: no stacks, no grace. Recomputed from live HP every tick; the write
+		// Fury: no stacks, no grace. Recomputed from live HP every tick; the write
 		// early-out below already covers no-op ticks, bucket 0 removes like dead stacks.
 		int bucket = HpScaledPassive.bucket(player.getHealth(), player.getMaxHealth());
 		for (HpScaledPassive hp : def.hpPassives()) {
@@ -45,7 +45,7 @@ public final class PassiveApplier {
 				remove(player, hp.attribute(), hp.modifierId());
 			}
 		}
-		// Bonus pool: flat max-HP per class, Warrior-only today. The write early-out
+		// Bonus pool: flat max-HP per class, Berserker-only today. The write early-out
 		// covers no-op ticks; a zero bonus removes, so the tick self-heals within one
 		// tick of any switch — no onClassChanged handling needed.
 		if (def.maxHealthBonus() > 0) {
@@ -72,7 +72,7 @@ public final class PassiveApplier {
 					remove(player, passive.attribute(), passive.modifierId());
 				}
 			}
-			// Berserk holds no stacks to clear, only the modifiers come off.
+			// Fury holds no stacks to clear, only the modifiers come off.
 			for (HpScaledPassive hp : oldDef.hpPassives()) {
 				if (newDef == null || !newDef.hpPassives().contains(hp)) {
 					remove(player, hp.attribute(), hp.modifierId());
@@ -108,21 +108,21 @@ public final class PassiveApplier {
 	}
 
 	/**
-	 * Builder grant by class: War Cry's shout credits the priced passive, capped and
-	 * grace re-stamped through the trigger path. The single path for the builder, mirroring
-	 * {@link #consumeSpent}: the entry forwards the result, never resolves. Only a fired
-	 * shout grants; rejects and a missing priced passive do nothing.
+	 * Builder grant by class: Bloodlust's opener credits the priced passive with the fired
+	 * bucket, capped and grace re-stamped through the trigger path. The single path for the
+	 * builder, mirroring {@link #consumeSpent}: the entry forwards the result, never resolves.
+	 * Only a fired opener grants; rejects and a missing priced passive do nothing.
 	 */
-	public static void grantWarCryStacks(PlayerRuntime runtime, ClassDefinition def,
-			WarCryAbility.Result result, long now) {
-		if (result == null || result.kind() != WarCryAbility.Kind.FIRED) {
+	public static void grantBloodlustStacks(PlayerRuntime runtime, ClassDefinition def,
+			BloodlustAbility.Result result, long now) {
+		if (result == null || result.kind() != BloodlustAbility.Kind.FIRED) {
 			return;
 		}
 		ConditionalPassive bulwark = SecondWindAbility.bulwarkOf(def);
 		if (bulwark == null) {
 			return;
 		}
-		for (int i = 0; i < WarCryAbility.BUILDER_STACKS; i++) {
+		for (int i = 0; i < result.builderStacks(); i++) {
 			runtime.onTrigger(def, bulwark.trigger(), now);
 		}
 	}

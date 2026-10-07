@@ -17,12 +17,12 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 class ConditionalPassiveStacksTest {
 	@Test
-	void hitTakenIncrementsStacksWhileWarriorSelected() {
+	void hitTakenIncrementsStacksWhileBerserkerSelected() {
 		PlayerRuntime runtime = new PlayerRuntime();
 		long base = System.currentTimeMillis();
 
-		runtime.onTrigger(warrior(), "on_hit_taken", base);
-		runtime.onTrigger(warrior(), "on_hit_taken", base);
+		runtime.onTrigger(berserker(), "on_hit_taken", base);
+		runtime.onTrigger(berserker(), "on_hit_taken", base);
 
 		assertEquals(2, runtime.stacks(bulwark()));
 	}
@@ -33,7 +33,7 @@ class ConditionalPassiveStacksTest {
 		long base = System.currentTimeMillis();
 
 		for (int i = 0; i < 25; i++) {
-			runtime.onTrigger(warrior(), "on_hit_taken", base);
+			runtime.onTrigger(berserker(), "on_hit_taken", base);
 		}
 
 		assertEquals(20, runtime.stacks(bulwark()));
@@ -44,7 +44,7 @@ class ConditionalPassiveStacksTest {
 		PlayerRuntime runtime = new PlayerRuntime();
 		long base = System.currentTimeMillis();
 
-		runtime.onTrigger(warrior(), "on_death", base);
+		runtime.onTrigger(berserker(), "on_death", base);
 
 		assertEquals(0, runtime.stacks(bulwark()));
 
@@ -57,17 +57,17 @@ class ConditionalPassiveStacksTest {
 	@Test
 	void stacksAreTransientNotPersistedOrCopied() {
 		PlayerClasses oldClasses = new PlayerClasses();
-		oldClasses.trySetClass(ClassRegistry.WARRIOR);
+		oldClasses.trySetClass(ClassRegistry.BERSERKER);
 		PlayerRuntime oldRuntime = new PlayerRuntime();
-		oldRuntime.onTrigger(warrior(), "on_hit_taken", System.currentTimeMillis());
+		oldRuntime.onTrigger(berserker(), "on_hit_taken", System.currentTimeMillis());
 
-		assertEquals(ClassRegistry.WARRIOR.toString(), oldClasses.writeId());
+		assertEquals(ClassRegistry.BERSERKER.toString(), oldClasses.writeId());
 
 		// Stacks live in the transient half and never reach the saved payload: the whole
 		// persisted content is still the one choice id, however many stacks have been earned.
-		oldRuntime.onTrigger(warrior(), "on_hit_taken", System.currentTimeMillis());
+		oldRuntime.onTrigger(berserker(), "on_hit_taken", System.currentTimeMillis());
 		assertEquals(2, oldRuntime.stacks(bulwark()));
-		assertEquals(ClassRegistry.WARRIOR.toString(), oldClasses.writeId());
+		assertEquals(ClassRegistry.BERSERKER.toString(), oldClasses.writeId());
 
 		// The respawn copy carries the choice and nothing else, and reads back as the same id.
 		// The new player's own stacks are zero because the server entry drops the old runtime
@@ -76,18 +76,18 @@ class ConditionalPassiveStacksTest {
 		PlayerClasses newClasses = new PlayerClasses();
 		newClasses.copyFrom(oldClasses);
 
-		assertEquals(ClassRegistry.WARRIOR.toString(), newClasses.writeId());
-		assertEquals(ClassRegistry.WARRIOR, newClasses.currentDefinition().id());
+		assertEquals(ClassRegistry.BERSERKER.toString(), newClasses.writeId());
+		assertEquals(ClassRegistry.BERSERKER, newClasses.currentDefinition().id());
 	}
 
 	@Test
 	void noDecayWithinGracePeriod() {
 		PlayerRuntime runtime = new PlayerRuntime();
 		long base = System.currentTimeMillis();
-		runtime.onTrigger(warrior(), "on_hit_taken", base);
+		runtime.onTrigger(berserker(), "on_hit_taken", base);
 
 		// Tick at 4 seconds after trigger - still in grace period
-		boolean changed = !runtime.tickDecayMoved(warrior(), base + 4_000).isEmpty();
+		boolean changed = !runtime.tickDecayMoved(berserker(), base + 4_000).isEmpty();
 
 		assertFalse(changed);
 		assertEquals(1, runtime.stacks(bulwark()));
@@ -97,10 +97,10 @@ class ConditionalPassiveStacksTest {
 	void decayStartsAfterGracePeriod() {
 		PlayerRuntime runtime = new PlayerRuntime();
 		long base = System.currentTimeMillis();
-		runtime.onTrigger(warrior(), "on_hit_taken", base);
+		runtime.onTrigger(berserker(), "on_hit_taken", base);
 
 		// Tick at 6 seconds after trigger - 1 second past grace, should lose 1
-		boolean changed = !runtime.tickDecayMoved(warrior(), base + 6_000).isEmpty();
+		boolean changed = !runtime.tickDecayMoved(berserker(), base + 6_000).isEmpty();
 
 		assertTrue(changed);
 		assertEquals(0, runtime.stacks(bulwark()));
@@ -111,12 +111,12 @@ class ConditionalPassiveStacksTest {
 		PlayerRuntime runtime = new PlayerRuntime();
 		long base = System.currentTimeMillis();
 		for (int i = 0; i < 5; i++) {
-			runtime.onTrigger(warrior(), "on_hit_taken", base);
+			runtime.onTrigger(berserker(), "on_hit_taken", base);
 		}
 		assertEquals(5, runtime.stacks(bulwark()));
 
 		// Tick at 10 seconds after trigger - 5 seconds past grace, should lose 5
-		boolean changed = !runtime.tickDecayMoved(warrior(), base + 10_000).isEmpty();
+		boolean changed = !runtime.tickDecayMoved(berserker(), base + 10_000).isEmpty();
 
 		assertTrue(changed);
 		assertEquals(0, runtime.stacks(bulwark()));
@@ -126,12 +126,12 @@ class ConditionalPassiveStacksTest {
 	void dropFiresPastGraceMillisNotTruncatedSeconds() {
 		PlayerRuntime runtime = new PlayerRuntime();
 		long base = 1_000_000L;
-		runtime.onTrigger(warrior(), ConditionalPassive.ON_HIT_TAKEN, base);
+		runtime.onTrigger(berserker(), ConditionalPassive.ON_HIT_TAKEN, base);
 
 		// Exactly 5s: still grace, the client agrees. Past it by a millisecond: gone on both.
-		assertTrue(runtime.tickDecayMoved(warrior(), base + 5_000).isEmpty());
+		assertTrue(runtime.tickDecayMoved(berserker(), base + 5_000).isEmpty());
 		assertEquals(1, runtime.stacks(bulwark()));
-		assertFalse(runtime.tickDecayMoved(warrior(), base + 5_001).isEmpty());
+		assertFalse(runtime.tickDecayMoved(berserker(), base + 5_001).isEmpty());
 		assertEquals(0, runtime.stacks(bulwark()));
 	}
 
@@ -140,29 +140,29 @@ class ConditionalPassiveStacksTest {
 		PlayerRuntime runtime = new PlayerRuntime();
 		long base = System.currentTimeMillis();
 		for (int i = 0; i < 5; i++) {
-			runtime.onTrigger(warrior(), "on_hit_taken", base);
+			runtime.onTrigger(berserker(), "on_hit_taken", base);
 		}
 		assertEquals(5, runtime.stacks(bulwark()));
 
 		// Tick at +6s drops all 5 at once; the next tick has nothing left to move.
-		assertFalse(runtime.tickDecayMoved(warrior(), base + 6_000).isEmpty());
+		assertFalse(runtime.tickDecayMoved(berserker(), base + 6_000).isEmpty());
 		assertEquals(0, runtime.stacks(bulwark()));
-		assertTrue(runtime.tickDecayMoved(warrior(), base + 7_000).isEmpty());
+		assertTrue(runtime.tickDecayMoved(berserker(), base + 7_000).isEmpty());
 	}
 
 	@Test
 	void newTriggerResetsGraceTimer() {
 		PlayerRuntime runtime = new PlayerRuntime();
 		long base = System.currentTimeMillis();
-		runtime.onTrigger(warrior(), "on_hit_taken", base);
+		runtime.onTrigger(berserker(), "on_hit_taken", base);
 
 		// Advance 4 seconds, then trigger again
-		runtime.tickDecayMoved(warrior(), base + 4_000);
-		runtime.onTrigger(warrior(), "on_hit_taken", base + 4_000); // should reset grace
+		runtime.tickDecayMoved(berserker(), base + 4_000);
+		runtime.onTrigger(berserker(), "on_hit_taken", base + 4_000); // should reset grace
 
 		// Now advance 4 more seconds (8 total from first hit, 4 from second)
 		// Since second hit reset grace, still in grace period
-		runtime.tickDecayMoved(warrior(), base + 8_000);
+		runtime.tickDecayMoved(berserker(), base + 8_000);
 
 		assertEquals(2, runtime.stacks(bulwark()));
 	}
@@ -200,13 +200,13 @@ class ConditionalPassiveStacksTest {
 		assertEquals(0, runtime.stacks(swift));
 	}
 
-	private static ClassDefinition warrior() {
-		return ClassRegistry.byId(ClassRegistry.WARRIOR);
+	private static ClassDefinition berserker() {
+		return ClassRegistry.byId(ClassRegistry.BERSERKER);
 	}
 
-	/** The one passive on the warrior, addressed the way the entry addresses it. */
+	/** The one passive on the berserker, addressed the way the entry addresses it. */
 	private static ConditionalPassive bulwark() {
-		return warrior().passives().get(0);
+		return berserker().passives().get(0);
 	}
 
 	/** A class carrying exactly the given passives, so a rule can be read off a passive of our own. */

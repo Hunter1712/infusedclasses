@@ -23,13 +23,13 @@ class PlayerRuntimesTest {
 		PlayerRuntimes store = new PlayerRuntimes();
 		UUID id = UUID.randomUUID();
 		PlayerRuntime first = store.runtime(id);
-		first.onTrigger(ClassRegistry.byId(ClassRegistry.WARRIOR), "on_hit_taken", 0);
+		first.onTrigger(ClassRegistry.byId(ClassRegistry.BERSERKER), "on_hit_taken", 0);
 
 		store.remove(id);
 
 		assertNotSame(first, store.runtime(id));
 		assertEquals(0, store.runtime(id).stacks(
-				ClassRegistry.byId(ClassRegistry.WARRIOR).passives().get(0)));
+				ClassRegistry.byId(ClassRegistry.BERSERKER).passives().get(0)));
 	}
 
 	@Test
@@ -37,13 +37,13 @@ class PlayerRuntimesTest {
 		PlayerRuntimes store = new PlayerRuntimes();
 		UUID id = UUID.randomUUID();
 		PlayerRuntime old = store.runtime(id);
-		old.onTrigger(ClassRegistry.byId(ClassRegistry.WARRIOR), "on_hit_taken", 0);
+		old.onTrigger(ClassRegistry.byId(ClassRegistry.BERSERKER), "on_hit_taken", 0);
 
 		store.respawn(id);
 
 		PlayerRuntime fresh = store.runtime(id);
 		assertNotSame(old, fresh);
 		assertEquals(0, fresh.stacks(
-				ClassRegistry.byId(ClassRegistry.WARRIOR).passives().get(0)));
+				ClassRegistry.byId(ClassRegistry.BERSERKER).passives().get(0)));
 	}
 }

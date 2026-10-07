@@ -14,7 +14,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 /** Per-passive decay and switch cleanup: the C2 deepening. */
 class PlayerRuntimeDeepeningTest {
 	private static ConditionalPassive bulwark() {
-		return ClassRegistry.byId(ClassRegistry.WARRIOR).passives().get(0);
+		return ClassRegistry.byId(ClassRegistry.BERSERKER).passives().get(0);
 	}
 
 	private static ClassDefinition withPassives(ConditionalPassive... passives) {

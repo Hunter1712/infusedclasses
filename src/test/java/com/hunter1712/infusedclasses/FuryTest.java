@@ -11,20 +11,20 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Berserk: the Warrior's HP-scaled pair. Pure bucket math, per-attribute bonus mapping,
+ * Fury: the Berserker's HP-scaled pair. Pure bucket math, per-attribute bonus mapping,
  * registry wiring, and picker copy — asserted without a player or attribute instance.
  */
-class BerserkTest {
-	private static ClassDefinition warrior() {
-		return ClassRegistry.byId(ClassRegistry.WARRIOR);
+class FuryTest {
+	private static ClassDefinition berserker() {
+		return ClassRegistry.byId(ClassRegistry.BERSERKER);
 	}
 
 	private static HpScaledPassive damage() {
-		return warrior().hpPassives().get(0);
+		return berserker().hpPassives().get(0);
 	}
 
 	private static HpScaledPassive speed() {
-		return warrior().hpPassives().get(1);
+		return berserker().hpPassives().get(1);
 	}
 
 	@Test
@@ -84,26 +84,26 @@ class BerserkTest {
 	void bonusCarriesItsOwnAttributeAndId() {
 		PassiveEffect.Modifier dmg = PassiveEffect.forBucket(damage(), 3);
 		assertEquals(ClassRegistry.ATTACK_DAMAGE, dmg.attribute());
-		assertEquals(Identifier.fromNamespaceAndPath("infusedclasses", "berserk_damage"), dmg.modifierId());
+		assertEquals(Identifier.fromNamespaceAndPath("infusedclasses", "fury_damage"), dmg.modifierId());
 
 		PassiveEffect.Modifier spd = PassiveEffect.forBucket(speed(), 3);
 		assertEquals(ClassRegistry.ATTACK_SPEED, spd.attribute());
-		assertEquals(Identifier.fromNamespaceAndPath("infusedclasses", "berserk_speed"), spd.modifierId());
+		assertEquals(Identifier.fromNamespaceAndPath("infusedclasses", "fury_speed"), spd.modifierId());
 	}
 
 	@Test
-	void warriorCarriesThePairWithoutTouchingBulwark() {
-		List<HpScaledPassive> pair = warrior().hpPassives();
+	void berserkerCarriesThePairWithoutTouchingBulwark() {
+		List<HpScaledPassive> pair = berserker().hpPassives();
 
 		assertEquals(2, pair.size());
-		assertEquals("Berserk Damage", pair.get(0).name());
-		assertEquals("Berserk", pair.get(0).group());
+		assertEquals("Fury Damage", pair.get(0).name());
+		assertEquals("Fury", pair.get(0).group());
 		assertEquals(0.3, pair.get(0).perStep());
-		assertEquals("Berserk Speed", pair.get(1).name());
+		assertEquals("Fury Speed", pair.get(1).name());
 		assertEquals(0.05, pair.get(1).perStep());
 
-		ConditionalPassive bulwark = warrior().passives().get(0);
-		assertEquals(1, warrior().passives().size());
+		ConditionalPassive bulwark = berserker().passives().get(0);
+		assertEquals(1, berserker().passives().size());
 		assertEquals("Bulwark", bulwark.name());
 		assertEquals(ConditionalPassive.ON_HIT_TAKEN, bulwark.trigger());
 		assertEquals(20, bulwark.maxStacks());
@@ -119,27 +119,27 @@ class BerserkTest {
 
 	@Test
 	void cardShowsNamesWhileTooltipShowsFullForm() {
-		List<ClassPresentation.CardLine> lines = ClassPresentation.cardLinesFor(warrior());
+		List<ClassPresentation.CardLine> lines = ClassPresentation.cardLinesFor(berserker());
 		List<String> names = lines.stream().map(ClassPresentation.CardLine::text).toList();
 
-		assertTrue(names.contains("Berserk"));
-		assertFalse(names.contains("Berserk Damage"));
-		assertFalse(names.contains("Berserk Speed"));
+		assertTrue(names.contains("Fury"));
+		assertFalse(names.contains("Fury Damage"));
+		assertFalse(names.contains("Fury Speed"));
 
-		String tooltip = ClassPresentation.tooltipFor(warrior());
-		assertTrue(tooltip.contains("Passive: Berserk \u2014 " + damage().fullDesc() + " " + speed().fullDesc()));
+		String tooltip = ClassPresentation.tooltipFor(berserker());
+		assertTrue(tooltip.contains("Passive: Fury \u2014 " + damage().fullDesc() + " " + speed().fullDesc()));
 	}
 
 	@Test
 	void secondWindStillSpendsBulwarkOnly() {
-		assertEquals(warrior().passives().get(0), SecondWindAbility.bulwarkOf(warrior()));
+		assertEquals(berserker().passives().get(0), SecondWindAbility.bulwarkOf(berserker()));
 
 		// The pair rides along without entering the stacks pipeline: hits still earn
-		// Bulwark alone, so the spender's consume can never touch Berserk.
+		// Bulwark alone, so the spender's consume can never touch Fury.
 		PlayerRuntime runtime = new PlayerRuntime();
-		runtime.onTrigger(warrior(), ConditionalPassive.ON_HIT_TAKEN, 0);
-		runtime.onTrigger(warrior(), ConditionalPassive.ON_HIT_TAKEN, 0);
+		runtime.onTrigger(berserker(), ConditionalPassive.ON_HIT_TAKEN, 0);
+		runtime.onTrigger(berserker(), ConditionalPassive.ON_HIT_TAKEN, 0);
 
-		assertEquals(2, runtime.stacks(warrior().passives().get(0)));
+		assertEquals(2, runtime.stacks(berserker().passives().get(0)));
 	}
 }

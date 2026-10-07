@@ -15,7 +15,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * attribute instance or graphics object is constructed to make these assertions.
  */
 class PassiveEffectTest {
-	private static final ConditionalPassive BULWARK = ClassRegistry.byId(ClassRegistry.WARRIOR).passives().get(0);
+	private static final ConditionalPassive BULWARK = ClassRegistry.byId(ClassRegistry.BERSERKER).passives().get(0);
 
 	@Test
 	void noStacksMeansNoModifier() {

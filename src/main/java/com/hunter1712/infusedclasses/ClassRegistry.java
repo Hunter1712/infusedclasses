@@ -12,12 +12,12 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * All classes. Adding a class = one definition here. Warrior carries Second Wind
- * plus one conditional passive (Bulwark) and the Berserk HP-scaled pair.
+ * All classes. Adding a class = one definition here. Berserker carries Bloodlust plus
+ * Second Wind, one conditional passive (Bulwark) and the Fury HP-scaled pair.
  */
 public final class ClassRegistry {
-	public static final Identifier WARRIOR = Identifier.fromNamespaceAndPath("infusedclasses", "warrior");
-	public static final Identifier WAR_CRY_ABILITY = Identifier.fromNamespaceAndPath("infusedclasses", "war_cry");
+	public static final Identifier BERSERKER = Identifier.fromNamespaceAndPath("infusedclasses", "berserker");
+	public static final Identifier BLOODLUST_ABILITY = Identifier.fromNamespaceAndPath("infusedclasses", "bloodlust");
 	public static final Identifier SECOND_WIND_ABILITY = Identifier.fromNamespaceAndPath("infusedclasses", "second_wind");
 	/** ponytail: attribute ids rather than vanilla holders, so the passive stays bootstrap-free. */
 	public static final ResourceKey<Attribute> ARMOR =
@@ -35,8 +35,8 @@ public final class ClassRegistry {
 
 	static {
 		register(new ClassDefinition(
-				WARRIOR,
-				"Warrior",
+				BERSERKER,
+				"Berserker",
 				false,
 				List.of(new ConditionalPassive(
 						"Bulwark",
@@ -48,28 +48,34 @@ public final class ClassRegistry {
 						5)),
 				List.of(
 						new HpScaledPassive(
-								"Berserk Damage",
+								"Fury Damage",
 								ATTACK_DAMAGE,
-								Identifier.fromNamespaceAndPath(ClassPackets.MOD_ID, "berserk_damage"),
+								Identifier.fromNamespaceAndPath(ClassPackets.MOD_ID, "fury_damage"),
 								0.3,
-								"Berserk"),
+								"Fury"),
 						new HpScaledPassive(
-								"Berserk Speed",
+								"Fury Speed",
 								ATTACK_SPEED,
-								Identifier.fromNamespaceAndPath(ClassPackets.MOD_ID, "berserk_speed"),
+								Identifier.fromNamespaceAndPath(ClassPackets.MOD_ID, "fury_speed"),
 								0.05,
-								"Berserk")),
+								"Fury")),
 				0.0,
-				List.of(WAR_CRY_ABILITY, SECOND_WIND_ABILITY),
+				List.of(BLOODLUST_ABILITY, SECOND_WIND_ABILITY),
 				0xFFE74C3C,
 				"Frontline bruiser",
 				List.of(
 						new ClassDefinition.ActiveAbility(
-								WarCryAbility.NAME,
-								"Weakens and slows hostiles within " + (int) WarCryAbility.RADIUS_BLOCKS
-										+ " blocks for " + (WarCryAbility.EFFECT_TICKS / 20) + "s (R, "
-										+ (Cooldowns.WAR_CRY_MS / 1000) + "s). Grants "
-										+ WarCryAbility.BUILDER_STACKS + " Bulwark. Roots you for "
+								BloodlustAbility.NAME,
+								"Opens a " + (BloodlustAbility.WINDOW_TICKS / 20) + "s lifesteal window healing "
+										+ "bucket x " + (int) (BloodlustAbility.LIFESTEAL_PER_BUCKET * 100)
+										+ "% of melee damage per hit (max "
+										+ ConditionalPassive.amount(BloodlustAbility.MAX_PER_HIT_HP)
+										+ " HP), fires under "
+										+ (20 * (HpScaledPassive.STEPS - BloodlustAbility.GATE_BUCKET)
+												/ HpScaledPassive.STEPS / 2)
+										+ " hearts and grants "
+										+ "bucket Bulwark (R, "
+										+ (Cooldowns.BLOODLUST_MS / 1000) + "s). Roots you for "
 										+ (Spellcast.SLOW_TICKS / 20) + "s."),
 						new ClassDefinition.ActiveAbility(
 								SecondWindAbility.NAME,

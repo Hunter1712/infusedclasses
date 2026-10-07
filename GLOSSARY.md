@@ -68,13 +68,13 @@ _Avoid_: description, lore text
 **Class** (`ClassDefinition`):
 A playable archetype, registered once with its id, display name, locked flag, passives, active
 ability ids, accent colour, tagline and the actives list (one name plus picker description per
-active). A class is data: it carries no player and no state of its own. Warrior is the one
-playable class today: `Warrior`, War Cry (`infusedclasses:war_cry`) plus Second Wind
+active). A class is data: it carries no player and no state of its own. Berserker is the one
+playable class today: `Berserker`, Bloodlust (`infusedclasses:bloodlust`) plus Second Wind
 (`infusedclasses:second_wind`), accent `0xFFE74C3C`,
-tagline `Frontline bruiser`, actives `War Cry` and `Second Wind`, with picker copy
+tagline `Frontline bruiser`, actives `Bloodlust` and `Second Wind`, with picker copy
 generated from the ability constants (builder shout; Bulwark spender), so the numbers
-cannot drift from behaviour. Warrior carries no max-health bonus (vanilla 20 HP): the
-Second Wind shield below is the survival tool, and it leaves live HP low so Berserk stays hot.
+cannot drift from behaviour. Berserker carries no max-health bonus (vanilla 20 HP): the
+Second Wind shield below is the survival tool, and it leaves live HP low so Fury stays hot.
 _Avoid_: character class definition, build
 
 **Locked class**:
@@ -86,23 +86,23 @@ _Avoid_: unavailable class, future class, hidden class
 
 **Active** (`ClassDefinition.ActiveAbility`):
 One playable active on a class card: its list line plus its tooltip description. A class carries
-one per active — Warrior carries War Cry and Second Wind — so names never join with `+`.
+one per active — Berserker carries Bloodlust and Second Wind — so names never join with `+`.
 _Avoid_: ability (ambiguous with the gating id), spell
 
 **Conditional passive** (`ConditionalPassive`):
 A passive that earns stacks when a named trigger fires, rather than always being on. It carries its
 own numbers — stack cap, attribute, per-stack value, grace period — and its picker copy
 is generated from those numbers so the copy cannot claim something the behaviour does not do.
-Bulwark, the Warrior passive, is `on_hit_taken`, max 20, `minecraft:armor` under
+Bulwark, the Berserker passive, is `on_hit_taken`, max 20, `minecraft:armor` under
 `infusedclasses:bulwark_armor`, +0.5 per stack, 5s grace, all stacks drop at once after.
 _Avoid_: buff, stackable stat
 
-**Berserk** (`HpScaledPassive`):
-The Warrior's HP-scaled passive pair: missing HP maps to stepped buckets, 10% per step
+**Fury** (`HpScaledPassive`):
+The Berserker's HP-scaled passive pair: missing HP maps to stepped buckets, 10% per step
 over 10 steps, each step adding a fixed bonus — +0.3 attack damage
-(`infusedclasses:berserk_damage`, max +3.0) and +0.05 attack speed
-(`infusedclasses:berserk_speed`, max +0.5). Zero bonus at full HP, max at 0 HP.
-The pair reads as one `Berserk` line on the card and tooltip (see `HpScaledPassive.group`),
+(`infusedclasses:fury_damage`, max +3.0) and +0.05 attack speed
+(`infusedclasses:fury_speed`, max +0.5). Zero bonus at full HP, max at 0 HP.
+The pair reads as one `Fury` line on the card and tooltip (see `HpScaledPassive.group`),
 with both bonus descs joined, so one passive never looks like two.
 Recomputed every tick from live HP, transient and never saved; Second Wind spends
 Bulwark only and never touches it.
@@ -117,18 +117,23 @@ _Avoid_: charge, level, rank
 
 **Cooldown** (`Cooldowns`):
 The wait after an ability fires, tracked per player, also transient. Two independent lanes:
-War Cry's 20s (`WAR_CRY_MS`) and Second Wind's 60s (`SECOND_WIND_MS`): `useWarCry` /
-`useSecondWind` fire only when their own lane is ready and report it, `warCryRemaining` /
+Bloodlust's 30s (`BLOODLUST_MS`) and Second Wind's 60s (`SECOND_WIND_MS`): `useBloodlust` /
+`useSecondWind` fire only when their own lane is ready and report it, `bloodlustRemaining` /
 `secondWindRemaining` report the milliseconds left, 0 when ready, `reset` readies both again
-for class switch and respawn.
+for class switch and respawn. The lifesteal window rides on the transient runtime next to
+the lanes: a fired opener stamps the press time, `isBloodlustLive` reads it against the
+10s window, and switch and respawn clear it with everything else.
 _Avoid_: timer
 
-**War Cry** (`WarCryAbility`):
-The Warrior's debuff shout on `R`: lays Weakness I and Slowness I for 10s (`EFFECT_TICKS`)
-on every alive hostile within 16 blocks (`RADIUS_BLOCKS`), on its own 20s lane. Builder —
-firing also grants 5 Bulwark (`BUILDER_STACKS`), the opener that starts the spend loop. Decided in the trigger/fire gate-and-arm
-shape; the effect ids ride in the decision and the adapter resolves them, announces
-`War Cry!` in red, and writes the effects. Rejected presses leave the lane untouched.
+**Bloodlust** (`BloodlustAbility`):
+The Berserker's lifesteal opener on `R`: opens a 10s lifesteal window (`WINDOW_TICKS`) on
+its own 30s lane, healing `bucket x 2%` of melee damage per hit (max 2 HP per hit), and
+grants the fired bucket as Bulwark, the opener that starts the spend loop. Fires only at
+bucket 5+, about under 5 hearts at 20 max; above that fizzles free with a `Too healthy`
+line, like Second Wind at 0 stacks: cooldown untouched, no root, no builder. Decided in
+the trigger/fire gate-and-arm shape; the runtime stamps the window when the lane arms,
+announces `Bloodlust!` in red, and the damage hook heals melee hits while the window is
+live. Rejected presses leave the lane and the window untouched.
 Like every cast, firing roots the caster briefly (see `Spellcast`).
 _Avoid_: damage button, second spender
 
@@ -140,10 +145,10 @@ picker copy discloses it from these constants.
 _Avoid_: cast time, wind-up
 
 **Second Wind** (`SecondWindAbility`):
-The Warrior's Bulwark spender on `G`: grants `stacks * 1.0 HP` absorption for 10s
+The Berserker's Bulwark spender on `G`: grants `stacks * 1.0 HP` absorption for 10s
 (`ABSORPTION_TICKS`, via the vanilla effect, trimmed to the exact shield) and consumes
 every Bulwark stack
-plus the armor they granted, on its own 60s lane. Live HP is untouched, so Berserk stays
+plus the armor they granted, on its own 60s lane. Live HP is untouched, so Fury stays
 hot through the shield. Zero stacks fizzles with a `No Bulwark` line
 and arms nothing. Decided in the trigger/fire gate-and-arm shape; the spent passive is
 found by trigger rather than position, and the consume flag rides in the result: the entry asks
@@ -271,10 +276,10 @@ against the choice module; a rejected pick leaves the picker open for retry. An 
 clears what the old class earned and resets the cooldown, so no stale modifier survives.
 _Avoid_: select packet
 
-**War cry intent** (`WarCryPayload`):
-The client's `infusedclasses:war_cry` intent: "I pressed the War Cry key", sent while
-the `R` key (`key.infusedclasses.war_cry`) is consumed each client tick. The server
-validates class and cooldown; rejected presses leave the lane untouched.
+**Bloodlust intent** (`BloodlustPayload`):
+The client's `infusedclasses:bloodlust` intent: "I pressed the Bloodlust key", sent while
+the `R` key (`key.infusedclasses.bloodlust`) is consumed each client tick. The server
+validates class, health gate and cooldown; rejected presses leave the lane and the window untouched.
 _Avoid_: shout packet, key packet
 
 **Second wind intent** (`SecondWindPayload`):

@@ -27,7 +27,7 @@ class ProtocolTest {
 
 	@Test
 	void selectClassCodecRoundTrips() {
-		Identifier id = Identifier.fromNamespaceAndPath("infusedclasses", "warrior");
+		Identifier id = Identifier.fromNamespaceAndPath("infusedclasses", "berserker");
 		SelectClassPayload original = new SelectClassPayload(id);
 		ByteBuf buf = Unpooled.buffer();
 		try {
@@ -57,6 +57,11 @@ class ProtocolTest {
 			SecondWindPayload.STREAM_CODEC.encode(buf, new SecondWindPayload());
 			SecondWindPayload decoded4 = SecondWindPayload.STREAM_CODEC.decode(buf);
 			assertEquals(new SecondWindPayload(), decoded4);
+
+			buf.clear();
+			BloodlustPayload.STREAM_CODEC.encode(buf, new BloodlustPayload());
+			BloodlustPayload decoded5 = BloodlustPayload.STREAM_CODEC.decode(buf);
+			assertEquals(new BloodlustPayload(), decoded5);
 		} finally {
 			buf.release();
 		}

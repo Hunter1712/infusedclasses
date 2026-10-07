@@ -34,7 +34,7 @@ public final class AbilityApplier {
 		return shielded;
 	}
 
-	/** One announcement path for every ability result: null says nothing. Shared with the War Cry adapter. */
+	/** One announcement path for every ability result: null says nothing. Shared with the Bloodlust adapter. */
 	static void announce(ServerPlayer player, ChatLine announcement) {
 		if (announcement == null) {
 			return;

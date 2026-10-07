@@ -45,6 +45,20 @@ final class ServerEvents {
 					InfusedClasses.runtime(victim).onTrigger(def, ConditionalPassive.ON_HIT_TAKEN, now);
 				}
 			}
+			// Bloodlust lifesteal: a Berserker's direct melee hit inside a live window heals
+			// bucket x 2% of the damage dealt. Any melee, no charge gate; self-damage excluded
+			// by the attacker check, projectiles and spells by the direct check.
+			if (source.getEntity() instanceof ServerPlayer attacker && source.getDirectEntity() == attacker
+					&& attacker != entity) {
+				ClassDefinition atkDef = PlayerClassAccess.of(attacker).currentDefinition();
+				if (atkDef != null && atkDef.activeAbilities().contains(ClassRegistry.BLOODLUST_ABILITY)) {
+					PlayerRuntime atkRuntime = InfusedClasses.runtime(attacker);
+					if (atkRuntime.isBloodlustLive(now)) {
+						int bucket = HpScaledPassive.bucket(attacker.getHealth(), attacker.getMaxHealth());
+						BloodlustApplier.heal(attacker, bucket, damageTaken);
+					}
+				}
+			}
 		});
 
 		// Server tick: decay conditional passive stacks, then put their effect on the player.

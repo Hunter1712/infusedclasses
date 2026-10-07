@@ -19,6 +19,9 @@ import java.util.Set;
 public final class PlayerRuntime {
 	// ponytail: cooldowns reset on relog, persist to NBT if the reset becomes an exploit.
 	private final Cooldowns cooldowns = new Cooldowns();
+	// Bloodlust window: press timestamp (millis), live for the ability's window after a fired
+	// press. Cleared with everything else, so switch and respawn never inherit a window.
+	private long bloodlustPressedAt = -1L;
 	// Conditional-passive stacks: keyed by the passive definition, never by its name, so a
 	// passive is addressed by what it is rather than by what it is called.
 	private final Map<ConditionalPassive, Integer> passiveStacks = new HashMap<>();
@@ -30,12 +33,22 @@ public final class PlayerRuntime {
 	}
 
 	/** Cooldown verbs: arming runs through here, so no caller reaches through the mutable object. */
-	public long warCryRemaining(long now) {
-		return cooldowns.warCryRemaining(now);
+	public long bloodlustRemaining(long now) {
+		return cooldowns.bloodlustRemaining(now);
 	}
 
-	public boolean tryUseWarCry(long now) {
-		return cooldowns.useWarCry(now);
+	/** Arms the Bloodlust lane and stamps the lifesteal window together: fired presses only. */
+	public boolean tryUseBloodlust(long now) {
+		if (!cooldowns.useBloodlust(now)) {
+			return false;
+		}
+		bloodlustPressedAt = now;
+		return true;
+	}
+
+	/** Whether a fired Bloodlust window is still live: press timestamp plus the ability's window. */
+	public boolean isBloodlustLive(long now) {
+		return bloodlustPressedAt >= 0 && now - bloodlustPressedAt < BloodlustAbility.WINDOW_TICKS * 50L;
 	}
 
 	public long secondWindRemaining(long now) {
@@ -49,6 +62,7 @@ public final class PlayerRuntime {
 	/** Reset for class switch: a new class starts empty. The adapter calls this, not ability callers. */
 	public void resetCooldowns() {
 		cooldowns.reset();
+		bloodlustPressedAt = -1L;
 	}
 
 	/** Current stacks for a passive, 0 when never triggered. */
