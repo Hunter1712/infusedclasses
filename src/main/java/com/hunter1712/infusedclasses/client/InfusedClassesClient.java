@@ -2,9 +2,9 @@ package com.hunter1712.infusedclasses.client;
 
 import com.hunter1712.infusedclasses.ClassConfirmedPayload;
 import com.hunter1712.infusedclasses.OpenClassScreenPayload;
-import com.hunter1712.infusedclasses.SecondWindPayload;
+import com.hunter1712.infusedclasses.RendPayload;
 import com.hunter1712.infusedclasses.SelectClassPayload;
-import com.hunter1712.infusedclasses.BloodlustPayload;
+import com.hunter1712.infusedclasses.RushPayload;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
@@ -17,8 +17,8 @@ import org.lwjgl.glfw.GLFW;
 
 /** Client: opens picker on server signal, sends class pick and ability keys as intents. */
 public class InfusedClassesClient implements ClientModInitializer {
-	private static KeyMapping bloodlustKey;
-	private static KeyMapping secondWindKey;
+	private static KeyMapping rushKey;
+	private static KeyMapping rendKey;
 
 	@Override
 	public void onInitializeClient() {
@@ -36,20 +36,20 @@ public class InfusedClassesClient implements ClientModInitializer {
 							}
 						}));
 
-		bloodlustKey = KeyBindingHelper.registerKeyBinding(new KeyMapping(
-				"key.infusedclasses.bloodlust", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_R, KeyMapping.Category.GAMEPLAY));
-		secondWindKey = KeyBindingHelper.registerKeyBinding(new KeyMapping(
-				"key.infusedclasses.second_wind", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_G, KeyMapping.Category.GAMEPLAY));
+		rushKey = KeyBindingHelper.registerKeyBinding(new KeyMapping(
+				"key.infusedclasses.rush", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_R, KeyMapping.Category.GAMEPLAY));
+		rendKey = KeyBindingHelper.registerKeyBinding(new KeyMapping(
+				"key.infusedclasses.rend", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_G, KeyMapping.Category.GAMEPLAY));
 
 		ClientTickEvents.END_CLIENT_TICK.register(client -> {
 			if (client.player == null) {
 				return;
 			}
-			while (bloodlustKey.consumeClick()) {
-				ClientPlayNetworking.send(new BloodlustPayload());
+			while (rushKey.consumeClick()) {
+				ClientPlayNetworking.send(new RushPayload());
 			}
-			while (secondWindKey.consumeClick()) {
-				ClientPlayNetworking.send(new SecondWindPayload());
+			while (rendKey.consumeClick()) {
+				ClientPlayNetworking.send(new RendPayload());
 			}
 		});
 	}

@@ -28,8 +28,8 @@ public final class PlayerClasses {
 	}
 
 	public void readId(String id) {
-		if ("infusedclasses:warrior".equals(id)) {
-			id = "infusedclasses:berserker";
+		if ("infusedclasses:warrior".equals(id) || "infusedclasses:berserker".equals(id)) {
+			id = "infusedclasses:juggernaut";
 		}
 		Identifier parsed = id == null ? null : Identifier.tryParse(id);
 		ClassDefinition def = parsed == null ? null : ClassRegistry.byId(parsed);

@@ -24,8 +24,10 @@ public record ConditionalPassive(
 		double perStack,
 		int graceSeconds
 ) {
-	/** The only trigger the server entry feeds. One constant, so a rename cannot go silently inert. */
+	/** A hit-taken trigger: any passive on this trigger earns a stack per hit taken. One constant, so a rename cannot go silently inert. */
 	public static final String ON_HIT_TAKEN = "on_hit_taken";
+	/** The trigger the Juggernaut feeds by landing a hit. Same guarantee as the hit-taken one. */
+	public static final String ON_HIT_DEALT = "on_hit_dealt";
 	/** Full picker copy. Generated from the numbers so it cannot drift from behaviour. */
 	public String fullDesc() {
 		return earnClause() + " (max " + maxStacks + "). Each stack adds +" + amount(perStack)
@@ -38,16 +40,24 @@ public record ConditionalPassive(
 	 * and any other trigger is described as the bare trigger rather than guessed at.
 	 */
 	private String earnClause() {
-		return isHitTrigger() ? "Taking a hit grants 1 stack" : "Each trigger grants 1 stack";
+		if (ON_HIT_TAKEN.equals(trigger)) {
+			return "Taking a hit grants 1 stack";
+		}
+		if (ON_HIT_DEALT.equals(trigger)) {
+			return "Landing a hit grants 1 stack";
+		}
+		return "Each trigger grants 1 stack";
 	}
 
 	/** The idle half of the same wording: what has to stop happening for the stacks to decay. */
 	private String idleClause() {
-		return isHitTrigger() ? "without a hit" : "without a trigger";
-	}
-
-	private boolean isHitTrigger() {
-		return ON_HIT_TAKEN.equals(trigger);
+		if (ON_HIT_TAKEN.equals(trigger)) {
+			return "without a hit";
+		}
+		if (ON_HIT_DEALT.equals(trigger)) {
+			return "without landing a hit";
+		}
+		return "without a trigger";
 	}
 
 	/** Attribute name as the copy spells it: "minecraft:armor_toughness" reads as "armor toughness". */

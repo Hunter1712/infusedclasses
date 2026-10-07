@@ -8,14 +8,14 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 
 class PlayerClassStateTest {
 	@Test
-	void acceptsBerserkerThroughPurePath() {
+	void acceptsJuggernautThroughPurePath() {
 		PlayerClasses classes = new PlayerClasses();
 
-		ClassDefinition def = classes.trySetClass(ClassRegistry.BERSERKER);
+		ClassDefinition def = classes.trySetClass(ClassRegistry.JUGGERNAUT);
 
-		assertEquals(ClassRegistry.BERSERKER, def.id());
-		assertEquals(ClassRegistry.BERSERKER, classes.classId());
-		assertEquals(ClassRegistry.BERSERKER, classes.currentDefinition().id());
+		assertEquals(ClassRegistry.JUGGERNAUT, def.id());
+		assertEquals(ClassRegistry.JUGGERNAUT, classes.classId());
+		assertEquals(ClassRegistry.JUGGERNAUT, classes.currentDefinition().id());
 	}
 
 	@Test
@@ -32,21 +32,21 @@ class PlayerClassStateTest {
 	@Test
 	void rejectedPickKeepsPreviousClass() {
 		PlayerClasses classes = new PlayerClasses();
-		classes.trySetClass(ClassRegistry.BERSERKER);
+		classes.trySetClass(ClassRegistry.JUGGERNAUT);
 
 		assertNull(classes.trySetClass(Identifier.fromNamespaceAndPath("infusedclasses", "mage")));
 
-		assertEquals(ClassRegistry.BERSERKER, classes.classId());
+		assertEquals(ClassRegistry.JUGGERNAUT, classes.classId());
 	}
 
 	@Test
 	void respawnCopyPreservesClassOnFreshInstance() {
 		PlayerClasses oldClasses = new PlayerClasses();
-		oldClasses.trySetClass(ClassRegistry.BERSERKER);
+		oldClasses.trySetClass(ClassRegistry.JUGGERNAUT);
 		PlayerClasses newClasses = new PlayerClasses();
 
 		newClasses.copyFrom(oldClasses);
 
-		assertEquals(ClassRegistry.BERSERKER, newClasses.classId());
+		assertEquals(ClassRegistry.JUGGERNAUT, newClasses.classId());
 	}
 }

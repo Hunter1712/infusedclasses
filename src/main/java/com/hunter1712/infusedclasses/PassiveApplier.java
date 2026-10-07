@@ -34,9 +34,9 @@ public final class PassiveApplier {
 				}
 			}
 		}
-		// Fury: no stacks, no grace. Recomputed from live HP every tick; the write
+		// Vigor: no stacks, no grace. Recomputed from live HP every tick; the write
 		// early-out below already covers no-op ticks, bucket 0 removes like dead stacks.
-		int bucket = HpScaledPassive.bucket(player.getHealth(), player.getMaxHealth());
+		int bucket = HpScaledPassive.bucketForCurrent(player.getHealth(), player.getMaxHealth());
 		for (HpScaledPassive hp : def.hpPassives()) {
 			PassiveEffect.Modifier wanted = PassiveEffect.forBucket(hp, bucket);
 			if (wanted != null) {
@@ -45,7 +45,7 @@ public final class PassiveApplier {
 				remove(player, hp.attribute(), hp.modifierId());
 			}
 		}
-		// Bonus pool: flat max-HP per class, Berserker-only today. The write early-out
+		// Bonus pool: flat max-HP per class. The write early-out
 		// covers no-op ticks; a zero bonus removes, so the tick self-heals within one
 		// tick of any switch — no onClassChanged handling needed.
 		if (def.maxHealthBonus() > 0) {
@@ -72,7 +72,7 @@ public final class PassiveApplier {
 					remove(player, passive.attribute(), passive.modifierId());
 				}
 			}
-			// Fury holds no stacks to clear, only the modifiers come off.
+			// Vigor holds no stacks to clear, only the modifiers come off.
 			for (HpScaledPassive hp : oldDef.hpPassives()) {
 				if (newDef == null || !newDef.hpPassives().contains(hp)) {
 					remove(player, hp.attribute(), hp.modifierId());
@@ -100,31 +100,33 @@ public final class PassiveApplier {
 
 	/**
 	 * Spender consume by class: resolves the priced passive by trigger and consumes it. The
-	 * single path for Second Wind, so the entry never looks the passive up itself: one
-	 * trigger scan in the decision, one here, and never one in the entry.
+	 * single path for Rend, so the entry never looks the passive up itself: the definition
+	 * owns the one trigger scan, the decision aliases it, and the entry stays out.
 	 */
 	public static boolean consumeSpent(ServerPlayer player, PlayerRuntime runtime, ClassDefinition def) {
-		return consumeStacks(player, runtime, SecondWindAbility.bulwarkOf(def));
+		return consumeStacks(player, runtime, pricedPassive(def));
 	}
 
 	/**
-	 * Builder grant by class: Bloodlust's opener credits the priced passive with the fired
-	 * bucket, capped and grace re-stamped through the trigger path. The single path for the
-	 * builder, mirroring {@link #consumeSpent}: the entry forwards the result, never resolves.
-	 * Only a fired opener grants; rejects and a missing priced passive do nothing.
+	 * Bonus grant by class: Rush's next qualifying melee hit credits the priced passive
+	 * with the ability's bonus, capped and grace re-stamped through the trigger path.
+	 * Resolves through the definition like {@link #consumeSpent}: the entry forwards,
+	 * never resolves. Only a live fired window with its bonus still pending
+	 * grants; rejects, stale windows and a missing priced passive do nothing.
 	 */
-	public static void grantBloodlustStacks(PlayerRuntime runtime, ClassDefinition def,
-			BloodlustAbility.Result result, long now) {
-		if (result == null || result.kind() != BloodlustAbility.Kind.FIRED) {
+	public static void grantRushBonus(PlayerRuntime runtime, ClassDefinition def, long now) {
+		ConditionalPassive momentum = pricedPassive(def);
+		if (momentum == null || !runtime.consumeRushBonus(now)) {
 			return;
 		}
-		ConditionalPassive bulwark = SecondWindAbility.bulwarkOf(def);
-		if (bulwark == null) {
-			return;
+		for (int i = 0; i < RushAbility.BONUS_STACKS; i++) {
+			runtime.onTrigger(def, momentum.trigger(), now);
 		}
-		for (int i = 0; i < result.builderStacks(); i++) {
-			runtime.onTrigger(def, bulwark.trigger(), now);
-		}
+	}
+
+	/** The priced passive both the Rend spend and the Rush bonus resolve: the class's hit-dealt stacker, or null. */
+	private static ConditionalPassive pricedPassive(ClassDefinition def) {
+		return def == null ? null : def.passiveForTrigger(ConditionalPassive.ON_HIT_DEALT);
 	}
 
 	/** Writes exactly what the decision names, and only when it differs from what is applied. */

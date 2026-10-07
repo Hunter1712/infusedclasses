@@ -4,7 +4,6 @@ import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents;
 import net.fabricmc.fabric.api.entity.event.v1.ServerPlayerEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
-import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.server.level.ServerPlayer;
 
 /**
@@ -37,25 +36,25 @@ final class ServerEvents {
 
 		ServerLivingEntityEvents.AFTER_DAMAGE.register((entity, source, baseDamageTaken, damageTaken, blocked) -> {
 			long now = System.currentTimeMillis();
-			if (entity instanceof ServerPlayer victim) {
-				PlayerClasses classes = PlayerClassAccess.of(victim);
-				// Classless players are inert, and cost nothing: no transient state is made for them.
-				ClassDefinition def = classes.currentDefinition();
-				if (def != null) {
-					InfusedClasses.runtime(victim).onTrigger(def, ConditionalPassive.ON_HIT_TAKEN, now);
-				}
-			}
-			// Bloodlust lifesteal: a Berserker's direct melee hit inside a live window heals
-			// bucket x 2% of the damage dealt. Any melee, no charge gate; self-damage excluded
-			// by the attacker check, projectiles and spells by the direct check.
+			// Momentum: a direct melee hit builds stacks for any class carrying an
+			// on-hit-dealt passive and, inside a live Rush window with its bonus still
+			// pending, lands the engage bonus too. Any melee, no charge gate;
+			// self-damage excluded by the attacker check, projectiles and spells by
+			// the direct check. Gating lives in the pure modules (unknown triggers,
+			// missing passives and dead windows are inert), so this branch never
+			// compares ability ids: a future stacker works without touching it.
 			if (source.getEntity() instanceof ServerPlayer attacker && source.getDirectEntity() == attacker
 					&& attacker != entity) {
 				ClassDefinition atkDef = PlayerClassAccess.of(attacker).currentDefinition();
-				if (atkDef != null && atkDef.activeAbilities().contains(ClassRegistry.BLOODLUST_ABILITY)) {
+				if (atkDef != null) {
 					PlayerRuntime atkRuntime = InfusedClasses.runtime(attacker);
-					if (atkRuntime.isBloodlustLive(now)) {
-						int bucket = HpScaledPassive.bucket(attacker.getHealth(), attacker.getMaxHealth());
-						BloodlustApplier.heal(attacker, bucket, damageTaken);
+					atkRuntime.onTrigger(atkDef, ConditionalPassive.ON_HIT_DEALT, now);
+					PassiveApplier.grantRushBonus(atkRuntime, atkDef, now);
+					// Rend empower: the stamped bonus lands on this hit and only this one,
+					// applied through the adapter like every other outcome.
+					int empowerStacks = atkRuntime.consumeRendEmpower(now);
+					if (empowerStacks > 0) {
+						RendApplier.dealEmpower(attacker, entity, RendAbility.empowerFor(empowerStacks));
 					}
 				}
 			}

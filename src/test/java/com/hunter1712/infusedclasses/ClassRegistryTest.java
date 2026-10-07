@@ -16,12 +16,12 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ClassRegistryTest {
 	@Test
-	void berserkerIsKnownAndUnlocked() {
-		ClassDefinition berserker = ClassRegistry.byId(ClassRegistry.BERSERKER);
+	void juggernautIsKnownAndUnlocked() {
+		ClassDefinition juggernaut = ClassRegistry.byId(ClassRegistry.JUGGERNAUT);
 
-		assertNotNull(berserker);
-		assertFalse(berserker.locked());
-		assertEquals("Berserker", berserker.displayName());
+		assertNotNull(juggernaut);
+		assertFalse(juggernaut.locked());
+		assertEquals("Juggernaut", juggernaut.displayName());
 	}
 
 	@Test
@@ -34,8 +34,8 @@ class ClassRegistryTest {
 	}
 
 	@Test
-	void berserkerCarriesNoHealthBonusWhileLockedCarriesNone() {
-		assertEquals(0.0, ClassRegistry.byId(ClassRegistry.BERSERKER).maxHealthBonus());
+	void juggernautCarriesNoHealthBonusWhileLockedCarriesNone() {
+		assertEquals(0.0, ClassRegistry.byId(ClassRegistry.JUGGERNAUT).maxHealthBonus());
 
 		for (ClassDefinition def : ClassRegistry.all()) {
 			if (def.locked()) {
@@ -45,23 +45,23 @@ class ClassRegistryTest {
 	}
 
 	@Test
-	void berserkerCarriesBulwarkConditionalPassive() {
-		List<ConditionalPassive> passives = ClassRegistry.byId(ClassRegistry.BERSERKER).passives();
+	void juggernautCarriesMomentumConditionalPassive() {
+		List<ConditionalPassive> passives = ClassRegistry.byId(ClassRegistry.JUGGERNAUT).passives();
 
 		assertEquals(1, passives.size());
-		ConditionalPassive bulwark = passives.get(0);
-		assertEquals("Bulwark", bulwark.name());
-		assertEquals("on_hit_taken", bulwark.trigger());
-		assertEquals(20, bulwark.maxStacks());
-		assertFalse(bulwark.fullDesc().isBlank());
+		ConditionalPassive momentum = passives.get(0);
+		assertEquals("Momentum", momentum.name());
+		assertEquals("on_hit_dealt", momentum.trigger());
+		assertEquals(10, momentum.maxStacks());
+		assertFalse(momentum.fullDesc().isBlank());
 	}
 
 	@Test
-	void berserkerPassiveCopySaysWhatItDoesToday() {
-		ConditionalPassive bulwark = ClassRegistry.byId(ClassRegistry.BERSERKER).passives().get(0);
+	void juggernautPassiveCopySaysWhatItDoesToday() {
+		ConditionalPassive momentum = ClassRegistry.byId(ClassRegistry.JUGGERNAUT).passives().get(0);
 
-		assertEquals("Taking a hit grants 1 stack (max 20). Each stack adds +0.5 armor. "
-				+ "After 5s without a hit, lose all stacks.", bulwark.fullDesc());
+		assertEquals("Landing a hit grants 1 stack (max 10). Each stack adds +1 armor. "
+				+ "After 4s without landing a hit, lose all stacks.", momentum.fullDesc());
 	}
 
 	@Test
@@ -78,17 +78,30 @@ class ClassRegistryTest {
 	}
 
 	@Test
+	void hitTakenCopyStillReadsAsAHit() {
+		ConditionalPassive guard = new ConditionalPassive("Guard", ConditionalPassive.ON_HIT_TAKEN, 20,
+				ClassRegistry.ARMOR, Identifier.fromNamespaceAndPath("infusedclasses", "guard_armor"), 0.5, 5);
+
+		assertEquals("Taking a hit grants 1 stack (max 20). Each stack adds +0.5 armor. "
+				+ "After 5s without a hit, lose all stacks.", guard.fullDesc());
+	}
+
+	@Test
 	void playerClassIdRoundTripsThroughString() {
 		PlayerClasses classes = new PlayerClasses();
 
 		assertNull(classes.writeId());
+		classes.readId("infusedclasses:juggernaut");
+		assertEquals(ClassRegistry.JUGGERNAUT, classes.classId());
+		assertEquals("infusedclasses:juggernaut", classes.writeId());
+
 		classes.readId("infusedclasses:berserker");
-		assertEquals(ClassRegistry.BERSERKER, classes.classId());
-		assertEquals("infusedclasses:berserker", classes.writeId());
+		assertEquals(ClassRegistry.JUGGERNAUT, classes.classId());
+		assertEquals("infusedclasses:juggernaut", classes.writeId());
 
 		classes.readId("infusedclasses:warrior");
-		assertEquals(ClassRegistry.BERSERKER, classes.classId());
-		assertEquals("infusedclasses:berserker", classes.writeId());
+		assertEquals(ClassRegistry.JUGGERNAUT, classes.classId());
+		assertEquals("infusedclasses:juggernaut", classes.writeId());
 
 		classes.readId("infusedclasses:bard");
 		assertNull(classes.classId());
@@ -98,4 +111,3 @@ class ClassRegistryTest {
 		assertNull(classes.classId());
 	}
 }
-

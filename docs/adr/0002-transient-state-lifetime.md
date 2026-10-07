@@ -28,18 +28,19 @@ Split per-player state at the seam it already drew, and give the transient half 
   player mixin implements it on every player and holds the one choice slot, saved with player data
   (`ValueInput`/`ValueOutput`), so only the choice lives on the player.
 - `PlayerRuntime` is the **transient runtime**: stacks, the cap, decay, the grace period and
-  cooldowns (`Cooldowns`: War Cry 30s, `useWarCry`/`warCryRemaining`). It is handed the class they
+  cooldowns (`Cooldowns`: Rush 25s plus Rend 60s, `useRush`/`rushRemaining` plus
+  `useRend`/`rendRemaining`). It is handed the class they
   belong to and the current time on every call, so it holds neither a clock nor a player's choice,
   and it reads no Minecraft types beyond its own signature. Stacks and last-trigger timestamps are
   keyed by the passive definition, not its name. `onTrigger` bumps every matching passive and
-  re-stamps grace; `tickDecay` ticks every passive on the class past its own grace at its own rate
-  and reports whether any stacks moved, so a tick that moved nothing needs no attribute write.
+  re-stamps grace; `tickDecayMoved` drops every stack of each passive on the class past its own grace
+  at once and reports the set that moved, so a tick that moved nothing needs no attribute write.
 - Because the transient half is no longer reachable from the player, the **server entry owns its
   lifetime**: one per player keyed by UUID, created on first use, replaced by an empty one on respawn,
   and removed on disconnect.
 - Wiring, as it stands: join opens the picker when the player has no class and creates nothing;
   classless players stay inert on damage and on tick, costing no transient state. Damage feeds the
-  `on_hit_taken` trigger only; the end-of-tick pass decays stacks and then applies the passive
+  `on_hit_dealt` trigger plus the Rush bonus and Rend empower spend; the end-of-tick pass decays stacks and then applies the passive
   effect. On respawn only the choice is copied to the new player, and the old runtime entry is
   removed before the new one is created — both players share one UUID, so the other order would hand
   the respawned player the stacks their old body earned. That ordering lives in wiring no test

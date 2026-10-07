@@ -16,7 +16,7 @@ class ProtocolTest {
 		Set<Identifier> ids = new HashSet<>(Set.of(
 				SelectClassPayload.TYPE.id(),
 				OpenClassScreenPayload.TYPE.id(),
-				SecondWindPayload.TYPE.id(),
+				RendPayload.TYPE.id(),
 				ClassConfirmedPayload.TYPE.id()));
 
 		assertEquals(4, ids.size());
@@ -26,8 +26,14 @@ class ProtocolTest {
 	}
 
 	@Test
+	void rushPayloadHasItsOwnChannel() {
+		assertEquals("infusedclasses:rush", RushPayload.TYPE.id().toString());
+		assertEquals(ClassPackets.MOD_ID, RushPayload.TYPE.id().getNamespace());
+	}
+
+	@Test
 	void selectClassCodecRoundTrips() {
-		Identifier id = Identifier.fromNamespaceAndPath("infusedclasses", "berserker");
+		Identifier id = Identifier.fromNamespaceAndPath("infusedclasses", "juggernaut");
 		SelectClassPayload original = new SelectClassPayload(id);
 		ByteBuf buf = Unpooled.buffer();
 		try {
@@ -54,14 +60,14 @@ class ProtocolTest {
 			assertEquals(new ClassConfirmedPayload(), decoded3);
 
 			buf.clear();
-			SecondWindPayload.STREAM_CODEC.encode(buf, new SecondWindPayload());
-			SecondWindPayload decoded4 = SecondWindPayload.STREAM_CODEC.decode(buf);
-			assertEquals(new SecondWindPayload(), decoded4);
+			RendPayload.STREAM_CODEC.encode(buf, new RendPayload());
+			RendPayload decoded4 = RendPayload.STREAM_CODEC.decode(buf);
+			assertEquals(new RendPayload(), decoded4);
 
 			buf.clear();
-			BloodlustPayload.STREAM_CODEC.encode(buf, new BloodlustPayload());
-			BloodlustPayload decoded5 = BloodlustPayload.STREAM_CODEC.decode(buf);
-			assertEquals(new BloodlustPayload(), decoded5);
+			RushPayload.STREAM_CODEC.encode(buf, new RushPayload());
+			RushPayload decoded5 = RushPayload.STREAM_CODEC.decode(buf);
+			assertEquals(new RushPayload(), decoded5);
 		} finally {
 			buf.release();
 		}

@@ -13,8 +13,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /** Per-passive decay and switch cleanup: the C2 deepening. */
 class PlayerRuntimeDeepeningTest {
-	private static ConditionalPassive bulwark() {
-		return ClassRegistry.byId(ClassRegistry.BERSERKER).passives().get(0);
+	private static ConditionalPassive momentum() {
+		return ClassRegistry.byId(ClassRegistry.JUGGERNAUT).passives().get(0);
 	}
 
 	private static ClassDefinition withPassives(ConditionalPassive... passives) {
@@ -26,15 +26,15 @@ class PlayerRuntimeDeepeningTest {
 	void decayedPassiveMovesWithoutTouchingIdleOne() {
 		ConditionalPassive swift = new ConditionalPassive("Swift", "on_land", 4, ClassRegistry.ARMOR,
 				Identifier.fromNamespaceAndPath("infusedclasses", "swift_armor"), 0.5, 2);
-		ClassDefinition def = withPassives(bulwark(), swift);
+		ClassDefinition def = withPassives(momentum(), swift);
 		PlayerRuntime runtime = new PlayerRuntime();
 		long base = 1_000_000L;
-		runtime.onTrigger(def, "on_hit_taken", base);
+		runtime.onTrigger(def, "on_hit_dealt", base);
 		// Swift never triggered: 0 stacks, never moved.
 
-		Set<ConditionalPassive> moved = runtime.tickDecayMoved(def, base + 6_000);
+		Set<ConditionalPassive> moved = runtime.tickDecayMoved(def, base + 5_000);
 
-		assertTrue(moved.contains(bulwark()));
+		assertTrue(moved.contains(momentum()));
 		assertFalse(moved.contains(swift));
 		// Old global flag would have removed Swift spuriously; per-passive must not.
 		assertTrue(PassiveEffect.planFor(swift, runtime.stacks(swift), moved.contains(swift))
@@ -45,16 +45,16 @@ class PlayerRuntimeDeepeningTest {
 	void clearDropsOnlyThatClassStacks() {
 		ConditionalPassive swift = new ConditionalPassive("Swift", "on_land", 4, ClassRegistry.ARMOR,
 				Identifier.fromNamespaceAndPath("infusedclasses", "swift_armor"), 0.5, 2);
-		ClassDefinition both = withPassives(bulwark(), swift);
+		ClassDefinition both = withPassives(momentum(), swift);
 		PlayerRuntime runtime = new PlayerRuntime();
 		long base = 1_000_000L;
-		runtime.onTrigger(both, "on_hit_taken", base);
+		runtime.onTrigger(both, "on_hit_dealt", base);
 		runtime.onTrigger(both, "on_land", base);
-		assertEquals(1, runtime.stacks(bulwark()));
+		assertEquals(1, runtime.stacks(momentum()));
 
-		runtime.clear(withPassives(bulwark()));
+		runtime.clear(withPassives(momentum()));
 
-		assertEquals(0, runtime.stacks(bulwark()));
+		assertEquals(0, runtime.stacks(momentum()));
 		assertEquals(1, runtime.stacks(swift));
 	}
 
@@ -62,26 +62,26 @@ class PlayerRuntimeDeepeningTest {
 	void clearDropsOnlyThePricedPassive() {
 		ConditionalPassive swift = new ConditionalPassive("Swift", "on_land", 4, ClassRegistry.ARMOR,
 				Identifier.fromNamespaceAndPath("infusedclasses", "swift_armor"), 0.5, 2);
-		ClassDefinition both = withPassives(bulwark(), swift);
+		ClassDefinition both = withPassives(momentum(), swift);
 		PlayerRuntime runtime = new PlayerRuntime();
 		long base = 1_000_000L;
-		runtime.onTrigger(both, "on_hit_taken", base);
+		runtime.onTrigger(both, "on_hit_dealt", base);
 		runtime.onTrigger(both, "on_land", base);
 
-		runtime.clear(bulwark());
+		runtime.clear(momentum());
 
-		assertEquals(0, runtime.stacks(bulwark()));
-		assertNull(runtime.lastTrigger(bulwark()));
+		assertEquals(0, runtime.stacks(momentum()));
+		assertNull(runtime.lastTrigger(momentum()));
 		assertEquals(1, runtime.stacks(swift));
 	}
 
 	@Test
 	void cooldownVerbsArmWithoutExposingMutation() {
 		PlayerRuntime runtime = new PlayerRuntime();
-		assertEquals(0, runtime.secondWindRemaining(0));
-		assertTrue(runtime.tryUseSecondWind(0));
-		assertEquals(Cooldowns.SECOND_WIND_MS, runtime.secondWindRemaining(0));
+		assertEquals(0, runtime.rendRemaining(0));
+		assertTrue(runtime.tryUseRend(0, 5));
+		assertEquals(Cooldowns.REND_MS, runtime.rendRemaining(0));
 		runtime.resetCooldowns();
-		assertEquals(0, runtime.secondWindRemaining(0));
+		assertEquals(0, runtime.rendRemaining(0));
 	}
 }

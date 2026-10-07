@@ -8,15 +8,15 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 class CardDeepeningTest {
 	@Test
 	void cardForAgreesWithItsParts() {
-		ClassDefinition berserker = ClassRegistry.byId(ClassRegistry.BERSERKER);
+		ClassDefinition juggernaut = ClassRegistry.byId(ClassRegistry.JUGGERNAUT);
 
-		ClassPresentation.CardModel plain = ClassPresentation.cardFor(berserker, false);
+		ClassPresentation.CardModel plain = ClassPresentation.cardFor(juggernaut, false);
 
-		assertEquals(ClassPresentation.cardLinesFor(berserker).size(), plain.lines().size());
-		assertEquals(ClassPresentation.cardStyleFor(berserker, false), plain.style());
-		assertEquals(ClassPresentation.accentFor(berserker), plain.accent());
-		assertEquals(ClassPresentation.buttonFor(berserker), plain.button());
-		assertEquals(ClassPresentation.tooltipFor(berserker), plain.tooltip());
+		assertEquals(ClassPresentation.cardLinesFor(juggernaut).size(), plain.lines().size());
+		assertEquals(ClassPresentation.cardStyleFor(juggernaut, false), plain.style());
+		assertEquals(ClassPresentation.accentFor(juggernaut), plain.accent());
+		assertEquals(ClassPresentation.buttonFor(juggernaut), plain.button());
+		assertEquals(ClassPresentation.tooltipFor(juggernaut), plain.tooltip());
 	}
 
 	@Test

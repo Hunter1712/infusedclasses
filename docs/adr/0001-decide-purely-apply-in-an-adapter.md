@@ -36,9 +36,10 @@ seams:
 - The **passive effect** (`PassiveEffect`) decides which attribute modifier a passive's stacks are
   worth. `PassiveApplier` applies it: writing only when the applied value differs from the wanted
   one, and removing only when stacks moved.
-- The **applied outcome** (`WarCryAbility.Outcome` plus its chat line, carried by
-  `WarCryAbility.Result` with its `Kind` and `remainingMs`) decides what an ability press
-  should do. `AbilityApplier` applies it — the single place an outcome reaches the player — and
+- The **applied outcome** (`RushAbility.Result` plus `RendAbility.Result`, each with its `Kind`,
+  `remainingMs` and chat line — Rend also carrying `empowerHp` and `consume`) decides what an ability press
+  should do. `RushApplier`/`RendApplier` apply it — sharing announcement, holder lookup and cast
+  fanfare through `AbilityApplier` — and
   the server entry maps one result to one `apply` call.
 - The **picker copy** (`ConditionalPassive.fullDesc`) decides what a passive's picker copy says,
   generated from its own numbers. The tooltip and the tests read it; nobody rewords it.
@@ -58,7 +59,7 @@ add a rule.
   wrong-class or on-cooldown press. An adapter can therefore stay trivial, and a null answer needs no
   special handling. A result with no outcome and nothing to say is a no-op.
 - Decisions own their own numbers. The stack-to-attribute value, the effect duration and amplifier
-  (Strength II, 160 ticks), the sound and particle ids, the cooldown wording and its rounding, the
+  (Speed I, 80 ticks; Rend empower `6 + 1/stack` within 120 ticks), the sound ids, the cooldown wording and its rounding, the
   passive copy wording, and the per-line colour and weight are all facts a test can pin,
   where before they were constants scattered through the code that applied them.
 - The cost: every effect has to be expressed as data and ids, and each adapter carries the resolution

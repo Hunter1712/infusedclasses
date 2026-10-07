@@ -12,13 +12,13 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * All classes. Adding a class = one definition here. Berserker carries Bloodlust plus
- * Second Wind, one conditional passive (Bulwark) and the Fury HP-scaled pair.
+ * All classes. Adding a class = one definition here. Juggernaut carries Rush plus
+ * Rend, one conditional passive (Momentum) and the Vigor HP-scaled pair.
  */
 public final class ClassRegistry {
-	public static final Identifier BERSERKER = Identifier.fromNamespaceAndPath("infusedclasses", "berserker");
-	public static final Identifier BLOODLUST_ABILITY = Identifier.fromNamespaceAndPath("infusedclasses", "bloodlust");
-	public static final Identifier SECOND_WIND_ABILITY = Identifier.fromNamespaceAndPath("infusedclasses", "second_wind");
+	public static final Identifier JUGGERNAUT = Identifier.fromNamespaceAndPath("infusedclasses", "juggernaut");
+	public static final Identifier RUSH_ABILITY = Identifier.fromNamespaceAndPath("infusedclasses", "rush");
+	public static final Identifier REND_ABILITY = Identifier.fromNamespaceAndPath("infusedclasses", "rend");
 	/** ponytail: attribute ids rather than vanilla holders, so the passive stays bootstrap-free. */
 	public static final ResourceKey<Attribute> ARMOR =
 			ResourceKey.create(Registries.ATTRIBUTE, Identifier.withDefaultNamespace("armor"));
@@ -35,55 +35,49 @@ public final class ClassRegistry {
 
 	static {
 		register(new ClassDefinition(
-				BERSERKER,
-				"Berserker",
+				JUGGERNAUT,
+				"Juggernaut",
 				false,
 				List.of(new ConditionalPassive(
-						"Bulwark",
-						ConditionalPassive.ON_HIT_TAKEN,
-						20,
+						"Momentum",
+						ConditionalPassive.ON_HIT_DEALT,
+						10,
 						ARMOR,
-						Identifier.fromNamespaceAndPath(ClassPackets.MOD_ID, "bulwark_armor"),
-						0.5,
-						5)),
+						Identifier.fromNamespaceAndPath(ClassPackets.MOD_ID, "momentum_armor"),
+						1.0,
+						4)),
 				List.of(
 						new HpScaledPassive(
-								"Fury Damage",
+								"Vigor Damage",
 								ATTACK_DAMAGE,
-								Identifier.fromNamespaceAndPath(ClassPackets.MOD_ID, "fury_damage"),
+								Identifier.fromNamespaceAndPath(ClassPackets.MOD_ID, "vigor_damage"),
 								0.3,
-								"Fury"),
+								"Vigor"),
 						new HpScaledPassive(
-								"Fury Speed",
+								"Vigor Speed",
 								ATTACK_SPEED,
-								Identifier.fromNamespaceAndPath(ClassPackets.MOD_ID, "fury_speed"),
+								Identifier.fromNamespaceAndPath(ClassPackets.MOD_ID, "vigor_speed"),
 								0.05,
-								"Fury")),
+								"Vigor")),
 				0.0,
-				List.of(BLOODLUST_ABILITY, SECOND_WIND_ABILITY),
+				List.of(RUSH_ABILITY, REND_ABILITY),
 				0xFFE74C3C,
 				"Frontline bruiser",
 				List.of(
 						new ClassDefinition.ActiveAbility(
-								BloodlustAbility.NAME,
-								"Opens a " + (BloodlustAbility.WINDOW_TICKS / 20) + "s lifesteal window healing "
-										+ "bucket x " + (int) (BloodlustAbility.LIFESTEAL_PER_BUCKET * 100)
-										+ "% of melee damage per hit (max "
-										+ ConditionalPassive.amount(BloodlustAbility.MAX_PER_HIT_HP)
-										+ " HP), fires under "
-										+ (20 * (HpScaledPassive.STEPS - BloodlustAbility.GATE_BUCKET)
-												/ HpScaledPassive.STEPS / 2)
-										+ " hearts and grants "
-										+ "bucket Bulwark (R, "
-										+ (Cooldowns.BLOODLUST_MS / 1000) + "s). Roots you for "
-										+ (Spellcast.SLOW_TICKS / 20) + "s."),
+								RushAbility.NAME,
+								"Cleanses harmful effects and grants Speed I for "
+										+ (RushAbility.SPEED_TICKS / 20) + "s; your next melee hit grants +"
+										+ RushAbility.BONUS_STACKS + " Momentum (R, "
+										+ (Cooldowns.RUSH_MS / 1000) + "s). Horn!"),
 						new ClassDefinition.ActiveAbility(
-								SecondWindAbility.NAME,
-								"Shields " + SecondWindAbility.HP_PER_STACK
-										+ " HP per Bulwark stack for " + (SecondWindAbility.ABSORPTION_TICKS / 20)
-										+ "s, consumes stacks (G, "
-										+ (Cooldowns.SECOND_WIND_MS / 1000) + "s). Roots you for "
-										+ (Spellcast.SLOW_TICKS / 20) + "s."))));
+								RendAbility.NAME,
+								"Empowers your next melee hit within "
+										+ (RendAbility.WINDOW_TICKS / 20) + "s for "
+										+ ConditionalPassive.amount(RendAbility.BASE_HP)
+										+ " HP + " + ConditionalPassive.amount(RendAbility.HP_PER_STACK)
+										+ " HP per Momentum stack, consumes stacks (G, "
+										+ (Cooldowns.REND_MS / 1000) + "s). Roar!"))));
 
 		register(new ClassDefinition(
 				Identifier.fromNamespaceAndPath("infusedclasses", "ranger"),

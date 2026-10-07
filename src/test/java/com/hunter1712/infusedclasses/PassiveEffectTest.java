@@ -15,16 +15,16 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * attribute instance or graphics object is constructed to make these assertions.
  */
 class PassiveEffectTest {
-	private static final ConditionalPassive BULWARK = ClassRegistry.byId(ClassRegistry.BERSERKER).passives().get(0);
+	private static final ConditionalPassive MOMENTUM = ClassRegistry.byId(ClassRegistry.JUGGERNAUT).passives().get(0);
 
 	@Test
 	void noStacksMeansNoModifier() {
-		assertNull(PassiveEffect.forStacks(BULWARK, 0));
+		assertNull(PassiveEffect.forStacks(MOMENTUM, 0));
 	}
 
 	@Test
 	void negativeStacksMeanNoModifier() {
-		assertNull(PassiveEffect.forStacks(BULWARK, -1));
+		assertNull(PassiveEffect.forStacks(MOMENTUM, -1));
 	}
 
 	@Test
@@ -34,16 +34,16 @@ class PassiveEffectTest {
 
 	@Test
 	void oneStackGrantsThePassivesOwnAttributeModifier() {
-		PassiveEffect.Modifier wanted = PassiveEffect.forStacks(BULWARK, 1);
+		PassiveEffect.Modifier wanted = PassiveEffect.forStacks(MOMENTUM, 1);
 
 		assertEquals(ClassRegistry.ARMOR, wanted.attribute());
-		assertEquals(Identifier.fromNamespaceAndPath("infusedclasses", "bulwark_armor"), wanted.modifierId());
-		assertEquals(0.5, wanted.amount());
+		assertEquals(Identifier.fromNamespaceAndPath("infusedclasses", "momentum_armor"), wanted.modifierId());
+		assertEquals(1.0, wanted.amount());
 	}
 
 	@Test
 	void stacksScaleLinearlyToTheCap() {
-		PassiveEffect.Modifier atCap = PassiveEffect.forStacks(BULWARK, BULWARK.maxStacks());
+		PassiveEffect.Modifier atCap = PassiveEffect.forStacks(MOMENTUM, MOMENTUM.maxStacks());
 
 		assertEquals(10, atCap.amount());
 	}
@@ -70,14 +70,14 @@ class PassiveEffectTest {
 
 	@Test
 	void stacksWriteTheirModifier() {
-		assertTrue(PassiveEffect.planFor(BULWARK, 3, false) instanceof PassiveEffect.Plan.Write write
-				&& write.wanted().amount() == 1.5);
+		assertTrue(PassiveEffect.planFor(MOMENTUM, 3, false) instanceof PassiveEffect.Plan.Write write
+				&& write.wanted().amount() == 3.0);
 	}
 
 	@Test
 	void deadStacksRemoveOnlyWhenTheyMoved() {
-		assertTrue(PassiveEffect.planFor(BULWARK, 0, true) instanceof PassiveEffect.Plan.Remove);
-		assertTrue(PassiveEffect.planFor(BULWARK, 0, false) instanceof PassiveEffect.Plan.Skip);
+		assertTrue(PassiveEffect.planFor(MOMENTUM, 0, true) instanceof PassiveEffect.Plan.Remove);
+		assertTrue(PassiveEffect.planFor(MOMENTUM, 0, false) instanceof PassiveEffect.Plan.Skip);
 		assertTrue(PassiveEffect.planFor(null, 0, true) instanceof PassiveEffect.Plan.Skip);
 	}
 }
