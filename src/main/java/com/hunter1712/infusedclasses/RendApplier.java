@@ -5,7 +5,8 @@ import net.minecraft.world.entity.Entity;
 
 /**
  * Adapter for {@link RendAbility}: the single place an empower reaches the player and,
- * later, its target. Announces on the presser's action bar and roars — on FIRED only.
+ * later, its target. Announces on the presser's action bar and plays
+ * {@link RendAbility#CAST_SOUND} — on FIRED only.
  * Fizzles (wrong class, cooldown, no momentum) say their line and touch nothing.
  * The empower damage itself lands in {@link #dealEmpower}, called by the damage hook
  * on the next qualifying melee hit. Consuming the spent stacks stays the passive

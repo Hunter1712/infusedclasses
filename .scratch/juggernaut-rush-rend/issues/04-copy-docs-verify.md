@@ -12,7 +12,8 @@ Player-visible copy plus the manual pass no test can cover:
 
 - `ClassRegistry` Juggernaut actives `[rush, rend]` with copy built from
   the 02 constants (Rush 4s Speed / 25s lane / cleanse-harmful / +3 bonus /
-  horn; Rend next-hit empower 6s / `6 + 1/stack` / 60s lane / roar; no `Roots`
+  wind burst (`Whoosh!` from `CAST_WORD`); Rend next-hit empower 6s /
+  `6 + 1/stack` / 60s lane / anvil land (`Smash!` from `CAST_WORD`); no `Roots`
   text anywhere). Vigor + Momentum picker lines from their numbers.
 - `GLOSSARY.md`: Berserker→Juggernaut, Fury→Vigor, Bulwark→Momentum,
   Bloodlust/Second Wind→Rush/Rend (ability + intent entries), Spellcast
@@ -22,7 +23,7 @@ Player-visible copy plus the manual pass no test can cover:
 - `gradle test` green, then `gradle deployClient` (never `compileJava`
   alone for client-visible work) and verify in game via
   `/class select <player>`: topped-off hits hard without taking hits;
-  landing hits builds armor; `R` cleanses poison/slowness, speeds, horns;
+  landing hits builds armor; `R` cleanses poison/slowness, speeds, whooshes;
   next hit builds +3; `G` at 0 stacks fizzles free; `G` at 10 stacks
   empowers the next swing (+16); an unswung 6s window expires with stacks
   spent; old `berserker` (and `warrior`) NBT picks load as Juggernaut.

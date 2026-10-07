@@ -9,7 +9,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Rush decisions: the engage, asserted without a player or level.
- * The adapters own the speed, the cleanse and the horn; this pins what they are told.
+ * The adapters own the speed, the cleanse and the wind burst; this pins what they are told.
  */
 class RushAbilityTest {
 	private static ClassDefinition juggernaut() {
@@ -24,6 +24,7 @@ class RushAbilityTest {
 		assertEquals(3, RushAbility.BONUS_STACKS);
 		assertEquals("minecraft:speed", RushAbility.SPEED_EFFECT.toString());
 		assertEquals("minecraft:entity.wind_charge.wind_burst", RushAbility.CAST_SOUND.toString());
+		assertEquals("Whoosh!", RushAbility.CAST_WORD);
 	}
 
 	@Test

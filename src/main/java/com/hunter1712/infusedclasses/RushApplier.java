@@ -11,7 +11,7 @@ import java.util.ArrayList;
 /**
  * Adapter for {@link RushAbility}: the single place an engage reaches the player.
  * Cleanses harmful effects, lays Speed for the window, announces on the action bar
- * and horns — on FIRED only. Fizzles (wrong class, cooldown) say their line and
+ * and plays {@link RushAbility#CAST_SOUND} — on FIRED only. Fizzles (wrong class, cooldown) say their line and
  * touch nothing. The Momentum bonus lands later, on the next qualifying melee hit.
  */
 public final class RushApplier {

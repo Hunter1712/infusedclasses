@@ -23,8 +23,8 @@ hurt while topped-off:
 
 Full rename plus a high-HP inversion. Berserker becomes **Juggernaut** —
 scary full, vulnerable empty. Dive topped, build by hitting, spend before
-you bleed out. Two sounds replace the shared root: horn for the engage,
-roar for the execute.
+you bleed out. Two sounds replace the shared root: a wind-burst whoosh for the engage,
+an anvil-land smash for the execute.
 
 - **Rename**: `Berserker` → `Juggernaut`, full rename (id
   `infusedclasses:juggernaut`, display `Juggernaut`). Passive group `Fury`
@@ -42,14 +42,14 @@ roar for the execute.
   (poison, wither, weakness, slowness, blindness — adapter drops harmful
   only, beneficial kept) + next melee hit inside the window grants +3
   Momentum (cap-respecting, grace re-stamped). Always fires off cooldown;
-  never fizzles on HP/stacks. Sound `minecraft:event.raid.horn`.
+  never fizzles on HP/stacks. Sound `minecraft:entity.wind_charge.wind_burst` with copy
+  tail `RushAbility.CAST_WORD` (`Whoosh!`).
 - **Rend (G, 60s):** consumes all Momentum up front and empowers the next melee
   hit landed within 6s for `6 HP + 1 HP/stack` bonus damage (6–16 HP). No target-HP
   check, no press-time target: `G` fires with stacks and the bonus rides the next
   swing. An unswung window expires with the stacks already spent. Fizzles
   free at 0 stacks (`No Momentum`-style line). Sound
-  `minecraft:entity.ravager.roar` (already used in
-  `BloodlustApplier.java:27`, so resolvable).
+  `minecraft:block.anvil.land` with copy tail `RendAbility.CAST_WORD` (`Smash!`).
 - **Root removed globally:** `SLOW_TICKS` / `SLOW_AMPLIFIER` and
   `applyCastSlow` go away; every cast plays its own sound on FIRED only
   instead. Fizzles (wrong-class, cooldown, no-momentum) stay silent and
@@ -76,7 +76,7 @@ means no Vigor and no sustain — that is the intended risk.
    (cooldown untouched, silent except the line), like Second Wind today.
 7. As a picker browser, I want copy generated from the new constants
    (Juggernaut, Vigor steps, Momentum cap/grace, Rush window/cooldown/
-   cleanse, Rend base/per-stack/execute/cooldowns, horn/roar), so text
+   cleanse, Rend base/per-stack/execute/cooldowns, cast words (`CAST_WORD`)), so text
    cannot drift from behaviour.
 
 ## Implementation Decisions
@@ -123,16 +123,16 @@ means no Vigor and no sustain — that is the intended risk.
   window is live with bonus unconsumed, then spends a live Rend empower
   snapshot as bonus damage on the same hit. The extra hurt re-enters the hook
   on the same thread, guarded by a flag so it earns nothing twice.
-- Adapters: `RushApplier` (Speed + cleanse + announce + horn on FIRED),
+- Adapters: `RushApplier` (Speed + cleanse + announce + wind burst on FIRED),
   `RendApplier` (damage + consume via `PassiveApplier.consumeSpent`-shaped
-  path + announce + roar on FIRED). Shared `announce` stays in
+  path + announce + anvil land on FIRED). Shared `announce` stays in
   `AbilityApplier`. Cleanse iterates `player.getActiveEffects()` and
   calls `removeEffect` for harmful-category holders only; category
   lookup resolved via `javap` against the merged jar (1.21 effect
   signatures drifted — no guessing, resolve `MobEffect#getCategory` /
   `MobEffectCategory` first). Sound via `level.playSound` with
-  `SoundEvents` holders (roar precedent at `BloodlustApplier.java:26-27`;
-  resolve raid-horn holder the same way, fail silent if missing).
+  `SoundEvents` holders (wind-burst and anvil-land holders resolved via `javap`
+  against the merged jar like the category lookup; fail silent if missing).
 - `Spellcast`: `SLOWNESS`/`SLOW_TICKS`/`SLOW_AMPLIFIER` deleted with
   `applyCastSlow` and all callers; module becomes the cast-sound rule
   (per-ability sound id constants or one helper `playCastSound(level,
@@ -145,6 +145,13 @@ means no Vigor and no sustain — that is the intended risk.
   waits for the next swing.
 - Migration: `PlayerClasses` load maps stored `infusedclasses:berserker`
   to `infusedclasses:juggernaut`.
+- As-built (fe24f6d, seam detail in ADR-0005): stack storage moved to
+  `PassiveStacks` behind the runtime seam; `ClassDefinition.passiveForTrigger`
+  is the single trigger scan with `RendAbility.momentumOf` kept as its alias;
+  the damage hook runs for any attacker with a class (no ability-id
+  comparison); lane liveness shares one `isLive` helper and cooldown reads
+  share one `remaining` helper; `SPEED_TICKS` is tied to the Rush window;
+  `AbilityApplier` exposes the shared holder/`playCast` seams.
 - Copy/docs from constants: `ActiveAbility` descs (Rush window/cooldown/
   cleanse/sound, Rend base/per-stack/execute/cooldown/sound, no root
   clause), `ConditionalPassive.fullDesc` (Momentum), Vigor desc

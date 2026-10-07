@@ -1,4 +1,4 @@
-# 03: Rush/Rend intents, receivers, appliers, Momentum hook, cleanse, horn/roar, root removal
+# 03: Rush/Rend intents, receivers, appliers, Momentum hook, cleanse, cast sounds, root removal
 
 Spec: `.scratch/juggernaut-rush-rend/spec.md`
 
@@ -19,21 +19,21 @@ lifesteal + shield with engage + empower:
   remains (`grep` first).
 - Receivers in `InfusedClasses.registerReceivers` replacing the Bloodlust /
   Second Wind blocks: Rush fires the 02 decision, applies, stamps the 4s
-  window; Rend fires, applies (announce + roar), then consumes Momentum via the
+  window; Rend fires, applies (announce + anvil land), then consumes Momentum via the
   `PassiveApplier.consumeSpent`-shaped path (trigger-found, priced passive
   only). No press-time target: the empower waits for the next swing.
 - New `RushApplier.apply(player, result)`: announce via shared
-  `AbilityApplier` path, Speed I 80 ticks + cleanse + horn on FIRED only,
+  `AbilityApplier` path, Speed I 80 ticks + cleanse + wind burst on FIRED only,
   ids from `RushAbility` (`SPEED_EFFECT`, `CAST_SOUND`), holders resolved via
-  the shared `AbilityApplier` lookups. New `RendApplier`: announce + roar
+  the shared `AbilityApplier` lookups. New `RendApplier`: announce + anvil land
   (id from `RendAbility.CAST_SOUND`) on FIRED only, plus `dealEmpower`
   for the hook-spent bonus damage with a re-entrancy guard. Fizzles say
   their line and touch nothing.
 - Cleanse: iterate `player.getActiveEffects()`, `removeEffect` for
   harmful-category holders only (beneficial kept). Resolve category lookup
   via `javap` against the merged jar first (1.21 effect signatures
-  drifted — no guessing). Resolve the raid-horn `SoundEvents` holder the
-  same way as the roar; fail silent if missing.
+  drifted — no guessing). Resolve the wind-burst and anvil-land `SoundEvents`
+  holders the same way as the effect category above; fail silent if missing.
 - `ServerEvents.AFTER_DAMAGE` (`ServerEvents.java:38-52`): victim
   `ON_HIT_TAKEN` branch removed with Bulwark (unless another class uses
   it); attacker melee branch feeds `ON_HIT_DEALT` (+1 Momentum, grace

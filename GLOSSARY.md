@@ -134,12 +134,12 @@ earns +3 Momentum (`BONUS_STACKS`), on its own 25s lane. Fires with zero stacks 
 HP — engaging topped-off is the normal case, not a reject — and rejected presses leave
 the lane, the window and the bonus untouched. Decided in the trigger/fire gate-and-arm
 shape.
-Like every cast, firing plays its sound (see `Spellcast`): horn for the engage.
+Like every cast, firing plays its sound (see `Spellcast`): a wind-burst whoosh for the engage.
 _Avoid_: dash, charge
 
 **Spellcast** (`Spellcast`):
-The fanfare shared by every active: firing any ability plays its own sound — horn for
-Rush, roar for Rend — so landing a cast is one learnable rule; fizzles and rejects cost
+The fanfare shared by every active: firing any ability plays its own sound — wind burst for
+Rush, anvil land for Rend — so landing a cast is one learnable rule; fizzles and rejects cost
 nothing and stay silent. The single play path lives here so appliers never duplicate it.
 _Avoid_: cast time, wind-up
 
@@ -154,7 +154,7 @@ gate-and-arm shape; the spent passive is found with `ClassDefinition.passiveForT
 empower snapshot rides the transient runtime next to the lane, and
 the consume flag rides in the result: the entry asks the passive applier to consume
 that passive while the damage hook spends the snapshot on the next hit.
-Like every cast, firing plays its sound (see `Spellcast`): roar for the
+Like every cast, firing plays its sound (see `Spellcast`): an anvil-land smash for the
 empower.
 _Avoid_: heal button, second ability
 

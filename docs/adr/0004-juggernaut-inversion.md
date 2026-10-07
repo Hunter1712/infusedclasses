@@ -24,8 +24,9 @@ Minecraft — got zero passives and two fizzles, and the optimal loop was a
    (Amended: Rend was a direct execute with a sub-half-HP multiplier; it is now a
    next-hit empower with no target-HP check, so `G` needs no target in range.)
 3. **Sound replaces root.** `Spellcast` self-slow is deleted; every cast plays
-   its own sound on FIRED only (horn for Rush, roar for Rend). Rooting a melee
-   engage punished the exact behaviour the kit demands.
+   its own sound on FIRED only (wind burst for Rush, anvil land for Rend). Rooting a melee
+   engage punished the exact behaviour the kit demands. (Amended: horn/roar as first
+   specified; swapped in 89eccfd.)
 4. **Full rename.** Berserker becomes Juggernaut (`infusedclasses:juggernaut`);
    stored `berserker` (and legacy `warrior`) ids map forward on load, no wipes.
 
