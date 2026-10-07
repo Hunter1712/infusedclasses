@@ -21,8 +21,8 @@ public final class RushAbility {
 	public static final int BONUS_STACKS = 3;
 	/** Speed effect id, resolved by the adapter; vanilla Speed, so the icon is honest. */
 	public static final Identifier SPEED_EFFECT = Identifier.withDefaultNamespace("speed");
-	/** Cast sound id, resolved by the adapter; the horn is the engage. */
-	public static final Identifier CAST_SOUND = Identifier.withDefaultNamespace("event.raid.horn");
+	/** Cast sound id, resolved by the adapter; the wind burst is the engage. */
+	public static final Identifier CAST_SOUND = Identifier.withDefaultNamespace("entity.wind_charge.wind_burst");
 
 	public enum Kind {
 		FIRED,

@@ -23,7 +23,7 @@ class RushAbilityTest {
 		assertEquals(0, RushAbility.SPEED_AMPLIFIER);
 		assertEquals(3, RushAbility.BONUS_STACKS);
 		assertEquals("minecraft:speed", RushAbility.SPEED_EFFECT.toString());
-		assertEquals("minecraft:event.raid.horn", RushAbility.CAST_SOUND.toString());
+		assertEquals("minecraft:entity.wind_charge.wind_burst", RushAbility.CAST_SOUND.toString());
 	}
 
 	@Test

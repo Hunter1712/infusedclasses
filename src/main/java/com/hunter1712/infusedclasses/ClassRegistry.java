@@ -69,7 +69,7 @@ public final class ClassRegistry {
 								"Cleanses harmful effects and grants Speed I for "
 										+ (RushAbility.SPEED_TICKS / 20) + "s; your next melee hit grants +"
 										+ RushAbility.BONUS_STACKS + " Momentum (R, "
-										+ (Cooldowns.RUSH_MS / 1000) + "s). Horn!"),
+										+ (Cooldowns.RUSH_MS / 1000) + "s). Whoosh!"),
 						new ClassDefinition.ActiveAbility(
 								RendAbility.NAME,
 								"Empowers your next melee hit within "
@@ -77,7 +77,7 @@ public final class ClassRegistry {
 										+ ConditionalPassive.amount(RendAbility.BASE_HP)
 										+ " HP + " + ConditionalPassive.amount(RendAbility.HP_PER_STACK)
 										+ " HP per Momentum stack, consumes stacks (G, "
-										+ (Cooldowns.REND_MS / 1000) + "s). Roar!"))));
+										+ (Cooldowns.REND_MS / 1000) + "s). Smash!"))));
 
 		register(new ClassDefinition(
 				Identifier.fromNamespaceAndPath("infusedclasses", "ranger"),

@@ -20,8 +20,8 @@ public final class RendAbility {
 	public static final float HP_PER_STACK = 1.0F;
 	/** Empower window in ticks: 6 seconds to land the hit, tracked as a press timestamp on the runtime. */
 	public static final int WINDOW_TICKS = 120;
-	/** Cast sound id, resolved by the adapter; the roar is the empower. */
-	public static final Identifier CAST_SOUND = Identifier.withDefaultNamespace("entity.ravager.roar");
+	/** Cast sound id, resolved by the adapter; the anvil land is the empower. */
+	public static final Identifier CAST_SOUND = Identifier.withDefaultNamespace("block.anvil.land");
 
 	public enum Kind {
 		FIRED,

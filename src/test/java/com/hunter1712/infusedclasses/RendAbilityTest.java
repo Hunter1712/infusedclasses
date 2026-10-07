@@ -34,7 +34,7 @@ class RendAbilityTest {
 		assertEquals(0, RendAbility.empowerFor(0));
 		assertEquals(7.0F, RendAbility.empowerFor(1));
 		assertEquals(16.0F, RendAbility.empowerFor(10));
-		assertEquals("minecraft:entity.ravager.roar", RendAbility.CAST_SOUND.toString());
+		assertEquals("minecraft:block.anvil.land", RendAbility.CAST_SOUND.toString());
 	}
 
 	@Test
