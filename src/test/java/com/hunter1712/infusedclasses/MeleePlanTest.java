@@ -117,7 +117,7 @@ class MeleePlanTest {
 		PlayerRuntime runtime = new PlayerRuntime();
 		ConditionalPassive momentum = juggernaut().passives().get(0);
 		for (int i = 0; i < 5; i++) {
-			runtime.onTrigger(juggernaut(), ConditionalPassive.ON_HIT_DEALT, 0);
+			runtime.onTrigger(juggernaut(), ConditionalPassive.ON_HIT_DEALT, 0, 1.0F);
 		}
 		RushAbility.fire(juggernaut(), runtime, 0);
 		RendAbility.fire(juggernaut(), runtime, 0);

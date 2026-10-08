@@ -24,7 +24,7 @@ class RendAbilityTest {
 	private static PlayerRuntime withStacks(int stacks, long now) {
 		PlayerRuntime runtime = new PlayerRuntime();
 		for (int i = 0; i < stacks; i++) {
-			runtime.onTrigger(juggernautDef(), ConditionalPassive.ON_HIT_DEALT, now);
+			runtime.onTrigger(juggernautDef(), ConditionalPassive.ON_HIT_DEALT, now, 1.0F);
 		}
 		return runtime;
 	}

@@ -22,8 +22,8 @@ public final class AbilityApplier {
 	private AbilityApplier() {
 	}
 
-	/** One announcement path for every ability result: null says nothing. */
-	public static void announce(ServerPlayer player, ChatLine announcement) {
+	/** One announcement path for every ability result and choice line: null says nothing. If actionBar is true, sends to action bar; otherwise to chat. */
+	public static void announce(ServerPlayer player, ChatLine announcement, boolean actionBar) {
 		if (announcement == null) {
 			return;
 		}
@@ -31,7 +31,7 @@ public final class AbilityApplier {
 		if (announcement.style() != null) {
 			line = line.withStyle(announcement.style());
 		}
-		player.displayClientMessage(line, true);
+		player.displayClientMessage(line, actionBar);
 	}
 
 	/** One cast fanfare for every fired ability: resolves the sound id and plays it. Fizzles never reach here. Null sound plays nothing. */
@@ -51,10 +51,11 @@ public final class AbilityApplier {
 	/**
 	 * One announce-plus-fanfare path for every fired-or-fizzle outcome: says the line,
 	 * plays the sound on FIRED only. Null says nothing, missing sound stays silent.
+	 * If actionBar is true, sends to action bar; otherwise to chat.
 	 */
 	public static void announceAndCast(ServerPlayer player, ChatLine announcement, boolean fired,
-			Identifier soundId) {
-		announce(player, announcement);
+			Identifier soundId, boolean actionBar) {
+		announce(player, announcement, actionBar);
 		if (fired) {
 			playCast(player, soundId);
 		}

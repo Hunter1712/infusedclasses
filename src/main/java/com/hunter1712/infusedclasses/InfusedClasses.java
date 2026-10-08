@@ -60,13 +60,12 @@ public class InfusedClasses implements ModInitializer {
 					ClassDefinition oldDef = classes.currentDefinition();
 					ClassDefinition def = classes.trySetClass(payload.classId());
 					if (def == null) {
-						player.displayClientMessage(Component.literal(UNKNOWN_OR_LOCKED).withStyle(ChatFormatting.RED), false);
+						AbilityApplier.announce(player, ChatLine.unknownOrLocked(), false);
 						return;
 					}
 					onClassChanged(player, oldDef, def);
-						context.responseSender().sendPacket(new ClassConfirmedPayload());
-					player.displayClientMessage(Component.literal("Class: ").withStyle(ChatFormatting.GRAY)
-							.append(Component.literal(def.displayName()).withStyle(ChatFormatting.WHITE)), false);
+					context.responseSender().sendPacket(new ClassConfirmedPayload());
+					AbilityApplier.announce(player, ChatLine.classPicked(def.displayName()), false);
 				}));
 
 		ServerPlayNetworking.registerGlobalReceiver(RushPayload.TYPE, (payload, context) -> context.server()
@@ -80,7 +79,7 @@ public class InfusedClasses implements ModInitializer {
 					// Rotate announces without fanfare on purpose: it carries no cast sound.
 					if (BindMorph.usesRotate(def)) {
 						RotateAbility.Result result = RotateAbility.fire(def, runtime, now);
-						AbilityApplier.announce(player, result.announcement());
+						AbilityApplier.announce(player, result.announcement(), true);
 						return;
 					}
 					RushAbility.Result result = RushAbility.fire(def, runtime, now);
@@ -99,17 +98,17 @@ public class InfusedClasses implements ModInitializer {
 						case IMPETUS -> {
 							ImpetusAbility.Result result = ImpetusAbility.fire(def, runtime, now);
 							AbilityApplier.announceAndCast(player, result.announcement(),
-									result.kind() == ImpetusAbility.Kind.FIRED, ImpetusAbility.CAST_SOUND);
+									result.kind() == ImpetusAbility.Kind.FIRED, ImpetusAbility.CAST_SOUND, true);
 						}
 						case TESTUDO -> {
 							TestudoAbility.Result result = TestudoAbility.fire(def, runtime, now);
 							AbilityApplier.announceAndCast(player, result.announcement(),
-									result.kind() == TestudoAbility.Kind.FIRED, TestudoAbility.CAST_SOUND);
+									result.kind() == TestudoAbility.Kind.FIRED, TestudoAbility.CAST_SOUND, true);
 						}
 						case REND -> {
 							RendAbility.Result result = RendAbility.fire(def, runtime, now);
 							AbilityApplier.announceAndCast(player, result.announcement(),
-									result.kind() == RendAbility.Kind.FIRED, RendAbility.CAST_SOUND);
+									result.kind() == RendAbility.Kind.FIRED, RendAbility.CAST_SOUND, true);
 							// The adapter spends only the priced passive; a fizzle spends nothing.
 							// The empower damage lands on the next melee hit inside the window.
 							if (result.consume()) {

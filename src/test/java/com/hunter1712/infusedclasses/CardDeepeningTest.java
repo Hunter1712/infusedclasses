@@ -12,13 +12,13 @@ class CardDeepeningTest {
 
 		ClassPresentation.CardModel plain = ClassPresentation.cardFor(juggernaut, false);
 
-		assertEquals(ClassPresentation.cardLinesFor(juggernaut).size(), plain.lines().size());
+		assertEquals(ClassPresentation.cardLinesFor(juggernaut).size(), plain.text().lines().size());
 		assertEquals(ClassPresentation.cardStyleFor(juggernaut, false), plain.style());
-		assertEquals(ClassPresentation.accentFor(juggernaut), plain.accent());
-		assertEquals(ClassPresentation.buttonFor(juggernaut), plain.button());
-		assertEquals(ClassPresentation.tooltipFor(juggernaut), plain.tooltip());
-		assertEquals(juggernaut.displayName(), plain.displayName());
-		assertEquals(juggernaut.tagline(), plain.tagline());
+		assertEquals(ClassPresentation.accentFor(juggernaut), plain.text().accent());
+		assertEquals(ClassPresentation.buttonFor(juggernaut), plain.text().button());
+		assertEquals(ClassPresentation.tooltipFor(juggernaut), plain.text().tooltip());
+		assertEquals(juggernaut.displayName(), plain.text().displayName());
+		assertEquals(juggernaut.tagline(), plain.text().tagline());
 	}
 
 	@Test
@@ -28,9 +28,9 @@ class CardDeepeningTest {
 
 		ClassPresentation.CardModel card = ClassPresentation.cardFor(ranger, false);
 
-		assertEquals("Locked", card.button().label());
-		assertEquals("Coming soon", card.tooltip());
-		assertEquals(0xFF555555, card.accent());
+		assertEquals("Locked", card.text().button().label());
+		assertEquals("Coming soon", card.text().tooltip());
+		assertEquals(0xFF555555, card.text().accent());
 	}
 
 	@Test

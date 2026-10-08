@@ -23,7 +23,9 @@ public final class MeleePlan {
 		if (atkDef == null || !atkDef.hasAbility(ClassRegistry.ROTATE_ABILITY)) {
 			return 1.0;
 		}
-		return RotateAbility.dealMult(runtime.stance(), runtime.isTestudoLive(now));
+		double base = RotateAbility.dealMult(runtime.stance());
+		double window = runtime.isTestudoLive(now) ? TestudoAbility.TESTUDO_WINDOW_DEAL_FACTOR : 1.0;
+		return base * window;
 	}
 
 	/** Incoming melee multiplier for a victim: the stance take mult, 1.0 for anyone else. */
@@ -32,7 +34,9 @@ public final class MeleePlan {
 			return 1.0;
 		}
 		PlayerRuntime r = runtime.get();
-		return RotateAbility.takeMult(r.stance(), r.isImpetusLive(now));
+		double base = RotateAbility.takeMult(r.stance());
+		double window = r.isImpetusLive(now) ? ImpetusAbility.IMPETUS_WINDOW_TAKE_FACTOR : 1.0;
+		return base * window;
 	}
 
 	/** Window bonus for an attacker inside a live Impetus window, through the charge curve. 0 otherwise. */
@@ -61,7 +65,7 @@ public final class MeleePlan {
 		boolean bump = shouldBump(charge);
 		boolean rushBonus = bump && atkRuntime != null && atkRuntime.hasRushBonusPending(now);
 		int rendStacks = atkRuntime == null ? -1 : atkRuntime.peekRendEmpowerStacks(now);
-		float rendHp = rendStacks > 0 ? BonusCurve.bonusFor(RendAbility.empowerFor(rendStacks), charge) : 0;
+		float rendHp = rendStacks > 0 ? RendAbility.bonusFor(rendStacks, charge) : 0;
 		float impetus = atkRuntime == null ? 0 : impetusBonusFor(atkDef, atkRuntime, now, charge);
 		double deal = atkDef == null || atkRuntime == null ? 1.0 : dealFor(atkDef, atkRuntime, now);
 		double take = victimDef == null || victimRuntime == null ? 1.0 : takeFor(victimDef, victimRuntime, now);

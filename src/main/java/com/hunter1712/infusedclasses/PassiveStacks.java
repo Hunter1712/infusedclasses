@@ -30,16 +30,9 @@ final class PassiveStacks {
 	}
 
 	/** Bumps every passive on the given class whose trigger matches.
-	 *  Unknown triggers, a missing class and trigger-less classes are inert. */
-	void onTrigger(ClassDefinition def, String trigger, long now) {
-		onTrigger(def, trigger, now, 1.0F);
-	}
-
-	/**
-	 * Charged bump: only a full swing earns stacks, so spam earns zero.
-	 * The no-charge overload above reads as full for callers with no swing
-	 * (bonus grants, tests): they already qualified, the gate is for hits.
-	 */
+	 *  Unknown triggers, a missing class and trigger-less classes are inert.
+	 *  Only a full swing ({@code charge == 1.0}) earns stacks; spam earns zero.
+	 *  Callers with no swing (bonus grants, tests) must pass {@code 1.0F} explicitly. */
 	void onTrigger(ClassDefinition def, String trigger, long now, float charge) {
 		if (!BonusCurve.isFullSwing(charge)) {
 			return;
@@ -89,6 +82,19 @@ final class PassiveStacks {
 		}
 		for (ConditionalPassive passive : def.passives()) {
 			clear(passive);
+		}
+	}
+
+	/** Bumps one passive record N times: single cap application, single grace stamp, same clamp semantics. */
+	void bumpPassive(ConditionalPassive passive, int times, long now) {
+		if (passive == null || times <= 0) {
+			return;
+		}
+		int current = stacks(passive);
+		int capped = Math.min(passive.maxStacks(), current + times);
+		if (capped > current) {
+			passiveStacks.put(passive, capped);
+			lastTriggerTime.put(passive, now);
 		}
 	}
 

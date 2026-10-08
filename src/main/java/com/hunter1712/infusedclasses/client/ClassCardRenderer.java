@@ -60,9 +60,8 @@ public final class ClassCardRenderer {
 	}
 
 	/** Body, accent strip, border, hover highlight and locked veil. Drawn behind the widgets. */
-	public static void drawFrame(GuiGraphics graphics, int x, int y, ClassPresentation.CardModel model) {
-		ClassPresentation.CardStyle style = model.style();
-		int accent = model.accent();
+	public static void drawFrame(GuiGraphics graphics, int x, int y, ClassPresentation.CardText text, ClassPresentation.CardStyle style) {
+		int accent = text.accent();
 		int x1 = x + WIDTH;
 		int y1 = y + HEIGHT;
 		graphics.fill(x, y, x1, y1, BODY_COLOR);
@@ -82,12 +81,12 @@ public final class ClassCardRenderer {
 	/** Name, tagline, divider and the card lines from one card model: the screen resolves the model once, never the parts. */
 	public static void drawBody(GuiGraphics graphics, Font font, int x, int y, ClassPresentation.CardModel model) {
 		ClassPresentation.CardStyle style = model.style();
-		List<ClassPresentation.CardLine> lines = model.lines();
+		List<ClassPresentation.CardLine> lines = model.text().lines();
 		int cx = x + WIDTH / 2;
 		int ty = y + 10;
-		graphics.drawCenteredString(font, model.displayName(), cx, ty, style.nameColor());
+		graphics.drawCenteredString(font, model.text().displayName(), cx, ty, style.nameColor());
 		ty += 11;
-		graphics.drawCenteredString(font, model.tagline(), cx, ty, TAGLINE_COLOR);
+		graphics.drawCenteredString(font, model.text().tagline(), cx, ty, TAGLINE_COLOR);
 		ty += 12;
 		graphics.fill(x + PAD, ty, x + WIDTH - PAD, ty + 1, DIVIDER_COLOR);
 		ty += 6;

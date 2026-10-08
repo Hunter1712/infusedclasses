@@ -22,8 +22,8 @@ class ConditionalPassiveStacksTest {
 		PlayerRuntime runtime = new PlayerRuntime();
 		long base = System.currentTimeMillis();
 
-		runtime.onTrigger(juggernaut(), "on_hit_dealt", base);
-		runtime.onTrigger(juggernaut(), "on_hit_dealt", base);
+		runtime.onTrigger(juggernaut(), "on_hit_dealt", base, 1.0F);
+		runtime.onTrigger(juggernaut(), "on_hit_dealt", base, 1.0F);
 
 		assertEquals(2, runtime.stacks(momentum()));
 	}
@@ -34,7 +34,7 @@ class ConditionalPassiveStacksTest {
 		long base = System.currentTimeMillis();
 
 		for (int i = 0; i < 25; i++) {
-			runtime.onTrigger(juggernaut(), "on_hit_dealt", base);
+			runtime.onTrigger(juggernaut(), "on_hit_dealt", base, 1.0F);
 		}
 
 		assertEquals(10, runtime.stacks(momentum()));
@@ -45,12 +45,12 @@ class ConditionalPassiveStacksTest {
 		PlayerRuntime runtime = new PlayerRuntime();
 		long base = System.currentTimeMillis();
 
-		runtime.onTrigger(juggernaut(), "on_death", base);
+		runtime.onTrigger(juggernaut(), "on_death", base, 1.0F);
 
 		assertEquals(0, runtime.stacks(momentum()));
 
 		PlayerRuntime noClass = new PlayerRuntime();
-		noClass.onTrigger(null, "on_hit_dealt", base);
+		noClass.onTrigger(null, "on_hit_dealt", base, 1.0F);
 
 		assertEquals(0, noClass.stacks(momentum()));
 	}
@@ -60,13 +60,13 @@ class ConditionalPassiveStacksTest {
 		PlayerClasses oldClasses = new PlayerClasses();
 		oldClasses.trySetClass(ClassRegistry.JUGGERNAUT);
 		PlayerRuntime oldRuntime = new PlayerRuntime();
-		oldRuntime.onTrigger(juggernaut(), "on_hit_dealt", System.currentTimeMillis());
+		oldRuntime.onTrigger(juggernaut(), "on_hit_dealt", System.currentTimeMillis(), 1.0F);
 
 		assertEquals(ClassRegistry.JUGGERNAUT.toString(), oldClasses.writeId());
 
 		// Stacks live in the transient half and never reach the saved payload: the whole
 		// persisted content is still the one choice id, however many stacks have been earned.
-		oldRuntime.onTrigger(juggernaut(), "on_hit_dealt", System.currentTimeMillis());
+		oldRuntime.onTrigger(juggernaut(), "on_hit_dealt", System.currentTimeMillis(), 1.0F);
 		assertEquals(2, oldRuntime.stacks(momentum()));
 		assertEquals(ClassRegistry.JUGGERNAUT.toString(), oldClasses.writeId());
 
@@ -85,7 +85,7 @@ class ConditionalPassiveStacksTest {
 	void noDecayWithinGracePeriod() {
 		PlayerRuntime runtime = new PlayerRuntime();
 		long base = System.currentTimeMillis();
-		runtime.onTrigger(juggernaut(), "on_hit_dealt", base);
+		runtime.onTrigger(juggernaut(), "on_hit_dealt", base, 1.0F);
 
 		// Tick at 3 seconds after trigger - still in grace period
 		boolean changed = !runtime.tickDecayMoved(juggernaut(), base + 3_000).isEmpty();
@@ -98,7 +98,7 @@ class ConditionalPassiveStacksTest {
 	void decayStartsAfterGracePeriod() {
 		PlayerRuntime runtime = new PlayerRuntime();
 		long base = System.currentTimeMillis();
-		runtime.onTrigger(juggernaut(), "on_hit_dealt", base);
+		runtime.onTrigger(juggernaut(), "on_hit_dealt", base, 1.0F);
 
 		// Tick at 6 seconds after trigger - 1 second past grace, should lose 1
 		boolean changed = !runtime.tickDecayMoved(juggernaut(), base + 6_000).isEmpty();
@@ -112,7 +112,7 @@ class ConditionalPassiveStacksTest {
 		PlayerRuntime runtime = new PlayerRuntime();
 		long base = System.currentTimeMillis();
 		for (int i = 0; i < 5; i++) {
-			runtime.onTrigger(juggernaut(), "on_hit_dealt", base);
+			runtime.onTrigger(juggernaut(), "on_hit_dealt", base, 1.0F);
 		}
 		assertEquals(5, runtime.stacks(momentum()));
 
@@ -127,7 +127,7 @@ class ConditionalPassiveStacksTest {
 	void dropFiresPastGraceMillisNotTruncatedSeconds() {
 		PlayerRuntime runtime = new PlayerRuntime();
 		long base = 1_000_000L;
-		runtime.onTrigger(juggernaut(), ConditionalPassive.ON_HIT_DEALT, base);
+		runtime.onTrigger(juggernaut(), ConditionalPassive.ON_HIT_DEALT, base, 1.0F);
 
 		// Exactly 5s: still grace, the client agrees. Past it by a millisecond: gone on both.
 		assertTrue(runtime.tickDecayMoved(juggernaut(), base + 5_000).isEmpty());
@@ -141,7 +141,7 @@ class ConditionalPassiveStacksTest {
 		PlayerRuntime runtime = new PlayerRuntime();
 		long base = System.currentTimeMillis();
 		for (int i = 0; i < 5; i++) {
-			runtime.onTrigger(juggernaut(), "on_hit_dealt", base);
+			runtime.onTrigger(juggernaut(), "on_hit_dealt", base, 1.0F);
 		}
 		assertEquals(5, runtime.stacks(momentum()));
 
@@ -155,11 +155,11 @@ class ConditionalPassiveStacksTest {
 	void newTriggerResetsGraceTimer() {
 		PlayerRuntime runtime = new PlayerRuntime();
 		long base = System.currentTimeMillis();
-		runtime.onTrigger(juggernaut(), "on_hit_dealt", base);
+		runtime.onTrigger(juggernaut(), "on_hit_dealt", base, 1.0F);
 
 		// Advance 3 seconds, then trigger again
 		runtime.tickDecayMoved(juggernaut(), base + 3_000);
-		runtime.onTrigger(juggernaut(), "on_hit_dealt", base + 3_000); // should reset grace
+		runtime.onTrigger(juggernaut(), "on_hit_dealt", base + 3_000, 1.0F); // should reset grace
 
 		// Now advance 3 more seconds (6 total from first hit, 3 from second)
 		// Since second hit reset grace, still in grace period
@@ -177,7 +177,7 @@ class ConditionalPassiveStacksTest {
 		long base = System.currentTimeMillis();
 
 		for (int i = 0; i < 6; i++) {
-			runtime.onTrigger(def, "on_land", base);
+			runtime.onTrigger(def, "on_land", base, 1.0F);
 		}
 		assertEquals(4, runtime.stacks(swift)); // its own cap, not the ten Momentum allows
 
@@ -194,8 +194,8 @@ class ConditionalPassiveStacksTest {
 		PlayerRuntime runtime = new PlayerRuntime();
 		long base = System.currentTimeMillis();
 
-		runtime.onTrigger(def, "on_hit_dealt", base);
-		runtime.onTrigger(def, "on_hit_dealt", base);
+		runtime.onTrigger(def, "on_hit_dealt", base, 1.0F);
+		runtime.onTrigger(def, "on_hit_dealt", base, 1.0F);
 
 		assertEquals(2, runtime.stacks(momentum()));
 		assertEquals(0, runtime.stacks(swift));

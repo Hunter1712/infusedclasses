@@ -236,15 +236,9 @@ public final class PlayerRuntime {
 	}
 
 	/** Bumps every passive on the given class whose trigger matches.
-	 *  Unknown triggers, a missing class and trigger-less classes are inert. */
-	public void onTrigger(ClassDefinition def, String trigger, long now) {
-		passiveStacks.onTrigger(def, trigger, now);
-	}
-
-	/**
-	 * Charged bump from the melee hook: only a full swing ({@code charge == 1.0})
-	 * earns stacks. Spam earns zero; the uncharged overload reads as full.
-	 */
+	 *  Unknown triggers, a missing class and trigger-less classes are inert.
+	 *  Only a full swing ({@code charge == 1.0}) earns stacks; spam earns zero.
+	 *  Callers with no swing (bonus grants, tests) must pass {@code 1.0F} explicitly. */
 	public void onTrigger(ClassDefinition def, String trigger, long now, float charge) {
 		passiveStacks.onTrigger(def, trigger, now, charge);
 	}
@@ -267,5 +261,10 @@ public final class PlayerRuntime {
 	/** Drops one passive's stacks and timestamp: a spender consumes only what it priced. */
 	public void clear(ConditionalPassive passive) {
 		passiveStacks.clear(passive);
+	}
+
+	/** Bumps one passive record N times: single cap, single grace stamp. Used by Rush bonus grant. */
+	public void bumpPassive(ConditionalPassive passive, int times, long now) {
+		passiveStacks.bumpPassive(passive, times, now);
 	}
 }

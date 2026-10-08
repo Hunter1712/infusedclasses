@@ -58,11 +58,10 @@ public final class ClassCommands {
 		ClassDefinition def = classes.trySetClass(id);
 		if (def != null) {
 			InfusedClasses.onClassChanged(player, oldDef, def);
-			source.sendSuccess(() -> Component.literal("Set " + player.getName().getString()
-					+ " to " + def.displayName()), true);
+			AbilityApplier.announce(player, ChatLine.classPicked(def.displayName()), false);
 			return 1;
 		}
-		source.sendFailure(Component.literal(InfusedClasses.UNKNOWN_OR_LOCKED + ": " + id));
+		AbilityApplier.announce(player, ChatLine.unknownOrLocked(), false);
 		return 0;
 	}
 }

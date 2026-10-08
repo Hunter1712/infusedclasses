@@ -138,8 +138,8 @@ class VigorTest {
 		// The pair rides along without entering the stacks pipeline: hits still earn
 		// Momentum alone, so the spender's consume can never touch Vigor.
 		PlayerRuntime runtime = new PlayerRuntime();
-		runtime.onTrigger(juggernaut(), ConditionalPassive.ON_HIT_DEALT, 0);
-		runtime.onTrigger(juggernaut(), ConditionalPassive.ON_HIT_DEALT, 0);
+		runtime.onTrigger(juggernaut(), ConditionalPassive.ON_HIT_DEALT, 0, 1.0F);
+		runtime.onTrigger(juggernaut(), ConditionalPassive.ON_HIT_DEALT, 0, 1.0F);
 
 		assertEquals(2, runtime.stacks(juggernaut().passives().get(0)));
 	}

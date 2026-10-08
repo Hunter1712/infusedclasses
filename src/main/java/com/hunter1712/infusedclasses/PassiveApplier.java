@@ -20,27 +20,30 @@ public final class PassiveApplier {
 		}
 		Set<ConditionalPassive> moved = runtime.tickDecayMoved(def, now);
 		for (ConditionalPassive passive : def.passives()) {
-			switch (PassiveEffect.planFor(passive, runtime.stacks(passive), moved.contains(passive))) {
-				case PassiveEffect.Plan.Write(var wanted) -> AttributeWriter.write(player, wanted);
-				case PassiveEffect.Plan.Remove(var attribute, var modifierId) -> AttributeWriter.remove(player, attribute, modifierId);
-				case PassiveEffect.Plan.Skip() -> {
-				}
-			}
+			settlePlan(player, PassiveEffect.planFor(passive, runtime.stacks(passive), moved.contains(passive)));
 		}
 		// Vigor: no stacks, no grace. Recomputed from live HP every tick; the writer's
 		// early-out already covers no-op ticks, bucket 0 removes like dead stacks.
 		int bucket = HpScaledPassive.bucketForCurrent(player.getHealth(), player.getMaxHealth());
 		for (HpScaledPassive hp : def.hpPassives()) {
-			switch (PassiveEffect.planForBucket(hp, bucket)) {
-				case PassiveEffect.Plan.Write(var wanted) -> AttributeWriter.write(player, wanted);
-				case PassiveEffect.Plan.Remove(var attribute, var modifierId) -> AttributeWriter.remove(player, attribute, modifierId);
-				case PassiveEffect.Plan.Skip() -> {
-				}
-			}
+			settlePlan(player, PassiveEffect.planForBucket(hp, bucket));
 		}
 		// ponytail: no max-health tick until a class carries one (all read 0.0 today).
-		// A class that sets maxHealthBonus re-adds one branch here; nothing else writes it.
+		// A class that sets maxHealthBonus re-adds one plan computation here; nothing else writes it.
 		StanceApplier.applyStance(player, def, runtime, now);
+	}
+
+	/**
+	 * Applies a single passive effect plan: write the wanted modifier, remove the stale one,
+	 * or skip. The adapter owns the write/remove/skip decision so the caller only computes plans.
+	 */
+	private static void settlePlan(ServerPlayer player, PassiveEffect.Plan plan) {
+		switch (plan) {
+			case PassiveEffect.Plan.Write(var wanted) -> AttributeWriter.write(player, wanted);
+			case PassiveEffect.Plan.Remove(var attribute, var modifierId) -> AttributeWriter.remove(player, attribute, modifierId);
+			case PassiveEffect.Plan.Skip() -> {
+			}
+		}
 	}
 
 	/**
@@ -108,7 +111,7 @@ public final class PassiveApplier {
 
 	/**
 	 * Bonus grant by class: Rush's next qualifying melee hit credits the priced passive
-	 * with the ability's bonus, capped and grace re-stamped through the trigger path.
+	 * with the ability's bonus, capped and grace re-stamped in one call.
 	 * Resolves through the definition like {@link #consumeSpent}: the entry forwards,
 	 * never resolves. Only a live fired window with its bonus still pending
 	 * grants; rejects, stale windows and a missing priced passive do nothing.
@@ -118,9 +121,7 @@ public final class PassiveApplier {
 		if (momentum == null || !runtime.consumeRushBonus(now)) {
 			return;
 		}
-		for (int i = 0; i < RushAbility.BONUS_STACKS; i++) {
-			runtime.onTrigger(def, momentum.trigger(), now);
-		}
+		runtime.bumpPassive(momentum, RushAbility.BONUS_STACKS, now);
 	}
 
 	/**

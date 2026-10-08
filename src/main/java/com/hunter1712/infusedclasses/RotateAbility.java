@@ -102,21 +102,19 @@ public final class RotateAbility {
 			new PassiveEffect.Modifier(ClassRegistry.MOVEMENT_SPEED, SCUTUM_WEIGHT_ID, SCUTUM_WEIGHT));
 
 	/**
-	 * Outgoing melee multiplier for a stance plus a live Testudo window.
-	 * Scutum deals x0.8; Testudo multiplies a further x0.7 (x0.56 together).
+	 * Outgoing melee multiplier for a stance (no oath window).
+	 * Scutum deals x0.8; Gladius deals x1.0. Oath windows apply their own factor in MeleePlan.
 	 */
-	public static double dealMult(Stance stance, boolean testudoLive) {
-		double mult = stance == Stance.SCUTUM ? SCUTUM_DEAL_MULT : 1.0;
-		return testudoLive ? mult * TestudoAbility.TESTUDO_DEAL_MULT : mult;
+	public static double dealMult(Stance stance) {
+		return stance == Stance.SCUTUM ? SCUTUM_DEAL_MULT : 1.0;
 	}
 
 	/**
-	 * Incoming melee multiplier for a stance plus a live Impetus window.
-	 * Gladius takes x1.2; Impetus multiplies a further x1.25 (x1.5 together).
+	 * Incoming melee multiplier for a stance (no oath window).
+	 * Gladius takes x1.2; Scutum takes x1.0. Oath windows apply their own factor in MeleePlan.
 	 */
-	public static double takeMult(Stance stance, boolean impetusLive) {
-		double mult = stance == Stance.GLADIUS ? GLADIUS_TAKEN_MULT : 1.0;
-		return impetusLive ? mult * ImpetusAbility.IMPETUS_TAKEN_MULT : mult;
+	public static double takeMult(Stance stance) {
+		return stance == Stance.GLADIUS ? GLADIUS_TAKEN_MULT : 1.0;
 	}
 
 	/** The other stance: firing always lands here, whichever is current. */

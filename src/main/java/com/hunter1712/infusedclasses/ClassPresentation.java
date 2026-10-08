@@ -120,12 +120,40 @@ public final class ClassPresentation {
 		return def.locked() ? 0xFF555555 : def.accentColor();
 	}
 
+	/** Button label and active state. */
+	public static ButtonData buttonFor(ClassDefinition def) {
+		return new ButtonData(def.locked() ? "Locked" : "Select", !def.locked());
+	}
+
+	public record ButtonData(String label, boolean active) {
+	}
+
 	/**
-	 * The whole locked/unlocked look of a card: border, hover wash, locked veil and name
-	 * colour. A null wash or veil means that layer is skipped. Decided here so the renderer
-	 * applies it without reading the definition's locked flag itself.
+	 * Hover-independent card text: lines, tooltip, accent, button. Cached per definition.
 	 */
+	public record CardText(String displayName, String tagline, List<CardLine> lines, int accent, ButtonData button, String tooltip) {
+	}
+
+	/** Hover-dependent style only: border, wash, veil, name colour. */
 	public record CardStyle(int borderColor, Integer washColor, Integer veilColor, int nameColor) {
+	}
+
+	/**
+	 * Whole card: hover-independent text plus per-frame style.
+	 * The existing entries delegate here conceptually; they stay as the seams tests pin.
+	 */
+	public record CardModel(CardText text, CardStyle style) {
+	}
+
+	/** Resolves the hover-independent text once per definition. */
+	public static CardText cardTextFor(ClassDefinition def) {
+		return new CardText(
+				def.displayName(),
+				def.tagline(),
+				List.copyOf(cardLinesFor(def)),
+				accentFor(def),
+				buttonFor(def),
+				tooltipFor(def));
 	}
 
 	public static CardStyle cardStyleFor(ClassDefinition def, boolean hovered) {
@@ -136,30 +164,8 @@ public final class ClassPresentation {
 				hovered ? HOVER_WASH_COLOR : null, null, NAME_COLOR);
 	}
 
-	/** Button label and active state. */
-	public static ButtonData buttonFor(ClassDefinition def) {
-		return new ButtonData(def.locked() ? "Locked" : "Select", !def.locked());
-	}
-
-	public record ButtonData(String label, boolean active) {
-	}
-
-	/**
-	 * Whole card in one decision: name, tagline, lines, style, accent, button and tooltip
-	 * together, so the locked look lives in one place instead of five ternaries across callers.
-	 * The existing entries delegate here conceptually; they stay as the seams tests pin.
-	 */
-	public record CardModel(String displayName, String tagline, List<CardLine> lines, CardStyle style, int accent, ButtonData button, String tooltip) {
-	}
-
+	/** Whole card in one decision: text + style. */
 	public static CardModel cardFor(ClassDefinition def, boolean hovered) {
-		return new CardModel(
-				def.displayName(),
-				def.tagline(),
-				List.copyOf(cardLinesFor(def)),
-				cardStyleFor(def, hovered),
-				accentFor(def),
-				buttonFor(def),
-				tooltipFor(def));
+		return new CardModel(cardTextFor(def), cardStyleFor(def, hovered));
 	}
 }

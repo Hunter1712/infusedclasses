@@ -84,15 +84,14 @@ class LegionaryTest {
 
 	@Test
 	void stanceMatrix() {
-		assertEquals(1.2, RotateAbility.takeMult(RotateAbility.Stance.GLADIUS, false));
-		assertEquals(1.5, RotateAbility.takeMult(RotateAbility.Stance.GLADIUS, true));
-		assertEquals(1.0, RotateAbility.takeMult(RotateAbility.Stance.SCUTUM, false));
-		// Mixed states live: rotating inside a window keeps it, so the mults stack.
-		assertEquals(1.25, RotateAbility.takeMult(RotateAbility.Stance.SCUTUM, true));
-		assertEquals(0.8, RotateAbility.dealMult(RotateAbility.Stance.SCUTUM, false));
-		assertEquals(0.56, RotateAbility.dealMult(RotateAbility.Stance.SCUTUM, true), 1e-9);
-		assertEquals(1.0, RotateAbility.dealMult(RotateAbility.Stance.GLADIUS, false));
-		assertEquals(0.7, RotateAbility.dealMult(RotateAbility.Stance.GLADIUS, true), 1e-9);
+		// Stance-only mults (RotateAbility)
+		assertEquals(1.2, RotateAbility.takeMult(RotateAbility.Stance.GLADIUS));
+		assertEquals(1.0, RotateAbility.takeMult(RotateAbility.Stance.SCUTUM));
+		assertEquals(0.8, RotateAbility.dealMult(RotateAbility.Stance.SCUTUM));
+		assertEquals(1.0, RotateAbility.dealMult(RotateAbility.Stance.GLADIUS));
+		// Window factors (ImpetusAbility / TestudoAbility)
+		assertEquals(1.25, ImpetusAbility.IMPETUS_WINDOW_TAKE_FACTOR);
+		assertEquals(0.7, TestudoAbility.TESTUDO_WINDOW_DEAL_FACTOR);
 	}
 
 	@Test

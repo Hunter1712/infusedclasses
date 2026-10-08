@@ -65,7 +65,7 @@ final class ServerEvents {
 							? () -> InfusedClasses.runtime(v2) : null;
 					MeleePlan.HitPlan plan = MeleePlan.planHit(atkDef, atkRuntime, victimDef, victimRt, charge, now);
 					if (plan.bump()) {
-						atkRuntime.onTrigger(atkDef, ConditionalPassive.ON_HIT_DEALT, now);
+						atkRuntime.onTrigger(atkDef, ConditionalPassive.ON_HIT_DEALT, now, charge);
 					}
 					// One-shot flags settle where the plan peeked them, at the same now:
 					// the Rush credit grants and the Rend snapshot spends exactly when the

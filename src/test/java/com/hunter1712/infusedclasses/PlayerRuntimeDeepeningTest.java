@@ -29,7 +29,7 @@ class PlayerRuntimeDeepeningTest {
 		ClassDefinition def = withPassives(momentum(), swift);
 		PlayerRuntime runtime = new PlayerRuntime();
 		long base = 1_000_000L;
-		runtime.onTrigger(def, "on_hit_dealt", base);
+		runtime.onTrigger(def, "on_hit_dealt", base, 1.0F);
 		// Swift never triggered: 0 stacks, never moved.
 
 		Set<ConditionalPassive> moved = runtime.tickDecayMoved(def, base + 6_000);
@@ -48,8 +48,8 @@ class PlayerRuntimeDeepeningTest {
 		ClassDefinition both = withPassives(momentum(), swift);
 		PlayerRuntime runtime = new PlayerRuntime();
 		long base = 1_000_000L;
-		runtime.onTrigger(both, "on_hit_dealt", base);
-		runtime.onTrigger(both, "on_land", base);
+		runtime.onTrigger(both, "on_hit_dealt", base, 1.0F);
+		runtime.onTrigger(both, "on_land", base, 1.0F);
 		assertEquals(1, runtime.stacks(momentum()));
 
 		runtime.clear(withPassives(momentum()));
@@ -65,8 +65,8 @@ class PlayerRuntimeDeepeningTest {
 		ClassDefinition both = withPassives(momentum(), swift);
 		PlayerRuntime runtime = new PlayerRuntime();
 		long base = 1_000_000L;
-		runtime.onTrigger(both, "on_hit_dealt", base);
-		runtime.onTrigger(both, "on_land", base);
+		runtime.onTrigger(both, "on_hit_dealt", base, 1.0F);
+		runtime.onTrigger(both, "on_land", base, 1.0F);
 
 		runtime.clear(momentum());
 

@@ -21,7 +21,7 @@ public final class RushApplier {
 	}
 
 	public static void apply(ServerPlayer player, RushAbility.Result result) {
-		AbilityApplier.announce(player, result.announcement());
+		AbilityApplier.announce(player, result.announcement(), true);
 		if (result.kind() != RushAbility.Kind.FIRED) {
 			return;
 		}

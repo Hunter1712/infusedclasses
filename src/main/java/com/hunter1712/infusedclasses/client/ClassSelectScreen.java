@@ -41,13 +41,13 @@ public class ClassSelectScreen extends Screen {
 			int cardX = cardX(i, classes.size());
 			int cardY = ClassCardRenderer.cardsTop(height);
 			ClassCardRenderer.ButtonRect bounds = ClassCardRenderer.buttonRect(cardX, cardY);
-			ClassPresentation.CardModel model = ClassPresentation.cardFor(def, false);
-			Component tip = Component.literal(model.tooltip());
-			Button button = Button.builder(Component.literal(model.button().label()), b -> InfusedClassesClient.pickClass(def.id()))
+			ClassPresentation.CardText text = ClassPresentation.cardTextFor(def);
+			Component tip = Component.literal(text.tooltip());
+			Button button = Button.builder(Component.literal(text.button().label()), b -> InfusedClassesClient.pickClass(def.id()))
 					.bounds(bounds.x(), bounds.y(), bounds.w(), bounds.h())
 					.tooltip(Tooltip.create(tip))
 					.build();
-			button.active = model.button().active();
+			button.active = text.button().active();
 			addRenderableWidget(button);
 		}
 	}
@@ -60,8 +60,9 @@ public class ClassSelectScreen extends Screen {
 			int cardX = cardX(i, classes.size());
 			int cardY = ClassCardRenderer.cardsTop(height);
 			ClassDefinition def = classes.get(i);
-			ClassPresentation.CardModel frame = cardModel(def, cardX, cardY, mouseX, mouseY);
-			ClassCardRenderer.drawFrame(graphics, cardX, cardY, frame);
+			boolean hovered = ClassCardRenderer.isHovering(cardX, cardY, mouseX, mouseY);
+			ClassPresentation.CardStyle style = ClassPresentation.cardStyleFor(def, hovered);
+			ClassCardRenderer.drawFrame(graphics, cardX, cardY, ClassPresentation.cardTextFor(def), style);
 		}
 	}
 
@@ -76,7 +77,8 @@ public class ClassSelectScreen extends Screen {
 			int cardX = cardX(i, classes.size());
 			int cardY = ClassCardRenderer.cardsTop(height);
 			ClassDefinition def = classes.get(i);
-			ClassPresentation.CardModel model = cardModel(def, cardX, cardY, mouseX, mouseY);
+			boolean hovered = ClassCardRenderer.isHovering(cardX, cardY, mouseX, mouseY);
+			ClassPresentation.CardModel model = ClassPresentation.cardFor(def, hovered);
 			ClassCardRenderer.drawBody(graphics, font, cardX, cardY, model);
 		}
 		graphics.drawCenteredString(font, "Click a class to choose it", width / 2, top + ClassCardRenderer.HEIGHT + 14, FOOTER_COLOR);
@@ -84,15 +86,6 @@ public class ClassSelectScreen extends Screen {
 
 	private int cardX(int index, int count) {
 		return ClassCardRenderer.cardX(index, count, width, GAP);
-	}
-
-	/**
-	 * One card model per card per pass: hover test plus resolution in one place, so the
-	 * frame and body passes cannot disagree on what hovered means.
-	 */
-	private static ClassPresentation.CardModel cardModel(ClassDefinition def, int cardX, int cardY,
-			int mouseX, int mouseY) {
-		return ClassPresentation.cardFor(def, ClassCardRenderer.isHovering(cardX, cardY, mouseX, mouseY));
 	}
 
 	@Override

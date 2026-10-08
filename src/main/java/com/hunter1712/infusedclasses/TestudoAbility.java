@@ -17,6 +17,8 @@ public final class TestudoAbility {
 	public static final double TESTUDO_ARMOR = 8.0;
 	/** Tradeoff: melee dealt x0.7 while live (x0.56 with the Scutum stance). */
 	public static final double TESTUDO_DEAL_MULT = 0.7;
+	/** Window factor for outgoing melee while Testudo is live: x0.7 dealt. */
+	public static final double TESTUDO_WINDOW_DEAL_FACTOR = 0.7;
 	/** Payoff window in ticks: 6 seconds, tracked as a press timestamp on the runtime. */
 	public static final int WINDOW_TICKS = 120;
 	/** Modifier id for the window plate. */

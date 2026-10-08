@@ -69,6 +69,11 @@ public final class RendAbility {
 		return BASE_HP + stacks * HP_PER_STACK;
 	}
 
+	/** Bonus damage for a stack count at a charge: empower plus the shared charge curve. */
+	public static float bonusFor(int stacks, float charge) {
+		return BonusCurve.bonusFor(empowerFor(stacks), charge);
+	}
+
 	/** Decides firing for Juggernauts off cooldown holding stacks. Zero stacks fizzles before the cooldown is even read. Pure and read-only: only {@link #fire} arms the cooldown. */
 	public static Result trigger(ClassDefinition def, long rendRemaining, int stacks) {
 		if (def == null || !def.hasAbility(ClassRegistry.REND_ABILITY)) {
