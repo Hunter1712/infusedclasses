@@ -57,7 +57,8 @@ final class ServerEvents {
 				if (atkDef != null) {
 					PlayerRuntime atkRuntime = InfusedClasses.runtime(attacker);
 					float charge = attacker.getAttackStrengthScale(0.0F);
-					// One plan, applied in field order: bump, Rush, Rend, Impetus, stance settle.
+					// One plan, settled in field order: bump, Rush, Rend, Impetus, stance settle.
+					// The entry routes; the plan decides and the appliers apply.
 					ClassDefinition victimDef = entity instanceof ServerPlayer v
 							? PlayerClassAccess.of(v).currentDefinition() : null;
 					Supplier<PlayerRuntime> victimRt = entity instanceof ServerPlayer v2
@@ -66,17 +67,14 @@ final class ServerEvents {
 					if (plan.bump()) {
 						atkRuntime.onTrigger(atkDef, ConditionalPassive.ON_HIT_DEALT, now);
 					}
-					// Spam grants zero stacks; the pending bonus waits for a full swing.
-					if (plan.rushBonus()) {
-						PassiveApplier.grantRushBonus(atkRuntime, atkDef, now);
-					}
+					// One-shot flags settle where the plan peeked them, at the same now:
+					// the Rush credit grants and the Rend snapshot spends exactly when the
+					// plan saw them live, so empty hits never touch a window. Spam grants
+					// zero stacks; the pending bonus waits for a full swing.
+					PassiveApplier.settleHitOneShots(atkRuntime, atkDef, plan, now);
 					// Rend empower: the stamped bonus lands on this hit and only this one,
-					// applied through the adapter like every other outcome. The snapshot clears
-					// only when the plan saw one live, so empty hits never touch the window;
-					// the bonus is what the plan already decided, never recomputed.
-					if (plan.rendStacks() > 0) {
-						atkRuntime.consumeRendEmpower(now);
-					}
+					// applied through the adapter like every other outcome; the bonus is
+					// what the plan already decided, never recomputed.
 					if (plan.rendHp() > 0) {
 						DamageSettle.dealBonus(attacker, entity, plan.rendHp());
 					}

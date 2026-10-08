@@ -111,4 +111,35 @@ class MeleePlanTest {
 		assertEquals(-1, full.rendStacks());
 		assertEquals(0, full.rendHp());
 	}
+
+	@Test
+	void settleConsumesWhatThePlanPeeked() {
+		PlayerRuntime runtime = new PlayerRuntime();
+		ConditionalPassive momentum = juggernaut().passives().get(0);
+		for (int i = 0; i < 5; i++) {
+			runtime.onTrigger(juggernaut(), ConditionalPassive.ON_HIT_DEALT, 0);
+		}
+		RushAbility.fire(juggernaut(), runtime, 0);
+		RendAbility.fire(juggernaut(), runtime, 0);
+		MeleePlan.HitPlan plan = MeleePlan.planHit(juggernaut(), runtime, null, null, 1.0F, 0);
+
+		PassiveApplier.settleHitOneShots(runtime, juggernaut(), plan, 0);
+
+		// Rush credit granted (+3, capped) and spent; Rend snapshot spent, not refunded.
+		assertEquals(8, runtime.stacks(momentum));
+		assertFalse(runtime.hasRushBonusPending(0));
+		assertEquals(-1, runtime.peekRendEmpowerStacks(0));
+	}
+
+	@Test
+	void settleTouchesNothingOnAnEmptyHit() {
+		PlayerRuntime runtime = new PlayerRuntime();
+		MeleePlan.HitPlan plan = MeleePlan.planHit(juggernaut(), runtime, null, null, 0.5F, 0);
+
+		PassiveApplier.settleHitOneShots(runtime, juggernaut(), plan, 0);
+
+		assertEquals(0, runtime.stacks(juggernaut().passives().get(0)));
+		assertFalse(runtime.hasRushBonusPending(0));
+		assertEquals(-1, runtime.peekRendEmpowerStacks(0));
+	}
 }

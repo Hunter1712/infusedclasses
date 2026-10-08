@@ -31,11 +31,11 @@ public final class PassiveApplier {
 		// early-out already covers no-op ticks, bucket 0 removes like dead stacks.
 		int bucket = HpScaledPassive.bucketForCurrent(player.getHealth(), player.getMaxHealth());
 		for (HpScaledPassive hp : def.hpPassives()) {
-			PassiveEffect.Modifier wanted = PassiveEffect.forBucket(hp, bucket);
-			if (wanted != null) {
-				AttributeWriter.write(player, wanted);
-			} else {
-				AttributeWriter.remove(player, hp.attribute(), hp.modifierId());
+			switch (PassiveEffect.planForBucket(hp, bucket)) {
+				case PassiveEffect.Plan.Write(var wanted) -> AttributeWriter.write(player, wanted);
+				case PassiveEffect.Plan.Remove(var attribute, var modifierId) -> AttributeWriter.remove(player, attribute, modifierId);
+				case PassiveEffect.Plan.Skip() -> {
+				}
 			}
 		}
 		// ponytail: no max-health tick until a class carries one (all read 0.0 today).
@@ -45,11 +45,11 @@ public final class PassiveApplier {
 
 	/**
 	 * The one priced passive on a class: the first {@code on_hit_dealt} stacker, or null.
-	 * Single home for the spender pair (consume plus Rush grant); the trigger scan itself
-	 * stays on the definition, and Rend's decide path keeps its own resolve-then-read.
+	 * Resolved once in {@link RendAbility#spentPassive}: the spender pair (consume plus
+	 * Rush grant) and Rend's decide path share it, so neither resolves behind the other's back.
 	 */
 	private static ConditionalPassive pricedPassive(ClassDefinition def) {
-		return def == null ? null : def.passiveForTrigger(ConditionalPassive.ON_HIT_DEALT);
+		return RendAbility.spentPassive(def);
 	}
 
 	/**
@@ -75,10 +75,8 @@ public final class PassiveApplier {
 				}
 			}
 			// Stance auras are transient like Vigor: leaving the class takes them off.
-			if (oldDef.hasAbility(ClassRegistry.ROTATE_ABILITY)
-					&& (newDef == null || !newDef.hasAbility(ClassRegistry.ROTATE_ABILITY))) {
-			StanceApplier.removeStanceModifiers(player);
-			}
+			// The Legionary marker lives with the stance adapter, not here.
+			StanceApplier.onClassChanged(player, oldDef, newDef);
 			runtime.clear(oldDef);
 		}
 		runtime.resetCooldowns();
@@ -122,6 +120,27 @@ public final class PassiveApplier {
 		}
 		for (int i = 0; i < RushAbility.BONUS_STACKS; i++) {
 			runtime.onTrigger(def, momentum.trigger(), now);
+		}
+	}
+
+	/**
+	 * Settles a planned hit's one-shot flags at the same {@code now} the plan peeked them:
+	 * the Rush credit grants, the Rend snapshot spends, in field order with
+	 * {@link MeleePlan#planHit}. The entry routes the plan here instead of re-agreeing on
+	 * the peek guards itself, so the pairing the plan saw is the pairing that lands; empty
+	 * hits (no bonus pending, no snapshot live) touch no window. Bonus damage itself still
+	 * lands from the plan's stamped {@code rendHp}/{@code impetusBonus}, never recomputed.
+	 */
+	public static void settleHitOneShots(PlayerRuntime runtime, ClassDefinition def, MeleePlan.HitPlan plan,
+			long now) {
+		if (runtime == null || plan == null) {
+			return;
+		}
+		if (plan.rushBonus()) {
+			grantRushBonus(runtime, def, now);
+		}
+		if (plan.rendStacks() > 0) {
+			runtime.consumeRendEmpower(now);
 		}
 	}
 }

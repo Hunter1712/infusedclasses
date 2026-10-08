@@ -80,4 +80,16 @@ class PassiveEffectTest {
 		assertTrue(PassiveEffect.planFor(MOMENTUM, 0, false) instanceof PassiveEffect.Plan.Skip);
 		assertTrue(PassiveEffect.planFor(null, 0, true) instanceof PassiveEffect.Plan.Skip);
 	}
+
+	@Test
+	void bucketsWriteLiveAndRemoveDead() {
+		HpScaledPassive vigor = ClassRegistry.byId(ClassRegistry.JUGGERNAUT).hpPassives().get(0);
+
+		assertTrue(PassiveEffect.planForBucket(vigor, 10) instanceof PassiveEffect.Plan.Write write
+				&& write.wanted().amount() == 3.0);
+		assertTrue(PassiveEffect.planForBucket(vigor, 0)
+				instanceof PassiveEffect.Plan.Remove remove
+				&& remove.attribute().equals(vigor.attribute()));
+		assertTrue(PassiveEffect.planForBucket(null, 0) instanceof PassiveEffect.Plan.Skip);
+	}
 }

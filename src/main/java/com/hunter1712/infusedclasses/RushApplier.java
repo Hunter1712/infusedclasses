@@ -1,6 +1,8 @@
 package com.hunter1712.infusedclasses;
 
 import net.minecraft.core.Holder;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.effect.MobEffectCategory;
@@ -24,7 +26,9 @@ public final class RushApplier {
 			return;
 		}
 		cleanse(player);
-		Holder<MobEffect> holder = AbilityApplier.effectHolder(player, RushAbility.SPEED_EFFECT);
+		Holder<MobEffect> holder = player.registryAccess().lookupOrThrow(Registries.MOB_EFFECT)
+				.get(ResourceKey.create(Registries.MOB_EFFECT, RushAbility.SPEED_EFFECT))
+				.orElse(null);
 		if (holder != null) {
 			player.addEffect(new MobEffectInstance(holder, RushAbility.SPEED_TICKS, RushAbility.SPEED_AMPLIFIER));
 		}

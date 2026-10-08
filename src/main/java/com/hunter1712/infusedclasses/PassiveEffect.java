@@ -73,4 +73,21 @@ public final class PassiveEffect {
 		}
 		return new Plan.Skip();
 	}
+
+	/**
+	 * The whole answer for one HP-scaled passive this tick, in the same shape as
+	 * {@link #planFor}: write the bucket's modifier, take off what a dead bucket earned,
+	 * or nothing. The bucket is recomputed from live HP every tick and the writer's
+	 * early-out covers no-op ticks, so unlike conditionals there is no moved-set.
+	 */
+	public static Plan planForBucket(HpScaledPassive hp, int bucket) {
+		Modifier wanted = forBucket(hp, bucket);
+		if (wanted != null) {
+			return new Plan.Write(wanted);
+		}
+		if (hp != null) {
+			return new Plan.Remove(hp.attribute(), hp.modifierId());
+		}
+		return new Plan.Skip();
+	}
 }

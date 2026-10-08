@@ -3,6 +3,8 @@ package com.hunter1712.infusedclasses;
 import net.minecraft.ChatFormatting;
 import net.minecraft.resources.Identifier;
 
+import java.util.List;
+
 /**
  * Testudo decisions: the Legionary's Scutum payoff on {@code G}. Pure gate-and-arm
  * shape on the shared oath lane: only Scutum fires, firing arms the lane for both
@@ -27,6 +29,19 @@ public final class TestudoAbility {
 	public static final Identifier CAST_SOUND = Identifier.withDefaultNamespace("item.shield.block");
 	/** Picker-copy tail evoking the cast, kept next to {@link #CAST_SOUND} so the two change together. */
 	public static final String CAST_WORD = "Hold!";
+
+	/**
+	 * The window aura as modifiers: what sits on the player while Testudo is live.
+	 * Single source for the applier's write and remove paths, so they cannot drift.
+	 * Shared instance: the tick iterates it, never mutates.
+	 */
+	public static List<PassiveEffect.Modifier> windowModifiers() {
+		return WINDOW_AURA;
+	}
+
+	private static final List<PassiveEffect.Modifier> WINDOW_AURA = List.of(
+			new PassiveEffect.Modifier(ClassRegistry.ARMOR, TESTUDO_PLATE_ID, TESTUDO_ARMOR),
+			new PassiveEffect.Modifier(ClassRegistry.KNOCKBACK_RESISTANCE, TESTUDO_BRACE_ID, 1.0));
 
 	public enum Kind {
 		FIRED,

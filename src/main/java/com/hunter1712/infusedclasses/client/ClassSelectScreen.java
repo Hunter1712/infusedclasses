@@ -60,8 +60,7 @@ public class ClassSelectScreen extends Screen {
 			int cardX = cardX(i, classes.size());
 			int cardY = ClassCardRenderer.cardsTop(height);
 			ClassDefinition def = classes.get(i);
-			boolean hovered = ClassCardRenderer.isHovering(cardX, cardY, mouseX, mouseY);
-			ClassPresentation.CardModel frame = ClassPresentation.cardFor(def, hovered);
+			ClassPresentation.CardModel frame = cardModel(def, cardX, cardY, mouseX, mouseY);
 			ClassCardRenderer.drawFrame(graphics, cardX, cardY, frame);
 		}
 	}
@@ -77,8 +76,7 @@ public class ClassSelectScreen extends Screen {
 			int cardX = cardX(i, classes.size());
 			int cardY = ClassCardRenderer.cardsTop(height);
 			ClassDefinition def = classes.get(i);
-			boolean hovered = ClassCardRenderer.isHovering(cardX, cardY, mouseX, mouseY);
-			ClassPresentation.CardModel model = ClassPresentation.cardFor(def, hovered);
+			ClassPresentation.CardModel model = cardModel(def, cardX, cardY, mouseX, mouseY);
 			ClassCardRenderer.drawBody(graphics, font, cardX, cardY, model);
 		}
 		graphics.drawCenteredString(font, "Click a class to choose it", width / 2, top + ClassCardRenderer.HEIGHT + 14, FOOTER_COLOR);
@@ -86,6 +84,15 @@ public class ClassSelectScreen extends Screen {
 
 	private int cardX(int index, int count) {
 		return ClassCardRenderer.cardX(index, count, width, GAP);
+	}
+
+	/**
+	 * One card model per card per pass: hover test plus resolution in one place, so the
+	 * frame and body passes cannot disagree on what hovered means.
+	 */
+	private static ClassPresentation.CardModel cardModel(ClassDefinition def, int cardX, int cardY,
+			int mouseX, int mouseY) {
+		return ClassPresentation.cardFor(def, ClassCardRenderer.isHovering(cardX, cardY, mouseX, mouseY));
 	}
 
 	@Override

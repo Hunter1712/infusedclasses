@@ -41,10 +41,13 @@ caller can fire without arming, and rejected presses leave the cooldown untouche
 _Avoid_: ability result (that is the whole decision, gating included), buff
 
 **Ability applier** (`AbilityApplier`):
-The shared adapter seams every ability outcome passes through: effect-holder lookup,
-the announcement on the action bar, and the cast fanfare (`playCast`). A result with nothing to grant and nothing
+The shared adapter seams every ability outcome passes through: the announcement
+on the action bar and the cast fanfare (`playCast`). Effect and sound ids resolve
+at their single use sites — Rush's Speed in its own adapter, the cast sound in the
+fanfare itself — never behind shared lookups with one caller each. A result with nothing to grant and nothing
 to say — a wrong-class, on-cooldown or no-stacks press — lands nothing.
-A fired-or-fizzle press lands through `announceAndCast` alone; only Rush keeps its own
+A fired-or-fizzle press lands through `announceAndCast` alone, except Rotate which
+announces without fanfare (it carries no cast sound); only Rush keeps its own
 adapter, for the cleanse and the Speed it lays.
 _Avoid_: ability system, effect handler
 
@@ -165,8 +168,8 @@ The Juggernaut's Momentum spender on `G`: empowers the next melee hit landed wit
 every Momentum stack plus the armor they granted up front, on its own 60s lane. An
 unswung window simply expires with the stacks already spent. Zero stacks fizzles with a
 `No Momentum` line and arms nothing. Decided in the trigger/fire
-gate-and-arm shape; the spent passive is found with `ClassDefinition.passiveForTrigger`
-rather than by position, the
+gate-and-arm shape; the spent passive is found once with `RendAbility.spentPassive`
+(over `passiveForTrigger`, never by position), the
 empower snapshot rides the transient runtime next to the lane, and
 the consume flag rides in the result: the entry asks the passive applier to consume
 that passive while the damage hook spends the snapshot on the next hit, and only
@@ -235,8 +238,9 @@ The decision of what one melee hit earns and settles, taken from definitions and
 transient state: whether the swing earns stacks (full swings only, spam earns zero),
 the stance deal and take mults (1.0 for anyone else), and the Impetus window bonus
 through the charged curve (0 outside the window). `planHit` decides the whole hit in
-field order — bump, Rush credit, Rend spend, Impetus bonus, combined mult — peeking
-one-shot flags the entry then consumes at the same moment; Scutum plus Testudo reads
+field order — bump, Rush credit, Rend spend, Impetus bonus, combined mult — peeking one-shot flags the passive applier then settles at the same
+moment through `settleHitOneShots`, so the pairing the plan saw is the pairing that
+lands and empty hits never touch a window; Scutum plus Testudo reads
 x0.56, Gladius plus Impetus x1.5, named once in the plan rather than emerging in the
 entry. The server entry maps, adapters
 apply; the victim runtime arrives lazily, so a non-Legionary victim costs no transient
@@ -261,7 +265,9 @@ _Avoid_: recursion flag, lock
 The adapter that makes the player's attributes agree with the Legionary stance: only
 the current stance's modifiers sit on the player, the other stance's come off, same
 write-only-on-change shape as the Vigor tick. Testudo plate and brace ride the window
-while live. Leaving the class takes them all off.
+while live. Both sides iterate the stance's single aura list (`RotateAbility.auraFor`,
+`TestudoAbility.windowModifiers`), so write and remove cannot drift. Leaving the class
+takes them all off through `onClassChanged`, which also owns the Legionary marker.
 _Avoid_: stance system, aura updater
 
 **Bind morph** (`BindMorph`):

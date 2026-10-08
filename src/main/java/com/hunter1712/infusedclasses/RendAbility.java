@@ -84,14 +84,22 @@ public final class RendAbility {
 	}
 
 	/**
+	 * The one priced passive on a class: the first {@code on_hit_dealt} stacker, or null.
+	 * Single home for the spender pair (consume plus Rush grant); the trigger scan itself
+	 * stays on the definition, and Rend's decide path keeps its own resolve-then-read.
+	 */
+	public static ConditionalPassive spentPassive(ClassDefinition def) {
+		return def == null ? null : def.passiveForTrigger(ConditionalPassive.ON_HIT_DEALT);
+	}
+
+	/**
 	 * Gate and arm together: the production path. Resolves the spent stacks from the runtime
 	 * itself, decides with {@link #trigger}, and arms the transient runtime's Rend lane plus
 	 * the empower snapshot when it fires. Rejected presses leave the lane untouched. An arm
 	 * that somehow fails reports on-cooldown instead of a fire it did not earn.
 	 */
 	public static Result fire(ClassDefinition def, PlayerRuntime runtime, long now) {
-		ConditionalPassive spent =
-				def == null ? null : def.passiveForTrigger(ConditionalPassive.ON_HIT_DEALT);
+		ConditionalPassive spent = spentPassive(def);
 		int stacks = spent == null ? 0 : runtime.stacks(spent);
 		Result result = trigger(def, runtime.rendRemaining(now), stacks);
 		return AbilityGate.gate(result, result.kind() == Kind.FIRED, () -> runtime.tryUseRend(now, stacks),

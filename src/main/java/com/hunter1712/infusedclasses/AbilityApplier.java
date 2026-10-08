@@ -10,13 +10,13 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundSource;
-import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.phys.Vec3;
 
 /**
- * Shared adapter seams: the single place ability outcomes are announced and registry ids
- * are resolved. Ids ride in decisions, holders resolve here — never the reverse.
- * Per-ability adapters own what their own result lands; this owns what they share.
+ * Shared adapter seams: the single place ability outcomes are announced and cast
+ * sounds are played. Ids ride in decisions, holders resolve at their single use
+ * sites — never behind shared lookups with one caller each. Per-ability adapters
+ * own what their own result lands; this owns what they share.
  */
 public final class AbilityApplier {
 	private AbilityApplier() {
@@ -34,31 +34,13 @@ public final class AbilityApplier {
 		player.displayClientMessage(line, true);
 	}
 
-	/** One holder lookup for every effect an adapter lays: ids ride in decisions, holders resolve here. Missing stays silent. */
-	public static Holder<MobEffect> effectHolder(ServerPlayer player, Identifier id) {
-		if (id == null) {
-			return null;
-		}
-		return player.registryAccess().lookupOrThrow(Registries.MOB_EFFECT)
-				.get(ResourceKey.create(Registries.MOB_EFFECT, id))
-				.orElse(null);
-	}
-
-	/** One holder lookup for every cast sound: ids ride in decisions, holders resolve here. Missing stays silent. */
-	public static Holder<SoundEvent> soundHolder(ServerPlayer player, Identifier id) {
-		if (id == null) {
-			return null;
-		}
-		return player.registryAccess().lookupOrThrow(Registries.SOUND_EVENT)
-				.get(ResourceKey.create(Registries.SOUND_EVENT, id))
-				.orElse(null);
-	}
-
 	/** One cast fanfare for every fired ability: resolves the sound id and plays it. Fizzles never reach here. Null sound plays nothing. */
 	public static void playCast(ServerPlayer player, Identifier soundId) {
-		if (player.level() instanceof ServerLevel level) {
+		if (player.level() instanceof ServerLevel level && soundId != null) {
 			Vec3 at = player.position();
-			Holder<SoundEvent> sound = soundHolder(player, soundId);
+			Holder<SoundEvent> sound = player.registryAccess().lookupOrThrow(Registries.SOUND_EVENT)
+					.get(ResourceKey.create(Registries.SOUND_EVENT, soundId))
+					.orElse(null);
 			if (sound == null) {
 				return;
 			}

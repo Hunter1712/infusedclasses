@@ -159,4 +159,26 @@ class LegionaryTest {
 		runtime.flipStance();
 		return runtime;
 	}
+
+	@Test
+	void stanceAurasAreSingleSourced() {
+		var gladius = RotateAbility.auraFor(RotateAbility.Stance.GLADIUS);
+		var scutum = RotateAbility.auraFor(RotateAbility.Stance.SCUTUM);
+		var window = TestudoAbility.windowModifiers();
+
+		// What the applier writes is what it removes: two auras plus the window pair.
+		assertEquals(
+				java.util.List.of(RotateAbility.GLADIUS_DAMAGE_ID, RotateAbility.GLADIUS_ALACRITY_ID),
+				gladius.stream().map(PassiveEffect.Modifier::modifierId).toList());
+		assertEquals(
+				java.util.List.of(RotateAbility.SCUTUM_PLATE_ID, RotateAbility.SCUTUM_TOUGHNESS_ID,
+						RotateAbility.SCUTUM_WEIGHT_ID),
+				scutum.stream().map(PassiveEffect.Modifier::modifierId).toList());
+		assertEquals(
+				java.util.List.of(TestudoAbility.TESTUDO_PLATE_ID, TestudoAbility.TESTUDO_BRACE_ID),
+				window.stream().map(PassiveEffect.Modifier::modifierId).toList());
+		assertEquals(2.0, gladius.get(0).amount());
+		assertEquals(6.0, scutum.get(0).amount());
+		assertEquals(TestudoAbility.TESTUDO_ARMOR, window.get(0).amount());
+	}
 }

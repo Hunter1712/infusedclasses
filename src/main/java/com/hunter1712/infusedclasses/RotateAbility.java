@@ -3,6 +3,8 @@ package com.hunter1712.infusedclasses;
 import net.minecraft.ChatFormatting;
 import net.minecraft.resources.Identifier;
 
+import java.util.List;
+
 /**
  * Rotate decisions: the Legionary's stance toggle on {@code R}. Pure gate-and-arm
  * shape with no build-up and no fizzle on stance: any stance fires off cooldown,
@@ -81,6 +83,23 @@ public final class RotateAbility {
 
 	private RotateAbility() {
 	}
+
+	/**
+	 * The stance aura as modifiers: what sits on the player while in this stance.
+	 * Single source for the applier's write and remove paths, so they cannot drift.
+	 * Shared instances: the tick iterates them, never mutates.
+	 */
+	public static List<PassiveEffect.Modifier> auraFor(Stance stance) {
+		return stance == Stance.GLADIUS ? GLADIUS_AURA : SCUTUM_AURA;
+	}
+
+	private static final List<PassiveEffect.Modifier> GLADIUS_AURA = List.of(
+			new PassiveEffect.Modifier(ClassRegistry.ATTACK_DAMAGE, GLADIUS_DAMAGE_ID, GLADIUS_DAMAGE),
+			new PassiveEffect.Modifier(ClassRegistry.ATTACK_SPEED, GLADIUS_ALACRITY_ID, GLADIUS_SPEED));
+	private static final List<PassiveEffect.Modifier> SCUTUM_AURA = List.of(
+			new PassiveEffect.Modifier(ClassRegistry.ARMOR, SCUTUM_PLATE_ID, SCUTUM_ARMOR),
+			new PassiveEffect.Modifier(ClassRegistry.ARMOR_TOUGHNESS, SCUTUM_TOUGHNESS_ID, SCUTUM_TOUGHNESS),
+			new PassiveEffect.Modifier(ClassRegistry.MOVEMENT_SPEED, SCUTUM_WEIGHT_ID, SCUTUM_WEIGHT));
 
 	/**
 	 * Outgoing melee multiplier for a stance plus a live Testudo window.

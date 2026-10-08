@@ -77,6 +77,7 @@ public class InfusedClasses implements ModInitializer {
 					ClassDefinition def = classes.currentDefinition();
 					PlayerRuntime runtime = runtime(player);
 					// Legionary reuses the R bind as the rotate intent, so binds survive.
+					// Rotate announces without fanfare on purpose: it carries no cast sound.
 					if (BindMorph.usesRotate(def)) {
 						RotateAbility.Result result = RotateAbility.fire(def, runtime, now);
 						AbilityApplier.announce(player, result.announcement());

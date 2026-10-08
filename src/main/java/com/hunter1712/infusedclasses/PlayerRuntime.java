@@ -44,6 +44,9 @@ public final class PlayerRuntime {
 		stance = RotateAbility.flipped(stance);
 	}
 
+	// Joint arms: lane plus window stamped together, so a fired press can never arm
+	// one without the other. This coordination is the module's own job; the lane map
+	// itself stays hidden inside Cooldowns.
 	/** Arms the rotate lock: fired Rotate presses only. The flip rides with it. */
 	public boolean tryUseRotate(long now) {
 		return cooldowns.useRotate(now);
@@ -86,6 +89,8 @@ public final class PlayerRuntime {
 		return testudoWindow.isLive(TestudoAbility.WINDOW_TICKS, now);
 	}
 
+	// Lane reads: mechanical forwards over the hidden Cooldowns, so ability decisions
+	// never touch the lane map. No coordination lives here, only remaining-time answers.
 	/** Cooldown verbs: arming runs through here; the lanes stay the module's implementation. */
 	public long rushRemaining(long now) {
 		return cooldowns.rushRemaining(now);
