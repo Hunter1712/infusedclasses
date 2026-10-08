@@ -34,5 +34,13 @@ public record ClassDefinition(
 		}
 		return null;
 	}
+
+	/**
+	 * Whether this class carries the ability: the single seam for ability-id checks, so
+	 * decisions never read the raw list. Null-safe on the id; a missing class never carries.
+	 */
+	public boolean hasAbility(Identifier ability) {
+		return ability != null && activeAbilities().contains(ability);
+	}
 }
 

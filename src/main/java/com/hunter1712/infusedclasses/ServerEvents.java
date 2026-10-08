@@ -71,11 +71,11 @@ final class ServerEvents {
 						PassiveApplier.grantRushBonus(atkRuntime, atkDef, now);
 					}
 					// Rend empower: the stamped bonus lands on this hit and only this one,
-					// applied through the adapter like every other outcome.
-					int empowerStacks = atkRuntime.consumeRendEmpower(now);
-					if (empowerStacks > 0) {
-						DamageSettle.dealBonus(attacker, entity,
-								BonusCurve.bonusFor(RendAbility.empowerFor(empowerStacks), charge));
+					// applied through the adapter like every other outcome. The snapshot clears
+					// here; the bonus is what the plan already decided, never recomputed.
+					atkRuntime.consumeRendEmpower(now);
+					if (plan.rendHp() > 0) {
+						DamageSettle.dealBonus(attacker, entity, plan.rendHp());
 					}
 					// Impetus: every melee hit inside the window earns the curve bonus.
 					if (plan.impetusBonus() > 0) {

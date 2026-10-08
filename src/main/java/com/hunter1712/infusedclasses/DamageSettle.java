@@ -65,12 +65,23 @@ public final class DamageSettle {
 		if (target == null || !target.isAlive() || mult == 1.0 || source == null) {
 			return;
 		}
-		float extra = (float) (baseDamageTaken * (mult - 1.0));
+		float extra = settleMath(baseDamageTaken, mult);
 		if (extra > 0) {
 			hurtGuarded(target, source, extra);
 		} else if (target instanceof LivingEntity living) {
 			living.heal(-extra);
 		}
+	}
+
+	/**
+	 * Pure settle math: the extra hurt over 1.0, the healed-back discount under it, nothing at
+	 * exactly 1.0. Decided here so the curve is pinned without a player; adapters apply it.
+	 */
+	static float settleMath(float baseDamageTaken, double mult) {
+		if (mult == 1.0) {
+			return 0;
+		}
+		return (float) (baseDamageTaken * (mult - 1.0));
 	}
 
 	/** Single guarded hurt: extra damage re-enters the damage hook on the same thread. */

@@ -30,4 +30,19 @@ class BindMorphTest {
 				BindMorph.oathFor(ClassRegistry.byId(ClassRegistry.JUGGERNAUT), RotateAbility.Stance.GLADIUS));
 		assertEquals(BindMorph.OathTarget.REND, BindMorph.oathFor(null, RotateAbility.Stance.SCUTUM));
 	}
+
+	@Test
+	void oathMorphKeysOnRotateNotOnOathIds() {
+		ClassDefinition rotateOnly = new ClassDefinition(
+				net.minecraft.resources.Identifier.fromNamespaceAndPath("infusedclasses", "test"), "Test", false,
+				java.util.List.of(), java.util.List.of(), 0.0, java.util.List.of(ClassRegistry.ROTATE_ABILITY), 0, "", java.util.List.of());
+		ClassDefinition impetusWithoutRotate = new ClassDefinition(
+				net.minecraft.resources.Identifier.fromNamespaceAndPath("infusedclasses", "test"), "Test", false,
+				java.util.List.of(), java.util.List.of(), 0.0, java.util.List.of(ClassRegistry.IMPETUS_ABILITY), 0, "", java.util.List.of());
+
+		assertEquals(BindMorph.OathTarget.IMPETUS,
+				BindMorph.oathFor(rotateOnly, RotateAbility.Stance.GLADIUS));
+		assertEquals(BindMorph.OathTarget.REND,
+				BindMorph.oathFor(impetusWithoutRotate, RotateAbility.Stance.GLADIUS));
+	}
 }

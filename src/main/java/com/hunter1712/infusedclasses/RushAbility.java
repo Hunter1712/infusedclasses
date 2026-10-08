@@ -51,7 +51,7 @@ public final class RushAbility {
 
 	/** Decides engaging for Juggernauts off cooldown. Pure and read-only: only {@link #fire} arms the lane and the window. */
 	public static Result trigger(ClassDefinition def, long rushRemaining) {
-		if (def == null || !def.activeAbilities().contains(ClassRegistry.RUSH_ABILITY)) {
+		if (def == null || !def.hasAbility(ClassRegistry.RUSH_ABILITY)) {
 			return Result.wrongClass();
 		}
 		if (rushRemaining > 0) {

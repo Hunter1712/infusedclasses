@@ -59,24 +59,20 @@ public final class PlayerRuntime {
 
 	/** Arms the shared oath lane and stamps the Impetus window together. */
 	public boolean tryUseImpetus(long now) {
-		return armOath(now, true);
+		return armOath(now, impetusWindow);
 	}
 
 	/** Arms the shared oath lane and stamps the Testudo window together. */
 	public boolean tryUseTestudo(long now) {
-		return armOath(now, false);
+		return armOath(now, testudoWindow);
 	}
 
 	/** Single lane-arm for both oath windows: firing one locks the other. */
-	private boolean armOath(long now, boolean impetus) {
+	private boolean armOath(long now, Window window) {
 		if (!cooldowns.useOath(now)) {
 			return false;
 		}
-		if (impetus) {
-			impetusWindow.arm(now);
-		} else {
-			testudoWindow.arm(now);
-		}
+		window.arm(now);
 		return true;
 	}
 

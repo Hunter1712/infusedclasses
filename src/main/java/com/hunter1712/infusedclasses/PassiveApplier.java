@@ -73,8 +73,8 @@ public final class PassiveApplier {
 				}
 			}
 			// Stance auras are transient like Vigor: leaving the class takes them off.
-			if (oldDef.activeAbilities().contains(ClassRegistry.ROTATE_ABILITY)
-					&& (newDef == null || !newDef.activeAbilities().contains(ClassRegistry.ROTATE_ABILITY))) {
+			if (oldDef.hasAbility(ClassRegistry.ROTATE_ABILITY)
+					&& (newDef == null || !newDef.hasAbility(ClassRegistry.ROTATE_ABILITY))) {
 			StanceApplier.removeStanceModifiers(player);
 			}
 			runtime.clear(oldDef);

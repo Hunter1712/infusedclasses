@@ -30,34 +30,25 @@ public record ConditionalPassive(
 	public static final String ON_HIT_DEALT = "on_hit_dealt";
 	/** Full picker copy. Generated from the numbers so it cannot drift from behaviour. */
 	public String fullDesc() {
-		return earnClause() + " (max " + maxStacks + "). Each stack adds +" + amount(perStack)
-				+ " " + word() + ". After " + graceSeconds + "s " + idleClause() + ", lose all stacks.";
+		TriggerPhrasing said = phrasing();
+		return said.earn() + " (max " + maxStacks + "). Each stack adds +" + amount(perStack)
+				+ " " + word() + ". After " + graceSeconds + "s " + said.idle() + ", lose all stacks.";
 	}
 
 	/**
-	 * What earns a stack. The definition carries a trigger id, not prose for it, so the copy only
-	 * describes an earning event it actually knows: the one trigger the mod emits is described,
-	 * and any other trigger is described as the bare trigger rather than guessed at.
+	 * What a trigger earns and what idleness decays, in one row per trigger: the definition
+	 * carries a trigger id, not prose for it, so the copy only describes an earning event it
+	 * actually knows. A third trigger adds one row, never two chains to keep in sync.
 	 */
-	private String earnClause() {
-		if (ON_HIT_TAKEN.equals(trigger)) {
-			return "Taking a hit grants 1 stack";
-		}
-		if (ON_HIT_DEALT.equals(trigger)) {
-			return "Landing a hit grants 1 stack";
-		}
-		return "Each trigger grants 1 stack";
+	private record TriggerPhrasing(String earn, String idle) {
 	}
 
-	/** The idle half of the same wording: what has to stop happening for the stacks to decay. */
-	private String idleClause() {
-		if (ON_HIT_TAKEN.equals(trigger)) {
-			return "without a hit";
-		}
-		if (ON_HIT_DEALT.equals(trigger)) {
-			return "without landing a hit";
-		}
-		return "without a trigger";
+	private TriggerPhrasing phrasing() {
+		return switch (trigger) {
+			case ON_HIT_TAKEN -> new TriggerPhrasing("Taking a hit grants 1 stack", "without a hit");
+			case ON_HIT_DEALT -> new TriggerPhrasing("Landing a hit grants 1 stack", "without landing a hit");
+			default -> new TriggerPhrasing("Each trigger grants 1 stack", "without a trigger");
+		};
 	}
 
 	/** Attribute name as the copy spells it: "minecraft:armor_toughness" reads as "armor toughness". */

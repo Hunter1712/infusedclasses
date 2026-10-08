@@ -53,7 +53,7 @@ public final class TestudoAbility {
 
 	/** Decides firing for Scutum Legionaries off the shared oath lane. Other stances and classes stay silent. Pure and read-only: only {@link #fire} arms the lane and the window. */
 	public static Result trigger(ClassDefinition def, long oathRemaining, RotateAbility.Stance stance) {
-		if (def == null || !def.activeAbilities().contains(ClassRegistry.TESTUDO_ABILITY)
+		if (def == null || !def.hasAbility(ClassRegistry.TESTUDO_ABILITY)
 				|| stance != RotateAbility.Stance.SCUTUM) {
 			return Result.wrongClass();
 		}

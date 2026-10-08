@@ -19,12 +19,12 @@ public final class BindMorph {
 
 	/** Whether {@code R} arrives as the rotate intent: true for Legionaries, Rush for everyone else. */
 	public static boolean usesRotate(ClassDefinition def) {
-		return def != null && def.activeAbilities().contains(ClassRegistry.ROTATE_ABILITY);
+		return def != null && def.hasAbility(ClassRegistry.ROTATE_ABILITY);
 	}
 
 	/** What {@code G} means: the stance-morphed oath for Legionaries, Rend for everyone else. */
 	public static OathTarget oathFor(ClassDefinition def, RotateAbility.Stance stance) {
-		if (def != null && def.activeAbilities().contains(ClassRegistry.IMPETUS_ABILITY)) {
+		if (def != null && def.hasAbility(ClassRegistry.ROTATE_ABILITY)) {
 			return stance == RotateAbility.Stance.GLADIUS ? OathTarget.IMPETUS : OathTarget.TESTUDO;
 		}
 		return OathTarget.REND;

@@ -71,7 +71,7 @@ public final class RendAbility {
 
 	/** Decides firing for Juggernauts off cooldown holding stacks. Zero stacks fizzles before the cooldown is even read. Pure and read-only: only {@link #fire} arms the cooldown. */
 	public static Result trigger(ClassDefinition def, long rendRemaining, int stacks) {
-		if (def == null || !def.activeAbilities().contains(ClassRegistry.REND_ABILITY)) {
+		if (def == null || !def.hasAbility(ClassRegistry.REND_ABILITY)) {
 			return Result.wrongClass();
 		}
 		if (stacks <= 0) {

@@ -62,7 +62,7 @@ public class ClassSelectScreen extends Screen {
 			ClassDefinition def = classes.get(i);
 			boolean hovered = ClassCardRenderer.isHovering(cardX, cardY, mouseX, mouseY);
 			ClassPresentation.CardModel frame = ClassPresentation.cardFor(def, hovered);
-			ClassCardRenderer.drawFrame(graphics, cardX, cardY, frame.style(), frame.accent());
+			ClassCardRenderer.drawFrame(graphics, cardX, cardY, frame);
 		}
 	}
 
@@ -79,7 +79,7 @@ public class ClassSelectScreen extends Screen {
 			ClassDefinition def = classes.get(i);
 			boolean hovered = ClassCardRenderer.isHovering(cardX, cardY, mouseX, mouseY);
 			ClassPresentation.CardModel model = ClassPresentation.cardFor(def, hovered);
-			ClassCardRenderer.drawBody(graphics, font, cardX, cardY, def, model.style(), model.lines());
+			ClassCardRenderer.drawBody(graphics, font, cardX, cardY, model);
 		}
 		graphics.drawCenteredString(font, "Click a class to choose it", width / 2, top + ClassCardRenderer.HEIGHT + 14, FOOTER_COLOR);
 	}

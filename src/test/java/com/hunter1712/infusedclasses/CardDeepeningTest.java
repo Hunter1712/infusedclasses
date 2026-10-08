@@ -17,6 +17,8 @@ class CardDeepeningTest {
 		assertEquals(ClassPresentation.accentFor(juggernaut), plain.accent());
 		assertEquals(ClassPresentation.buttonFor(juggernaut), plain.button());
 		assertEquals(ClassPresentation.tooltipFor(juggernaut), plain.tooltip());
+		assertEquals(juggernaut.displayName(), plain.displayName());
+		assertEquals(juggernaut.tagline(), plain.tagline());
 	}
 
 	@Test

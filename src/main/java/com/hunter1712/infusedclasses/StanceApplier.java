@@ -18,7 +18,7 @@ final class StanceApplier {
 	 * the other stance's come off. Non-Legionaries skip entirely.
 	 */
 	static void applyStance(ServerPlayer player, ClassDefinition def, PlayerRuntime runtime, long now) {
-		if (!def.activeAbilities().contains(ClassRegistry.ROTATE_ABILITY)) {
+		if (!def.hasAbility(ClassRegistry.ROTATE_ABILITY)) {
 			return;
 		}
 		if (runtime.stance() == RotateAbility.Stance.GLADIUS) {

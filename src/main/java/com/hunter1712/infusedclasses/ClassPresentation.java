@@ -145,15 +145,17 @@ public final class ClassPresentation {
 	}
 
 	/**
-	 * Whole card in one decision: lines, style, accent, button and tooltip together, so the
-	 * locked look lives in one place instead of five ternaries across callers. The existing
-	 * entries delegate here conceptually; they stay as the seams tests pin.
+	 * Whole card in one decision: name, tagline, lines, style, accent, button and tooltip
+	 * together, so the locked look lives in one place instead of five ternaries across callers.
+	 * The existing entries delegate here conceptually; they stay as the seams tests pin.
 	 */
-	public record CardModel(List<CardLine> lines, CardStyle style, int accent, ButtonData button, String tooltip) {
+	public record CardModel(String displayName, String tagline, List<CardLine> lines, CardStyle style, int accent, ButtonData button, String tooltip) {
 	}
 
 	public static CardModel cardFor(ClassDefinition def, boolean hovered) {
 		return new CardModel(
+				def.displayName(),
+				def.tagline(),
 				List.copyOf(cardLinesFor(def)),
 				cardStyleFor(def, hovered),
 				accentFor(def),

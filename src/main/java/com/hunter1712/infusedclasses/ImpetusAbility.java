@@ -52,7 +52,7 @@ public final class ImpetusAbility {
 
 	/** Decides firing for Gladius Legionaries off the shared oath lane. Other stances and classes stay silent. Pure and read-only: only {@link #fire} arms the lane and the window. */
 	public static Result trigger(ClassDefinition def, long oathRemaining, RotateAbility.Stance stance) {
-		if (def == null || !def.activeAbilities().contains(ClassRegistry.IMPETUS_ABILITY)
+		if (def == null || !def.hasAbility(ClassRegistry.IMPETUS_ABILITY)
 				|| stance != RotateAbility.Stance.GLADIUS) {
 			return Result.wrongClass();
 		}

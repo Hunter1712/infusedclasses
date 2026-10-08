@@ -110,4 +110,14 @@ class ClassRegistryTest {
 		classes.readId(null);
 		assertNull(classes.classId());
 	}
+
+	@Test
+	void hasAbilityReadsTheListAndIsNullSafeOnTheId() {
+		ClassDefinition juggernaut = ClassRegistry.byId(ClassRegistry.JUGGERNAUT);
+
+		assertTrue(juggernaut.hasAbility(ClassRegistry.RUSH_ABILITY));
+		assertTrue(juggernaut.hasAbility(ClassRegistry.REND_ABILITY));
+		assertFalse(juggernaut.hasAbility(ClassRegistry.ROTATE_ABILITY));
+		assertFalse(juggernaut.hasAbility(null));
+	}
 }

@@ -446,4 +446,6 @@ server entry, the stack storage out of the transient runtime, and the trigger sc
 `0006` adds the Legionary stance tradeoff plus the universal charged curve and stack gate;
 `0007` deepens the melee hook (plan, settle, morph) and splits the adapters, revisiting
 the `0005` bind-morph carve-out; `0008` closes the review's six seams (cooldown leak,
-one-line Rend adapter, shared gate-and-arm, full hit plan, card back door, window registry).
+one-line Rend adapter, shared gate-and-arm, full hit plan, card back door, window registry);
+`0009` keeps oath dispatch in the server entry (morph stays pure) and single-sources
+the Legionary marker through `hasAbility`.
