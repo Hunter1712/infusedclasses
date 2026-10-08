@@ -107,6 +107,7 @@ class MeleePlanTest {
 		assertTrue(full.bump());
 		assertFalse(spam.bump());
 		assertTrue(full.rushBonus());
+		assertFalse(spam.rushBonus());
 		assertEquals(-1, full.rendStacks());
 		assertEquals(0, full.rendHp());
 	}

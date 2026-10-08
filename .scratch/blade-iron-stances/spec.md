@@ -77,7 +77,8 @@ or `Testudo` to outlive. Cycling pays; camping pays nothing.
   tagline `Sword and shield`; actives `[rotate, impetus, testudo]` with copy
   built from constants; ids `infusedclasses:rotate`, `infusedclasses:impetus`,
   `infusedclasses:testudo` (`G` morphs by stance on a shared lane; the card
-  names all three). New attribute keys `MOVEMENT_SPEED` and `ARMOR_TOUGHNESS`
+  names all three). New attribute keys `MOVEMENT_SPEED`, `ARMOR_TOUGHNESS` and
+  `KNOCKBACK_RESISTANCE` (+1 brace while Testudo is live)
   next to the existing `ARMOR`/`ATTACK_DAMAGE`/`ATTACK_SPEED` keys. No
   migration (new id); Ranger/Mage untouched.
 - New `RotateAbility`: `NAME` "Rotate", `ROTATE_MS` 8_000, kinds

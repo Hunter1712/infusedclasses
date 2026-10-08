@@ -79,7 +79,7 @@ public final class ClassRegistry {
 						new ClassDefinition.ActiveAbility(
 								RushAbility.NAME,
 								"Cleanses harmful effects and grants Speed I for "
-										+ (RushAbility.SPEED_TICKS / 20) + "s; your next melee hit grants +"
+										+ (RushAbility.SPEED_TICKS / 20) + "s; your next full-swing melee hit grants +"
 										+ RushAbility.BONUS_STACKS + " Momentum (R, "
 										+ (Cooldowns.RUSH_MS / 1000) + "s). " + RushAbility.CAST_WORD),
 						new ClassDefinition.ActiveAbility(

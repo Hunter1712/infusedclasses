@@ -40,8 +40,8 @@ an anvil-land smash for the execute.
   lose-all. Tank earned by landing hits, not taking them.
 - **Rush (R, 25s):** 4s Speed I + **cleanse every active HARMFUL effect**
   (poison, wither, weakness, slowness, blindness — adapter drops harmful
-  only, beneficial kept) + next melee hit inside the window grants +3
-  Momentum (cap-respecting, grace re-stamped). Always fires off cooldown;
+  only, beneficial kept) + next full-swing melee hit inside the window grants +3
+  Momentum (cap-respecting, grace re-stamped; spam leaves it pending). Always fires off cooldown;
   never fizzles on HP/stacks. Sound `minecraft:entity.wind_charge.wind_burst` with copy
   tail `RushAbility.CAST_WORD` (`Whoosh!`).
 - **Rend (G, 60s):** consumes all Momentum up front and empowers the next melee
@@ -119,8 +119,8 @@ means no Vigor and no sustain — that is the intended risk.
 - `ServerEvents.AFTER_DAMAGE`: victim branch feeds `ON_HIT_TAKEN` only
   if a class still uses it (else removed with Bulwark); attacker branch
   (existing melee check at `ServerEvents.java:51-52`) feeds
-  `ON_HIT_DEALT` for Momentum (+1, grace re-stamp), grants +3 when a Rush
-  window is live with bonus unconsumed, then spends a live Rend empower
+  `ON_HIT_DEALT` for Momentum (+1 full swings only, grace re-stamp), grants +3 on a
+  full swing when a Rush window is live with bonus unconsumed, then spends a live Rend empower
   snapshot as bonus damage on the same hit. The extra hurt re-enters the hook
   on the same thread, guarded by a flag so it earns nothing twice.
 - Adapters: `RushApplier` (Speed + cleanse + announce + wind burst on FIRED),

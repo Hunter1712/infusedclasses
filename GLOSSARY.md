@@ -143,8 +143,8 @@ _Avoid_: timer
 
 **Rush** (`RushAbility`):
 The Juggernaut's engage on `R`: cleanses every active harmful effect, lays Speed I for
-4s (`SPEED_TICKS`), and arms a one-shot bonus so the next melee hit inside the window
-earns +3 Momentum (`BONUS_STACKS`), on its own 25s lane. Fires with zero stacks at full
+4s (`SPEED_TICKS`), and arms a one-shot bonus so the next full-swing melee hit inside
+the window earns +3 Momentum (`BONUS_STACKS`), on its own 25s lane. Spam leaves the bonus pending. Fires with zero stacks at full
 HP — engaging topped-off is the normal case, not a reject — and rejected presses leave
 the lane, the window and the bonus untouched. Decided in the trigger/fire gate-and-arm
 shape.

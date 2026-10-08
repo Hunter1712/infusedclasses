@@ -58,7 +58,7 @@ public final class MeleePlan {
 	public static HitPlan planHit(ClassDefinition atkDef, PlayerRuntime atkRuntime, ClassDefinition victimDef,
 			Supplier<PlayerRuntime> victimRuntime, float charge, long now) {
 		boolean bump = shouldBump(charge);
-		boolean rushBonus = atkRuntime != null && atkRuntime.hasRushBonusPending(now);
+		boolean rushBonus = shouldBump(charge) && atkRuntime != null && atkRuntime.hasRushBonusPending(now);
 		int rendStacks = atkRuntime == null ? -1 : atkRuntime.peekRendEmpowerStacks(now);
 		float rendHp = rendStacks > 0 ? BonusCurve.bonusFor(RendAbility.empowerFor(rendStacks), charge) : 0;
 		float impetus = atkRuntime == null ? 0 : impetusBonusFor(atkDef, atkRuntime, now, charge);

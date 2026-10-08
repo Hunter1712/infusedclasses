@@ -45,8 +45,8 @@ final class ServerEvents {
 				return;
 			}
 			// Attacker: a direct melee hit builds stacks for any class carrying an
-			// on-hit-dealt passive — full swings only, spam earns zero — and, inside
-			// a live Rush window with its bonus still pending, lands the engage
+			// on-hit-dealt passive — full swings only, spam earns zero — and a full swing,
+			// inside a live Rush window with its bonus still pending, lands the engage
 			// bonus too. Rend and Impetus bonuses land through the shared charge
 			// curve, and Legionary deal/take mults settle as one extra hurt (or a
 			// heal-back when the stance discounts). Self-damage excluded by the
@@ -66,7 +66,7 @@ final class ServerEvents {
 					if (plan.bump()) {
 						atkRuntime.onTrigger(atkDef, ConditionalPassive.ON_HIT_DEALT, now);
 					}
-					// Spam earns the window plus a quarter bonus, but zero stacks.
+					// Spam grants zero stacks; the pending bonus waits for a full swing.
 					if (plan.rushBonus()) {
 						PassiveApplier.grantRushBonus(atkRuntime, atkDef, now);
 					}
