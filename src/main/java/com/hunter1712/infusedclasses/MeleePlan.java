@@ -43,4 +43,27 @@ public final class MeleePlan {
 		}
 		return ImpetusAbility.bonusFor(charge);
 	}
+
+	/**
+	 * What one melee hit earns and settles, decided in field order: stack bump, Rush credit,
+	 * Rend spend, Impetus bonus, then the stance mults. The entry applies in the same order:
+	 * bump triggers, Rush grants, Rend consumes, bonuses land, the combined mult settles.
+	 * One-shot flags are peeked here and consumed there, at the same {@code now}.
+	 */
+	public record HitPlan(boolean bump, boolean rushBonus, int rendStacks, float rendHp, float impetusBonus,
+			double deal, double take, double combined) {
+	}
+
+	/** Full hit decision from definitions and transient state. Victim parts are 1.0 without a victim. */
+	public static HitPlan planHit(ClassDefinition atkDef, PlayerRuntime atkRuntime, ClassDefinition victimDef,
+			Supplier<PlayerRuntime> victimRuntime, float charge, long now) {
+		boolean bump = shouldBump(charge);
+		boolean rushBonus = atkRuntime != null && atkRuntime.hasRushBonusPending(now);
+		int rendStacks = atkRuntime == null ? -1 : atkRuntime.peekRendEmpowerStacks(now);
+		float rendHp = rendStacks > 0 ? BonusCurve.bonusFor(RendAbility.empowerFor(rendStacks), charge) : 0;
+		float impetus = atkRuntime == null ? 0 : impetusBonusFor(atkDef, atkRuntime, now, charge);
+		double deal = atkDef == null || atkRuntime == null ? 1.0 : dealFor(atkDef, atkRuntime, now);
+		double take = victimDef == null || victimRuntime == null ? 1.0 : takeFor(victimDef, victimRuntime, now);
+		return new HitPlan(bump, rushBonus, rendStacks, rendHp, impetus, deal, take, deal * take);
+	}
 }

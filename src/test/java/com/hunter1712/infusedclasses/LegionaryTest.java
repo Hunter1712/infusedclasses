@@ -58,7 +58,7 @@ class LegionaryTest {
 		assertEquals(RotateAbility.Stance.GLADIUS, runtime.stance());
 		assertEquals(RotateAbility.Stance.GLADIUS, first.stance());
 		assertEquals("Gladius!", first.announcement().text());
-		assertEquals(RotateAbility.ROTATE_MS, runtime.cooldowns().rotateRemaining(0));
+		assertEquals(Cooldowns.ROTATE_MS, runtime.rotateRemaining(0));
 		// The rotate lane is its own: oath stays ready.
 		assertEquals(0, runtime.oathRemaining(0));
 	}
@@ -78,7 +78,7 @@ class LegionaryTest {
 
 		assertEquals(RotateAbility.Kind.WRONG_CLASS, rejected.kind());
 		assertNull(rejected.announcement());
-		assertEquals(0, wrong.cooldowns().rotateRemaining(0));
+		assertEquals(0, wrong.rotateRemaining(0));
 		assertEquals(RotateAbility.Stance.SCUTUM, wrong.stance());
 	}
 
@@ -148,7 +148,7 @@ class LegionaryTest {
 		runtime.resetCooldowns();
 
 		assertEquals(0, runtime.oathRemaining(0));
-		assertEquals(0, runtime.cooldowns().rotateRemaining(0));
+		assertEquals(0, runtime.rotateRemaining(0));
 		assertFalse(runtime.isImpetusLive(0));
 		assertFalse(runtime.isTestudoLive(0));
 		assertEquals(RotateAbility.Stance.SCUTUM, runtime.stance());

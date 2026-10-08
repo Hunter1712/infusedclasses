@@ -70,16 +70,15 @@ public final class RendAbility {
 	}
 
 	/** Decides firing for Juggernauts off cooldown holding stacks. Zero stacks fizzles before the cooldown is even read. Pure and read-only: only {@link #fire} arms the cooldown. */
-	public static Result trigger(ClassDefinition def, Cooldowns cooldowns, int stacks, long now) {
+	public static Result trigger(ClassDefinition def, long rendRemaining, int stacks) {
 		if (def == null || !def.activeAbilities().contains(ClassRegistry.REND_ABILITY)) {
 			return Result.wrongClass();
 		}
 		if (stacks <= 0) {
 			return Result.noMomentum();
 		}
-		long remaining = cooldowns.rendRemaining(now);
-		if (remaining > 0) {
-			return Result.onCooldown(remaining);
+		if (rendRemaining > 0) {
+			return Result.onCooldown(rendRemaining);
 		}
 		return Result.fired(empowerFor(stacks));
 	}
@@ -94,10 +93,8 @@ public final class RendAbility {
 		ConditionalPassive spent =
 				def == null ? null : def.passiveForTrigger(ConditionalPassive.ON_HIT_DEALT);
 		int stacks = spent == null ? 0 : runtime.stacks(spent);
-		Result result = trigger(def, runtime.cooldowns(), stacks, now);
-		if (result.kind() == Kind.FIRED && !runtime.tryUseRend(now, stacks)) {
-			return Result.onCooldown(runtime.rendRemaining(now));
-		}
-		return result;
+		Result result = trigger(def, runtime.rendRemaining(now), stacks);
+		return AbilityGate.gate(result, result.kind() == Kind.FIRED, () -> runtime.tryUseRend(now, stacks),
+				() -> runtime.rendRemaining(now), Result::onCooldown);
 	}
 }

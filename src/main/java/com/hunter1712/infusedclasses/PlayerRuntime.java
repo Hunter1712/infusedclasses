@@ -17,17 +17,11 @@ import java.util.Set;
 public final class PlayerRuntime {
 	// ponytail: cooldowns reset on relog, persist to NBT if the reset becomes an exploit.
 	private final Cooldowns cooldowns = new Cooldowns();
-	// Rush window: press timestamp (millis), live for the ability's window after a fired
-	// press, plus a one-shot bonus flag for the next qualifying melee hit. Cleared with
-	// everything else, so switch and respawn never inherit a window.
+	// Ability windows: press timestamps plus their one-shot payloads. Rush carries a bare
+	// pending bonus, Rend a pending stack snapshot, the oath windows liveness only.
+	// Cleared with everything else, so switch and respawn never inherit a window.
 	private final Window rushWindow = new Window();
-	private boolean rushBonusPending;
-	// Rend empower: stack snapshot (bonus damage) stamped on a fired press, live for the
-	// ability's window, spent by the next qualifying melee hit. Cleared with everything
-	// else, so switch and respawn never inherit an empower.
 	private final Window rendWindow = new Window();
-	private int rendEmpowerStacks;
-	private boolean rendEmpowerPending;
 	// Conditional-passive stacks: counts plus grace timestamps, keyed by the passive
 	// definition, never by its name.
 	private final PassiveStacks passiveStacks = new PassiveStacks();
@@ -96,11 +90,7 @@ public final class PlayerRuntime {
 		return testudoWindow.isLive(TestudoAbility.WINDOW_TICKS, now);
 	}
 
-	public Cooldowns cooldowns() {
-		return cooldowns;
-	}
-
-	/** Cooldown verbs: arming runs through here, so no caller reaches through the mutable object. */
+	/** Cooldown verbs: arming runs through here; the lanes stay the module's implementation. */
 	public long rushRemaining(long now) {
 		return cooldowns.rushRemaining(now);
 	}
@@ -111,7 +101,6 @@ public final class PlayerRuntime {
 			return false;
 		}
 		rushWindow.arm(now);
-		rushBonusPending = true;
 		return true;
 	}
 
@@ -125,11 +114,12 @@ public final class PlayerRuntime {
 	 * false when nothing was owed. A stale window with no bonus left grants nothing.
 	 */
 	public boolean consumeRushBonus(long now) {
-		if (!rushBonusPending || !isRushLive(now)) {
-			return false;
-		}
-		rushBonusPending = false;
-		return true;
+		return rushWindow.consume(RushAbility.WINDOW_TICKS, now);
+	}
+
+	/** Peeks the Rush bonus without consuming: what the melee plan decides on. */
+	public boolean hasRushBonusPending(long now) {
+		return rushWindow.hasPending(RushAbility.WINDOW_TICKS, now);
 	}
 
 	public long rendRemaining(long now) {
@@ -145,15 +135,18 @@ public final class PlayerRuntime {
 		if (!cooldowns.useRend(now)) {
 			return false;
 		}
-		rendWindow.arm(now);
-		rendEmpowerStacks = stacks;
-		rendEmpowerPending = true;
+		rendWindow.arm(now, stacks);
 		return true;
 	}
 
 	/** Whether a fired Rend empower is still live: press timestamp plus the ability's window. */
 	public boolean isRendEmpowerLive(long now) {
-		return rendEmpowerPending && rendWindow.isLive(RendAbility.WINDOW_TICKS, now);
+		return rendWindow.hasPending(RendAbility.WINDOW_TICKS, now);
+	}
+
+	/** Peeks the empower snapshot without consuming: what the melee plan decides on. -1 when nothing is owed. */
+	public int peekRendEmpowerStacks(long now) {
+		return rendWindow.peekPayload(RendAbility.WINDOW_TICKS, now);
 	}
 
 	/**
@@ -162,33 +155,27 @@ public final class PlayerRuntime {
 	 * the stacks it cost are already gone.
 	 */
 	public int consumeRendEmpower(long now) {
-		if (!isRendEmpowerLive(now)) {
-			return -1;
-		}
-		rendEmpowerPending = false;
-		return rendEmpowerStacks;
+		return rendWindow.consumePayload(RendAbility.WINDOW_TICKS, now);
 	}
 
 	/** Reset for class switch: a new class starts empty. The adapter calls this, not ability callers. */
 	public void resetCooldowns() {
 		cooldowns.reset();
-		rushWindow.clear();
-		rushBonusPending = false;
-		rendWindow.clear();
-		rendEmpowerStacks = 0;
-		rendEmpowerPending = false;
+		for (Window w : new Window[]{rushWindow, rendWindow, impetusWindow, testudoWindow}) {
+			w.clear();
+		}
 		stance = RotateAbility.Stance.SCUTUM;
-		impetusWindow.clear();
-		testudoWindow.clear();
 	}
 
 	/**
-	 * One ability window: a press timestamp, live for the ability's window after a fired
-	 * press. Cleared with everything else, so switch and respawn never inherit a window.
-	 * Ticks ride as 50ms each.
+	 * One ability window: a press timestamp plus its one-shot payload, live for the ability's
+	 * window after a fired press. Cleared with everything else, so switch and respawn never
+	 * inherit a window. Ticks ride as 50ms each.
 	 */
 	private static final class Window {
 		private long pressedAt = -1L;
+		private boolean pending;
+		private int payload;
 
 		boolean isLive(int windowTicks, long now) {
 			return pressedAt >= 0 && now - pressedAt < windowTicks * 50L;
@@ -196,10 +183,44 @@ public final class PlayerRuntime {
 
 		void arm(long now) {
 			pressedAt = now;
+			pending = true;
+		}
+
+		void arm(long now, int payload) {
+			pressedAt = now;
+			pending = true;
+			this.payload = payload;
+		}
+
+		boolean hasPending(int windowTicks, long now) {
+			return pending && isLive(windowTicks, now);
+		}
+
+		boolean consume(int windowTicks, long now) {
+			if (!hasPending(windowTicks, now)) {
+				return false;
+			}
+			pending = false;
+			return true;
+		}
+
+		int peekPayload(int windowTicks, long now) {
+			return hasPending(windowTicks, now) ? payload : -1;
+		}
+
+		int consumePayload(int windowTicks, long now) {
+			int seen = peekPayload(windowTicks, now);
+			if (seen < 0) {
+				return -1;
+			}
+			pending = false;
+			return seen;
 		}
 
 		void clear() {
 			pressedAt = -1L;
+			pending = false;
+			payload = 0;
 		}
 	}
 

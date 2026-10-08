@@ -52,14 +52,13 @@ public final class TestudoAbility {
 	}
 
 	/** Decides firing for Scutum Legionaries off the shared oath lane. Other stances and classes stay silent. Pure and read-only: only {@link #fire} arms the lane and the window. */
-	public static Result trigger(ClassDefinition def, Cooldowns cooldowns, RotateAbility.Stance stance, long now) {
+	public static Result trigger(ClassDefinition def, long oathRemaining, RotateAbility.Stance stance) {
 		if (def == null || !def.activeAbilities().contains(ClassRegistry.TESTUDO_ABILITY)
 				|| stance != RotateAbility.Stance.SCUTUM) {
 			return Result.wrongClass();
 		}
-		long remaining = cooldowns.oathRemaining(now);
-		if (remaining > 0) {
-			return Result.onCooldown(remaining);
+		if (oathRemaining > 0) {
+			return Result.onCooldown(oathRemaining);
 		}
 		return Result.fired();
 	}
@@ -70,10 +69,8 @@ public final class TestudoAbility {
 	 * rejected presses leave both untouched.
 	 */
 	public static Result fire(ClassDefinition def, PlayerRuntime runtime, long now) {
-		Result result = trigger(def, runtime.cooldowns(), runtime.stance(), now);
-		if (result.kind() == Kind.FIRED && !runtime.tryUseTestudo(now)) {
-			return Result.onCooldown(runtime.oathRemaining(now));
-		}
-		return result;
+		Result result = trigger(def, runtime.oathRemaining(now), runtime.stance());
+		return AbilityGate.gate(result, result.kind() == Kind.FIRED, () -> runtime.tryUseTestudo(now),
+				() -> runtime.oathRemaining(now), Result::onCooldown);
 	}
 }

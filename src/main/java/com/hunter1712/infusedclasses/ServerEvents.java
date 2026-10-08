@@ -6,6 +6,8 @@ import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 import net.minecraft.server.level.ServerPlayer;
 
+import java.util.function.Supplier;
+
 /**
  * Server event wiring for the entry: first-join picker, respawn copy, logout drop, hit trigger,
  * and the per-tick decay-plus-apply. Decisions stay in pure modules and application in adapters;
@@ -55,11 +57,19 @@ final class ServerEvents {
 				if (atkDef != null) {
 					PlayerRuntime atkRuntime = InfusedClasses.runtime(attacker);
 					float charge = attacker.getAttackStrengthScale(0.0F);
-					if (MeleePlan.shouldBump(charge)) {
+					// One plan, applied in field order: bump, Rush, Rend, Impetus, stance settle.
+					ClassDefinition victimDef = entity instanceof ServerPlayer v
+							? PlayerClassAccess.of(v).currentDefinition() : null;
+					Supplier<PlayerRuntime> victimRt = entity instanceof ServerPlayer v2
+							? () -> InfusedClasses.runtime(v2) : null;
+					MeleePlan.HitPlan plan = MeleePlan.planHit(atkDef, atkRuntime, victimDef, victimRt, charge, now);
+					if (plan.bump()) {
 						atkRuntime.onTrigger(atkDef, ConditionalPassive.ON_HIT_DEALT, now);
 					}
 					// Spam earns the window plus a quarter bonus, but zero stacks.
-					PassiveApplier.grantRushBonus(atkRuntime, atkDef, now);
+					if (plan.rushBonus()) {
+						PassiveApplier.grantRushBonus(atkRuntime, atkDef, now);
+					}
 					// Rend empower: the stamped bonus lands on this hit and only this one,
 					// applied through the adapter like every other outcome.
 					int empowerStacks = atkRuntime.consumeRendEmpower(now);
@@ -68,15 +78,12 @@ final class ServerEvents {
 								BonusCurve.bonusFor(RendAbility.empowerFor(empowerStacks), charge));
 					}
 					// Impetus: every melee hit inside the window earns the curve bonus.
-					float impetus = MeleePlan.impetusBonusFor(atkDef, atkRuntime, now, charge);
-					if (impetus > 0) {
-						DamageSettle.dealBonus(attacker, entity, impetus);
+					if (plan.impetusBonus() > 0) {
+						DamageSettle.dealBonus(attacker, entity, plan.impetusBonus());
 					}
 					// Stance mults: attacker deal times victim take, settled at once.
-					double deal = MeleePlan.dealFor(atkDef, atkRuntime, now);
-					double take = entity instanceof ServerPlayer v ? MeleePlan.takeFor(
-							PlayerClassAccess.of(v).currentDefinition(), () -> InfusedClasses.runtime(v), now) : 1.0;
-					DamageSettle.settleMult(attacker, entity, baseDamageTaken, deal * take);
+					// Scutum + Testudo read x0.56, Gladius + Impetus x1.5: see HitPlan.combined.
+					DamageSettle.settleMult(attacker, entity, baseDamageTaken, plan.combined());
 				}
 			} else if (entity instanceof ServerPlayer victim
 					&& source.getEntity() instanceof net.minecraft.world.entity.LivingEntity mobAttacker

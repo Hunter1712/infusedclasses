@@ -79,13 +79,7 @@ public final class ClassCardRenderer {
 		}
 	}
 
-	/** Name, tagline, divider and the card lines, each drawn with the style it carries. */
-	public static void drawBody(GuiGraphics graphics, Font font, int x, int y, ClassDefinition def,
-			ClassPresentation.CardStyle style) {
-		drawBody(graphics, font, x, y, def, style, ClassPresentation.cardLinesFor(def));
-	}
-
-	/** Same body from one card model: the screen resolves the model once, never the parts. */
+	/** Name, tagline, divider and the card lines from one card model: the screen resolves the model once, never the parts. */
 	public static void drawBody(GuiGraphics graphics, Font font, int x, int y, ClassDefinition def,
 			ClassPresentation.CardStyle style, List<ClassPresentation.CardLine> lines) {
 		int cx = x + WIDTH / 2;

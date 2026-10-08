@@ -12,8 +12,8 @@ import net.minecraft.resources.Identifier;
  */
 public final class RotateAbility {
 	public static final String NAME = "Rotate";
-	/** Rotate lock in millis: 8s between stance flips. */
-	public static final long ROTATE_MS = 8_000L;
+	/** Rotate lock in millis: 8s between stance flips. Canonical home is {@link Cooldowns#ROTATE_MS}. */
+	public static final long ROTATE_MS = Cooldowns.ROTATE_MS;
 
 	/** Legionary form. Scutum is the default: every Legionary enters in plate. */
 	public enum Stance {
@@ -106,13 +106,12 @@ public final class RotateAbility {
 	}
 
 	/** Decides flipping for Legionaries off the rotate lock. Never fizzles on stance. Pure and read-only: only {@link #fire} arms the lane and flips. */
-	public static Result trigger(ClassDefinition def, Cooldowns cooldowns, Stance current, long now) {
+	public static Result trigger(ClassDefinition def, long rotateRemaining, Stance current) {
 		if (def == null || !def.activeAbilities().contains(ClassRegistry.ROTATE_ABILITY)) {
 			return Result.wrongClass();
 		}
-		long remaining = cooldowns.rotateRemaining(now);
-		if (remaining > 0) {
-			return Result.onCooldown(remaining);
+		if (rotateRemaining > 0) {
+			return Result.onCooldown(rotateRemaining);
 		}
 		return Result.fired(flipped(current));
 	}
@@ -124,14 +123,13 @@ public final class RotateAbility {
 	 * fire it did not earn.
 	 */
 	public static Result fire(ClassDefinition def, PlayerRuntime runtime, long now) {
-		Result result = trigger(def, runtime.cooldowns(), runtime.stance(), now);
-		if (result.kind() != Kind.FIRED) {
-			return result;
-		}
-		if (!runtime.tryUseRotate(now)) {
-			return Result.onCooldown(runtime.rotateRemaining(now));
+		Result result = trigger(def, runtime.rotateRemaining(now), runtime.stance());
+		Result gated = AbilityGate.gate(result, result.kind() == Kind.FIRED, () -> runtime.tryUseRotate(now),
+				() -> runtime.rotateRemaining(now), Result::onCooldown);
+		if (gated.kind() != Kind.FIRED) {
+			return gated;
 		}
 		runtime.flipStance();
-		return Result.fired(runtime.stance());
+		return gated;
 	}
 }

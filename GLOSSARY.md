@@ -44,7 +44,16 @@ _Avoid_: ability result (that is the whole decision, gating included), buff
 The shared adapter seams every ability outcome passes through: effect-holder lookup,
 the announcement on the action bar, and the cast fanfare (`playCast`). A result with nothing to grant and nothing
 to say — a wrong-class, on-cooldown or no-stacks press — lands nothing.
+A fired-or-fizzle press lands through `announceAndCast` alone; only Rush keeps its own
+adapter, for the cleanse and the Speed it lays.
 _Avoid_: ability system, effect handler
+
+**Gate-and-arm** (`AbilityGate`):
+The one rule every ability firing shares: a rejected trigger passes through untouched,
+a fired trigger arms its lane, and an arm that somehow fails reports on-cooldown instead
+of a fire it did not earn. Abilities keep their own numbers, chat lines and windows;
+this owns only the fallback.
+_Avoid_: fire helper, trigger wrapper
 
 **Chat line** (`ChatLine`):
 The text and the chat style an ability decision returns for the server entry to send verbatim,
@@ -222,7 +231,11 @@ _Avoid_: damage falloff, charge multiplier
 The decision of what one melee hit earns and settles, taken from definitions and
 transient state: whether the swing earns stacks (full swings only, spam earns zero),
 the stance deal and take mults (1.0 for anyone else), and the Impetus window bonus
-through the charged curve (0 outside the window). The server entry maps, adapters
+through the charged curve (0 outside the window). `planHit` decides the whole hit in
+field order — bump, Rush credit, Rend spend, Impetus bonus, combined mult — peeking
+one-shot flags the entry then consumes at the same moment; Scutum plus Testudo reads
+x0.56, Gladius plus Impetus x1.5, named once in the plan rather than emerging in the
+entry. The server entry maps, adapters
 apply; the victim runtime arrives lazily, so a non-Legionary victim costs no transient
 state. Owns every ability-id check the hook needs, so the entry never compares
 ability ids to gate rewards.
@@ -432,4 +445,5 @@ plus Rend empower) with sound replacing root; `0005` moves the hit-gating decisi
 server entry, the stack storage out of the transient runtime, and the trigger scan onto the class;
 `0006` adds the Legionary stance tradeoff plus the universal charged curve and stack gate;
 `0007` deepens the melee hook (plan, settle, morph) and splits the adapters, revisiting
-the `0005` bind-morph carve-out.
+the `0005` bind-morph carve-out; `0008` closes the review's six seams (cooldown leak,
+one-line Rend adapter, shared gate-and-arm, full hit plan, card back door, window registry).

@@ -7,6 +7,8 @@ package com.hunter1712.infusedclasses;
 public final class Cooldowns {
 	public static final long RUSH_MS = 25_000L;
 	public static final long REND_MS = 60_000L;
+	/** Rotate lock in millis: 8s between stance flips. Owned here with the lane that enforces it. */
+	public static final long ROTATE_MS = 8_000L;
 	/** Shared Legionary oath lane: firing Impetus locks Testudo and vice versa. */
 	public static final long OATH_MS = 50_000L;
 
@@ -56,7 +58,7 @@ public final class Cooldowns {
 		if (now < rotateReadyAt) {
 			return false;
 		}
-		rotateReadyAt = now + RotateAbility.ROTATE_MS;
+		rotateReadyAt = now + ROTATE_MS;
 		return true;
 	}
 

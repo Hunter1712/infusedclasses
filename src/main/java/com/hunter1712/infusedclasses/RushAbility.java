@@ -50,13 +50,12 @@ public final class RushAbility {
 	}
 
 	/** Decides engaging for Juggernauts off cooldown. Pure and read-only: only {@link #fire} arms the lane and the window. */
-	public static Result trigger(ClassDefinition def, Cooldowns cooldowns, long now) {
+	public static Result trigger(ClassDefinition def, long rushRemaining) {
 		if (def == null || !def.activeAbilities().contains(ClassRegistry.RUSH_ABILITY)) {
 			return Result.wrongClass();
 		}
-		long remaining = cooldowns.rushRemaining(now);
-		if (remaining > 0) {
-			return Result.onCooldown(remaining);
+		if (rushRemaining > 0) {
+			return Result.onCooldown(rushRemaining);
 		}
 		return Result.fired();
 	}
@@ -68,10 +67,8 @@ public final class RushAbility {
 	 * did not earn.
 	 */
 	public static Result fire(ClassDefinition def, PlayerRuntime runtime, long now) {
-		Result result = trigger(def, runtime.cooldowns(), now);
-		if (result.kind() == Kind.FIRED && !runtime.tryUseRush(now)) {
-			return Result.onCooldown(runtime.rushRemaining(now));
-		}
-		return result;
+		Result result = trigger(def, runtime.rushRemaining(now));
+		return AbilityGate.gate(result, result.kind() == Kind.FIRED, () -> runtime.tryUseRush(now),
+				() -> runtime.rushRemaining(now), Result::onCooldown);
 	}
 }

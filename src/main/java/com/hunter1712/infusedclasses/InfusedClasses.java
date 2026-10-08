@@ -107,7 +107,8 @@ public class InfusedClasses implements ModInitializer {
 						}
 						case REND -> {
 							RendAbility.Result result = RendAbility.fire(def, runtime, now);
-							RendApplier.apply(player, result);
+							AbilityApplier.announceAndCast(player, result.announcement(),
+									result.kind() == RendAbility.Kind.FIRED, RendAbility.CAST_SOUND);
 							// The adapter spends only the priced passive; a fizzle spends nothing.
 							// The empower damage lands on the next melee hit inside the window.
 							if (result.consume()) {

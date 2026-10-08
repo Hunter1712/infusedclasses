@@ -30,7 +30,7 @@ class RushAbilityTest {
 	@Test
 	void firesWithZeroStacksAtFullHp() {
 		assertEquals(RushAbility.Kind.FIRED,
-				RushAbility.trigger(juggernaut(), new Cooldowns(), 0).kind());
+				RushAbility.trigger(juggernaut(), 0).kind());
 	}
 
 	@Test
@@ -98,7 +98,7 @@ class RushAbilityTest {
 				java.util.List.of(), java.util.List.of(), 0.0, java.util.List.of(ClassRegistry.REND_ABILITY), 0, "", java.util.List.of());
 
 		assertEquals(RushAbility.Kind.WRONG_CLASS,
-				RushAbility.trigger(rendOnly, new Cooldowns(), 0).kind());
+				RushAbility.trigger(rendOnly, 0).kind());
 	}
 
 	@Test

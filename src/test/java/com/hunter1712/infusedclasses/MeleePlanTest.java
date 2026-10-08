@@ -79,4 +79,35 @@ class MeleePlanTest {
 		assertEquals(0.0F, MeleePlan.impetusBonusFor(juggernaut(), live, 0, 1.0F));
 		assertEquals(0.0F, MeleePlan.impetusBonusFor(null, live, 0, 1.0F));
 	}
+
+	@Test
+	void planHitNamesTheCombinedMults() {
+		PlayerRuntime scutum = new PlayerRuntime();
+		TestudoAbility.fire(legionary(), scutum, 0);
+		PlayerRuntime gladius = new PlayerRuntime();
+		gladius.flipStance();
+		ImpetusAbility.fire(legionary(), gladius, 0);
+
+		MeleePlan.HitPlan plate = MeleePlan.planHit(legionary(), scutum, null, null, 1.0F, 0);
+		MeleePlan.HitPlan glass = MeleePlan.planHit(legionary(), gladius, legionary(), () -> gladius, 1.0F, 0);
+
+		assertEquals(0.56, plate.combined(), 1e-9);
+		assertEquals(1.5, glass.take(), 1e-9);
+		assertEquals(1.5, glass.combined(), 1e-9);
+	}
+
+	@Test
+	void planHitGatesStacksAndPeeksOneShots() {
+		PlayerRuntime runtime = new PlayerRuntime();
+		RushAbility.fire(juggernaut(), runtime, 0);
+
+		MeleePlan.HitPlan full = MeleePlan.planHit(juggernaut(), runtime, null, null, 1.0F, 0);
+		MeleePlan.HitPlan spam = MeleePlan.planHit(juggernaut(), runtime, null, null, 0.5F, 0);
+
+		assertTrue(full.bump());
+		assertFalse(spam.bump());
+		assertTrue(full.rushBonus());
+		assertEquals(-1, full.rendStacks());
+		assertEquals(0, full.rendHp());
+	}
 }
