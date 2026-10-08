@@ -36,26 +36,59 @@ final class ServerEvents {
 
 		ServerLivingEntityEvents.AFTER_DAMAGE.register((entity, source, baseDamageTaken, damageTaken, blocked) -> {
 			long now = System.currentTimeMillis();
-			// Momentum: a direct melee hit builds stacks for any class carrying an
-			// on-hit-dealt passive and, inside a live Rush window with its bonus still
-			// pending, lands the engage bonus too. Any melee, no charge gate;
-			// self-damage excluded by the attacker check, projectiles and spells by
-			// the direct check. Gating lives in the pure modules (unknown triggers,
-			// missing passives and dead windows are inert), so this branch never
-			// compares ability ids: a future stacker works without touching it.
+			// Melee hook, three jobs: stacks, bonuses, stance mults. The plan decides,
+			// adapters apply; this only routes. Settled hurts re-enter this hook
+			// on the same thread, guarded so they grant nothing twice.
+			if (DamageSettle.isResolving()) {
+				return;
+			}
+			// Attacker: a direct melee hit builds stacks for any class carrying an
+			// on-hit-dealt passive — full swings only, spam earns zero — and, inside
+			// a live Rush window with its bonus still pending, lands the engage
+			// bonus too. Rend and Impetus bonuses land through the shared charge
+			// curve, and Legionary deal/take mults settle as one extra hurt (or a
+			// heal-back when the stance discounts). Self-damage excluded by the
+			// attacker check, projectiles and spells by the direct check.
 			if (source.getEntity() instanceof ServerPlayer attacker && source.getDirectEntity() == attacker
 					&& attacker != entity) {
 				ClassDefinition atkDef = PlayerClassAccess.of(attacker).currentDefinition();
 				if (atkDef != null) {
 					PlayerRuntime atkRuntime = InfusedClasses.runtime(attacker);
-					atkRuntime.onTrigger(atkDef, ConditionalPassive.ON_HIT_DEALT, now);
+					float charge = attacker.getAttackStrengthScale(0.0F);
+					if (MeleePlan.shouldBump(charge)) {
+						atkRuntime.onTrigger(atkDef, ConditionalPassive.ON_HIT_DEALT, now);
+					}
+					// Spam earns the window plus a quarter bonus, but zero stacks.
 					PassiveApplier.grantRushBonus(atkRuntime, atkDef, now);
 					// Rend empower: the stamped bonus lands on this hit and only this one,
 					// applied through the adapter like every other outcome.
 					int empowerStacks = atkRuntime.consumeRendEmpower(now);
 					if (empowerStacks > 0) {
-						RendApplier.dealEmpower(attacker, entity, RendAbility.empowerFor(empowerStacks));
+						DamageSettle.dealBonus(attacker, entity,
+								BonusCurve.bonusFor(RendAbility.empowerFor(empowerStacks), charge));
 					}
+					// Impetus: every melee hit inside the window earns the curve bonus.
+					float impetus = MeleePlan.impetusBonusFor(atkDef, atkRuntime, now, charge);
+					if (impetus > 0) {
+						DamageSettle.dealBonus(attacker, entity, impetus);
+					}
+					// Stance mults: attacker deal times victim take, settled at once.
+					double deal = MeleePlan.dealFor(atkDef, atkRuntime, now);
+					double take = entity instanceof ServerPlayer v ? MeleePlan.takeFor(
+							PlayerClassAccess.of(v).currentDefinition(), () -> InfusedClasses.runtime(v), now) : 1.0;
+					DamageSettle.settleMult(attacker, entity, baseDamageTaken, deal * take);
+				}
+			} else if (entity instanceof ServerPlayer victim
+					&& source.getEntity() instanceof net.minecraft.world.entity.LivingEntity mobAttacker
+					&& !(mobAttacker instanceof ServerPlayer)
+					&& source.getDirectEntity() == mobAttacker) {
+				// Victim: mob melee on a Legionary still pays the stance take mult
+				// (player-vs-player take settles in the attacker branch above).
+				// takeFor is 1.0 for non-Legionaries, and the settle is a no-op at 1.0.
+				double take = MeleePlan.takeFor(PlayerClassAccess.of(victim).currentDefinition(),
+						() -> InfusedClasses.runtime(victim), now);
+				if (take != 1.0) {
+					DamageSettle.settleMobTake(victim, mobAttacker, baseDamageTaken, take);
 				}
 			}
 		});

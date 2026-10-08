@@ -22,10 +22,13 @@ Three seams sat in the wrong place after the Juggernaut inversion:
 
 ## Decision
 
-1. **The entry never compares ability ids.** The damage branch runs for any
+1. **The entry never compares ability ids to gate rewards.** The damage branch runs for any
    attacker with a class; gating stays in the pure modules. Classless attackers
    still cost no transient state (the runtime is looked up only behind the
-   non-null check, as before).
+   non-null check, as before). Bind-morph routing is the one carve-out: the intent
+   receivers may read the current class's ability ids only to pick which decision
+   module to call (Legionary `R` to Rotate, `G` to Impetus/Testudo per stance);
+   decisions and applies stay pure/adapter (see ADR-0006).
 2. **Stack storage moves to `PassiveStacks`.** Counts, grace timestamps, bump,
    decay, and clear live there; `PlayerRuntime` keeps its public verbs and
    delegates, coordinating stacks with cooldowns and windows. Callers and tests

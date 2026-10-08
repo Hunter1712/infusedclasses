@@ -14,11 +14,17 @@ import java.util.Map;
 /**
  * All classes. Adding a class = one definition here. Juggernaut carries Rush plus
  * Rend, one conditional passive (Momentum) and the Vigor HP-scaled pair.
+ * Legionary carries Rotate plus the stance-morphed Impetus/Testudo oath pair;
+ * its stances are transient auras, not passives.
  */
 public final class ClassRegistry {
 	public static final Identifier JUGGERNAUT = Identifier.fromNamespaceAndPath("infusedclasses", "juggernaut");
 	public static final Identifier RUSH_ABILITY = Identifier.fromNamespaceAndPath("infusedclasses", "rush");
 	public static final Identifier REND_ABILITY = Identifier.fromNamespaceAndPath("infusedclasses", "rend");
+	public static final Identifier LEGIONARY = Identifier.fromNamespaceAndPath("infusedclasses", "legionary");
+	public static final Identifier ROTATE_ABILITY = Identifier.fromNamespaceAndPath("infusedclasses", "rotate");
+	public static final Identifier IMPETUS_ABILITY = Identifier.fromNamespaceAndPath("infusedclasses", "impetus");
+	public static final Identifier TESTUDO_ABILITY = Identifier.fromNamespaceAndPath("infusedclasses", "testudo");
 	/** ponytail: attribute ids rather than vanilla holders, so the passive stays bootstrap-free. */
 	public static final ResourceKey<Attribute> ARMOR =
 			ResourceKey.create(Registries.ATTRIBUTE, Identifier.withDefaultNamespace("armor"));
@@ -28,6 +34,12 @@ public final class ClassRegistry {
 			ResourceKey.create(Registries.ATTRIBUTE, Identifier.withDefaultNamespace("attack_speed"));
 	public static final ResourceKey<Attribute> MAX_HEALTH =
 			ResourceKey.create(Registries.ATTRIBUTE, Identifier.withDefaultNamespace("max_health"));
+	public static final ResourceKey<Attribute> MOVEMENT_SPEED =
+			ResourceKey.create(Registries.ATTRIBUTE, Identifier.withDefaultNamespace("movement_speed"));
+	public static final ResourceKey<Attribute> ARMOR_TOUGHNESS =
+			ResourceKey.create(Registries.ATTRIBUTE, Identifier.withDefaultNamespace("armor_toughness"));
+	public static final ResourceKey<Attribute> KNOCKBACK_RESISTANCE =
+			ResourceKey.create(Registries.ATTRIBUTE, Identifier.withDefaultNamespace("knockback_resistance"));
 	public static final Identifier BONUS_HEALTH_ID =
 			Identifier.fromNamespaceAndPath(ClassPackets.MOD_ID, "bonus_health");
 
@@ -45,7 +57,7 @@ public final class ClassRegistry {
 						ARMOR,
 						Identifier.fromNamespaceAndPath(ClassPackets.MOD_ID, "momentum_armor"),
 						1.0,
-						4)),
+						5)),
 				List.of(
 						new HpScaledPassive(
 								"Vigor Damage",
@@ -78,6 +90,43 @@ public final class ClassRegistry {
 										+ " HP + " + ConditionalPassive.amount(RendAbility.HP_PER_STACK)
 										+ " HP per Momentum stack, consumes stacks (G, "
 										+ (Cooldowns.REND_MS / 1000) + "s). " + RendAbility.CAST_WORD))));
+
+		register(new ClassDefinition(
+				LEGIONARY,
+				"Legionary",
+				false,
+				List.of(),
+				List.of(),
+				0.0,
+				List.of(ROTATE_ABILITY, IMPETUS_ABILITY, TESTUDO_ABILITY),
+				0xFFB87333,
+				"Sword and shield",
+				List.of(
+						new ClassDefinition.ActiveAbility(
+								RotateAbility.NAME,
+								"Toggle stance: Gladius (+" + ConditionalPassive.amount(RotateAbility.GLADIUS_DAMAGE)
+										+ " damage, +" + ConditionalPassive.amount(RotateAbility.GLADIUS_SPEED)
+										+ " speed, take x" + RotateAbility.GLADIUS_TAKEN_MULT
+										+ ") or Scutum (+" + ConditionalPassive.amount(RotateAbility.SCUTUM_ARMOR)
+										+ " armor, +" + ConditionalPassive.amount(RotateAbility.SCUTUM_TOUGHNESS)
+										+ " toughness, slower) (R, "
+										+ (RotateAbility.ROTATE_MS / 1000) + "s). Announces Gladius!/Scutum!."),
+						new ClassDefinition.ActiveAbility(
+								ImpetusAbility.NAME,
+								"In Gladius: melee hits within "
+										+ (ImpetusAbility.WINDOW_TICKS / 20) + "s deal +"
+										+ ConditionalPassive.amount(ImpetusAbility.IMPETUS_BONUS)
+										+ " damage, take x" + ImpetusAbility.IMPETUS_TAKEN_MULT
+										+ " (G, shares " + (Cooldowns.OATH_MS / 1000) + "s oath). "
+										+ ImpetusAbility.CAST_WORD),
+						new ClassDefinition.ActiveAbility(
+								TestudoAbility.NAME,
+								"In Scutum: +" + ConditionalPassive.amount(TestudoAbility.TESTUDO_ARMOR)
+										+ " armor and no knockback for "
+										+ (TestudoAbility.WINDOW_TICKS / 20) + "s, deal x"
+										+ TestudoAbility.TESTUDO_DEAL_MULT
+										+ " (G, shares " + (Cooldowns.OATH_MS / 1000) + "s oath). "
+										+ TestudoAbility.CAST_WORD))));
 
 		register(new ClassDefinition(
 				Identifier.fromNamespaceAndPath("infusedclasses", "ranger"),

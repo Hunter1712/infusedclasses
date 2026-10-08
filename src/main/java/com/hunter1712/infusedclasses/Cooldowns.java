@@ -7,9 +7,13 @@ package com.hunter1712.infusedclasses;
 public final class Cooldowns {
 	public static final long RUSH_MS = 25_000L;
 	public static final long REND_MS = 60_000L;
+	/** Shared Legionary oath lane: firing Impetus locks Testudo and vice versa. */
+	public static final long OATH_MS = 50_000L;
 
 	private long rushReadyAt;
 	private long rendReadyAt;
+	private long rotateReadyAt;
+	private long oathReadyAt;
 
 	/** @return true if Rush fired; false if still on cooldown. Independent of Rend. */
 	public boolean useRush(long now) {
@@ -43,6 +47,36 @@ public final class Cooldowns {
 	public void reset() {
 		rushReadyAt = 0;
 		rendReadyAt = 0;
+		rotateReadyAt = 0;
+		oathReadyAt = 0;
+	}
+
+	/** @return true if Rotate fired; false if still on its lock. */
+	public boolean useRotate(long now) {
+		if (now < rotateReadyAt) {
+			return false;
+		}
+		rotateReadyAt = now + RotateAbility.ROTATE_MS;
+		return true;
+	}
+
+	/** Milliseconds left on the rotate lock, 0 when ready. */
+	public long rotateRemaining(long now) {
+		return remaining(rotateReadyAt, now);
+	}
+
+	/** @return true if an oath ability fired; false if the shared lane is held. */
+	public boolean useOath(long now) {
+		if (now < oathReadyAt) {
+			return false;
+		}
+		oathReadyAt = now + OATH_MS;
+		return true;
+	}
+
+	/** Milliseconds left on the shared oath lane, 0 when ready. */
+	public long oathRemaining(long now) {
+		return remaining(oathReadyAt, now);
 	}
 
 	private static long remaining(long readyAt, long now) {

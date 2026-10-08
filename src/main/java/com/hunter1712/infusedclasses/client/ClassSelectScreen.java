@@ -21,6 +21,8 @@ public class ClassSelectScreen extends Screen {
 
 	private static final String TITLE = "Choose your class";
 
+	private static final Component TITLE_BOLD = Component.literal(TITLE).withStyle(s -> s.withBold(true));
+
 	private static final int TITLE_COLOR = 0xFFE8C15A;
 	private static final int SUBTITLE_COLOR = 0xFF9A9A9A;
 	private static final int FOOTER_COLOR = 0xFF777777;
@@ -59,8 +61,8 @@ public class ClassSelectScreen extends Screen {
 			int cardY = ClassCardRenderer.cardsTop(height);
 			ClassDefinition def = classes.get(i);
 			boolean hovered = ClassCardRenderer.isHovering(cardX, cardY, mouseX, mouseY);
-			ClassCardRenderer.drawFrame(graphics, cardX, cardY,
-					ClassPresentation.cardStyleFor(def, hovered), ClassPresentation.accentFor(def));
+			ClassPresentation.CardModel frame = ClassPresentation.cardFor(def, hovered);
+			ClassCardRenderer.drawFrame(graphics, cardX, cardY, frame.style(), frame.accent());
 		}
 	}
 
@@ -68,7 +70,7 @@ public class ClassSelectScreen extends Screen {
 	public void render(GuiGraphics graphics, int mouseX, int mouseY, float delta) {
 		super.render(graphics, mouseX, mouseY, delta);
 		int top = ClassCardRenderer.cardsTop(height);
-		graphics.drawCenteredString(font, Component.literal(TITLE).withStyle(s -> s.withBold(true)), width / 2, top - 44, TITLE_COLOR);
+		graphics.drawCenteredString(font, TITLE_BOLD, width / 2, top - 44, TITLE_COLOR);
 		graphics.drawCenteredString(font, ClassPresentation.subtitle(), width / 2, top - 28, SUBTITLE_COLOR);
 
 		for (int i = 0; i < classes.size(); i++) {
@@ -76,8 +78,8 @@ public class ClassSelectScreen extends Screen {
 			int cardY = ClassCardRenderer.cardsTop(height);
 			ClassDefinition def = classes.get(i);
 			boolean hovered = ClassCardRenderer.isHovering(cardX, cardY, mouseX, mouseY);
-			ClassCardRenderer.drawBody(graphics, font, cardX, cardY, def,
-					ClassPresentation.cardStyleFor(def, hovered));
+			ClassPresentation.CardModel model = ClassPresentation.cardFor(def, hovered);
+			ClassCardRenderer.drawBody(graphics, font, cardX, cardY, def, model.style(), model.lines());
 		}
 		graphics.drawCenteredString(font, "Click a class to choose it", width / 2, top + ClassCardRenderer.HEIGHT + 14, FOOTER_COLOR);
 	}

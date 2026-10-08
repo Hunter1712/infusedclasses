@@ -9,6 +9,7 @@ import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvent;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.phys.Vec3;
 
@@ -53,12 +54,27 @@ public final class AbilityApplier {
 				.orElse(null);
 	}
 
-	/** One cast fanfare for every fired ability: resolves the sound id and plays it. Fizzles never reach here. */
+	/** One cast fanfare for every fired ability: resolves the sound id and plays it. Fizzles never reach here. Null sound plays nothing. */
 	public static void playCast(ServerPlayer player, Identifier soundId) {
 		if (player.level() instanceof ServerLevel level) {
 			Vec3 at = player.position();
 			Holder<SoundEvent> sound = soundHolder(player, soundId);
-			Spellcast.playCastSound(level, at, sound);
+			if (sound == null) {
+				return;
+			}
+			level.playSound(null, at.x, at.y, at.z, sound, SoundSource.PLAYERS, 1.0F, 1.0F);
+		}
+	}
+
+	/**
+	 * One announce-plus-fanfare path for every fired-or-fizzle outcome: says the line,
+	 * plays the sound on FIRED only. Null says nothing, missing sound stays silent.
+	 */
+	public static void announceAndCast(ServerPlayer player, ChatLine announcement, boolean fired,
+			Identifier soundId) {
+		announce(player, announcement);
+		if (fired) {
+			playCast(player, soundId);
 		}
 	}
 }

@@ -28,7 +28,7 @@ class ClassRegistryTest {
 	void plannedClassesArePresentAndLocked() {
 		long locked = ClassRegistry.all().stream().filter(ClassDefinition::locked).count();
 
-		assertEquals(3, ClassRegistry.all().size());
+		assertEquals(4, ClassRegistry.all().size());
 		assertEquals(2, locked);
 		assertNull(ClassRegistry.byId(Identifier.fromNamespaceAndPath("infusedclasses", "bard")));
 	}
@@ -61,7 +61,7 @@ class ClassRegistryTest {
 		ConditionalPassive momentum = ClassRegistry.byId(ClassRegistry.JUGGERNAUT).passives().get(0);
 
 		assertEquals("Landing a hit grants 1 stack (max 10). Each stack adds +1 armor. "
-				+ "After 4s without landing a hit, lose all stacks.", momentum.fullDesc());
+				+ "After 5s without landing a hit, lose all stacks.", momentum.fullDesc());
 	}
 
 	@Test

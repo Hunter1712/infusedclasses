@@ -76,6 +76,12 @@ public class InfusedClasses implements ModInitializer {
 					PlayerClasses classes = PlayerClassAccess.of(player);
 					ClassDefinition def = classes.currentDefinition();
 					PlayerRuntime runtime = runtime(player);
+					// Legionary reuses the R bind as the rotate intent, so binds survive.
+					if (BindMorph.usesRotate(def)) {
+						RotateAbility.Result result = RotateAbility.fire(def, runtime, now);
+						AbilityApplier.announce(player, result.announcement());
+						return;
+					}
 					RushAbility.Result result = RushAbility.fire(def, runtime, now);
 					RushApplier.apply(player, result);
 				}));
@@ -87,12 +93,27 @@ public class InfusedClasses implements ModInitializer {
 					PlayerClasses classes = PlayerClassAccess.of(player);
 					ClassDefinition def = classes.currentDefinition();
 					PlayerRuntime runtime = runtime(player);
-					RendAbility.Result result = RendAbility.fire(def, runtime, now);
-					RendApplier.apply(player, result);
-					// The adapter spends only the priced passive; a fizzle spends nothing.
-					// The empower damage lands on the next melee hit inside the window.
-					if (result.consume()) {
-						PassiveApplier.consumeSpent(player, runtime, def);
+					// Legionary reuses the G bind as the oath intent: stance morphs it.
+					switch (BindMorph.oathFor(def, runtime.stance())) {
+						case IMPETUS -> {
+							ImpetusAbility.Result result = ImpetusAbility.fire(def, runtime, now);
+							AbilityApplier.announceAndCast(player, result.announcement(),
+									result.kind() == ImpetusAbility.Kind.FIRED, ImpetusAbility.CAST_SOUND);
+						}
+						case TESTUDO -> {
+							TestudoAbility.Result result = TestudoAbility.fire(def, runtime, now);
+							AbilityApplier.announceAndCast(player, result.announcement(),
+									result.kind() == TestudoAbility.Kind.FIRED, TestudoAbility.CAST_SOUND);
+						}
+						case REND -> {
+							RendAbility.Result result = RendAbility.fire(def, runtime, now);
+							RendApplier.apply(player, result);
+							// The adapter spends only the priced passive; a fizzle spends nothing.
+							// The empower damage lands on the next melee hit inside the window.
+							if (result.consume()) {
+								PassiveApplier.consumeSpent(player, runtime, def);
+							}
+						}
 					}
 				}));
 	}

@@ -20,17 +20,81 @@ public final class PlayerRuntime {
 	// Rush window: press timestamp (millis), live for the ability's window after a fired
 	// press, plus a one-shot bonus flag for the next qualifying melee hit. Cleared with
 	// everything else, so switch and respawn never inherit a window.
-	private long rushPressedAt = -1L;
+	private final Window rushWindow = new Window();
 	private boolean rushBonusPending;
 	// Rend empower: stack snapshot (bonus damage) stamped on a fired press, live for the
 	// ability's window, spent by the next qualifying melee hit. Cleared with everything
 	// else, so switch and respawn never inherit an empower.
-	private long rendEmpowerPressedAt = -1L;
+	private final Window rendWindow = new Window();
 	private int rendEmpowerStacks;
 	private boolean rendEmpowerPending;
 	// Conditional-passive stacks: counts plus grace timestamps, keyed by the passive
 	// definition, never by its name.
 	private final PassiveStacks passiveStacks = new PassiveStacks();
+	// Legionary form: transient per ADR-0002, every Legionary enters in Scutum.
+	// The choice stays in PlayerClasses; this is where the body is, not the pick.
+	private RotateAbility.Stance stance = RotateAbility.Stance.SCUTUM;
+	// Oath windows: press timestamps (millis), each live 6s after its fired
+	// press. Milk-proof (timestamps, not effects); death ends them with
+	// everything else, so switch and respawn never inherit a window.
+	private final Window impetusWindow = new Window();
+	private final Window testudoWindow = new Window();
+
+	/** Current Legionary stance, SCUTUM until the first Rotate. */
+	public RotateAbility.Stance stance() {
+		return stance;
+	}
+
+	/** Flips the stance: Rotate's fire lands here with the lane arm. */
+	public void flipStance() {
+		stance = RotateAbility.flipped(stance);
+	}
+
+	/** Arms the rotate lock: fired Rotate presses only. The flip rides with it. */
+	public boolean tryUseRotate(long now) {
+		return cooldowns.useRotate(now);
+	}
+
+	public long rotateRemaining(long now) {
+		return cooldowns.rotateRemaining(now);
+	}
+
+	public long oathRemaining(long now) {
+		return cooldowns.oathRemaining(now);
+	}
+
+	/** Arms the shared oath lane and stamps the Impetus window together. */
+	public boolean tryUseImpetus(long now) {
+		return armOath(now, true);
+	}
+
+	/** Arms the shared oath lane and stamps the Testudo window together. */
+	public boolean tryUseTestudo(long now) {
+		return armOath(now, false);
+	}
+
+	/** Single lane-arm for both oath windows: firing one locks the other. */
+	private boolean armOath(long now, boolean impetus) {
+		if (!cooldowns.useOath(now)) {
+			return false;
+		}
+		if (impetus) {
+			impetusWindow.arm(now);
+		} else {
+			testudoWindow.arm(now);
+		}
+		return true;
+	}
+
+	/** Whether a fired Impetus window is still live. Expiry is silent. */
+	public boolean isImpetusLive(long now) {
+		return impetusWindow.isLive(ImpetusAbility.WINDOW_TICKS, now);
+	}
+
+	/** Whether a fired Testudo window is still live. Expiry is silent. */
+	public boolean isTestudoLive(long now) {
+		return testudoWindow.isLive(TestudoAbility.WINDOW_TICKS, now);
+	}
 
 	public Cooldowns cooldowns() {
 		return cooldowns;
@@ -46,14 +110,14 @@ public final class PlayerRuntime {
 		if (!cooldowns.useRush(now)) {
 			return false;
 		}
-		rushPressedAt = now;
+		rushWindow.arm(now);
 		rushBonusPending = true;
 		return true;
 	}
 
 	/** Whether a fired Rush window is still live: press timestamp plus the ability's window. */
 	public boolean isRushLive(long now) {
-		return isLive(rushPressedAt, RushAbility.WINDOW_TICKS, now);
+		return rushWindow.isLive(RushAbility.WINDOW_TICKS, now);
 	}
 
 	/**
@@ -81,7 +145,7 @@ public final class PlayerRuntime {
 		if (!cooldowns.useRend(now)) {
 			return false;
 		}
-		rendEmpowerPressedAt = now;
+		rendWindow.arm(now);
 		rendEmpowerStacks = stacks;
 		rendEmpowerPending = true;
 		return true;
@@ -89,7 +153,7 @@ public final class PlayerRuntime {
 
 	/** Whether a fired Rend empower is still live: press timestamp plus the ability's window. */
 	public boolean isRendEmpowerLive(long now) {
-		return rendEmpowerPending && isLive(rendEmpowerPressedAt, RendAbility.WINDOW_TICKS, now);
+		return rendEmpowerPending && rendWindow.isLive(RendAbility.WINDOW_TICKS, now);
 	}
 
 	/**
@@ -108,21 +172,40 @@ public final class PlayerRuntime {
 	/** Reset for class switch: a new class starts empty. The adapter calls this, not ability callers. */
 	public void resetCooldowns() {
 		cooldowns.reset();
-		rushPressedAt = -1L;
+		rushWindow.clear();
 		rushBonusPending = false;
-		rendEmpowerPressedAt = -1L;
+		rendWindow.clear();
 		rendEmpowerStacks = 0;
 		rendEmpowerPending = false;
+		stance = RotateAbility.Stance.SCUTUM;
+		impetusWindow.clear();
+		testudoWindow.clear();
+	}
+
+	/**
+	 * One ability window: a press timestamp, live for the ability's window after a fired
+	 * press. Cleared with everything else, so switch and respawn never inherit a window.
+	 * Ticks ride as 50ms each.
+	 */
+	private static final class Window {
+		private long pressedAt = -1L;
+
+		boolean isLive(int windowTicks, long now) {
+			return pressedAt >= 0 && now - pressedAt < windowTicks * 50L;
+		}
+
+		void arm(long now) {
+			pressedAt = now;
+		}
+
+		void clear() {
+			pressedAt = -1L;
+		}
 	}
 
 	/** Current stacks for a passive, 0 when never triggered. */
 	public int stacks(ConditionalPassive passive) {
 		return passiveStacks.stacks(passive);
-	}
-
-	/** One window check for both abilities: press timestamp plus that ability's window. Ticks ride as 50ms each. */
-	private static boolean isLive(long pressedAt, int windowTicks, long now) {
-		return pressedAt >= 0 && now - pressedAt < windowTicks * 50L;
 	}
 
 	/** Last-trigger millis for a passive, null when never triggered. Decay counts from it. */
@@ -134,6 +217,14 @@ public final class PlayerRuntime {
 	 *  Unknown triggers, a missing class and trigger-less classes are inert. */
 	public void onTrigger(ClassDefinition def, String trigger, long now) {
 		passiveStacks.onTrigger(def, trigger, now);
+	}
+
+	/**
+	 * Charged bump from the melee hook: only a full swing ({@code charge == 1.0})
+	 * earns stacks. Spam earns zero; the uncharged overload reads as full.
+	 */
+	public void onTrigger(ClassDefinition def, String trigger, long now, float charge) {
+		passiveStacks.onTrigger(def, trigger, now, charge);
 	}
 
 	/**

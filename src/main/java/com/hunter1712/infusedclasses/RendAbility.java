@@ -69,16 +69,6 @@ public final class RendAbility {
 		return BASE_HP + stacks * HP_PER_STACK;
 	}
 
-	/**
-	 * The passive Rend spends: the class's hit-dealt stacker, or null. Found by trigger
-	 * through {@link ClassDefinition#passiveForTrigger}, never by position, so reordering
-	 * passives cannot silently spend the wrong one. Kept as the decision's semantic
-	 * alias; adapters resolve through the definition directly.
-	 */
-	public static ConditionalPassive momentumOf(ClassDefinition def) {
-		return def == null ? null : def.passiveForTrigger(ConditionalPassive.ON_HIT_DEALT);
-	}
-
 	/** Decides firing for Juggernauts off cooldown holding stacks. Zero stacks fizzles before the cooldown is even read. Pure and read-only: only {@link #fire} arms the cooldown. */
 	public static Result trigger(ClassDefinition def, Cooldowns cooldowns, int stacks, long now) {
 		if (def == null || !def.activeAbilities().contains(ClassRegistry.REND_ABILITY)) {
@@ -101,11 +91,12 @@ public final class RendAbility {
 	 * that somehow fails reports on-cooldown instead of a fire it did not earn.
 	 */
 	public static Result fire(ClassDefinition def, PlayerRuntime runtime, long now) {
-		ConditionalPassive spent = momentumOf(def);
+		ConditionalPassive spent =
+				def == null ? null : def.passiveForTrigger(ConditionalPassive.ON_HIT_DEALT);
 		int stacks = spent == null ? 0 : runtime.stacks(spent);
 		Result result = trigger(def, runtime.cooldowns(), stacks, now);
 		if (result.kind() == Kind.FIRED && !runtime.tryUseRend(now, stacks)) {
-			return Result.onCooldown(runtime.cooldowns().rendRemaining(now));
+			return Result.onCooldown(runtime.rendRemaining(now));
 		}
 		return result;
 	}

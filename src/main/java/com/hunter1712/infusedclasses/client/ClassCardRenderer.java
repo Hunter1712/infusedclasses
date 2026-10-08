@@ -7,6 +7,8 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.chat.Component;
 
+import java.util.List;
+
 /**
  * Everything one class card looks like: frame palette, accent strip, locked veil, hover
  * highlight and the card body text. Each line is drawn with the colour and weight the
@@ -80,6 +82,12 @@ public final class ClassCardRenderer {
 	/** Name, tagline, divider and the card lines, each drawn with the style it carries. */
 	public static void drawBody(GuiGraphics graphics, Font font, int x, int y, ClassDefinition def,
 			ClassPresentation.CardStyle style) {
+		drawBody(graphics, font, x, y, def, style, ClassPresentation.cardLinesFor(def));
+	}
+
+	/** Same body from one card model: the screen resolves the model once, never the parts. */
+	public static void drawBody(GuiGraphics graphics, Font font, int x, int y, ClassDefinition def,
+			ClassPresentation.CardStyle style, List<ClassPresentation.CardLine> lines) {
 		int cx = x + WIDTH / 2;
 		int ty = y + 10;
 		graphics.drawCenteredString(font, def.displayName(), cx, ty, style.nameColor());
@@ -89,7 +97,7 @@ public final class ClassCardRenderer {
 		graphics.fill(x + PAD, ty, x + WIDTH - PAD, ty + 1, DIVIDER_COLOR);
 		ty += 6;
 
-		for (ClassPresentation.CardLine line : ClassPresentation.cardLinesFor(def)) {
+		for (ClassPresentation.CardLine line : lines) {
 			MutableComponent text = Component.literal(line.text());
 			if (line.style().bold()) {
 				text = text.withStyle(s -> s.withBold(true));

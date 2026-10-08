@@ -100,8 +100,8 @@ class ConditionalPassiveStacksTest {
 		long base = System.currentTimeMillis();
 		runtime.onTrigger(juggernaut(), "on_hit_dealt", base);
 
-		// Tick at 5 seconds after trigger - 1 second past grace, should lose 1
-		boolean changed = !runtime.tickDecayMoved(juggernaut(), base + 5_000).isEmpty();
+		// Tick at 6 seconds after trigger - 1 second past grace, should lose 1
+		boolean changed = !runtime.tickDecayMoved(juggernaut(), base + 6_000).isEmpty();
 
 		assertTrue(changed);
 		assertEquals(0, runtime.stacks(momentum()));
@@ -129,10 +129,10 @@ class ConditionalPassiveStacksTest {
 		long base = 1_000_000L;
 		runtime.onTrigger(juggernaut(), ConditionalPassive.ON_HIT_DEALT, base);
 
-		// Exactly 4s: still grace, the client agrees. Past it by a millisecond: gone on both.
-		assertTrue(runtime.tickDecayMoved(juggernaut(), base + 4_000).isEmpty());
+		// Exactly 5s: still grace, the client agrees. Past it by a millisecond: gone on both.
+		assertTrue(runtime.tickDecayMoved(juggernaut(), base + 5_000).isEmpty());
 		assertEquals(1, runtime.stacks(momentum()));
-		assertFalse(runtime.tickDecayMoved(juggernaut(), base + 4_001).isEmpty());
+		assertFalse(runtime.tickDecayMoved(juggernaut(), base + 5_001).isEmpty());
 		assertEquals(0, runtime.stacks(momentum()));
 	}
 
@@ -145,10 +145,10 @@ class ConditionalPassiveStacksTest {
 		}
 		assertEquals(5, runtime.stacks(momentum()));
 
-		// Tick at +5s drops all 5 at once; the next tick has nothing left to move.
-		assertFalse(runtime.tickDecayMoved(juggernaut(), base + 5_000).isEmpty());
+		// Tick at +6s drops all 5 at once; the next tick has nothing left to move.
+		assertFalse(runtime.tickDecayMoved(juggernaut(), base + 6_000).isEmpty());
 		assertEquals(0, runtime.stacks(momentum()));
-		assertTrue(runtime.tickDecayMoved(juggernaut(), base + 6_000).isEmpty());
+		assertTrue(runtime.tickDecayMoved(juggernaut(), base + 7_000).isEmpty());
 	}
 
 	@Test

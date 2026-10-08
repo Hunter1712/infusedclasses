@@ -132,7 +132,8 @@ class VigorTest {
 
 	@Test
 	void rendStillSpendsMomentumOnly() {
-		assertEquals(juggernaut().passives().get(0), RendAbility.momentumOf(juggernaut()));
+		assertEquals(juggernaut().passives().get(0),
+				juggernaut().passiveForTrigger(ConditionalPassive.ON_HIT_DEALT));
 
 		// The pair rides along without entering the stacks pipeline: hits still earn
 		// Momentum alone, so the spender's consume can never touch Vigor.

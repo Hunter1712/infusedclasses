@@ -70,7 +70,7 @@ public final class RushAbility {
 	public static Result fire(ClassDefinition def, PlayerRuntime runtime, long now) {
 		Result result = trigger(def, runtime.cooldowns(), now);
 		if (result.kind() == Kind.FIRED && !runtime.tryUseRush(now)) {
-			return Result.onCooldown(runtime.cooldowns().rushRemaining(now));
+			return Result.onCooldown(runtime.rushRemaining(now));
 		}
 		return result;
 	}

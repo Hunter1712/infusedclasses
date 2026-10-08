@@ -69,12 +69,14 @@ _Avoid_: description, lore text
 A playable archetype, registered once with its id, display name, locked flag, passives, active
 ability ids, accent colour, tagline and the actives list (one name plus picker description per
 active). A class is data: it carries no player and no state of its own. The first passive on a
-trigger is found with `passiveForTrigger`, never by list position. Juggernaut is the one
-playable class today: `Juggernaut`, Rush (`infusedclasses:rush`) plus Rend
+trigger is found with `passiveForTrigger`, never by list position. Juggernaut and Legionary are the two
+playable classes today: `Juggernaut`, Rush (`infusedclasses:rush`) plus Rend
 (`infusedclasses:rend`), accent `0xFFE74C3C`,
 tagline `Frontline bruiser`, actives `Rush` and `Rend`, with picker copy
 generated from the ability constants, so the numbers
-cannot drift from behaviour. Juggernaut carries no max-health bonus (vanilla 20 HP):
+cannot drift from behaviour; `Legionary` (see below), Rotate plus the stance-morphed
+Impetus/Testudo oath pair, accent `0xFFB87333`, tagline `Sword and shield`.
+Juggernaut carries no max-health bonus (vanilla 20 HP):
 Vigor below is the reward for staying topped, and Momentum is the armor for staying on target.
 _Avoid_: character class definition, build
 
@@ -95,7 +97,7 @@ A passive that earns stacks when a named trigger fires, rather than always being
 own numbers — stack cap, attribute, per-stack value, grace period — and its picker copy
 is generated from those numbers so the copy cannot claim something the behaviour does not do.
 Momentum, the Juggernaut passive, is `on_hit_dealt`, max 10, `minecraft:armor` under
-`infusedclasses:momentum_armor`, +1.0 per stack, 4s grace, all stacks drop at once after.
+`infusedclasses:momentum_armor`, +1.0 per stack, 5s grace, all stacks drop at once after.
 _Avoid_: buff, stackable stat
 
 **Vigor** (`HpScaledPassive`):
@@ -117,10 +119,13 @@ at once, vanilla-style, and stacks are transient: they do not survive relog or r
 _Avoid_: charge, level, rank
 
 **Cooldown** (`Cooldowns`):
-The wait after an ability fires, tracked per player, also transient. Two independent lanes:
+The wait after an ability fires, tracked per player, also transient. Four lanes:
 Rush's 25s (`RUSH_MS`) and Rend's 60s (`REND_MS`): `useRush` /
 `useRend` fire only when their own lane is ready and report it, `rushRemaining` /
-`rendRemaining` report the milliseconds left, 0 when ready, `reset` readies both again
+`rendRemaining` report the milliseconds left, 0 when ready; Rotate's 8s
+(`ROTATE_MS`, `useRotate` / `rotateRemaining`) and the Legionary shared oath 50s
+(`OATH_MS`, `useOath` / `oathRemaining`, one fire locks both oath abilities).
+`reset` readies every lane again
 for class switch and respawn. The engage window rides on the transient runtime next to
 the lanes: a fired Rush stamps the press time plus a one-shot next-hit bonus,
 `isRushLive` reads it against the 4s window, and switch and respawn clear it with
@@ -137,7 +142,7 @@ shape.
 Like every cast, firing plays its sound (see `Spellcast`): a wind-burst whoosh for the engage.
 _Avoid_: dash, charge
 
-**Spellcast** (`Spellcast`):
+**Spellcast** (`AbilityApplier.playCast`):
 The fanfare shared by every active: firing any ability plays its own sound — wind burst for
 Rush, anvil land for Rend — so landing a cast is one learnable rule; fizzles and rejects cost
 nothing and stay silent. The single play path lives here so appliers never duplicate it.
@@ -150,13 +155,114 @@ every Momentum stack plus the armor they granted up front, on its own 60s lane. 
 unswung window simply expires with the stacks already spent. Zero stacks fizzles with a
 `No Momentum` line and arms nothing. Decided in the trigger/fire
 gate-and-arm shape; the spent passive is found with `ClassDefinition.passiveForTrigger`
-(aliased as `RendAbility.momentumOf`) rather than by position, the
+rather than by position, the
 empower snapshot rides the transient runtime next to the lane, and
 the consume flag rides in the result: the entry asks the passive applier to consume
 that passive while the damage hook spends the snapshot on the next hit.
 Like every cast, firing plays its sound (see `Spellcast`): an anvil-land smash for the
 empower.
 _Avoid_: heal button, second ability
+
+**Legionary** (`ClassRegistry`):
+The second playable class: `infusedclasses:legionary`, display `Legionary`,
+accent bronze `0xFFB87333`, tagline `Sword and shield`, actives Rotate plus the
+stance-morphed Impetus/Testudo oath pair. It carries no conditional passives and
+no HP-scaled pair: its stances are transient auras on the runtime (see below),
+not stacks, so the card shows `No passives yet` and the play lives in the
+actives. Every Legionary enters in `Scutum`.
+_Avoid_: roman, tank class
+
+**Gladius**:
+The Legionary's striking stance: `attack_damage` +2.0
+(`infusedclasses:gladius_damage`), `attack_speed` +0.2
+(`infusedclasses:gladius_alacrity`), melee taken x1.2. Glass reads as glass.
+_Avoid_: dps stance, sword form
+
+**Scutum**:
+The Legionary's plate stance and the default: `armor` +6
+(`infusedclasses:scutum_plate`), `armor_toughness` +1
+(`infusedclasses:scutum_toughness`), `movement_speed` about -8%
+(`infusedclasses:scutum_weight`), melee dealt x0.8. Plate reads as plate.
+_Avoid_: tank stance, shield form
+
+**Rotate** (`RotateAbility`):
+The Legionary's stance toggle on `R`: flips `Gladius`/`Scutum` any time off its
+8s lock (`ROTATE_MS`), no build-up, no stacks. Picking a stance applies its aura
+at once; leaving removes it at once. Firing announces the new stance (`Gladius!`
+red / `Scutum!` gray) with no cast word; rejects arm nothing. The `R` bind is
+the Juggernaut's Rush bind reused, so binds survive the class.
+Decided in the trigger/fire gate-and-arm shape.
+_Avoid_: swap stance, transform
+
+**Impetus** (`ImpetusAbility`):
+The Legionary's Gladius payoff on `G`: every melee hit inside the 6s window
+(`WINDOW_TICKS`) earns +3 (`IMPETUS_BONUS`) through the charged curve, while
+melee taken pays x1.25 (`Ha!`, `Impetus!` red). Fires only in Gladius, on the
+shared 50s oath lane, so one fire locks Testudo too.
+Decided in the trigger/fire gate-and-arm shape.
+_Avoid_: enrage, burst
+
+**Testudo** (`TestudoAbility`):
+The Legionary's Scutum payoff on `G`: +8 armor (`infusedclasses:testudo_plate`)
+plus no knockback (+1 resistance, `infusedclasses:testudo_brace`) for 6s, while
+melee dealt pays x0.7 (`Hold!`, `Testudo!` gray). Fires only in Scutum, on the
+shared 50s oath lane, so one fire locks Impetus too. Instant fire, no charge gate.
+Decided in the trigger/fire gate-and-arm shape.
+_Avoid_: block, turtle
+
+**Bonus curve** (`BonusCurve`):
+The universal melee rule: mod hook bonus damage scales quadratically with swing
+charge (`bonus x charge x charge`, half charge pays a quarter, spam pays chips).
+Base weapon damage never routes here — vanilla already halves spam. One call
+site in the attacker branch; every melee class shares it, no per-class copies.
+`isFullSwing` is the one definition of a full swing both the curve and the gate call.
+_Avoid_: damage falloff, charge multiplier
+
+**Melee plan** (`MeleePlan`):
+The decision of what one melee hit earns and settles, taken from definitions and
+transient state: whether the swing earns stacks (full swings only, spam earns zero),
+the stance deal and take mults (1.0 for anyone else), and the Impetus window bonus
+through the charged curve (0 outside the window). The server entry maps, adapters
+apply; the victim runtime arrives lazily, so a non-Legionary victim costs no transient
+state. Owns every ability-id check the hook needs, so the entry never compares
+ability ids to gate rewards.
+_Avoid_: damage handler, hook logic
+
+**Damage settle** (`DamageSettle`):
+The single guarded hurt for the whole mod plus the stance-mult settle every melee
+branch funnels through. Over 1.0 lands extra hurt (dead targets deal nothing); under
+1.0 heals back the discount, so the net hit reads as base times mult; exactly 1.0
+touches nothing. Rend and Impetus bonuses land here too.
+_Avoid_: damage handler, hurt helper
+
+**Hurt guard** (`DamageSettle.isResolving`):
+The one re-entrancy flag for the mod: settled hurts re-enter the damage hook on the
+same thread, and the hook grants nothing twice while it is set. Replaces the twin
+`resolvingBonus` / `resolvingEmpower` flags.
+_Avoid_: recursion flag, lock
+
+**Stance applier** (`StanceApplier`):
+The adapter that makes the player's attributes agree with the Legionary stance: only
+the current stance's modifiers sit on the player, the other stance's come off, same
+write-only-on-change shape as the Vigor tick. Testudo plate and brace ride the window
+while live. Leaving the class takes them all off.
+_Avoid_: stance system, aura updater
+
+**Bind morph** (`BindMorph`):
+The decision of what a reused bind means for a class and stance: `R` arrives as the
+rotate intent for Legionaries and Rush for everyone else; `G` arrives as the
+stance-morphed oath (Gladius Impetus, Scutum Testudo) for Legionaries and Rend for
+everyone else. The intent receivers wire, this decides.
+_Avoid_: key routing, bind table
+
+**Stack gate**:
+The other half of the spam fix: the attacker branch reads `attackStrengthScale`
+once per swing and feeds conditional triggers only at full charge
+(`MeleePlan.shouldBump` over `BonusCurve.isFullSwing`), so spam
+earns zero stacks and timed swings earn one. Rush bonus stays ungated and scales
+via the curve. `Juggernaut Momentum` grace reads 5s to cover the swing timer
+under the gate.
+_Avoid_: swing check, charge requirement
 
 ### Per-player state
 
@@ -258,7 +364,8 @@ _Avoid_: card DTO, view model
 **Picker screen** (`client/ClassSelectScreen`):
 The picker itself: dimmed backdrop, one card per class in a row, one `Button` per card with its
 tooltip and active state, title, subtitle and the `Click a class to choose it` footer. It positions
-cards with the renderer's row math, sizes buttons with its button rect, and passes hover through;
+cards with the renderer's row math, sizes buttons with its button rect, resolves one card model
+per card per frame and passes hover through;
 how a card draws is the card renderer's business, and what a card says is the card model's. It never pauses and never closes on Esc.
 _Avoid_: GUI, menu
 
@@ -266,8 +373,8 @@ _Avoid_: GUI, menu
 Everything one class card looks like: body, accent strip, border, hover highlight for unlocked
 cards, veil for locked ones, and the name, tagline, divider and card lines. It also owns the row
 math (width, x, top), the button rect and the hover hit-test the screen positions cards with.
-Style is resolved once per card (`cardFor` for the whole card, `cardStyleFor` inside frame/body);
-the screen passes hover, never a style. Each line draws with
+The body draws from the card model's lines with the model's style; the screen passes the model,
+never the parts. Each line draws with
 the colour and weight it carries, so nothing here reads what a line says. Cards are 120x156 with
 10 inner padding and a 20-high button.
 _Avoid_: card widget, draw helper
@@ -285,6 +392,8 @@ The client's `infusedclasses:rush` intent: "I pressed the Rush key", sent while
 the `R` key (`key.infusedclasses.rush`) is consumed each client tick. The server
 validates class and cooldown; rejected presses leave the lane, the window and the
 bonus untouched.
+For a Legionary the same `R` bind arrives as the rotate intent, so binds survive
+the class.
 _Avoid_: shout packet, key packet
 
 **Rend intent** (`RendPayload`):
@@ -292,6 +401,8 @@ The client's `infusedclasses:rend` intent: "I pressed the Rend key", sent while
 the `G` key (`key.infusedclasses.rend`) is consumed each client tick. The server
 validates class, stacks and cooldown; rejected presses leave the cooldown untouched,
 and the empower lands on the next melee hit inside the window.
+For a Legionary the same `G` bind arrives as the oath intent: Gladius morphs it
+to Impetus, Scutum to Testudo, so binds survive the class.
 _Avoid_: heal packet, key packet
 
 **Picker signal** (`OpenClassScreenPayload`):
@@ -318,4 +429,7 @@ Recorded in `docs/adr/`. `0001` is the decide-then-apply rule these terms are na
 owns the choice/transient split; `0003` defers the class-lookup seam until a second source of
 classes exists; `0004` inverts the Juggernaut kit to high-HP rewards (Vigor plus Momentum, Rush engage
 plus Rend empower) with sound replacing root; `0005` moves the hit-gating decision out of the
-server entry, the stack storage out of the transient runtime, and the trigger scan onto the class.
+server entry, the stack storage out of the transient runtime, and the trigger scan onto the class;
+`0006` adds the Legionary stance tradeoff plus the universal charged curve and stack gate;
+`0007` deepens the melee hook (plan, settle, morph) and splits the adapters, revisiting
+the `0005` bind-morph carve-out.

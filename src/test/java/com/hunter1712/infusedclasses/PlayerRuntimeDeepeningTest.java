@@ -32,7 +32,7 @@ class PlayerRuntimeDeepeningTest {
 		runtime.onTrigger(def, "on_hit_dealt", base);
 		// Swift never triggered: 0 stacks, never moved.
 
-		Set<ConditionalPassive> moved = runtime.tickDecayMoved(def, base + 5_000);
+		Set<ConditionalPassive> moved = runtime.tickDecayMoved(def, base + 6_000);
 
 		assertTrue(moved.contains(momentum()));
 		assertFalse(moved.contains(swift));
