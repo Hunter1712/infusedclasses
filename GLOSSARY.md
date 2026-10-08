@@ -41,14 +41,14 @@ caller can fire without arming, and rejected presses leave the cooldown untouche
 _Avoid_: ability result (that is the whole decision, gating included), buff
 
 **Ability applier** (`AbilityApplier`):
-The shared adapter seams every ability outcome passes through: the announcement
-on the action bar and the cast fanfare (`playCast`). Effect and sound ids resolve
+The shared adapter seams every ability outcome and class-choice outcome passes through: the announcement
+on the action bar (abilities, rotate) or chat (class-choice), plus the cast fanfare (`playCast`) for fired abilities. Effect and sound ids resolve
 at their single use sites — Rush's Speed in its own adapter, the cast sound in the
 fanfare itself — never behind shared lookups with one caller each. A result with nothing to grant and nothing
 to say — a wrong-class, on-cooldown or no-stacks press — lands nothing.
 A fired-or-fizzle press lands through `announceAndCast` alone, except Rotate which
 announces without fanfare (it carries no cast sound); only Rush keeps its own
-adapter, for the cleanse and the Speed it lays.
+adapter, for the cleanse and the Speed it lays. Class-choice rejections and accepts route through `announce` with the `actionBar` flag.
 _Avoid_: ability system, effect handler
 
 **Gate-and-arm** (`AbilityGate`):
@@ -59,11 +59,12 @@ this owns only the fallback.
 _Avoid_: fire helper, trigger wrapper
 
 **Chat line** (`ChatLine`):
-The text and the chat style an ability decision returns for the server entry to send verbatim,
+The text and the chat style a decision returns for the server entry to send verbatim,
 including the remaining-seconds message for a press on cooldown. Rend's fire line is
 `Rend!` in red, Rush's is `Rush!` in yellow; a cooldown line is `Rend: %.0fs` with no style of its own,
-rounded with `%.0f`. Its wording, rounding and locale are decided with the ability, not
-formatted by whoever sends it.
+rounded with `%.0f`. Its wording, rounding and locale are decided with the ability (or class-choice outcome),
+not formatted by whoever sends it. Class-choice lines use the same seam: `unknownOrLocked()` (red, action bar)
+for a rejected pick, and `classPicked(displayName)` (gray, chat) for an accepted switch.
 _Avoid_: message, notification
 
 **Picker copy** (`ConditionalPassive.fullDesc`):
@@ -378,17 +379,21 @@ A card's button label and active state: `Locked`/inactive for a locked class, `S
 otherwise. Its rect comes from the card renderer's button math, never the screen's.
 _Avoid_: select button
 
+**Card text** (`ClassPresentation.CardText`, `cardTextFor`):
+The hover-independent card content: display name, tagline, lines (with kinds and styles), accent colour, button label/state, and tooltip. Resolved once per class definition per frame.
+
+**Card style** (`ClassPresentation.CardStyle`, `cardStyleFor`):
+The hover-dependent visual layer: border colour, hover wash, locked veil, and name colour. Derived per frame from `isHovering`.
+
 **Card model** (`ClassPresentation.CardModel`, `cardFor`):
-The whole card in one decision: lines, style, accent, button and tooltip together, so the locked
-look is decided once instead of in five ternaries across callers.
+The whole card in one decision: text + style together, so the locked look is decided once instead of in five ternaries across callers.
 _Avoid_: card DTO, view model
 
 **Picker screen** (`client/ClassSelectScreen`):
 The picker itself: dimmed backdrop, one card per class in a row, one `Button` per card with its
 tooltip and active state, title, subtitle and the `Click a class to choose it` footer. It positions
-cards with the renderer's row math, sizes buttons with its button rect, resolves one card model
-per card per frame and passes hover through;
-how a card draws is the card renderer's business, and what a card says is the card model's. It never pauses and never closes on Esc.
+cards with the renderer's row math, sizes buttons with its button rect, resolves hover-independent `CardText` once per definition at init, and derives `CardStyle` per frame from `isHovering`;
+how a card draws is the card renderer's business, and what a card says is the card text's. It never pauses and never closes on Esc.
 _Avoid_: GUI, menu
 
 **Card renderer** (`client/ClassCardRenderer`):
