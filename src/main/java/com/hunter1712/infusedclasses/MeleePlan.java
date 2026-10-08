@@ -47,8 +47,9 @@ public final class MeleePlan {
 	/**
 	 * What one melee hit earns and settles, decided in field order: stack bump, Rush credit,
 	 * Rend spend, Impetus bonus, then the stance mults. The entry applies in the same order:
-	 * bump triggers, Rush grants, Rend consumes, bonuses land, the combined mult settles.
-	 * One-shot flags are peeked here and consumed there, at the same {@code now}.
+	 * bump triggers, Rush grants, Rend consumes when the peek was live, bonuses land,
+	 * the combined mult settles. One-shot flags are peeked here and consumed there,
+	 * at the same {@code now}.
 	 */
 	public record HitPlan(boolean bump, boolean rushBonus, int rendStacks, float rendHp, float impetusBonus,
 			double deal, double take, double combined) {

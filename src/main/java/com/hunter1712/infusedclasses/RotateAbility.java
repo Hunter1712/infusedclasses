@@ -118,18 +118,19 @@ public final class RotateAbility {
 
 	/**
 	 * Gate and arm together: the production path. A fired press arms the transient
-	 * runtime's rotate lane and flips the stance together; rejected presses leave
+	 * runtime's rotate lane and flips the stance inside the same arm, so the flip
+	 * cannot run on a failed arm or be forgotten by a caller; rejected presses leave
 	 * both untouched. An arm that somehow fails reports on-cooldown instead of a
 	 * fire it did not earn.
 	 */
 	public static Result fire(ClassDefinition def, PlayerRuntime runtime, long now) {
 		Result result = trigger(def, runtime.rotateRemaining(now), runtime.stance());
-		Result gated = AbilityGate.gate(result, result.kind() == Kind.FIRED, () -> runtime.tryUseRotate(now),
-				() -> runtime.rotateRemaining(now), Result::onCooldown);
-		if (gated.kind() != Kind.FIRED) {
-			return gated;
-		}
-		runtime.flipStance();
-		return gated;
+		return AbilityGate.gate(result, result.kind() == Kind.FIRED, () -> {
+			if (!runtime.tryUseRotate(now)) {
+				return false;
+			}
+			runtime.flipStance();
+			return true;
+		}, () -> runtime.rotateRemaining(now), Result::onCooldown);
 	}
 }

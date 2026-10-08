@@ -70,7 +70,7 @@ final class PassiveStacks {
 			if (current <= 0) {
 				continue;
 			}
-			if (PassiveExpiry.expired(lastTriggerTime.get(passive), passive.graceSeconds(), now)) {
+			if (pastGrace(lastTriggerTime.get(passive), passive.graceSeconds(), now)) {
 				passiveStacks.put(passive, 0);
 				lastTriggerTime.remove(passive);
 				moved.add(passive);
@@ -99,5 +99,17 @@ final class PassiveStacks {
 		}
 		passiveStacks.remove(passive);
 		lastTriggerTime.remove(passive);
+	}
+
+	/**
+	 * Grace-expiry math, folded home: one caller, one predicate. Exactly at grace is
+	 * still live ({@code >}, never {@code >=}); a passive never triggered has nothing
+	 * to decay, so a null timestamp never expires.
+	 */
+	private static boolean pastGrace(Long lastTrigger, int graceSeconds, long now) {
+		if (lastTrigger == null) {
+			return false;
+		}
+		return (now - lastTrigger) > graceSeconds * 1000L;
 	}
 }

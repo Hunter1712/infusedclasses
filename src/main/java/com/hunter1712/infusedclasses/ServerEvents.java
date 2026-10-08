@@ -72,8 +72,11 @@ final class ServerEvents {
 					}
 					// Rend empower: the stamped bonus lands on this hit and only this one,
 					// applied through the adapter like every other outcome. The snapshot clears
-					// here; the bonus is what the plan already decided, never recomputed.
-					atkRuntime.consumeRendEmpower(now);
+					// only when the plan saw one live, so empty hits never touch the window;
+					// the bonus is what the plan already decided, never recomputed.
+					if (plan.rendStacks() > 0) {
+						atkRuntime.consumeRendEmpower(now);
+					}
 					if (plan.rendHp() > 0) {
 						DamageSettle.dealBonus(attacker, entity, plan.rendHp());
 					}

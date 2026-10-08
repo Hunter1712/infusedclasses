@@ -38,16 +38,18 @@ public final class PassiveApplier {
 				AttributeWriter.remove(player, hp.attribute(), hp.modifierId());
 			}
 		}
-		// Bonus pool: flat max-HP per class. The write early-out
-		// covers no-op ticks; a zero bonus removes, so the tick self-heals within one
-		// tick of any switch — no onClassChanged handling needed.
-		if (def.maxHealthBonus() > 0) {
-			AttributeWriter.write(player, new PassiveEffect.Modifier(
-					ClassRegistry.MAX_HEALTH, ClassRegistry.BONUS_HEALTH_ID, def.maxHealthBonus()));
-		} else {
-			AttributeWriter.remove(player, ClassRegistry.MAX_HEALTH, ClassRegistry.BONUS_HEALTH_ID);
-		}
+		// ponytail: no max-health tick until a class carries one (all read 0.0 today).
+		// A class that sets maxHealthBonus re-adds one branch here; nothing else writes it.
 		StanceApplier.applyStance(player, def, runtime, now);
+	}
+
+	/**
+	 * The one priced passive on a class: the first {@code on_hit_dealt} stacker, or null.
+	 * Single home for the spender pair (consume plus Rush grant); the trigger scan itself
+	 * stays on the definition, and Rend's decide path keeps its own resolve-then-read.
+	 */
+	private static ConditionalPassive pricedPassive(ClassDefinition def) {
+		return def == null ? null : def.passiveForTrigger(ConditionalPassive.ON_HIT_DEALT);
 	}
 
 	/**
@@ -103,8 +105,7 @@ public final class PassiveApplier {
 	 * owns the one trigger scan, and the entry stays out.
 	 */
 	public static boolean consumeSpent(ServerPlayer player, PlayerRuntime runtime, ClassDefinition def) {
-		return consumeStacks(player, runtime,
-				def == null ? null : def.passiveForTrigger(ConditionalPassive.ON_HIT_DEALT));
+		return consumeStacks(player, runtime, pricedPassive(def));
 	}
 
 	/**
@@ -115,8 +116,7 @@ public final class PassiveApplier {
 	 * grants; rejects, stale windows and a missing priced passive do nothing.
 	 */
 	public static void grantRushBonus(PlayerRuntime runtime, ClassDefinition def, long now) {
-		ConditionalPassive momentum =
-				def == null ? null : def.passiveForTrigger(ConditionalPassive.ON_HIT_DEALT);
+		ConditionalPassive momentum = pricedPassive(def);
 		if (momentum == null || !runtime.consumeRushBonus(now)) {
 			return;
 		}

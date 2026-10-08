@@ -135,7 +135,9 @@ Rush's 25s (`RUSH_MS`) and Rend's 60s (`REND_MS`): `useRush` /
 (`ROTATE_MS`, `useRotate` / `rotateRemaining`) and the Legionary shared oath 50s
 (`OATH_MS`, `useOath` / `oathRemaining`, one fire locks both oath abilities).
 `reset` readies every lane again
-for class switch and respawn. The engage window rides on the transient runtime next to
+for class switch and respawn. The lanes ride one map behind a private lane enum,
+so a fifth lane adds a value rather than a field; callers and tests cross the
+per-lane verbs, never the map. The engage window rides on the transient runtime next to
 the lanes: a fired Rush stamps the press time plus a one-shot next-hit bonus,
 `isRushLive` reads it against the 4s window, and switch and respawn clear it with
 everything else.
@@ -167,7 +169,8 @@ gate-and-arm shape; the spent passive is found with `ClassDefinition.passiveForT
 rather than by position, the
 empower snapshot rides the transient runtime next to the lane, and
 the consume flag rides in the result: the entry asks the passive applier to consume
-that passive while the damage hook spends the snapshot on the next hit.
+that passive while the damage hook spends the snapshot on the next hit, and only
+when the plan saw one live, so empty hits never touch the window.
 Like every cast, firing plays its sound (see `Spellcast`): an anvil-land smash for the
 empower.
 _Avoid_: heal button, second ability

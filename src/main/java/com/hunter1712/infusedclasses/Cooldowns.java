@@ -1,5 +1,7 @@
 package com.hunter1712.infusedclasses;
 
+import java.util.EnumMap;
+
 /**
  * Server-side cooldown tracking for active abilities. Pure logic, no Minecraft types, so the state machine
  * can be asserted on directly.
@@ -12,76 +14,83 @@ public final class Cooldowns {
 	/** Shared Legionary oath lane: firing Impetus locks Testudo and vice versa. */
 	public static final long OATH_MS = 50_000L;
 
-	private long rushReadyAt;
-	private long rendReadyAt;
-	private long rotateReadyAt;
-	private long oathReadyAt;
+	/**
+	 * One lane per ability family behind a single map: a fifth lane adds one value
+	 * plus two one-line verbs, never a field plus a reset line. Private: callers and
+	 * tests cross the per-lane verbs, never this.
+	 */
+	private enum Lane {
+		RUSH,
+		REND,
+		ROTATE,
+		OATH
+	}
+
+	private final EnumMap<Lane, Long> readyAt = new EnumMap<>(Lane.class);
+
+	private static long duration(Lane lane) {
+		return switch (lane) {
+			case RUSH -> RUSH_MS;
+			case REND -> REND_MS;
+			case ROTATE -> ROTATE_MS;
+			case OATH -> OATH_MS;
+		};
+	}
+
+	private boolean use(Lane lane, long now) {
+		if (now < readyAt.getOrDefault(lane, 0L)) {
+			return false;
+		}
+		readyAt.put(lane, now + duration(lane));
+		return true;
+	}
+
+	private long remaining(Lane lane, long now) {
+		return Math.max(0L, readyAt.getOrDefault(lane, 0L) - now);
+	}
 
 	/** @return true if Rush fired; false if still on cooldown. Independent of Rend. */
 	public boolean useRush(long now) {
-		if (now < rushReadyAt) {
-			return false;
-		}
-		rushReadyAt = now + RUSH_MS;
-		return true;
+		return use(Lane.RUSH, now);
 	}
 
 	/** Milliseconds left, 0 when ready. Zero means ready. */
 	public long rushRemaining(long now) {
-		return remaining(rushReadyAt, now);
+		return remaining(Lane.RUSH, now);
 	}
 
 	/** @return true if Rend fired; false if still on cooldown. */
 	public boolean useRend(long now) {
-		if (now < rendReadyAt) {
-			return false;
-		}
-		rendReadyAt = now + REND_MS;
-		return true;
+		return use(Lane.REND, now);
 	}
 
 	/** Milliseconds left, 0 when ready. Zero means ready. */
 	public long rendRemaining(long now) {
-		return remaining(rendReadyAt, now);
+		return remaining(Lane.REND, now);
 	}
 
 	/** Ready again immediately: class switch and respawn start empty. */
 	public void reset() {
-		rushReadyAt = 0;
-		rendReadyAt = 0;
-		rotateReadyAt = 0;
-		oathReadyAt = 0;
+		readyAt.clear();
 	}
 
 	/** @return true if Rotate fired; false if still on its lock. */
 	public boolean useRotate(long now) {
-		if (now < rotateReadyAt) {
-			return false;
-		}
-		rotateReadyAt = now + ROTATE_MS;
-		return true;
+		return use(Lane.ROTATE, now);
 	}
 
 	/** Milliseconds left on the rotate lock, 0 when ready. */
 	public long rotateRemaining(long now) {
-		return remaining(rotateReadyAt, now);
+		return remaining(Lane.ROTATE, now);
 	}
 
 	/** @return true if an oath ability fired; false if the shared lane is held. */
 	public boolean useOath(long now) {
-		if (now < oathReadyAt) {
-			return false;
-		}
-		oathReadyAt = now + OATH_MS;
-		return true;
+		return use(Lane.OATH, now);
 	}
 
 	/** Milliseconds left on the shared oath lane, 0 when ready. */
 	public long oathRemaining(long now) {
-		return remaining(oathReadyAt, now);
-	}
-
-	private static long remaining(long readyAt, long now) {
-		return Math.max(0L, readyAt - now);
+		return remaining(Lane.OATH, now);
 	}
 }
