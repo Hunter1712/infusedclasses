@@ -78,9 +78,9 @@ class RendAbilityTest {
 		PlayerRuntime runtime = withStacks(10, 0);
 		RendAbility.fire(juggernautDef(), runtime, 0);
 
-		assertTrue(runtime.isRendEmpowerLive(0));
-		assertTrue(runtime.isRendEmpowerLive(5_999));
-		assertFalse(runtime.isRendEmpowerLive(6_000));
+		assertEquals(10, runtime.peekRendEmpowerStacks(0));
+		assertEquals(10, runtime.peekRendEmpowerStacks(5_999));
+		assertEquals(-1, runtime.peekRendEmpowerStacks(6_000));
 		assertEquals(10, runtime.consumeRendEmpower(0));
 		assertEquals(-1, runtime.consumeRendEmpower(0));
 	}
@@ -90,7 +90,7 @@ class RendAbilityTest {
 		PlayerRuntime runtime = withStacks(10, 0);
 		RendAbility.fire(juggernautDef(), runtime, 0);
 
-		assertFalse(runtime.isRendEmpowerLive(6_001));
+		assertEquals(-1, runtime.peekRendEmpowerStacks(6_001));
 		assertEquals(-1, runtime.consumeRendEmpower(6_001));
 		// The lane stays armed: the whiff cost time, and the stacks are already spent.
 		assertEquals(Cooldowns.REND_MS - 6_001, runtime.rendRemaining(6_001));
@@ -106,7 +106,7 @@ class RendAbilityTest {
 		assertEquals(0, result.empowerHp());
 		assertFalse(result.consume());
 		assertEquals(0, runtime.rendRemaining(0));
-		assertFalse(runtime.isRendEmpowerLive(0));
+		assertEquals(-1, runtime.peekRendEmpowerStacks(0));
 	}
 
 	@Test
@@ -117,7 +117,7 @@ class RendAbilityTest {
 		assertEquals(RendAbility.Kind.WRONG_CLASS, result.kind());
 		assertNull(result.announcement());
 		assertEquals(0, runtime.rendRemaining(0));
-		assertFalse(runtime.isRendEmpowerLive(0));
+		assertEquals(-1, runtime.peekRendEmpowerStacks(0));
 	}
 
 	@Test
@@ -140,7 +140,23 @@ class RendAbilityTest {
 		runtime.resetCooldowns();
 
 		assertEquals(0, runtime.rendRemaining(0));
-		assertFalse(runtime.isRendEmpowerLive(0));
+		assertEquals(-1, runtime.peekRendEmpowerStacks(0));
 		assertEquals(-1, runtime.consumeRendEmpower(0));
+	}
+
+	@Test
+	void fireThenDropSpendsWhatFirePriced() {
+		PlayerRuntime runtime = withStacks(4, 0);
+		RendAbility.Result result = RendAbility.fire(juggernautDef(), runtime, 0);
+
+		assertEquals(RendAbility.Kind.FIRED, result.kind());
+		assertTrue(result.consume());
+		// The entry honors the flag through consumeSpent; its pure half is pinned
+		// here: stacks drop once, a second drop finds nothing, and the armed
+		// snapshot survives fire-time (hit-time spend is a separate event).
+		assertTrue(PassiveApplier.dropStacks(runtime, RendAbility.spentPassive(juggernautDef())));
+		assertEquals(0, runtime.stacks(juggernautDef().passives().get(0)));
+		assertFalse(PassiveApplier.dropStacks(runtime, RendAbility.spentPassive(juggernautDef())));
+		assertEquals(4, runtime.peekRendEmpowerStacks(0));
 	}
 }

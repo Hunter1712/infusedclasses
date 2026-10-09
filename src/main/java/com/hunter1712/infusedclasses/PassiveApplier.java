@@ -50,12 +50,13 @@ public final class PassiveApplier {
 	}
 
 	/**
-	 * The one priced passive on a class: the first {@code on_hit_dealt} stacker, or null.
-	 * Resolved once in {@link RendAbility#spentPassive}: the spender pair (consume plus
-	 * Rush grant) and Rend's decide path share it, so neither resolves behind the other's back.
+	 * Spender consume by class: resolves the priced passive by trigger and consumes it. The
+	 * single path for Rend, so the entry never looks the passive up itself: the definition
+	 * owns the one trigger scan, and the entry stays out. Resolved in
+	 * {@link RendAbility#spentPassive}, shared with the Rush grant and Rend's decide path.
 	 */
-	private static ConditionalPassive pricedPassive(ClassDefinition def) {
-		return RendAbility.spentPassive(def);
+	public static boolean consumeSpent(ServerPlayer player, PlayerRuntime runtime, ClassDefinition def) {
+		return consumeStacks(player, runtime, RendAbility.spentPassive(def));
 	}
 
 	/**
@@ -94,22 +95,25 @@ public final class PassiveApplier {
 	 * nothing done. Only the priced passive is touched: a second stacker on the class
 	 * keeps every stack.
 	 */
-	private static boolean consumeStacks(ServerPlayer player, PlayerRuntime runtime, ConditionalPassive passive) {
+	/**
+	 * Pure stack drop: clears one passive's stacks and timestamp, reporting whether
+	 * anything was dropped. The JUnit-reachable half of the spender consume; the
+	 * attribute removal rides with the player in {@link #consumeSpent}.
+	 */
+	static boolean dropStacks(PlayerRuntime runtime, ConditionalPassive passive) {
 		if (passive == null || runtime.stacks(passive) <= 0) {
 			return false;
 		}
 		runtime.clear(passive);
-		AttributeWriter.remove(player, passive.attribute(), passive.modifierId());
 		return true;
 	}
 
-	/**
-	 * Spender consume by class: resolves the priced passive by trigger and consumes it. The
-	 * single path for Rend, so the entry never looks the passive up itself: the definition
-	 * owns the one trigger scan, and the entry stays out.
-	 */
-	public static boolean consumeSpent(ServerPlayer player, PlayerRuntime runtime, ClassDefinition def) {
-		return consumeStacks(player, runtime, pricedPassive(def));
+	private static boolean consumeStacks(ServerPlayer player, PlayerRuntime runtime, ConditionalPassive passive) {
+		if (!dropStacks(runtime, passive)) {
+			return false;
+		}
+		AttributeWriter.remove(player, passive.attribute(), passive.modifierId());
+		return true;
 	}
 
 	/**
@@ -120,7 +124,7 @@ public final class PassiveApplier {
 	 * grants; rejects, stale windows and a missing priced passive do nothing.
 	 */
 	public static void grantRushBonus(PlayerRuntime runtime, ClassDefinition def, long now) {
-		ConditionalPassive momentum = pricedPassive(def);
+		ConditionalPassive momentum = RendAbility.spentPassive(def);
 		if (momentum == null || !runtime.consumeRushBonus(now)) {
 			return;
 		}
@@ -128,21 +132,22 @@ public final class PassiveApplier {
 	}
 
 	/**
-	 * Settles a planned hit's one-shot flags at the same {@code now} the plan peeked them,
-	 * in field order with {@link MeleePlan#planHit}: the stack bump, the Rush credit, then
-	 * the Rend snapshot spend. Returns the stamped Rend bonus for this hit to land, 0 when
-	 * the plan saw nothing live: the entry lands what this returns, so it cannot land a
+	 * Settles a planned hit and returns the stamped Rend bonus for this hit to land, 0 when
+	 * the plan saw nothing live, all at the same {@code now} the plan peeked them and in
+	 * field order with {@link MeleePlan#planHit}: the stack bump, the Rush credit, then
+	 * the Rend snapshot spend. The entry lands what this returns, so it cannot land a
 	 * bonus this did not spend, and empty hits never touch a window. Bonus damage itself
 	 * still lands from the plan's stamped {@code rendHp}, never recomputed.
 	 */
-	public static float settleHitOneShots(PlayerRuntime runtime, ClassDefinition def, MeleePlan.HitPlan plan,
+	public static float settleHit(PlayerRuntime runtime, ClassDefinition def, MeleePlan.HitPlan plan,
 			long now) {
 		if (runtime == null || plan == null) {
 			return 0;
 		}
 		if (plan.bump()) {
-			// plan.bump() already gated on a full swing, so 1.0F replays the same gate.
-			runtime.onTrigger(def, ConditionalPassive.ON_HIT_DEALT, now, 1.0F);
+			// Replays the plan's gated charge through the shared gate, so the settle
+			// cannot bump what the plan did not earn.
+			runtime.onTrigger(def, ConditionalPassive.ON_HIT_DEALT, now, plan.charge());
 		}
 		if (plan.rushBonus()) {
 			grantRushBonus(runtime, def, now);

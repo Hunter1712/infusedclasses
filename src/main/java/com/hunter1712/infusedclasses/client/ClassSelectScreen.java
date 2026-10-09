@@ -41,7 +41,7 @@ public class ClassSelectScreen extends Screen {
 			int cardX = cardX(i, classes.size());
 			int cardY = ClassCardRenderer.cardsTop(height);
 			ClassCardRenderer.ButtonRect bounds = ClassCardRenderer.buttonRect(cardX, cardY);
-			ClassPresentation.CardText text = ClassPresentation.cardFor(def, false).text();
+			ClassPresentation.CardText text = ClassPresentation.cardTextFor(def);
 			Component tip = Component.literal(text.tooltip());
 			Button button = Button.builder(Component.literal(text.button().label()), b -> InfusedClassesClient.pickClass(def.id()))
 					.bounds(bounds.x(), bounds.y(), bounds.w(), bounds.h())

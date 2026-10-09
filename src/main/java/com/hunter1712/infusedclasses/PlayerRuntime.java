@@ -108,11 +108,6 @@ public final class PlayerRuntime {
 		return true;
 	}
 
-	/** Whether a fired Rush window is still live: press timestamp plus the ability's window. Liveness only: a live window with its bonus already spent grants nothing. */
-	public boolean isRushLive(long now) {
-		return rushWindow.isLive(RushAbility.WINDOW_TICKS, now);
-	}
-
 	/**
 	 * Consumes the Rush next-hit bonus exactly once: true when a pending bonus was waiting,
 	 * false when nothing was owed. A stale window with no bonus left grants nothing.
@@ -141,11 +136,6 @@ public final class PlayerRuntime {
 		}
 		rendWindow.arm(now, stacks);
 		return true;
-	}
-
-	/** Whether a fired Rend empower is still live: press timestamp plus the ability's window. Liveness only: a live window with its snapshot already spent lands nothing. */
-	public boolean isRendEmpowerLive(long now) {
-		return rendWindow.hasPending(RendAbility.WINDOW_TICKS, now);
 	}
 
 	/** Peeks the empower snapshot without consuming: what the melee plan decides on. -1 when nothing is owed. */

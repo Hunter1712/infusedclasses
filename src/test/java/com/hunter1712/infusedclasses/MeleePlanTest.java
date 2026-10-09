@@ -123,7 +123,7 @@ class MeleePlanTest {
 		RendAbility.fire(juggernaut(), runtime, 0);
 		MeleePlan.HitPlan plan = MeleePlan.planHit(juggernaut(), runtime, null, null, 1.0F, 0);
 
-		float landed = PassiveApplier.settleHitOneShots(runtime, juggernaut(), plan, 0);
+		float landed = PassiveApplier.settleHit(runtime, juggernaut(), plan, 0);
 
 		// The settle returns the stamped bonus to land: the entry lands what it spent.
 		assertEquals(plan.rendHp(), landed);
@@ -139,10 +139,21 @@ class MeleePlanTest {
 		PlayerRuntime runtime = new PlayerRuntime();
 		MeleePlan.HitPlan plan = MeleePlan.planHit(juggernaut(), runtime, null, null, 0.5F, 0);
 
-		assertEquals(0, PassiveApplier.settleHitOneShots(runtime, juggernaut(), plan, 0));
+		assertEquals(0, PassiveApplier.settleHit(runtime, juggernaut(), plan, 0));
 
 		assertEquals(0, runtime.stacks(juggernaut().passives().get(0)));
 		assertFalse(runtime.hasRushBonusPending(0));
 		assertEquals(-1, runtime.peekRendEmpowerStacks(0));
+	}
+
+	@Test
+	void settleCannotBumpWhatThePlanDidNotEarn() {
+		PlayerRuntime runtime = new PlayerRuntime();
+		// A lying plan (bump claimed at spam charge): the settle replays the gated
+		// charge through the shared gate, so nothing bumps.
+		MeleePlan.HitPlan lying = new MeleePlan.HitPlan(true, 0.5F, false, -1, 0, 0, 1.0, 1.0, 1.0);
+
+		assertEquals(0, PassiveApplier.settleHit(runtime, juggernaut(), lying, 0));
+		assertEquals(0, runtime.stacks(juggernaut().passives().get(0)));
 	}
 }

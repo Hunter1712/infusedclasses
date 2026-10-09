@@ -55,7 +55,7 @@ public final class MeleePlan {
 	 * and the combined mult settles after. One-shot flags are peeked here and consumed
 	 * there, at the same {@code now}.
 	 */
-	public record HitPlan(boolean bump, boolean rushBonus, int rendStacks, float rendHp, float impetusBonus,
+	public record HitPlan(boolean bump, float charge, boolean rushBonus, int rendStacks, float rendHp, float impetusBonus,
 			double deal, double take, double combined) {
 	}
 
@@ -69,6 +69,6 @@ public final class MeleePlan {
 		float impetus = atkRuntime == null ? 0 : impetusBonusFor(atkDef, atkRuntime, now, charge);
 		double deal = atkDef == null || atkRuntime == null ? 1.0 : dealFor(atkDef, atkRuntime, now);
 		double take = victimDef == null || victimRuntime == null ? 1.0 : takeFor(victimDef, victimRuntime, now);
-		return new HitPlan(bump, rushBonus, rendStacks, rendHp, impetus, deal, take, deal * take);
+		return new HitPlan(bump, charge, rushBonus, rendStacks, rendHp, impetus, deal, take, deal * take);
 	}
 }

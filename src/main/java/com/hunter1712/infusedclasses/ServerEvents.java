@@ -57,9 +57,7 @@ final class ServerEvents {
 				// takeFor is 1.0 for non-Legionaries, and the settle is a no-op at 1.0.
 				double take = MeleePlan.takeFor(PlayerClassAccess.of(victim).currentDefinition(),
 						() -> InfusedClasses.runtime(victim), now);
-				if (take != 1.0) {
-					DamageSettle.settleMobTake(victim, mobAttacker, baseDamageTaken, take);
-				}
+				DamageSettle.settleMobTake(victim, mobAttacker, baseDamageTaken, take);
 			}
 		});
 
@@ -102,17 +100,14 @@ final class ServerEvents {
 		MeleePlan.HitPlan plan = MeleePlan.planHit(atkDef, atkRuntime, victimDef, victimRt, charge, now);
 		// The settle returns the stamped Rend bonus to land, so this lands what it spent.
 		// Spam grants zero stacks; the pending bonus waits for a full swing.
-		float rendHp = PassiveApplier.settleHitOneShots(atkRuntime, atkDef, plan, now);
+		// Empty bonuses settle as no-ops in the adapter, so no pre-checks here.
+		float rendHp = PassiveApplier.settleHit(atkRuntime, atkDef, plan, now);
 		// Rend empower: the stamped bonus lands on this hit and only this one,
 		// applied through the adapter like every other outcome; the bonus is
 		// what the plan already decided, never recomputed.
-		if (rendHp > 0) {
-			DamageSettle.dealBonus(attacker, entity, rendHp);
-		}
+		DamageSettle.dealBonus(attacker, entity, rendHp);
 		// Impetus: every melee hit inside the window earns the curve bonus.
-		if (plan.impetusBonus() > 0) {
-			DamageSettle.dealBonus(attacker, entity, plan.impetusBonus());
-		}
+		DamageSettle.dealBonus(attacker, entity, plan.impetusBonus());
 		// Stance mults: attacker deal times victim take, settled at once.
 		// Scutum + Testudo read x0.56, Gladius + Impetus x1.5: see HitPlan.combined.
 		DamageSettle.settleMult(attacker, entity, baseDamageTaken, plan.combined());

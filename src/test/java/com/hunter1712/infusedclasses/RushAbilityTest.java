@@ -42,9 +42,9 @@ class RushAbilityTest {
 		assertEquals("Rush!", result.announcement().text());
 		assertEquals(Cooldowns.RUSH_MS, runtime.rushRemaining(0));
 		assertEquals(0, runtime.rendRemaining(0));
-		assertTrue(runtime.isRushLive(0));
-		assertTrue(runtime.isRushLive(3_999));
-		assertFalse(runtime.isRushLive(4_000));
+		assertTrue(runtime.hasRushBonusPending(0));
+		assertTrue(runtime.hasRushBonusPending(3_999));
+		assertFalse(runtime.hasRushBonusPending(4_000));
 	}
 
 	@Test
@@ -58,7 +58,7 @@ class RushAbilityTest {
 		assertEquals("Rush: 15s", second.announcement().text());
 		assertEquals(15_000, runtime.rushRemaining(11_000));
 		assertEquals(0, runtime.rendRemaining(11_000));
-		assertFalse(runtime.isRushLive(11_000));
+		assertFalse(runtime.hasRushBonusPending(11_000));
 	}
 
 	@Test
@@ -69,7 +69,7 @@ class RushAbilityTest {
 		assertEquals(RushAbility.Kind.WRONG_CLASS, result.kind());
 		assertNull(result.announcement());
 		assertEquals(0, runtime.rushRemaining(0));
-		assertFalse(runtime.isRushLive(0));
+		assertFalse(runtime.hasRushBonusPending(0));
 	}
 
 	@Test
@@ -110,7 +110,7 @@ class RushAbilityTest {
 
 		assertEquals(0, runtime.rushRemaining(0));
 		assertEquals(0, runtime.rendRemaining(0));
-		assertFalse(runtime.isRushLive(0));
+		assertFalse(runtime.hasRushBonusPending(0));
 		assertFalse(runtime.consumeRushBonus(0));
 	}
 }

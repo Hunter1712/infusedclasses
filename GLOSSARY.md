@@ -30,8 +30,10 @@ modifier, take off what dead stacks earned, or nothing. A tick that moved no sta
 changed what should be on the player, so it needs no attribute write. Movement travels per
 passive (`tickDecayMoved`), so a decayed passive never removes one sitting at zero; a class
 switch removes what the old class earned but the new one does not carry (`onClassChanged`),
-drops the old stacks and resets the cooldown. The hit settle (`settleHitOneShots`)
+drops the old stacks and resets the cooldown. The hit settle (`settleHit`)
 owns bump, Rush credit and Rend spend in field order and returns the Rend bonus to land.
+The spender's stack drop (`dropStacks`) is the JUnit-reachable half of the consume; the
+attribute removal rides with the player.
 _Avoid_: passive system, stat updater
 
 **Applied outcome** (`RendAbility.Result`):
@@ -144,7 +146,7 @@ for class switch and respawn. The lanes ride one map behind a private lane enum,
 so a fifth lane adds a value rather than a field; callers and tests cross the
 per-lane verbs, never the map. The engage window rides on the transient runtime next to
 the lanes: a fired Rush stamps the press time plus a one-shot next-hit bonus,
-`isRushLive` reads it against the 4s window, and switch and respawn clear it with
+`hasRushBonusPending` reads it against the 4s window, and switch and respawn clear it with
 everything else. Rush and Rend windows are one-shot (the melee plan peeks them,
 the hit settle spends them, each bonus landing at most once); Impetus and Testudo
 windows are persistent (peeked every hit inside, never consumed).
@@ -243,7 +245,7 @@ The decision of what one melee hit earns and settles, taken from definitions and
 transient state: whether the swing earns stacks (full swings only, spam earns zero),
 the stance deal and take mults (1.0 for anyone else), and the Impetus window bonus
 through the charged curve (0 outside the window). `planHit` decides the whole hit in
-field order — bump, Rush credit, Rend spend, Impetus bonus, combined mult — and the hit settle (`settleHitOneShots`) applies the first three in
+field order — bump, Rush credit, Rend spend, Impetus bonus, combined mult — and the hit settle (`settleHit`) applies the first three in
 the same order at the same moment, returning the stamped Rend bonus for the entry
 to land, so the pairing the plan saw is the pairing that lands and empty hits never
 touch a window; the attacker branch (`settleAttackerHit`) owns the whole sequence
@@ -387,7 +389,7 @@ otherwise. Its rect comes from the card renderer's button math, never the screen
 _Avoid_: select button
 
 **Card text** (`ClassPresentation.CardText`, `cardTextFor`):
-The hover-independent card content: display name, tagline, lines (with kinds and styles), accent colour, button label/state, and tooltip. Resolved through the card model once per card per frame; buttons take it from the model at init.
+The hover-independent card content: display name, tagline, lines (with kinds and styles), accent colour, button label/state, and tooltip. Buttons resolve it once per definition at init; frame and body resolve the card model once per card per frame.
 
 **Card style** (`ClassPresentation.CardStyle`, `cardStyleFor`):
 The hover-dependent visual layer: border colour, hover wash, locked veil, and name colour. Derived per frame from `isHovering`.
@@ -400,7 +402,7 @@ _Avoid_: card DTO, view model
 The picker itself: dimmed backdrop, one card per class in a row, one `Button` per card with its
 tooltip and active state, title, subtitle and the `Click a class to choose it` footer. It positions
 cards with the renderer's row math, sizes buttons with its button rect, and resolves one `CardModel`
-per card per frame (button label, active state and tooltip come from the model's text at init);
+per card per frame (button label, active state and tooltip come from the card text at init);
 how a card draws is the card renderer's business, and what a card says is the card text's. It never pauses and never closes on Esc.
 _Avoid_: GUI, menu
 
