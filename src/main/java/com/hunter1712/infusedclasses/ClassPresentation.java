@@ -129,7 +129,8 @@ public final class ClassPresentation {
 	}
 
 	/**
-	 * Hover-independent card text: lines, tooltip, accent, button. Cached per definition.
+	 * Hover-independent card text: lines, tooltip, accent, button. Resolved through
+	 * {@link #cardFor} by every caller; kept public only as the seam tests pin.
 	 */
 	public record CardText(String displayName, String tagline, List<CardLine> lines, int accent, ButtonData button, String tooltip) {
 	}

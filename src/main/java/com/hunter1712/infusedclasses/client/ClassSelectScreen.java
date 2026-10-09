@@ -41,7 +41,7 @@ public class ClassSelectScreen extends Screen {
 			int cardX = cardX(i, classes.size());
 			int cardY = ClassCardRenderer.cardsTop(height);
 			ClassCardRenderer.ButtonRect bounds = ClassCardRenderer.buttonRect(cardX, cardY);
-			ClassPresentation.CardText text = ClassPresentation.cardTextFor(def);
+			ClassPresentation.CardText text = ClassPresentation.cardFor(def, false).text();
 			Component tip = Component.literal(text.tooltip());
 			Button button = Button.builder(Component.literal(text.button().label()), b -> InfusedClassesClient.pickClass(def.id()))
 					.bounds(bounds.x(), bounds.y(), bounds.w(), bounds.h())
@@ -61,8 +61,7 @@ public class ClassSelectScreen extends Screen {
 			int cardY = ClassCardRenderer.cardsTop(height);
 			ClassDefinition def = classes.get(i);
 			boolean hovered = ClassCardRenderer.isHovering(cardX, cardY, mouseX, mouseY);
-			ClassPresentation.CardStyle style = ClassPresentation.cardStyleFor(def, hovered);
-			ClassCardRenderer.drawFrame(graphics, cardX, cardY, ClassPresentation.cardTextFor(def), style);
+			ClassCardRenderer.drawFrame(graphics, cardX, cardY, ClassPresentation.cardFor(def, hovered));
 		}
 	}
 

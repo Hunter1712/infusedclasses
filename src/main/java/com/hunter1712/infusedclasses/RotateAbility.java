@@ -14,8 +14,6 @@ import java.util.List;
  */
 public final class RotateAbility {
 	public static final String NAME = "Rotate";
-	/** Rotate lock in millis: 8s between stance flips. Canonical home is {@link Cooldowns#ROTATE_MS}. */
-	public static final long ROTATE_MS = Cooldowns.ROTATE_MS;
 
 	/** Legionary form. Scutum is the default: every Legionary enters in plate. */
 	public enum Stance {

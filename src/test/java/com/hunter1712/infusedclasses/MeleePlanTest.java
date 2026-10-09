@@ -123,10 +123,13 @@ class MeleePlanTest {
 		RendAbility.fire(juggernaut(), runtime, 0);
 		MeleePlan.HitPlan plan = MeleePlan.planHit(juggernaut(), runtime, null, null, 1.0F, 0);
 
-		PassiveApplier.settleHitOneShots(runtime, juggernaut(), plan, 0);
+		float landed = PassiveApplier.settleHitOneShots(runtime, juggernaut(), plan, 0);
 
-		// Rush credit granted (+3, capped) and spent; Rend snapshot spent, not refunded.
-		assertEquals(8, runtime.stacks(momentum));
+		// The settle returns the stamped bonus to land: the entry lands what it spent.
+		assertEquals(plan.rendHp(), landed);
+		assertTrue(landed > 0);
+		// Settle owns the bump too: full swing earns one (+1), Rush credits +3, Rend snapshot spent, not refunded.
+		assertEquals(9, runtime.stacks(momentum));
 		assertFalse(runtime.hasRushBonusPending(0));
 		assertEquals(-1, runtime.peekRendEmpowerStacks(0));
 	}
@@ -136,7 +139,7 @@ class MeleePlanTest {
 		PlayerRuntime runtime = new PlayerRuntime();
 		MeleePlan.HitPlan plan = MeleePlan.planHit(juggernaut(), runtime, null, null, 0.5F, 0);
 
-		PassiveApplier.settleHitOneShots(runtime, juggernaut(), plan, 0);
+		assertEquals(0, PassiveApplier.settleHitOneShots(runtime, juggernaut(), plan, 0));
 
 		assertEquals(0, runtime.stacks(juggernaut().passives().get(0)));
 		assertFalse(runtime.hasRushBonusPending(0));

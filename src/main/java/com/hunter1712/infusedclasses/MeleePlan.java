@@ -24,7 +24,7 @@ public final class MeleePlan {
 			return 1.0;
 		}
 		double base = RotateAbility.dealMult(runtime.stance());
-		double window = runtime.isTestudoLive(now) ? TestudoAbility.TESTUDO_WINDOW_DEAL_FACTOR : 1.0;
+		double window = runtime.isTestudoLive(now) ? TestudoAbility.TESTUDO_DEAL_MULT : 1.0;
 		return base * window;
 	}
 
@@ -35,7 +35,7 @@ public final class MeleePlan {
 		}
 		PlayerRuntime r = runtime.get();
 		double base = RotateAbility.takeMult(r.stance());
-		double window = r.isImpetusLive(now) ? ImpetusAbility.IMPETUS_WINDOW_TAKE_FACTOR : 1.0;
+		double window = r.isImpetusLive(now) ? ImpetusAbility.IMPETUS_TAKEN_MULT : 1.0;
 		return base * window;
 	}
 
@@ -50,10 +50,10 @@ public final class MeleePlan {
 
 	/**
 	 * What one melee hit earns and settles, decided in field order: stack bump, Rush credit,
-	 * Rend spend, Impetus bonus, then the stance mults. The entry applies in the same order:
-	 * bump triggers, Rush grants, Rend consumes when the peek was live, bonuses land,
-	 * the combined mult settles. One-shot flags are peeked here and consumed there,
-	 * at the same {@code now}.
+	 * Rend spend, Impetus bonus, then the stance mults. The hit settle applies the first
+	 * three in the same order and returns the stamped Rend bonus to land; bonuses land
+	 * and the combined mult settles after. One-shot flags are peeked here and consumed
+	 * there, at the same {@code now}.
 	 */
 	public record HitPlan(boolean bump, boolean rushBonus, int rendStacks, float rendHp, float impetusBonus,
 			double deal, double take, double combined) {

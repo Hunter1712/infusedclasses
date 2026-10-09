@@ -21,18 +21,17 @@ public final class RushApplier {
 	}
 
 	public static void apply(ServerPlayer player, RushAbility.Result result) {
-		AbilityApplier.announce(player, result.announcement(), true);
-		if (result.kind() != RushAbility.Kind.FIRED) {
-			return;
+		boolean fired = result.kind() == RushAbility.Kind.FIRED;
+		if (fired) {
+			cleanse(player);
+			Holder<MobEffect> holder = player.registryAccess().lookupOrThrow(Registries.MOB_EFFECT)
+					.get(ResourceKey.create(Registries.MOB_EFFECT, RushAbility.SPEED_EFFECT))
+					.orElse(null);
+			if (holder != null) {
+				player.addEffect(new MobEffectInstance(holder, RushAbility.SPEED_TICKS, RushAbility.SPEED_AMPLIFIER));
+			}
 		}
-		cleanse(player);
-		Holder<MobEffect> holder = player.registryAccess().lookupOrThrow(Registries.MOB_EFFECT)
-				.get(ResourceKey.create(Registries.MOB_EFFECT, RushAbility.SPEED_EFFECT))
-				.orElse(null);
-		if (holder != null) {
-			player.addEffect(new MobEffectInstance(holder, RushAbility.SPEED_TICKS, RushAbility.SPEED_AMPLIFIER));
-		}
-		AbilityApplier.playCast(player, RushAbility.CAST_SOUND);
+		AbilityApplier.announceAndCast(player, result.announcement(), fired, RushAbility.CAST_SOUND, true);
 	}
 
 	/**

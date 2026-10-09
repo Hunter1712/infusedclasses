@@ -110,7 +110,7 @@ public final class ClassRegistry {
 										+ ") or Scutum (+" + ConditionalPassive.amount(RotateAbility.SCUTUM_ARMOR)
 										+ " armor, +" + ConditionalPassive.amount(RotateAbility.SCUTUM_TOUGHNESS)
 										+ " toughness, slower) (R, "
-										+ (RotateAbility.ROTATE_MS / 1000) + "s). Announces Gladius!/Scutum!."),
+										+ (Cooldowns.ROTATE_MS / 1000) + "s). Announces Gladius!/Scutum!."),
 						new ClassDefinition.ActiveAbility(
 								ImpetusAbility.NAME,
 								"In Gladius: melee hits within "

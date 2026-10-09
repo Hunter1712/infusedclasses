@@ -30,7 +30,8 @@ modifier, take off what dead stacks earned, or nothing. A tick that moved no sta
 changed what should be on the player, so it needs no attribute write. Movement travels per
 passive (`tickDecayMoved`), so a decayed passive never removes one sitting at zero; a class
 switch removes what the old class earned but the new one does not carry (`onClassChanged`),
-drops the old stacks and resets the cooldown.
+drops the old stacks and resets the cooldown. The hit settle (`settleHitOneShots`)
+owns bump, Rush credit and Rend spend in field order and returns the Rend bonus to land.
 _Avoid_: passive system, stat updater
 
 **Applied outcome** (`RendAbility.Result`):
@@ -46,9 +47,9 @@ on the action bar (abilities, rotate) or chat (class-choice), plus the cast fanf
 at their single use sites — Rush's Speed in its own adapter, the cast sound in the
 fanfare itself — never behind shared lookups with one caller each. A result with nothing to grant and nothing
 to say — a wrong-class, on-cooldown or no-stacks press — lands nothing.
-A fired-or-fizzle press lands through `announceAndCast` alone, except Rotate which
-announces without fanfare (it carries no cast sound); only Rush keeps its own
-adapter, for the cleanse and the Speed it lays. Class-choice rejections and accepts route through `announce` with the `actionBar` flag.
+A fired-or-fizzle press lands through `announceAndCast` alone — Rotate with no
+sound (it carries no cast sound, so it announces without fanfare); only Rush keeps its own
+adapter, for the cleanse and the Speed it lays, routing its fanfare through the shared path. Class-choice rejections and accepts route through `announce` with the `actionBar` flag.
 _Avoid_: ability system, effect handler
 
 **Gate-and-arm** (`AbilityGate`):
@@ -144,7 +145,9 @@ so a fifth lane adds a value rather than a field; callers and tests cross the
 per-lane verbs, never the map. The engage window rides on the transient runtime next to
 the lanes: a fired Rush stamps the press time plus a one-shot next-hit bonus,
 `isRushLive` reads it against the 4s window, and switch and respawn clear it with
-everything else.
+everything else. Rush and Rend windows are one-shot (the melee plan peeks them,
+the hit settle spends them, each bonus landing at most once); Impetus and Testudo
+windows are persistent (peeked every hit inside, never consumed).
 _Avoid_: timer
 
 **Rush** (`RushAbility`):
@@ -173,8 +176,9 @@ gate-and-arm shape; the spent passive is found once with `RendAbility.spentPassi
 (over `passiveForTrigger`, never by position), the
 empower snapshot rides the transient runtime next to the lane, and
 the consume flag rides in the result: the entry asks the passive applier to consume
-that passive while the damage hook spends the snapshot on the next hit, and only
-when the plan saw one live, so empty hits never touch the window.
+that passive while the hit settle spends the snapshot on the next hit and returns the
+stamped bonus, landing only what it spent, and only when the plan saw one live, so
+empty hits never touch a window.
 Like every cast, firing plays its sound (see `Spellcast`): an anvil-land smash for the
 empower.
 _Avoid_: heal button, second ability
@@ -239,9 +243,12 @@ The decision of what one melee hit earns and settles, taken from definitions and
 transient state: whether the swing earns stacks (full swings only, spam earns zero),
 the stance deal and take mults (1.0 for anyone else), and the Impetus window bonus
 through the charged curve (0 outside the window). `planHit` decides the whole hit in
-field order — bump, Rush credit, Rend spend, Impetus bonus, combined mult — peeking one-shot flags the passive applier then settles at the same
-moment through `settleHitOneShots`, so the pairing the plan saw is the pairing that
-lands and empty hits never touch a window; Scutum plus Testudo reads
+field order — bump, Rush credit, Rend spend, Impetus bonus, combined mult — and the hit settle (`settleHitOneShots`) applies the first three in
+the same order at the same moment, returning the stamped Rend bonus for the entry
+to land, so the pairing the plan saw is the pairing that lands and empty hits never
+touch a window; the attacker branch (`settleAttackerHit`) owns the whole sequence
+(plan, settle, Rend bonus, Impetus bonus, combined mult) so the hook cannot reorder
+or half-apply it; Scutum plus Testudo reads
 x0.56, Gladius plus Impetus x1.5, named once in the plan rather than emerging in the
 entry. The server entry maps, adapters
 apply; the victim runtime arrives lazily, so a non-Legionary victim costs no transient
@@ -380,7 +387,7 @@ otherwise. Its rect comes from the card renderer's button math, never the screen
 _Avoid_: select button
 
 **Card text** (`ClassPresentation.CardText`, `cardTextFor`):
-The hover-independent card content: display name, tagline, lines (with kinds and styles), accent colour, button label/state, and tooltip. Resolved once per class definition per frame.
+The hover-independent card content: display name, tagline, lines (with kinds and styles), accent colour, button label/state, and tooltip. Resolved through the card model once per card per frame; buttons take it from the model at init.
 
 **Card style** (`ClassPresentation.CardStyle`, `cardStyleFor`):
 The hover-dependent visual layer: border colour, hover wash, locked veil, and name colour. Derived per frame from `isHovering`.
@@ -392,7 +399,8 @@ _Avoid_: card DTO, view model
 **Picker screen** (`client/ClassSelectScreen`):
 The picker itself: dimmed backdrop, one card per class in a row, one `Button` per card with its
 tooltip and active state, title, subtitle and the `Click a class to choose it` footer. It positions
-cards with the renderer's row math, sizes buttons with its button rect, resolves hover-independent `CardText` once per definition at init, and derives `CardStyle` per frame from `isHovering`;
+cards with the renderer's row math, sizes buttons with its button rect, and resolves one `CardModel`
+per card per frame (button label, active state and tooltip come from the model's text at init);
 how a card draws is the card renderer's business, and what a card says is the card text's. It never pauses and never closes on Esc.
 _Avoid_: GUI, menu
 
@@ -400,7 +408,7 @@ _Avoid_: GUI, menu
 Everything one class card looks like: body, accent strip, border, hover highlight for unlocked
 cards, veil for locked ones, and the name, tagline, divider and card lines. It also owns the row
 math (width, x, top), the button rect and the hover hit-test the screen positions cards with.
-The body draws from the card model's lines with the model's style; the screen passes the model,
+The frame and the body both draw from one card model; the screen passes the model,
 never the parts. Each line draws with
 the colour and weight it carries, so nothing here reads what a line says. Cards are 120x156 with
 10 inner padding and a 20-high button.

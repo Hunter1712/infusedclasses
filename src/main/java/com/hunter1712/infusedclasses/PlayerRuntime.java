@@ -18,8 +18,9 @@ public final class PlayerRuntime {
 	// ponytail: cooldowns reset on relog, persist to NBT if the reset becomes an exploit.
 	private final Cooldowns cooldowns = new Cooldowns();
 	// Ability windows: press timestamps plus their one-shot payloads. Rush carries a bare
-	// pending bonus, Rend a pending stack snapshot, the oath windows liveness only.
-	// Cleared with everything else, so switch and respawn never inherit a window.
+	// pending bonus, Rend a pending stack snapshot. One-shot: the melee plan peeks them
+	// and the hit settle spends them, so each bonus lands at most once. Cleared with
+	// everything else, so switch and respawn never inherit a window.
 	private final Window rushWindow = new Window();
 	private final Window rendWindow = new Window();
 	// Conditional-passive stacks: counts plus grace timestamps, keyed by the passive
@@ -29,8 +30,10 @@ public final class PlayerRuntime {
 	// The choice stays in PlayerClasses; this is where the body is, not the pick.
 	private RotateAbility.Stance stance = RotateAbility.Stance.SCUTUM;
 	// Oath windows: press timestamps (millis), each live 6s after its fired
-	// press. Milk-proof (timestamps, not effects); death ends them with
-	// everything else, so switch and respawn never inherit a window.
+	// press. Persistent, never consumed: every hit inside a live window earns, so the
+	// plan peeks them with isLive and nothing spends them. Milk-proof (timestamps, not
+	// effects); death ends them with everything else, so switch and respawn never
+	// inherit a window.
 	private final Window impetusWindow = new Window();
 	private final Window testudoWindow = new Window();
 
@@ -79,12 +82,12 @@ public final class PlayerRuntime {
 		return true;
 	}
 
-	/** Whether a fired Impetus window is still live. Expiry is silent. */
+	/** Whether a fired Impetus window is still live. Persistent: peeked every hit inside, never consumed. Expiry is silent. */
 	public boolean isImpetusLive(long now) {
 		return impetusWindow.isLive(ImpetusAbility.WINDOW_TICKS, now);
 	}
 
-	/** Whether a fired Testudo window is still live. Expiry is silent. */
+	/** Whether a fired Testudo window is still live. Persistent: peeked every hit inside, never consumed. Expiry is silent. */
 	public boolean isTestudoLive(long now) {
 		return testudoWindow.isLive(TestudoAbility.WINDOW_TICKS, now);
 	}
@@ -105,7 +108,7 @@ public final class PlayerRuntime {
 		return true;
 	}
 
-	/** Whether a fired Rush window is still live: press timestamp plus the ability's window. */
+	/** Whether a fired Rush window is still live: press timestamp plus the ability's window. Liveness only: a live window with its bonus already spent grants nothing. */
 	public boolean isRushLive(long now) {
 		return rushWindow.isLive(RushAbility.WINDOW_TICKS, now);
 	}
@@ -140,7 +143,7 @@ public final class PlayerRuntime {
 		return true;
 	}
 
-	/** Whether a fired Rend empower is still live: press timestamp plus the ability's window. */
+	/** Whether a fired Rend empower is still live: press timestamp plus the ability's window. Liveness only: a live window with its snapshot already spent lands nothing. */
 	public boolean isRendEmpowerLive(long now) {
 		return rendWindow.hasPending(RendAbility.WINDOW_TICKS, now);
 	}

@@ -44,48 +44,10 @@ final class ServerEvents {
 			if (DamageSettle.isResolving()) {
 				return;
 			}
-			// Attacker: a direct melee hit builds stacks for any class carrying an
-			// on-hit-dealt passive — full swings only, spam earns zero — and a full swing,
-			// inside a live Rush window with its bonus still pending, lands the engage
-			// bonus too. Rend and Impetus bonuses land through the shared charge
-			// curve, and Legionary deal/take mults settle as one extra hurt (or a
-			// heal-back when the stance discounts). Self-damage excluded by the
-			// attacker check, projectiles and spells by the direct check.
+			// Attacker and victim melee settle below in field order; this only routes.
 			if (source.getEntity() instanceof ServerPlayer attacker && source.getDirectEntity() == attacker
 					&& attacker != entity) {
-				ClassDefinition atkDef = PlayerClassAccess.of(attacker).currentDefinition();
-				if (atkDef != null) {
-					PlayerRuntime atkRuntime = InfusedClasses.runtime(attacker);
-					float charge = attacker.getAttackStrengthScale(0.0F);
-					// One plan, settled in field order: bump, Rush, Rend, Impetus, stance settle.
-					// The entry routes; the plan decides and the appliers apply.
-					ClassDefinition victimDef = entity instanceof ServerPlayer v
-							? PlayerClassAccess.of(v).currentDefinition() : null;
-					Supplier<PlayerRuntime> victimRt = entity instanceof ServerPlayer v2
-							? () -> InfusedClasses.runtime(v2) : null;
-					MeleePlan.HitPlan plan = MeleePlan.planHit(atkDef, atkRuntime, victimDef, victimRt, charge, now);
-					if (plan.bump()) {
-						atkRuntime.onTrigger(atkDef, ConditionalPassive.ON_HIT_DEALT, now, charge);
-					}
-					// One-shot flags settle where the plan peeked them, at the same now:
-					// the Rush credit grants and the Rend snapshot spends exactly when the
-					// plan saw them live, so empty hits never touch a window. Spam grants
-					// zero stacks; the pending bonus waits for a full swing.
-					PassiveApplier.settleHitOneShots(atkRuntime, atkDef, plan, now);
-					// Rend empower: the stamped bonus lands on this hit and only this one,
-					// applied through the adapter like every other outcome; the bonus is
-					// what the plan already decided, never recomputed.
-					if (plan.rendHp() > 0) {
-						DamageSettle.dealBonus(attacker, entity, plan.rendHp());
-					}
-					// Impetus: every melee hit inside the window earns the curve bonus.
-					if (plan.impetusBonus() > 0) {
-						DamageSettle.dealBonus(attacker, entity, plan.impetusBonus());
-					}
-					// Stance mults: attacker deal times victim take, settled at once.
-					// Scutum + Testudo read x0.56, Gladius + Impetus x1.5: see HitPlan.combined.
-					DamageSettle.settleMult(attacker, entity, baseDamageTaken, plan.combined());
-				}
+				settleAttackerHit(attacker, entity, baseDamageTaken, now);
 			} else if (entity instanceof ServerPlayer victim
 					&& source.getEntity() instanceof net.minecraft.world.entity.LivingEntity mobAttacker
 					&& !(mobAttacker instanceof ServerPlayer)
@@ -114,5 +76,45 @@ final class ServerEvents {
 				PassiveApplier.apply(player, def, runtime, now);
 			}
 		});
+	}
+
+	/**
+	 * One attacker melee hit, settled in field order: plan, settle (bump, Rush credit,
+	 * Rend spend), Rend bonus, Impetus bonus, stance settle. The sequence lives here so
+	 * the hook cannot reorder or half-apply it; the plan decides and the appliers apply.
+	 * A direct melee hit builds stacks for any class carrying an on-hit-dealt passive —
+	 * full swings only, spam earns zero — and a full swing inside a live Rush window
+	 * with its bonus still pending lands the engage bonus too. Self-damage excluded by
+	 * the attacker check, projectiles and spells by the direct check.
+	 */
+	private static void settleAttackerHit(ServerPlayer attacker, net.minecraft.world.entity.Entity entity,
+			float baseDamageTaken, long now) {
+		ClassDefinition atkDef = PlayerClassAccess.of(attacker).currentDefinition();
+		if (atkDef == null) {
+			return;
+		}
+		PlayerRuntime atkRuntime = InfusedClasses.runtime(attacker);
+		float charge = attacker.getAttackStrengthScale(0.0F);
+		ClassDefinition victimDef = entity instanceof ServerPlayer v
+				? PlayerClassAccess.of(v).currentDefinition() : null;
+		Supplier<PlayerRuntime> victimRt = entity instanceof ServerPlayer v2
+				? () -> InfusedClasses.runtime(v2) : null;
+		MeleePlan.HitPlan plan = MeleePlan.planHit(atkDef, atkRuntime, victimDef, victimRt, charge, now);
+		// The settle returns the stamped Rend bonus to land, so this lands what it spent.
+		// Spam grants zero stacks; the pending bonus waits for a full swing.
+		float rendHp = PassiveApplier.settleHitOneShots(atkRuntime, atkDef, plan, now);
+		// Rend empower: the stamped bonus lands on this hit and only this one,
+		// applied through the adapter like every other outcome; the bonus is
+		// what the plan already decided, never recomputed.
+		if (rendHp > 0) {
+			DamageSettle.dealBonus(attacker, entity, rendHp);
+		}
+		// Impetus: every melee hit inside the window earns the curve bonus.
+		if (plan.impetusBonus() > 0) {
+			DamageSettle.dealBonus(attacker, entity, plan.impetusBonus());
+		}
+		// Stance mults: attacker deal times victim take, settled at once.
+		// Scutum + Testudo read x0.56, Gladius + Impetus x1.5: see HitPlan.combined.
+		DamageSettle.settleMult(attacker, entity, baseDamageTaken, plan.combined());
 	}
 }

@@ -79,7 +79,8 @@ public class InfusedClasses implements ModInitializer {
 					// Rotate announces without fanfare on purpose: it carries no cast sound.
 					if (BindMorph.usesRotate(def)) {
 						RotateAbility.Result result = RotateAbility.fire(def, runtime, now);
-						AbilityApplier.announce(player, result.announcement(), true);
+						AbilityApplier.announceAndCast(player, result.announcement(),
+								result.kind() == RotateAbility.Kind.FIRED, null, true);
 						return;
 					}
 					RushAbility.Result result = RushAbility.fire(def, runtime, now);

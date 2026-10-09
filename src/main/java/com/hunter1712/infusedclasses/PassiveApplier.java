@@ -10,8 +10,11 @@ public final class PassiveApplier {
 	}
 
 	/**
-	 * One tick for one player: decay stacks, then make the attributes agree with the plan.
-	 * Idempotent: an attribute is only written when what is applied differs from what should be,
+	 * One tick for one player: the single reconcile home. Decay, then conditionals, then
+	 * the HP-scaled pair, then the stance aura, in that order; the switch cleanup mirrors
+	 * it in {@link #onClassChanged}. Stance rides here (not in the entry tick) so the tick
+	 * order and the write-only-on-change discipline are decided once. Idempotent: an
+	 * attribute is only written when what is applied differs from what should be,
 	 * so the modifier is created once and left alone while the stacks hold still.
 	 */
 	public static void apply(ServerPlayer player, ClassDefinition def, PlayerRuntime runtime, long now) {
@@ -125,23 +128,28 @@ public final class PassiveApplier {
 	}
 
 	/**
-	 * Settles a planned hit's one-shot flags at the same {@code now} the plan peeked them:
-	 * the Rush credit grants, the Rend snapshot spends, in field order with
-	 * {@link MeleePlan#planHit}. The entry routes the plan here instead of re-agreeing on
-	 * the peek guards itself, so the pairing the plan saw is the pairing that lands; empty
-	 * hits (no bonus pending, no snapshot live) touch no window. Bonus damage itself still
-	 * lands from the plan's stamped {@code rendHp}/{@code impetusBonus}, never recomputed.
+	 * Settles a planned hit's one-shot flags at the same {@code now} the plan peeked them,
+	 * in field order with {@link MeleePlan#planHit}: the stack bump, the Rush credit, then
+	 * the Rend snapshot spend. Returns the stamped Rend bonus for this hit to land, 0 when
+	 * the plan saw nothing live: the entry lands what this returns, so it cannot land a
+	 * bonus this did not spend, and empty hits never touch a window. Bonus damage itself
+	 * still lands from the plan's stamped {@code rendHp}, never recomputed.
 	 */
-	public static void settleHitOneShots(PlayerRuntime runtime, ClassDefinition def, MeleePlan.HitPlan plan,
+	public static float settleHitOneShots(PlayerRuntime runtime, ClassDefinition def, MeleePlan.HitPlan plan,
 			long now) {
 		if (runtime == null || plan == null) {
-			return;
+			return 0;
+		}
+		if (plan.bump()) {
+			// plan.bump() already gated on a full swing, so 1.0F replays the same gate.
+			runtime.onTrigger(def, ConditionalPassive.ON_HIT_DEALT, now, 1.0F);
 		}
 		if (plan.rushBonus()) {
 			grantRushBonus(runtime, def, now);
 		}
-		if (plan.rendStacks() > 0) {
-			runtime.consumeRendEmpower(now);
+		if (plan.rendStacks() > 0 && runtime.consumeRendEmpower(now) >= 0) {
+			return plan.rendHp();
 		}
+		return 0;
 	}
 }

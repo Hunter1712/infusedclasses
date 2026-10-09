@@ -35,7 +35,7 @@ class LegionaryTest {
 	void copyReflectsLiveNumbers() {
 		String tooltip = ClassPresentation.tooltipFor(legionary());
 
-		assertTrue(tooltip.contains("(R, " + (RotateAbility.ROTATE_MS / 1000) + "s)"));
+		assertTrue(tooltip.contains("(R, " + (Cooldowns.ROTATE_MS / 1000) + "s)"));
 		assertTrue(tooltip.contains("Announces Gladius!/Scutum!"));
 		assertTrue(tooltip.contains("+" + ConditionalPassive.amount(ImpetusAbility.IMPETUS_BONUS)));
 		assertTrue(tooltip.contains("x" + ImpetusAbility.IMPETUS_TAKEN_MULT));
@@ -89,9 +89,9 @@ class LegionaryTest {
 		assertEquals(1.0, RotateAbility.takeMult(RotateAbility.Stance.SCUTUM));
 		assertEquals(0.8, RotateAbility.dealMult(RotateAbility.Stance.SCUTUM));
 		assertEquals(1.0, RotateAbility.dealMult(RotateAbility.Stance.GLADIUS));
-		// Window factors (ImpetusAbility / TestudoAbility)
-		assertEquals(1.25, ImpetusAbility.IMPETUS_WINDOW_TAKE_FACTOR);
-		assertEquals(0.7, TestudoAbility.TESTUDO_WINDOW_DEAL_FACTOR);
+		// Window factors ride the same constants as the picker copy, so balance and copy cannot drift.
+		assertEquals(1.25, ImpetusAbility.IMPETUS_TAKEN_MULT);
+		assertEquals(0.7, TestudoAbility.TESTUDO_DEAL_MULT);
 	}
 
 	@Test

@@ -13,10 +13,8 @@ public final class ImpetusAbility {
 	public static final String NAME = "Impetus";
 	/** Hook bonus damage in HP inside the window, before the charge curve. */
 	public static final float IMPETUS_BONUS = 3.0F;
-	/** Tradeoff: melee taken x1.25 while live (x1.5 with the Gladius stance). */
+	/** Tradeoff: melee taken x1.25 while live (x1.5 with the Gladius stance). Single source for the melee plan and the picker copy, so the two cannot drift. */
 	public static final double IMPETUS_TAKEN_MULT = 1.25;
-	/** Window factor for incoming melee while Impetus is live: x1.25 taken. */
-	public static final double IMPETUS_WINDOW_TAKE_FACTOR = 1.25;
 	/** Payoff window in ticks: 6 seconds, tracked as a press timestamp on the runtime. */
 	public static final int WINDOW_TICKS = 120;
 	/** Cast sound id, resolved by the adapter; fail silent if missing. */

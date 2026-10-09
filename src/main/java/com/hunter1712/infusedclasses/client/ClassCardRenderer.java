@@ -59,8 +59,10 @@ public final class ClassCardRenderer {
 				&& mouseY >= cardY && mouseY < cardY + HEIGHT;
 	}
 
-	/** Body, accent strip, border, hover highlight and locked veil. Drawn behind the widgets. */
-	public static void drawFrame(GuiGraphics graphics, int x, int y, ClassPresentation.CardText text, ClassPresentation.CardStyle style) {
+	/** Body, accent strip, border, hover highlight and locked veil. Drawn behind the widgets. Takes the whole model, like the body pass, so the screen resolves once per card. */
+	public static void drawFrame(GuiGraphics graphics, int x, int y, ClassPresentation.CardModel model) {
+		ClassPresentation.CardText text = model.text();
+		ClassPresentation.CardStyle style = model.style();
 		int accent = text.accent();
 		int x1 = x + WIDTH;
 		int y1 = y + HEIGHT;
