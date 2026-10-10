@@ -4,14 +4,16 @@ import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents;
 import net.fabricmc.fabric.api.entity.event.v1.ServerPlayerEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
+import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.server.level.ServerPlayer;
 
 import java.util.function.Supplier;
 
 /**
- * Server event wiring for the entry: first-join picker, respawn copy, logout drop, hit trigger,
- * and the per-tick decay-plus-apply. Decisions stay in pure modules and application in adapters;
- * this only routes between them.
+ * Server event wiring for the entry: intent receivers, first-join picker, respawn copy,
+ * logout drop, hit trigger, and the per-tick decay-plus-apply. Decisions stay in pure modules
+ * and application in adapters; this only routes between them. The oath switch stays explicit
+ * here per ADR-0009: it moved home, it did not shrink.
  */
 final class ServerEvents {
 	private ServerEvents() {
@@ -72,9 +74,76 @@ final class ServerEvents {
 				}
 				PlayerRuntime runtime = InfusedClasses.runtime(player);
 				PassiveApplier.apply(player, def, runtime, now);
-				RushApplier.tick(player, runtime, now);
 			}
 		});
+	}
+
+	/**
+	 * Intent receivers: what a reused bind means per class plus the picker switch path.
+	 * Lives here with the hit sequence and the tick fan-out so all routing has one home;
+	 * the initializer keeps payload registration and delegates.
+	 */
+	static void registerReceivers() {
+		ServerPlayNetworking.registerGlobalReceiver(SelectClassPayload.TYPE, (payload, context) -> context.server()
+				.execute(() -> {
+					ServerPlayer player = context.player();
+					PlayerClasses classes = PlayerClassAccess.of(player);
+					ClassDefinition oldDef = classes.currentDefinition();
+					ClassDefinition def = classes.trySetClass(payload.classId());
+					if (def == null) {
+						AbilityApplier.announce(player, ChatLine.unknownOrLocked(), false);
+						return;
+					}
+					InfusedClasses.onClassChanged(player, oldDef, def);
+					context.responseSender().sendPacket(new ClassConfirmedPayload());
+					AbilityApplier.announce(player, ChatLine.classPicked(def.displayName()), false);
+				}));
+
+		ServerPlayNetworking.registerGlobalReceiver(RushPayload.TYPE, (payload, context) -> context.server()
+				.execute(() -> {
+					ServerPlayer player = context.player();
+					long now = System.currentTimeMillis();
+					PlayerClasses classes = PlayerClassAccess.of(player);
+					ClassDefinition def = classes.currentDefinition();
+					PlayerRuntime runtime = InfusedClasses.runtime(player);
+					// Legionary reuses the R bind as the rotate intent, so binds survive.
+					// Rotate announces without fanfare on purpose: it carries no cast sound.
+					if (BindMorph.usesRotate(def)) {
+						RotateAbility.Result result = RotateAbility.fire(def, runtime, now);
+						AbilityApplier.announceAndCast(player, result.announcement(),
+								result.kind() == RotateAbility.Kind.FIRED, null, true);
+						return;
+					}
+					RushAbility.Result result = RushAbility.fire(def, runtime, now);
+					RushApplier.apply(player, result);
+				}));
+
+		ServerPlayNetworking.registerGlobalReceiver(RendPayload.TYPE, (payload, context) -> context.server()
+				.execute(() -> {
+					ServerPlayer player = context.player();
+					long now = System.currentTimeMillis();
+					PlayerClasses classes = PlayerClassAccess.of(player);
+					ClassDefinition def = classes.currentDefinition();
+					PlayerRuntime runtime = InfusedClasses.runtime(player);
+					// Legionary reuses the G bind as the oath intent: every stance fires the ultimate.
+					switch (BindMorph.oathFor(def)) {
+						case AEQUILIBRIUM -> {
+							AequilibriumAbility.Result result = AequilibriumAbility.fire(def, runtime, now);
+							AbilityApplier.announceAndCast(player, result.announcement(),
+									result.kind() == AequilibriumAbility.Kind.FIRED, AequilibriumAbility.CAST_SOUND, true);
+						}
+						case REND -> {
+							RendAbility.Result result = RendAbility.fire(def, runtime, now);
+							AbilityApplier.announceAndCast(player, result.announcement(),
+									result.kind() == RendAbility.Kind.FIRED, RendAbility.CAST_SOUND, true);
+							// The adapter spends only the priced passive; a fizzle spends nothing.
+							// The empower damage lands on the next melee hit inside the window.
+							if (result.consume()) {
+								PassiveApplier.consumeSpent(player, runtime, def);
+							}
+						}
+					}
+				}));
 	}
 
 	/**

@@ -29,15 +29,14 @@ public final class PlayerRuntime {
 	// Legionary form: transient per ADR-0002, every Legionary enters in Scutum.
 	// The choice stays in PlayerClasses; this is where the body is, not the pick.
 	private RotateAbility.Stance stance = RotateAbility.Stance.SCUTUM;
-	// Flip record: when the last Rotate flipped and where it landed. The Impetus
-	// flip buff peeks it (flipped to Gladius inside 5s, one-shot through the pending
-	// flag below) and the Testudo buff peeks it (flipped to Scutum inside 1.5s,
-	// timed, never consumed). Stamped by flipStance, cleared with everything else.
-	private long flipAt = -1L;
+	// Flip record: the last Rotate flip as a window-family member on the same millis
+	// clock as every ability window. The Impetus flip buff peeks it (flipped to Gladius
+	// inside 5s, one-shot through the window's pending flag) and the Testudo buff peeks
+	// it (flipped to Scutum inside 1.5s, timed, never consumed). Stamped by flipStance,
+	// cleared with everything else. Pending is only ever read under a Gladius landing,
+	// so flipping to Scutum needs no extra clear.
+	private final Window flipWindow = new Window();
 	private RotateAbility.Stance flippedTo = null;
-	// Impetus one-shot: armed by flipping to Gladius, spent by the hit settle, so the
-	// buff lands at most once. Flipping away drops it with the stance that earned it.
-	private boolean impetusPending;
 	// Aequilibrium window: press timestamp (millis), live 6s after its fired press.
 	// Persistent, never consumed: every tick inside a live window wears the aura, so the
 	// applier peeks it with isLive and nothing spends it. Milk-proof (timestamps, not
@@ -54,8 +53,7 @@ public final class PlayerRuntime {
 	public void flipStance(long now, RotateAbility.Stance landing) {
 		stance = landing;
 		flippedTo = landing;
-		flipAt = now;
-		impetusPending = landing == RotateAbility.Stance.GLADIUS;
+		flipWindow.arm(now);
 	}
 
 	// Joint arms: lane plus window stamped together, so a fired press can never arm
@@ -85,7 +83,7 @@ public final class PlayerRuntime {
 
 	/** Whether a fired Aequilibrium window is still live. Persistent: peeked while live, never consumed. Expiry is silent. */
 	public boolean isAequilibriumLive(long now) {
-		return aequilibriumWindow.isLive(AequilibriumAbility.WINDOW_TICKS, now);
+		return aequilibriumWindow.isLive(AequilibriumAbility.WINDOW_TICKS * 50L, now);
 	}
 
 	/**
@@ -93,8 +91,8 @@ public final class PlayerRuntime {
 	 * Armed by flipping to Gladius, live 5s, one-shot through the pending flag.
 	 */
 	public boolean hasImpetusPending(long now) {
-		return impetusPending && flippedTo == RotateAbility.Stance.GLADIUS
-				&& flipAt >= 0 && now - flipAt < ImpetusAbility.SWITCH_DEAL_MS;
+		return flippedTo == RotateAbility.Stance.GLADIUS
+				&& flipWindow.hasPending(ImpetusAbility.SWITCH_DEAL_MS, now);
 	}
 
 	/**
@@ -102,11 +100,8 @@ public final class PlayerRuntime {
 	 * false when nothing was owed. An unswung flip simply stops being live.
 	 */
 	public boolean consumeImpetusBonus(long now) {
-		if (!hasImpetusPending(now)) {
-			return false;
-		}
-		impetusPending = false;
-		return true;
+		return flippedTo == RotateAbility.Stance.GLADIUS
+				&& flipWindow.consume(ImpetusAbility.SWITCH_DEAL_MS, now);
 	}
 
 	/**
@@ -115,7 +110,7 @@ public final class PlayerRuntime {
 	 */
 	public boolean isTestudoBuffLive(long now) {
 		return flippedTo == RotateAbility.Stance.SCUTUM
-				&& flipAt >= 0 && now - flipAt < TestudoAbility.SWITCH_TAKE_MS;
+				&& flipWindow.isLive(TestudoAbility.SWITCH_TAKE_MS, now);
 	}
 
 	// Lane reads: mechanical forwards over the hidden Cooldowns, so ability decisions
@@ -139,17 +134,17 @@ public final class PlayerRuntime {
 	 * false when nothing was owed. A stale window with no bonus left grants nothing.
 	 */
 	public boolean consumeRushBonus(long now) {
-		return rushWindow.consume(RushAbility.WINDOW_TICKS, now);
+		return rushWindow.consume(RushAbility.WINDOW_TICKS * 50L, now);
 	}
 
 	/** Peeks the Rush bonus without consuming: what the melee plan decides on. */
 	public boolean hasRushBonusPending(long now) {
-		return rushWindow.hasPending(RushAbility.WINDOW_TICKS, now);
+		return rushWindow.hasPending(RushAbility.WINDOW_TICKS * 50L, now);
 	}
 
 	/** Whether a fired Rush window is still live: the stride aura rides it, spent bonus or not. */
 	public boolean isRushLive(long now) {
-		return rushWindow.isLive(RushAbility.WINDOW_TICKS, now);
+		return rushWindow.isLive(RushAbility.WINDOW_TICKS * 50L, now);
 	}
 
 	public long rendRemaining(long now) {
@@ -171,7 +166,7 @@ public final class PlayerRuntime {
 
 	/** Peeks the empower snapshot without consuming: what the melee plan decides on. -1 when nothing is owed. */
 	public int peekRendEmpowerStacks(long now) {
-		return rendWindow.peekPayload(RendAbility.WINDOW_TICKS, now);
+		return rendWindow.peekPayload(RendAbility.WINDOW_TICKS * 50L, now);
 	}
 
 	/**
@@ -180,33 +175,32 @@ public final class PlayerRuntime {
 	 * the stacks it cost are already gone.
 	 */
 	public int consumeRendEmpower(long now) {
-		return rendWindow.consumePayload(RendAbility.WINDOW_TICKS, now);
+		return rendWindow.consumePayload(RendAbility.WINDOW_TICKS * 50L, now);
 	}
 
 	/** Reset for class switch: a new class starts empty. The adapter calls this, not ability callers. */
 	public void resetCooldowns() {
 		cooldowns.reset();
-		for (Window w : new Window[]{rushWindow, rendWindow, aequilibriumWindow}) {
+		for (Window w : new Window[]{rushWindow, rendWindow, aequilibriumWindow, flipWindow}) {
 			w.clear();
 		}
-		flipAt = -1L;
 		flippedTo = null;
-		impetusPending = false;
 		stance = RotateAbility.Stance.SCUTUM;
 	}
 
 	/**
 	 * One ability window: a press timestamp plus its one-shot payload, live for the ability's
 	 * window after a fired press. Cleared with everything else, so switch and respawn never
-	 * inherit a window. Ticks ride as 50ms each.
+	 * inherit a window. One clock throughout: durations arrive in millis, so tick windows
+	 * convert at their call sites and flip windows pass their millis constants straight in.
 	 */
 	private static final class Window {
 		private long pressedAt = -1L;
 		private boolean pending;
 		private int payload;
 
-		boolean isLive(int windowTicks, long now) {
-			return pressedAt >= 0 && now - pressedAt < windowTicks * 50L;
+		boolean isLive(long windowMs, long now) {
+			return pressedAt >= 0 && now - pressedAt < windowMs;
 		}
 
 		void arm(long now) {
@@ -220,24 +214,24 @@ public final class PlayerRuntime {
 			this.payload = payload;
 		}
 
-		boolean hasPending(int windowTicks, long now) {
-			return pending && isLive(windowTicks, now);
+		boolean hasPending(long windowMs, long now) {
+			return pending && isLive(windowMs, now);
 		}
 
-		boolean consume(int windowTicks, long now) {
-			if (!hasPending(windowTicks, now)) {
+		boolean consume(long windowMs, long now) {
+			if (!hasPending(windowMs, now)) {
 				return false;
 			}
 			pending = false;
 			return true;
 		}
 
-		int peekPayload(int windowTicks, long now) {
-			return hasPending(windowTicks, now) ? payload : -1;
+		int peekPayload(long windowMs, long now) {
+			return hasPending(windowMs, now) ? payload : -1;
 		}
 
-		int consumePayload(int windowTicks, long now) {
-			int seen = peekPayload(windowTicks, now);
+		int consumePayload(long windowMs, long now) {
+			int seen = peekPayload(windowMs, now);
 			if (seen < 0) {
 				return -1;
 			}

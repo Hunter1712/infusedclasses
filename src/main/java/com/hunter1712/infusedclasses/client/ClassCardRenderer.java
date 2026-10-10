@@ -154,21 +154,23 @@ public final class ClassCardRenderer {
 	 * Greedy word wrap over the full line, tracking the name/desc split by character
 	 * offset so tone follows meaning, not row number. Names always fit row one.
 	 */
-	static List<TextRow> wrapRows(Font font, String name, String desc, int wrapW) {
-		String prefix = desc == null || desc.isEmpty() ? name : name + " \u2014 ";
-		String full = desc == null || desc.isEmpty() ? name : prefix + desc;
+	static List<TextRow> wrapRows(Font font, ClassPresentation.CardLine line, int wrapW) {
+		// The join lives in CardLine.text: the split is derived from it, never rebuilt.
+		String full = line.text();
+		String desc = line.desc();
+		int prefixLength = desc == null || desc.isEmpty() ? full.length() : full.length() - desc.length();
 		List<TextRow> rows = new ArrayList<>();
 		StringBuilder row = new StringBuilder();
 		for (String word : full.split(" ")) {
 			String add = row.isEmpty() ? word : " " + word;
 			if (!row.isEmpty() && font.width(row.toString() + add) > wrapW) {
-				rows.add(new TextRow(row.toString(), descStartFor(rows.size(), row.length(), prefix.length())));
+				rows.add(new TextRow(row.toString(), descStartFor(rows.size(), row.length(), prefixLength)));
 				row = new StringBuilder(word);
 			} else {
 				row.append(add);
 			}
 		}
-		rows.add(new TextRow(row.toString(), descStartFor(rows.size(), row.length(), prefix.length())));
+		rows.add(new TextRow(row.toString(), descStartFor(rows.size(), row.length(), prefixLength)));
 		return rows;
 	}
 
@@ -251,7 +253,7 @@ public final class ClassCardRenderer {
 			net.minecraft.network.chat.Style rowStyle = line.style().bold()
 					? net.minecraft.network.chat.Style.EMPTY.withBold(true)
 					: net.minecraft.network.chat.Style.EMPTY;
-			for (TextRow row : wrapRows(font, line.name(), line.desc(), card.w() - PAD * 2)) {
+			for (TextRow row : wrapRows(font, line, card.w() - PAD * 2)) {
 				int y = top + rows * ROW_H - scrollPx;
 				if (y >= top && y + 9 <= stop) {
 					String head = row.text().substring(0, row.descStart());

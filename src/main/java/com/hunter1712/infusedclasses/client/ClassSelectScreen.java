@@ -36,6 +36,9 @@ public class ClassSelectScreen extends Screen {
 	private int page;
 	private int scrollPx;
 	private int lastMaxScroll;
+	// One card model per frame: the background pass resolves it, the body pass reuses it,
+	// so cardLinesFor runs once instead of twice. Background always runs first per frame.
+	private ClassPresentation.CardModel frameModel;
 
 	public ClassSelectScreen(String currentClassId) {
 		super(Component.literal(TITLE));
@@ -93,8 +96,8 @@ public class ClassSelectScreen extends Screen {
 		}
 		ClassCardRenderer.CardRect card = ClassCardRenderer.focusedCard(width, height);
 		ClassDefinition def = classes.get(page);
-		ClassCardRenderer.drawFrame(graphics, card,
-				ClassPresentation.cardFor(def, ClassCardRenderer.isHovering(card, mouseX, mouseY)));
+		frameModel = ClassPresentation.cardFor(def, ClassCardRenderer.isHovering(card, mouseX, mouseY));
+		ClassCardRenderer.drawFrame(graphics, card, frameModel);
 	}
 
 	@Override
@@ -111,8 +114,10 @@ public class ClassSelectScreen extends Screen {
 		ClassDefinition def = classes.get(page);
 		boolean hovered = ClassCardRenderer.isHovering(card, mouseX, mouseY);
 		scrollPx = ClassCardRenderer.clampScroll(scrollPx, lastMaxScroll);
+		ClassPresentation.CardModel model = frameModel != null ? frameModel
+				: ClassPresentation.cardFor(def, hovered);
 		ClassCardRenderer.BodyLayout layout =
-				ClassCardRenderer.drawBody(graphics, font, card, ClassPresentation.cardFor(def, hovered), scrollPx);
+				ClassCardRenderer.drawBody(graphics, font, card, model, scrollPx);
 		lastMaxScroll = layout.maxScroll();
 		ClassCardRenderer.ButtonRect bar = ClassCardRenderer.scrollBar(card, layout, scrollPx);
 		if (bar != null) {

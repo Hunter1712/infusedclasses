@@ -54,10 +54,11 @@ public final class DamageSettle {
 	 */
 	public static void settleMobTake(ServerPlayer victim, LivingEntity mobAttacker, float baseDamageTaken,
 			double take) {
-		if (victim == null || mobAttacker == null || !victim.isAlive() || take == 1.0) {
+		if (victim == null || mobAttacker == null) {
 			return;
 		}
 		DamageSource source = mobAttacker.damageSources().mobAttack(mobAttacker);
+		// Alive and 1.0 guards ride in the core, not here.
 		settleWithSource(victim, baseDamageTaken, take, source);
 	}
 

@@ -2,9 +2,6 @@ package com.hunter1712.infusedclasses;
 
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
-import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
-import net.minecraft.ChatFormatting;
-import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 
 /** Server side. Authoritative: client sends intents, every decision happens here. */
@@ -17,7 +14,7 @@ public class InfusedClasses implements ModInitializer {
 	public void onInitialize() {
 		registerPayloads();
 		ServerEvents.register();
-		registerReceivers();
+		ServerEvents.registerReceivers();
 		ClassCommands.register();
 	}
 
@@ -50,68 +47,5 @@ public class InfusedClasses implements ModInitializer {
 		}
 		PlayerRuntime runtime = runtime(player);
 		PassiveApplier.onClassChanged(player, runtime, oldDef, newDef);
-	}
-
-	private static void registerReceivers() {
-		ServerPlayNetworking.registerGlobalReceiver(SelectClassPayload.TYPE, (payload, context) -> context.server()
-				.execute(() -> {
-					ServerPlayer player = context.player();
-					PlayerClasses classes = PlayerClassAccess.of(player);
-					ClassDefinition oldDef = classes.currentDefinition();
-					ClassDefinition def = classes.trySetClass(payload.classId());
-					if (def == null) {
-						AbilityApplier.announce(player, ChatLine.unknownOrLocked(), false);
-						return;
-					}
-					onClassChanged(player, oldDef, def);
-					context.responseSender().sendPacket(new ClassConfirmedPayload());
-					AbilityApplier.announce(player, ChatLine.classPicked(def.displayName()), false);
-				}));
-
-		ServerPlayNetworking.registerGlobalReceiver(RushPayload.TYPE, (payload, context) -> context.server()
-				.execute(() -> {
-					ServerPlayer player = context.player();
-					long now = System.currentTimeMillis();
-					PlayerClasses classes = PlayerClassAccess.of(player);
-					ClassDefinition def = classes.currentDefinition();
-					PlayerRuntime runtime = runtime(player);
-					// Legionary reuses the R bind as the rotate intent, so binds survive.
-					// Rotate announces without fanfare on purpose: it carries no cast sound.
-					if (BindMorph.usesRotate(def)) {
-						RotateAbility.Result result = RotateAbility.fire(def, runtime, now);
-						AbilityApplier.announceAndCast(player, result.announcement(),
-								result.kind() == RotateAbility.Kind.FIRED, null, true);
-						return;
-					}
-					RushAbility.Result result = RushAbility.fire(def, runtime, now);
-					RushApplier.apply(player, result);
-				}));
-
-		ServerPlayNetworking.registerGlobalReceiver(RendPayload.TYPE, (payload, context) -> context.server()
-				.execute(() -> {
-					ServerPlayer player = context.player();
-					long now = System.currentTimeMillis();
-					PlayerClasses classes = PlayerClassAccess.of(player);
-					ClassDefinition def = classes.currentDefinition();
-					PlayerRuntime runtime = runtime(player);
-					// Legionary reuses the G bind as the oath intent: every stance fires the ultimate.
-					switch (BindMorph.oathFor(def)) {
-						case AEQUILIBRIUM -> {
-							AequilibriumAbility.Result result = AequilibriumAbility.fire(def, runtime, now);
-							AbilityApplier.announceAndCast(player, result.announcement(),
-									result.kind() == AequilibriumAbility.Kind.FIRED, AequilibriumAbility.CAST_SOUND, true);
-						}
-						case REND -> {
-							RendAbility.Result result = RendAbility.fire(def, runtime, now);
-							AbilityApplier.announceAndCast(player, result.announcement(),
-									result.kind() == RendAbility.Kind.FIRED, RendAbility.CAST_SOUND, true);
-							// The adapter spends only the priced passive; a fizzle spends nothing.
-							// The empower damage lands on the next melee hit inside the window.
-							if (result.consume()) {
-								PassiveApplier.consumeSpent(player, runtime, def);
-							}
-						}
-					}
-				}));
 	}
 }

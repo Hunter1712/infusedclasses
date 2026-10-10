@@ -44,12 +44,17 @@ final class StanceApplier {
 
 	/** Every stance/window modifier in one place: leaving Legionary takes them all off. */
 	static void removeStanceModifiers(ServerPlayer player) {
+		for (PassiveEffect.Modifier stale : allModifiers()) {
+			AttributeWriter.remove(player, stale.attribute(), stale.modifierId());
+		}
+	}
+
+	/** The full set both sides draw from, so write and remove cannot drift apart. */
+	private static List<PassiveEffect.Modifier> allModifiers() {
 		List<PassiveEffect.Modifier> all = new ArrayList<>(RotateAbility.auraFor(RotateAbility.Stance.GLADIUS));
 		all.addAll(RotateAbility.auraFor(RotateAbility.Stance.SCUTUM));
 		all.addAll(AequilibriumAbility.windowModifiers());
-		for (PassiveEffect.Modifier stale : all) {
-			AttributeWriter.remove(player, stale.attribute(), stale.modifierId());
-		}
+		return all;
 	}
 
 	/**

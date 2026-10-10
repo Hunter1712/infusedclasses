@@ -11,8 +11,8 @@ public final class PassiveApplier {
 
 	/**
 	 * One tick for one player: the single reconcile home. Decay, then conditionals, then
-	 * the HP-scaled pair, then the stance aura, in that order; the switch cleanup mirrors
-	 * it in {@link #onClassChanged}. Stance rides here (not in the entry tick) so the tick
+	 * the HP-scaled pair, then the stance aura, then the stride aura, in that order; the switch cleanup mirrors
+	 * it in {@link #onClassChanged}. Stance and stride ride here (not in the entry tick) so the tick
 	 * order and the write-only-on-change discipline are decided once. Idempotent: an
 	 * attribute is only written when what is applied differs from what should be,
 	 * so the modifier is created once and left alone while the stacks hold still.
@@ -34,6 +34,7 @@ public final class PassiveApplier {
 		// ponytail: no max-health tick until a class carries one (all read 0.0 today).
 		// A class that sets maxHealthBonus re-adds one plan computation here; nothing else writes it.
 		StanceApplier.applyStance(player, def, runtime, now);
+		RushApplier.tick(player, runtime, now);
 	}
 
 	/**
