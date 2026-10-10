@@ -121,8 +121,8 @@ _Avoid_: buff, stackable stat
 **Vigor** (`HpScaledPassive`):
 The Juggernaut's HP-scaled passive pair: current HP maps to stepped buckets, 10% per step
 over 10 steps, each step adding a fixed bonus on top of a floor — +0.3 attack damage
-from -1.0 (`infusedclasses:vigor_damage`, -1 at 0 HP, +2.0 full) and +0.05 attack speed
-from 0.0 (`infusedclasses:vigor_speed`, max +0.5).
+from -1.0 (`infusedclasses:vigor_damage`, -1 at 0 HP, +2.0 full) and +0.075 attack speed
+from -0.25 (`infusedclasses:vigor_speed`, -0.25 at 0 HP, +0.5 full).
 The pair reads as one `Vigor` line on the card (see `HpScaledPassive.group`),
 with both bonus descs joined, so one passive never looks like two.
 Recomputed every tick from live HP, transient and never saved; Rend spends

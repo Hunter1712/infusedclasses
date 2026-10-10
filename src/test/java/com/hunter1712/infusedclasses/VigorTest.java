@@ -62,7 +62,7 @@ class VigorTest {
 	void bonusIsBasePlusBucketTimesPerStep() {
 		assertEquals(0.5, PassiveEffect.forBucket(damage(), 5).amount());
 		assertEquals(2.0, PassiveEffect.forBucket(damage(), 10).amount());
-		assertEquals(0.25, PassiveEffect.forBucket(speed(), 5).amount());
+		assertEquals(0.125, PassiveEffect.forBucket(speed(), 5).amount(), 1e-9);
 		assertEquals(0.5, PassiveEffect.forBucket(speed(), 10).amount());
 	}
 
@@ -101,8 +101,8 @@ class VigorTest {
 		assertEquals(0.3, pair.get(0).perStep());
 		assertEquals(-1.0, pair.get(0).baseBonus());
 		assertEquals("Vigor Speed", pair.get(1).name());
-		assertEquals(0.05, pair.get(1).perStep());
-		assertEquals(0.0, pair.get(1).baseBonus());
+		assertEquals(0.075, pair.get(1).perStep());
+		assertEquals(-0.25, pair.get(1).baseBonus());
 
 		ConditionalPassive momentum = juggernaut().passives().get(0);
 		assertEquals(1, juggernaut().passives().size());
@@ -115,7 +115,7 @@ class VigorTest {
 	void copyIsGeneratedFromTheNumbers() {
 		assertEquals("HP-scaled: -1 at 0 HP to +2 full HP.",
 				damage().fullDesc());
-		assertEquals("HP-scaled: 0 at 0 HP to +0.5 full HP.",
+		assertEquals("HP-scaled: -0.25 at 0 HP to +0.5 full HP.",
 				speed().fullDesc());
 	}
 
