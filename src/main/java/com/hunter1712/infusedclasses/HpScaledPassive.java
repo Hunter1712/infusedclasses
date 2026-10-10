@@ -41,10 +41,10 @@ public record HpScaledPassive(
 		return Math.max(0, Math.min(STEPS, (int) Math.floor(currentHp / maxHp * STEPS + 1e-9)));
 	}
 
-	/** Full picker copy, generated from the numbers so it cannot drift from behaviour. */
+	/** Short picker copy, generated from the numbers so it cannot drift from behaviour. */
 	public String fullDesc() {
-		return "Each 10% current HP grants +" + ConditionalPassive.amount(perStep)
+		return "Per 10% HP: +" + ConditionalPassive.amount(perStep)
 				+ " " + ConditionalPassive.wordFor(attribute)
-				+ " (max +" + ConditionalPassive.amount(perStep * STEPS) + " at full HP).";
+				+ " (max +" + ConditionalPassive.amount(perStep * STEPS) + " full HP).";
 	}
 }

@@ -22,8 +22,6 @@ public final class RendAbility {
 	public static final int WINDOW_TICKS = 120;
 	/** Cast sound id, resolved by the adapter; the anvil land is the empower. */
 	public static final Identifier CAST_SOUND = Identifier.withDefaultNamespace("block.anvil.land");
-	/** Picker-copy tail evoking the cast sound, kept next to {@link #CAST_SOUND} so the two change together. */
-	public static final String CAST_WORD = "Smash!";
 
 	public enum Kind {
 		FIRED,

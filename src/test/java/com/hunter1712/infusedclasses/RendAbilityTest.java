@@ -35,7 +35,6 @@ class RendAbilityTest {
 		assertEquals(7.0F, RendAbility.empowerFor(1));
 		assertEquals(16.0F, RendAbility.empowerFor(10));
 		assertEquals("minecraft:block.anvil.land", RendAbility.CAST_SOUND.toString());
-		assertEquals("Smash!", RendAbility.CAST_WORD);
 	}
 
 	@Test

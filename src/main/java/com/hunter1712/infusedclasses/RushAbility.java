@@ -23,8 +23,6 @@ public final class RushAbility {
 	public static final Identifier SPEED_EFFECT = Identifier.withDefaultNamespace("speed");
 	/** Cast sound id, resolved by the adapter; the wind burst is the engage. */
 	public static final Identifier CAST_SOUND = Identifier.withDefaultNamespace("entity.wind_charge.wind_burst");
-	/** Picker-copy tail evoking the cast sound, kept next to {@link #CAST_SOUND} so the two change together. */
-	public static final String CAST_WORD = "Whoosh!";
 
 	public enum Kind {
 		FIRED,

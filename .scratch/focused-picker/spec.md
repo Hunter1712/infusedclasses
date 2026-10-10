@@ -64,3 +64,4 @@ A focused picker: one large fullscreen class card per page with full description
 
 - The screenshot that motivated this showed the outer two cards of the four-card row clipped with truncated taglines and buttons; the focused layout removes the overflow class entirely rather than tuning fixed widths.
 - Deleting rather than hiding unimplemented classes is deliberate per grilling: no veil, no coming-soon notice, no locked button anywhere.
+- Follow-up (grill round 2): copy trimmed short (tails gone, numbers kept, actives capped at 200 chars by test) plus wheel scroll with a thin scrollbar for the rest. Continuations draw dimmed, card max 520px, Select stays pinned, new pages open at top.

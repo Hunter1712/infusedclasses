@@ -111,9 +111,9 @@ class VigorTest {
 
 	@Test
 	void copyIsGeneratedFromTheNumbers() {
-		assertEquals("Each 10% current HP grants +0.3 attack damage (max +3 at full HP).",
+		assertEquals("Per 10% HP: +0.3 attack damage (max +3 full HP).",
 				damage().fullDesc());
-		assertEquals("Each 10% current HP grants +0.05 attack speed (max +0.5 at full HP).",
+		assertEquals("Per 10% HP: +0.05 attack speed (max +0.5 full HP).",
 				speed().fullDesc());
 	}
 

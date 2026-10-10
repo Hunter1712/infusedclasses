@@ -18,7 +18,7 @@ public final class ImpetusAbility {
 
 	/** Picker copy, generated from the numbers so it cannot drift from behaviour. */
 	public static String desc() {
-		return "Flip buff: after flipping to Gladius, your next melee hit deals x" + SWITCH_DEAL_MULT
-				+ " at any charge (" + (SWITCH_DEAL_MS / 1000) + "s, one-shot).";
+		return "Flip to Gladius: next hit x" + SWITCH_DEAL_MULT
+				+ ", any charge (" + (SWITCH_DEAL_MS / 1000) + "s, one-shot).";
 	}
 }

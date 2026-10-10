@@ -72,11 +72,14 @@ _Avoid_: message, notification
 
 **Picker copy** (`ConditionalPassive.fullDesc`):
 The decision of what a conditional passive's picker copy says, generated from its own numbers so it
-cannot drift from behaviour. Every detail line shows name plus full
-form. The two triggers the mod emits are described as events ("Taking a hit
-grants 1 stack" for `on_hit_taken`, "Landing a hit grants 1 stack" for `on_hit_dealt`);
-any other trigger reads as the bare trigger. Whole numbers read
-as `1`, not `1.0`, and the drop reads as instant (`lose all stacks`).
+cannot drift from behaviour. Every detail line shows name plus short copy
+(`Land a hit: +1 armor (max 10). 5s no hit: lose all.`).
+Copy stays short on purpose: every active desc holds at most 200 chars, pinned by
+test, so full kits fit the focused card with little scroll.
+The two triggers the mod emits are described as events ("Land a hit"
+for `on_hit_dealt`, "Take a hit" for `on_hit_taken`);
+any other trigger reads as the bare `Trigger`. Whole numbers read
+as `1`, not `1.0`.
 _Avoid_: description, lore text
 
 ### Classes, passives and stacks
@@ -411,9 +414,12 @@ _Avoid_: GUI, menu
 
 **Card renderer** (`client/ClassCardRenderer`):
 Everything the focused card looks like: body, accent strip, border and hover highlight,
-plus the name, tagline, divider and wrapped detail lines. It also owns the focused
-math (centered card rectangle as a proportion of screen size, pinned select rect,
+plus the name, tagline, divider and wrapped detail lines. The first wrapped row
+of a line draws in its own color, continuations draw dimmed so names scan. It also owns the focused
+math (centered card rectangle, two-thirds width up to 520, pinned select rect,
 side arrows, dot row, title/subtitle/footer anchors) and the hover hit-test the screen positions with.
+Rows past the visible slice scroll under the wheel with a thin scrollbar; the
+pinned select never moves, and a new page always opens at the top.
 The frame and the body both draw from one card model; the screen passes the model,
 never the parts. Each visual line draws with
 the colour and weight it carries, so nothing here reads what a line says. Long lines

@@ -28,11 +28,12 @@ public record ConditionalPassive(
 	public static final String ON_HIT_TAKEN = "on_hit_taken";
 	/** The trigger the Juggernaut feeds by landing a hit. Same guarantee as the hit-taken one. */
 	public static final String ON_HIT_DEALT = "on_hit_dealt";
-	/** Full picker copy. Generated from the numbers so it cannot drift from behaviour. */
+	/** Short picker copy. Generated from the numbers so it cannot drift from behaviour. */
 	public String fullDesc() {
 		TriggerPhrasing said = phrasing();
-		return said.earn() + " (max " + maxStacks + "). Each stack adds +" + amount(perStack)
-				+ " " + word() + ". After " + graceSeconds + "s " + said.idle() + ", lose all stacks.";
+		return said.earn() + ": +" + amount(perStack)
+				+ " " + word() + " (max " + maxStacks + "). "
+				+ graceSeconds + "s " + said.idle() + ": lose all.";
 	}
 
 	/**
@@ -45,9 +46,9 @@ public record ConditionalPassive(
 
 	private TriggerPhrasing phrasing() {
 		return switch (trigger) {
-			case ON_HIT_TAKEN -> new TriggerPhrasing("Taking a hit grants 1 stack", "without a hit");
-			case ON_HIT_DEALT -> new TriggerPhrasing("Landing a hit grants 1 stack", "without landing a hit");
-			default -> new TriggerPhrasing("Each trigger grants 1 stack", "without a trigger");
+			case ON_HIT_TAKEN -> new TriggerPhrasing("Take a hit", "no hit");
+			case ON_HIT_DEALT -> new TriggerPhrasing("Land a hit", "no hit");
+			default -> new TriggerPhrasing("Trigger", "no trigger");
 		};
 	}
 

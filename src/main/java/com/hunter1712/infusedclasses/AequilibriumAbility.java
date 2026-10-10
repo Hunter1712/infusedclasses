@@ -66,10 +66,10 @@ public final class AequilibriumAbility {
 
 	/** Picker copy, generated from the numbers so it cannot drift from behaviour. */
 	public static String desc() {
-		return "In any stance: +" + ConditionalPassive.amount(EDGE_BONUS)
-				+ " attack damage and +" + ConditionalPassive.amount(PLATE_BONUS)
-				+ " armor for " + (WINDOW_TICKS / 20) + "s, no downside (G, shares "
-				+ (Cooldowns.OATH_MS / 1000) + "s oath). " + NAME + "!";
+		return "Any stance: +" + ConditionalPassive.amount(EDGE_BONUS)
+				+ " damage, +" + ConditionalPassive.amount(PLATE_BONUS)
+				+ " armor, " + (WINDOW_TICKS / 20) + "s (G, "
+				+ (Cooldowns.OATH_MS / 1000) + "s oath). No downside.";
 	}
 
 	/** Decides firing for Legionaries off the shared oath lane, in either stance. Pure and read-only: only {@link #fire} arms the lane and the window. */

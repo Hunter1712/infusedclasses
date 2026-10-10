@@ -18,7 +18,7 @@ public final class TestudoAbility {
 
 	/** Picker copy, generated from the numbers so it cannot drift from behaviour. */
 	public static String desc() {
-		return "Flip buff: after flipping to Scutum, melee taken x" + SWITCH_TAKE_MULT
+		return "Flip to Scutum: take x" + SWITCH_TAKE_MULT
 				+ " for " + ConditionalPassive.amount(SWITCH_TAKE_MS / 1000.0) + "s.";
 	}
 }

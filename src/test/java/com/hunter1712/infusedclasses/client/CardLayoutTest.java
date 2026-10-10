@@ -32,13 +32,53 @@ class CardLayoutTest {
 
 	@Test
 	void focusedCardIsCentredAndContained() {
-		for (int[] size : new int[][]{{854, 480}, {1280, 720}, {320, 240}}) {
+		for (int[] size : new int[][]{{854, 480}, {1280, 720}, {426, 240}, {320, 240}}) {
 			CardRect card = ClassCardRenderer.focusedCard(size[0], size[1]);
 
 			assertTrue(Math.abs((card.x() + card.w() / 2) - size[0] / 2) <= 1, "card centred");
 			assertOnScreen(size[0], size[1], card);
 			assertWidgetsOnScreen(size[0], size[1], card, 2);
 		}
+	}
+
+	@Test
+	void wideCardStaysInsideTheMax() {
+		CardRect card = ClassCardRenderer.focusedCard(1920, 1080);
+
+		assertEquals(520, card.w());
+		assertTrue(card.x() >= 0 && card.x() + card.w() <= 1920);
+	}
+
+	@Test
+	void scrollClampsAndScrollbarShowsOnlyOnOverflow() {
+		CardRect card = ClassCardRenderer.focusedCard(854, 480);
+
+		assertEquals(0, ClassCardRenderer.clampScroll(-5, 100));
+		assertEquals(100, ClassCardRenderer.clampScroll(999, 100));
+		assertEquals(30, ClassCardRenderer.clampScroll(30, 100));
+		assertEquals(0, ClassCardRenderer.clampScroll(10, 0));
+
+		assertEquals(null, ClassCardRenderer.scrollBar(card,
+				ClassCardRenderer.layoutFor(card, 5), 0));
+
+		int rows = 60;
+		var layout = ClassCardRenderer.layoutFor(card, rows);
+		assertTrue(layout.maxScroll() > 0);
+		var bar = ClassCardRenderer.scrollBar(card, layout, 0);
+		assertTrue(bar != null);
+		assertTrue(bar.y() >= ClassCardRenderer.bodyTop(card));
+		assertTrue(bar.y() + bar.h() <= ClassCardRenderer.stopY(card));
+		assertEquals(3, bar.w());
+		var end = ClassCardRenderer.scrollBar(card, layout, layout.maxScroll());
+		assertTrue(end.y() > bar.y());
+		assertTrue(end.y() + end.h() <= ClassCardRenderer.stopY(card) + 1);
+	}
+
+	@Test
+	void dimmedKeepsAlphaAndDarkens() {
+		assertEquals(0xFF5895B2, ClassCardRenderer.dimmed(0xFF7ED6FF));
+		assertEquals(0xFF848484, ClassCardRenderer.dimmed(0xFFBDBDBD));
+		assertEquals(0xFFB2B2B2, ClassCardRenderer.dimmed(0xFFFFFFFF));
 	}
 
 	@Test

@@ -38,16 +38,18 @@ class LegionaryTest {
 		String copy = String.join("\n", lines);
 
 		assertTrue(copy.contains("(R, " + (Cooldowns.ROTATE_MS / 1000) + "s)"));
-		assertTrue(copy.contains("Announces Gladius!/Scutum!"));
-		assertTrue(copy.contains("next hit deals x" + ImpetusAbility.SWITCH_DEAL_MULT));
-		assertTrue(copy.contains("melee taken x" + TestudoAbility.SWITCH_TAKE_MULT));
-		assertTrue(copy.contains("+" + ConditionalPassive.amount(AequilibriumAbility.EDGE_BONUS) + " attack damage"));
+		assertTrue(copy.contains("Flip to Gladius"));
+		assertTrue(copy.contains("Flip to Scutum"));
+		assertTrue(copy.contains("next hit x" + ImpetusAbility.SWITCH_DEAL_MULT));
+		assertTrue(copy.contains("take x" + TestudoAbility.SWITCH_TAKE_MULT));
+		assertTrue(copy.contains("+" + ConditionalPassive.amount(AequilibriumAbility.EDGE_BONUS) + " damage"));
 		assertTrue(copy.contains("+" + ConditionalPassive.amount(AequilibriumAbility.PLATE_BONUS) + " armor"));
-		assertTrue(copy.contains("shares " + (Cooldowns.OATH_MS / 1000) + "s oath"));
-		assertTrue(copy.contains("Aequilibrium!"));
+		assertTrue(copy.contains("(G, " + (Cooldowns.OATH_MS / 1000) + "s oath)"));
+		assertTrue(copy.contains("No downside"));
 		assertFalse(copy.contains("knockback"));
-		assertFalse(copy.contains("Ha!"));
-		assertFalse(copy.contains("Hold!"));
+		assertFalse(copy.contains("Announces"));
+		assertFalse(copy.contains("Whoosh"));
+		assertFalse(copy.contains("Smash"));
 	}
 
 	@Test

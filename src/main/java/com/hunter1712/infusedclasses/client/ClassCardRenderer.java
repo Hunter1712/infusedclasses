@@ -47,7 +47,7 @@ public final class ClassCardRenderer {
 	 * Pure ints: the picker never overflows like the old fixed row.
 	 */
 	public static CardRect focusedCard(int screenWidth, int screenHeight) {
-		int w = Math.min(Math.max(screenWidth * 2 / 3, 160), 440);
+		int w = Math.min(Math.max(screenWidth * 2 / 3, 160), 520);
 		if (w > screenWidth) {
 			w = screenWidth;
 		}
@@ -124,6 +124,57 @@ public final class ClassCardRenderer {
 				&& mouseY >= card.y() && mouseY < card.y() + card.h();
 	}
 
+	/** First text row of the body: name, tagline and divider sit above it. */
+	public static int bodyTop(CardRect card) {
+		return card.y() + 10 + 11 + 12 + 1 + 6;
+	}
+
+	/** Last text row: the pinned select control sits below it, never scrolled. */
+	public static int stopY(CardRect card) {
+		return selectRect(card).y() - 4;
+	}
+
+	/** Clamps a scroll offset into its content: 0 at top, never past the end. */
+	public static int clampScroll(int scroll, int maxScroll) {
+		return Math.max(0, Math.min(scroll, Math.max(0, maxScroll)));
+	}
+
+	/** Dimmed copy of a line color for description continuations: names scan, descs recede. */
+	static int dimmed(int argb) {
+		int a = argb >>> 24;
+		int r = (argb >> 16 & 0xFF) * 7 / 10;
+		int g = (argb >> 8 & 0xFF) * 7 / 10;
+		int b = (argb & 0xFF) * 7 / 10;
+		return a << 24 | r << 16 | g << 8 | b;
+	}
+
+	/** Body text geometry: wrapped rows height plus how far they scroll. Pure ints. */
+	public record BodyLayout(int textH, int maxScroll) {
+	}
+
+	private static final int ROW_H = 11;
+
+	/** Layout for a wrapped row count: text height plus the scroll range that shows it all. */
+	public static BodyLayout layoutFor(CardRect card, int rows) {
+		int visibleH = stopY(card) - bodyTop(card);
+		int textH = rows * ROW_H;
+		return new BodyLayout(textH, Math.max(0, bodyTop(card) + textH - stopY(card)));
+	}
+
+	/**
+	 * Scrollbar thumb for scrolled content, null when everything fits. Pure ints:
+	 * track runs the visible rows, thumb size follows the visible share.
+	 */
+	public static ButtonRect scrollBar(CardRect card, BodyLayout layout, int scrollPx) {
+		int visibleH = stopY(card) - bodyTop(card);
+		if (layout.maxScroll() <= 0) {
+			return null;
+		}
+		int thumbH = Math.max(12, visibleH * visibleH / layout.textH());
+		int thumbY = bodyTop(card) + scrollPx * (visibleH - thumbH) / layout.maxScroll();
+		return new ButtonRect(card.x() + card.w() - PAD + 2, thumbY, 3, thumbH);
+	}
+
 	/** Body, accent strip, border and hover highlight. Drawn behind the widgets. Takes the whole model, like the body pass, so the screen resolves once per page. */
 	public static void drawFrame(GuiGraphics graphics, CardRect card, ClassPresentation.CardModel model) {
 		ClassPresentation.CardText text = model.text();
@@ -143,34 +194,42 @@ public final class ClassCardRenderer {
 
 	/**
 	 * Name, tagline, divider and the card detail lines from one card model: the screen resolves
-	 * the model once, never the parts. Long lines wrap inside the card and stop before the
-	 * pinned select control, so descriptions never overflow or overlap it.
+	 * the model once, never the parts. Long lines wrap inside the card; rows past the
+	 * visible slice scroll under the wheel instead of clipping away, and the pinned
+	 * select control never moves. The first wrapped row of a line draws in its own
+	 * color, continuations draw dimmed. Returns the body layout for scroll clamping.
 	 */
-	public static void drawBody(GuiGraphics graphics, Font font, CardRect card, ClassPresentation.CardModel model) {
+	public static BodyLayout drawBody(GuiGraphics graphics, Font font, CardRect card,
+			ClassPresentation.CardModel model, int scrollPx) {
 		ClassPresentation.CardStyle style = model.style();
 		List<ClassPresentation.CardLine> lines = model.text().lines();
 		int cx = card.x() + card.w() / 2;
 		int ty = card.y() + 10;
-		int stopY = card.y() + card.h() - PAD - BUTTON_H - 4;
 		graphics.drawCenteredString(font, model.text().displayName(), cx, ty, style.nameColor());
 		ty += 11;
 		graphics.drawCenteredString(font, model.text().tagline(), cx, ty, TAGLINE_COLOR);
 		ty += 12;
 		graphics.fill(card.x() + PAD, ty, card.x() + card.w() - PAD, ty + 1, DIVIDER_COLOR);
-		ty += 6;
 
+		int top = bodyTop(card);
+		int stop = stopY(card);
+		int rows = 0;
 		for (ClassPresentation.CardLine line : lines) {
 			MutableComponent shaped = Component.literal(line.text());
 			if (line.style().bold()) {
 				shaped.withStyle(s -> s.withBold(true));
 			}
+			boolean first = true;
 			for (FormattedCharSequence visual : font.split(shaped, card.w() - PAD * 2)) {
-				if (ty + 9 > stopY) {
-					return;
+				int y = top + rows * ROW_H - scrollPx;
+				if (y >= top && y + 9 <= stop) {
+					int color = first ? line.style().color() : dimmed(line.style().color());
+					graphics.drawString(font, visual, cx - font.width(visual) / 2, y, color);
 				}
-				graphics.drawString(font, visual, cx - font.width(visual) / 2, ty, line.style().color());
-				ty += 11;
+				rows++;
+				first = false;
 			}
 		}
+		return layoutFor(card, rows);
 	}
 }

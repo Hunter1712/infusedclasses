@@ -24,7 +24,6 @@ class RushAbilityTest {
 		assertEquals(3, RushAbility.BONUS_STACKS);
 		assertEquals("minecraft:speed", RushAbility.SPEED_EFFECT.toString());
 		assertEquals("minecraft:entity.wind_charge.wind_burst", RushAbility.CAST_SOUND.toString());
-		assertEquals("Whoosh!", RushAbility.CAST_WORD);
 	}
 
 	@Test

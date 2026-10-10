@@ -42,7 +42,7 @@ class ClassPresentationTest {
 		assertTrue(texts.stream().anyMatch(t -> t.startsWith("Rush \u2014 ")
 				&& t.contains("(R, " + (Cooldowns.RUSH_MS / 1000) + "s)")));
 		assertTrue(texts.stream().anyMatch(t -> t.startsWith("Rend \u2014 ")
-				&& t.contains("per Momentum stack")));
+				&& t.contains("per Momentum")));
 		assertFalse(texts.stream().anyMatch(t -> t.contains("Roots")));
 	}
 

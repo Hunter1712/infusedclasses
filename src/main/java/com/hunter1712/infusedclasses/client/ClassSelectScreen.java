@@ -34,6 +34,8 @@ public class ClassSelectScreen extends Screen {
 	private List<ClassDefinition> classes = List.of();
 	private final List<Button> dots = new ArrayList<>();
 	private int page;
+	private int scrollPx;
+	private int lastMaxScroll;
 
 	public ClassSelectScreen(String currentClassId) {
 		super(Component.literal(TITLE));
@@ -54,11 +56,11 @@ public class ClassSelectScreen extends Screen {
 		ClassCardRenderer.CardRect card = ClassCardRenderer.focusedCard(width, height);
 
 		ClassCardRenderer.ButtonRect prev = ClassCardRenderer.prevRect(width, card);
-		addRenderableWidget(Button.builder(Component.literal("<"), b -> page = ClassCardRenderer.prevPage(page, classes.size()))
+		addRenderableWidget(Button.builder(Component.literal("<"), b -> goTo(ClassCardRenderer.prevPage(page, classes.size())))
 				.bounds(prev.x(), prev.y(), prev.w(), prev.h())
 				.build());
 		ClassCardRenderer.ButtonRect next = ClassCardRenderer.nextRect(width, card);
-		addRenderableWidget(Button.builder(Component.literal(">"), b -> page = ClassCardRenderer.nextPage(page, classes.size()))
+		addRenderableWidget(Button.builder(Component.literal(">"), b -> goTo(ClassCardRenderer.nextPage(page, classes.size())))
 				.bounds(next.x(), next.y(), next.w(), next.h())
 				.build());
 
@@ -66,7 +68,7 @@ public class ClassSelectScreen extends Screen {
 		for (int i = 0; i < classes.size(); i++) {
 			int dot = i;
 			Button dotButton = Button.builder(Component.literal(dot == page ? "\u25CF" : "\u25CB"),
-					b -> page = dot)
+					b -> goTo(dot))
 					.bounds(ClassCardRenderer.dotX(i, classes.size(), width), dotsTop,
 							ClassCardRenderer.DOT_W, ClassCardRenderer.DOT_H)
 					.build();
@@ -108,7 +110,14 @@ public class ClassSelectScreen extends Screen {
 
 		ClassDefinition def = classes.get(page);
 		boolean hovered = ClassCardRenderer.isHovering(card, mouseX, mouseY);
-		ClassCardRenderer.drawBody(graphics, font, card, ClassPresentation.cardFor(def, hovered));
+		scrollPx = ClassCardRenderer.clampScroll(scrollPx, lastMaxScroll);
+		ClassCardRenderer.BodyLayout layout =
+				ClassCardRenderer.drawBody(graphics, font, card, ClassPresentation.cardFor(def, hovered), scrollPx);
+		lastMaxScroll = layout.maxScroll();
+		ClassCardRenderer.ButtonRect bar = ClassCardRenderer.scrollBar(card, layout, scrollPx);
+		if (bar != null) {
+			graphics.fill(bar.x(), bar.y(), bar.x() + bar.w(), bar.y() + bar.h(), 0xFF8A8A8A);
+		}
 		for (int i = 0; i < dots.size(); i++) {
 			dots.get(i).setMessage(Component.literal(i == page ? "\u25CF" : "\u25CB"));
 		}
@@ -117,19 +126,37 @@ public class ClassSelectScreen extends Screen {
 	}
 
 	@Override
+	public boolean mouseScrolled(double mouseX, double mouseY, double horizontalAmount, double verticalAmount) {
+		if (!classes.isEmpty()) {
+			ClassCardRenderer.CardRect card = ClassCardRenderer.focusedCard(width, height);
+			if (ClassCardRenderer.isHovering(card, (int) mouseX, (int) mouseY)) {
+				scrollPx = ClassCardRenderer.clampScroll(scrollPx - (int) (verticalAmount * 12), lastMaxScroll);
+				return true;
+			}
+		}
+		return super.mouseScrolled(mouseX, mouseY, horizontalAmount, verticalAmount);
+	}
+
+	@Override
 	public boolean keyPressed(KeyEvent event) {
 		if (classes.isEmpty()) {
 			return super.keyPressed(event);
 		}
 		if (event.key() == GLFW.GLFW_KEY_LEFT || event.key() == GLFW.GLFW_KEY_A) {
-			page = ClassCardRenderer.prevPage(page, classes.size());
+			goTo(ClassCardRenderer.prevPage(page, classes.size()));
 			return true;
 		}
 		if (event.key() == GLFW.GLFW_KEY_RIGHT || event.key() == GLFW.GLFW_KEY_D) {
-			page = ClassCardRenderer.nextPage(page, classes.size());
+			goTo(ClassCardRenderer.nextPage(page, classes.size()));
 			return true;
 		}
 		return super.keyPressed(event);
+	}
+
+	/** Page jump that resets the scroll: a new page always opens at the top. */
+	private void goTo(int next) {
+		page = next;
+		scrollPx = 0;
 	}
 
 	@Override

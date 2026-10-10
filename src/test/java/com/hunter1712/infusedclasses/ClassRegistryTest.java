@@ -57,8 +57,7 @@ class ClassRegistryTest {
 	void juggernautPassiveCopySaysWhatItDoesToday() {
 		ConditionalPassive momentum = ClassRegistry.byId(ClassRegistry.JUGGERNAUT).passives().get(0);
 
-		assertEquals("Landing a hit grants 1 stack (max 10). Each stack adds +1 armor. "
-				+ "After 5s without landing a hit, lose all stacks.", momentum.fullDesc());
+		assertEquals("Land a hit: +1 armor (max 10). 5s no hit: lose all.", momentum.fullDesc());
 	}
 
 	@Test
@@ -68,9 +67,8 @@ class ClassRegistryTest {
 				Identifier.fromNamespaceAndPath("infusedclasses", "swift_speed"),
 				0.5, 3);
 
-		// An on_land passive is not described as a hit, and the drop reads as instant.
-		assertEquals("Each trigger grants 1 stack (max 4). Each stack adds +0.5 movement speed. "
-				+ "After 3s without a trigger, lose all stacks.", swift.fullDesc());
+		// An on_land passive is not described as a hit.
+		assertEquals("Trigger: +0.5 movement speed (max 4). 3s no trigger: lose all.", swift.fullDesc());
 		assertFalse(swift.fullDesc().contains("hit"));
 	}
 
@@ -79,8 +77,7 @@ class ClassRegistryTest {
 		ConditionalPassive guard = new ConditionalPassive("Guard", ConditionalPassive.ON_HIT_TAKEN, 20,
 				ClassRegistry.ARMOR, Identifier.fromNamespaceAndPath("infusedclasses", "guard_armor"), 0.5, 5);
 
-		assertEquals("Taking a hit grants 1 stack (max 20). Each stack adds +0.5 armor. "
-				+ "After 5s without a hit, lose all stacks.", guard.fullDesc());
+		assertEquals("Take a hit: +0.5 armor (max 20). 5s no hit: lose all.", guard.fullDesc());
 	}
 
 	@Test
@@ -106,6 +103,16 @@ class ClassRegistryTest {
 		assertNull(classes.classId());
 		classes.readId(null);
 		assertNull(classes.classId());
+	}
+
+	@Test
+	void everyActiveDescStaysShort() {
+		for (ClassDefinition def : ClassRegistry.all()) {
+			for (ClassDefinition.ActiveAbility a : def.actives()) {
+				assertTrue(a.desc().length() <= 200,
+						def.id() + " active \"" + a.name() + "\" must stay short (" + a.desc().length() + " chars)");
+			}
+		}
 	}
 
 	@Test

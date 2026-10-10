@@ -80,18 +80,18 @@ public final class ClassRegistry {
 				List.of(
 						new ClassDefinition.ActiveAbility(
 								RushAbility.NAME,
-								"Cleanses harmful effects and grants Speed I for "
-										+ (RushAbility.SPEED_TICKS / 20) + "s; your next full-swing melee hit grants +"
+								"Cleanse + Speed I, "
+										+ (RushAbility.SPEED_TICKS / 20) + "s. Next full-swing hit: +"
 										+ RushAbility.BONUS_STACKS + " Momentum (R, "
-										+ (Cooldowns.RUSH_MS / 1000) + "s). " + RushAbility.CAST_WORD),
+										+ (Cooldowns.RUSH_MS / 1000) + "s)."),
 						new ClassDefinition.ActiveAbility(
 								RendAbility.NAME,
-								"Empowers your next melee hit within "
-										+ (RendAbility.WINDOW_TICKS / 20) + "s for "
+								"Next hit in "
+										+ (RendAbility.WINDOW_TICKS / 20) + "s: +"
 										+ ConditionalPassive.amount(RendAbility.BASE_HP)
-										+ " HP + " + ConditionalPassive.amount(RendAbility.HP_PER_STACK)
-										+ " HP per Momentum stack, consumes stacks (G, "
-										+ (Cooldowns.REND_MS / 1000) + "s). " + RendAbility.CAST_WORD))));
+										+ " HP +" + ConditionalPassive.amount(RendAbility.HP_PER_STACK)
+										+ " per Momentum, spends stacks (G, "
+										+ (Cooldowns.REND_MS / 1000) + "s)."))));
 
 		register(new ClassDefinition(
 				LEGIONARY,
@@ -106,16 +106,16 @@ public final class ClassRegistry {
 				List.of(
 						new ClassDefinition.ActiveAbility(
 								RotateAbility.NAME,
-								"Toggle stance: Gladius (+" + ConditionalPassive.amount(RotateAbility.GLADIUS_DAMAGE)
+								"Gladius (+" + ConditionalPassive.amount(RotateAbility.GLADIUS_DAMAGE)
 										+ " damage, +" + ConditionalPassive.amount(RotateAbility.GLADIUS_SPEED)
 										+ " speed, take x" + RotateAbility.GLADIUS_TAKEN_MULT
 										+ ") or Scutum (+" + ConditionalPassive.amount(RotateAbility.SCUTUM_ARMOR)
 										+ " armor, +" + ConditionalPassive.amount(RotateAbility.SCUTUM_TOUGHNESS)
 										+ " toughness, slower) (R, "
-										+ (Cooldowns.ROTATE_MS / 1000) + "s). Announces Gladius!/Scutum!."
-										+ " Flipping to Gladius: next hit deals x" + ImpetusAbility.SWITCH_DEAL_MULT
+										+ (Cooldowns.ROTATE_MS / 1000) + "s)."
+										+ " Flip to Gladius: next hit x" + ImpetusAbility.SWITCH_DEAL_MULT
 										+ " (" + (ImpetusAbility.SWITCH_DEAL_MS / 1000) + "s)."
-										+ " Flipping to Scutum: take x" + TestudoAbility.SWITCH_TAKE_MULT
+										+ " Flip to Scutum: take x" + TestudoAbility.SWITCH_TAKE_MULT
 										+ " (" + ConditionalPassive.amount(TestudoAbility.SWITCH_TAKE_MS / 1000.0)
 										+ "s)."),
 						new ClassDefinition.ActiveAbility(
