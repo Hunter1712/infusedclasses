@@ -19,6 +19,12 @@ class MeleePlanTest {
 		return ClassRegistry.byId(ClassRegistry.LEGIONARY);
 	}
 
+	private static PlayerRuntime inStance(RotateAbility.Stance stance) {
+		PlayerRuntime runtime = new PlayerRuntime();
+		runtime.flipStance(0, stance);
+		return runtime;
+	}
+
 	@Test
 	void fullSwingsBumpSpamDoesNot() {
 		assertTrue(MeleePlan.shouldBump(1.0F));
@@ -28,72 +34,80 @@ class MeleePlanTest {
 
 	@Test
 	void dealMultIsStanceForLegionariesOneForEveryoneElse() {
-		PlayerRuntime scutum = new PlayerRuntime();
-		PlayerRuntime gladius = new PlayerRuntime();
-		gladius.flipStance();
+		PlayerRuntime scutum = inStance(RotateAbility.Stance.SCUTUM);
+		PlayerRuntime gladius = inStance(RotateAbility.Stance.GLADIUS);
 
-		assertEquals(0.8, MeleePlan.dealFor(legionary(), scutum, 0));
-		assertEquals(1.0, MeleePlan.dealFor(legionary(), gladius, 0));
+		assertEquals(0.9, MeleePlan.dealFor(legionary(), scutum, 0));
+		assertEquals(1.0, MeleePlan.dealFor(legionary(), gladius, 10_000));
 		assertEquals(1.0, MeleePlan.dealFor(juggernaut(), scutum, 0));
 		assertEquals(1.0, MeleePlan.dealFor(null, scutum, 0));
 	}
 
 	@Test
-	void testudoStacksOnScutumOnly() {
-		PlayerRuntime scutum = new PlayerRuntime();
-		TestudoAbility.fire(legionary(), scutum, 0);
+	void impetusFlipMultipliesDealAtAnyChargeAndSpendsOnce() {
+		PlayerRuntime gladius = inStance(RotateAbility.Stance.GLADIUS);
 
-		assertEquals(0.56, MeleePlan.dealFor(legionary(), scutum, 0), 1e-9);
+		assertEquals(1.10, MeleePlan.dealFor(legionary(), gladius, 0), 1e-9);
+
+		MeleePlan.HitPlan plan = MeleePlan.planHit(legionary(), gladius, null, null, 0.5F, 0);
+
+		// Any charge: spam still sees the flip buff (but earns no stacks).
+		assertTrue(plan.impetusPending());
+		assertFalse(plan.bump());
+		assertEquals(0.0F, PassiveApplier.settleHit(gladius, legionary(), plan, 0));
+		assertFalse(gladius.hasImpetusPending(0));
+		assertEquals(1.0, MeleePlan.dealFor(legionary(), gladius, 0), 1e-9);
+	}
+
+	@Test
+	void impetusBuffExpiresUnspent() {
+		PlayerRuntime gladius = inStance(RotateAbility.Stance.GLADIUS);
+
+		assertEquals(1.10,
+				MeleePlan.dealFor(legionary(), gladius, ImpetusAbility.SWITCH_DEAL_MS - 1), 1e-9);
+		assertEquals(1.0,
+				MeleePlan.dealFor(legionary(), gladius, ImpetusAbility.SWITCH_DEAL_MS), 1e-9);
+	}
+
+	@Test
+	void testudoCatchDiscountsTakeThenExpires() {
+		PlayerRuntime scutum = inStance(RotateAbility.Stance.SCUTUM);
+
+		assertEquals(0.85, MeleePlan.takeFor(legionary(), () -> scutum, 0), 1e-9);
+		assertEquals(0.85, MeleePlan.takeFor(legionary(), () -> scutum, TestudoAbility.SWITCH_TAKE_MS - 1), 1e-9);
+		assertEquals(1.0, MeleePlan.takeFor(legionary(), () -> scutum, TestudoAbility.SWITCH_TAKE_MS), 1e-9);
 	}
 
 	@Test
 	void takeMultIsStanceForLegionariesOneForEveryoneElse() {
-		PlayerRuntime gladius = new PlayerRuntime();
-		gladius.flipStance();
+		PlayerRuntime gladius = inStance(RotateAbility.Stance.GLADIUS);
 
-		assertEquals(1.2, MeleePlan.takeFor(legionary(), () -> gladius, 0));
+		assertEquals(1.1, MeleePlan.takeFor(legionary(), () -> gladius, 10_000));
 		assertEquals(1.0, MeleePlan.takeFor(juggernaut(), () -> gladius, 0));
 		assertEquals(1.0, MeleePlan.takeFor(null, () -> gladius, 0));
 	}
 
 	@Test
-	void impetusStacksOnGladiusOnly() {
-		PlayerRuntime gladius = new PlayerRuntime();
-		gladius.flipStance();
-		ImpetusAbility.fire(legionary(), gladius, 0);
+	void aequilibriumWindowKeepsStanceMults() {
+		PlayerRuntime scutum = new PlayerRuntime();
+		AequilibriumAbility.fire(legionary(), scutum, 0);
 
-		assertEquals(1.5, MeleePlan.takeFor(legionary(), () -> gladius, 0));
-	}
-
-	@Test
-	void impetusBonusNeedsWindowAndLegionary() {
-		PlayerRuntime live = new PlayerRuntime();
-		live.flipStance();
-		ImpetusAbility.fire(legionary(), live, 0);
-		PlayerRuntime cold = new PlayerRuntime();
-		cold.flipStance();
-
-		assertEquals(3.0F, MeleePlan.impetusBonusFor(legionary(), live, 0, 1.0F));
-		assertEquals(0.75F, MeleePlan.impetusBonusFor(legionary(), live, 0, 0.5F));
-		assertEquals(0.0F, MeleePlan.impetusBonusFor(legionary(), cold, 0, 1.0F));
-		assertEquals(0.0F, MeleePlan.impetusBonusFor(juggernaut(), live, 0, 1.0F));
-		assertEquals(0.0F, MeleePlan.impetusBonusFor(null, live, 0, 1.0F));
+		// The ultimate adds attributes, never mults: the stance tradeoff stays underneath.
+		assertEquals(0.9, MeleePlan.dealFor(legionary(), scutum, 0), 1e-9);
+		assertEquals(1.0, MeleePlan.takeFor(legionary(), () -> scutum, 0), 1e-9);
+		assertEquals(1.0, MeleePlan.dealFor(juggernaut(), scutum, 0));
 	}
 
 	@Test
 	void planHitNamesTheCombinedMults() {
-		PlayerRuntime scutum = new PlayerRuntime();
-		TestudoAbility.fire(legionary(), scutum, 0);
-		PlayerRuntime gladius = new PlayerRuntime();
-		gladius.flipStance();
-		ImpetusAbility.fire(legionary(), gladius, 0);
+		PlayerRuntime attacker = inStance(RotateAbility.Stance.GLADIUS);
+		PlayerRuntime victim = inStance(RotateAbility.Stance.SCUTUM);
 
-		MeleePlan.HitPlan plate = MeleePlan.planHit(legionary(), scutum, null, null, 1.0F, 0);
-		MeleePlan.HitPlan glass = MeleePlan.planHit(legionary(), gladius, legionary(), () -> gladius, 1.0F, 0);
+		MeleePlan.HitPlan peak = MeleePlan.planHit(legionary(), attacker, legionary(), () -> victim, 1.0F, 0);
 
-		assertEquals(0.56, plate.combined(), 1e-9);
-		assertEquals(1.5, glass.take(), 1e-9);
-		assertEquals(1.5, glass.combined(), 1e-9);
+		assertEquals(1.10, peak.deal(), 1e-9);
+		assertEquals(0.85, peak.take(), 1e-9);
+		assertEquals(1.10 * 0.85, peak.combined(), 1e-9);
 	}
 
 	@Test
@@ -147,11 +161,24 @@ class MeleePlanTest {
 	}
 
 	@Test
+	void settleLeavesUnseenImpetusPending() {
+		PlayerRuntime runtime = new PlayerRuntime();
+		MeleePlan.HitPlan plan = MeleePlan.planHit(legionary(), runtime, null, null, 1.0F, 0);
+		// The flip lands after the plan peeked: the plan saw nothing, so the settle spends nothing.
+		runtime.flipStance(0, RotateAbility.Stance.GLADIUS);
+
+		assertFalse(plan.impetusPending());
+		PassiveApplier.settleHit(runtime, legionary(), plan, 0);
+
+		assertTrue(runtime.hasImpetusPending(0));
+	}
+
+	@Test
 	void settleCannotBumpWhatThePlanDidNotEarn() {
 		PlayerRuntime runtime = new PlayerRuntime();
 		// A lying plan (bump claimed at spam charge): the settle replays the gated
 		// charge through the shared gate, so nothing bumps.
-		MeleePlan.HitPlan lying = new MeleePlan.HitPlan(true, 0.5F, false, -1, 0, 0, 1.0, 1.0, 1.0);
+		MeleePlan.HitPlan lying = new MeleePlan.HitPlan(true, 0.5F, false, -1, 0, false, 1.0, 1.0, 1.0);
 
 		assertEquals(0, PassiveApplier.settleHit(runtime, juggernaut(), lying, 0));
 		assertEquals(0, runtime.stacks(juggernaut().passives().get(0)));

@@ -14,8 +14,8 @@ import java.util.Map;
 /**
  * All classes. Adding a class = one definition here. Juggernaut carries Rush plus
  * Rend, one conditional passive (Momentum) and the Vigor HP-scaled pair.
- * Legionary carries Rotate plus the stance-morphed Impetus/Testudo oath pair;
- * its stances are transient auras, not passives.
+ * Legionary carries Rotate plus the Impetus/Testudo flip buffs and the Aequilibrium
+ * oath ultimate; its stances are transient auras, not passives.
  */
 public final class ClassRegistry {
 	public static final Identifier JUGGERNAUT = Identifier.fromNamespaceAndPath("infusedclasses", "juggernaut");
@@ -25,6 +25,8 @@ public final class ClassRegistry {
 	public static final Identifier ROTATE_ABILITY = Identifier.fromNamespaceAndPath("infusedclasses", "rotate");
 	public static final Identifier IMPETUS_ABILITY = Identifier.fromNamespaceAndPath("infusedclasses", "impetus");
 	public static final Identifier TESTUDO_ABILITY = Identifier.fromNamespaceAndPath("infusedclasses", "testudo");
+	public static final Identifier AEQUILIBRIUM_ABILITY =
+			Identifier.fromNamespaceAndPath("infusedclasses", "aequilibrium");
 	/** ponytail: attribute ids rather than vanilla holders, so the passive stays bootstrap-free. */
 	public static final ResourceKey<Attribute> ARMOR =
 			ResourceKey.create(Registries.ATTRIBUTE, Identifier.withDefaultNamespace("armor"));
@@ -98,7 +100,7 @@ public final class ClassRegistry {
 				List.of(),
 				List.of(),
 				0.0,
-				List.of(ROTATE_ABILITY, IMPETUS_ABILITY, TESTUDO_ABILITY),
+				List.of(ROTATE_ABILITY, IMPETUS_ABILITY, TESTUDO_ABILITY, AEQUILIBRIUM_ABILITY),
 				0xFFB87333,
 				"Sword and shield",
 				List.of(
@@ -110,62 +112,28 @@ public final class ClassRegistry {
 										+ ") or Scutum (+" + ConditionalPassive.amount(RotateAbility.SCUTUM_ARMOR)
 										+ " armor, +" + ConditionalPassive.amount(RotateAbility.SCUTUM_TOUGHNESS)
 										+ " toughness, slower) (R, "
-										+ (Cooldowns.ROTATE_MS / 1000) + "s). Announces Gladius!/Scutum!."),
+										+ (Cooldowns.ROTATE_MS / 1000) + "s). Announces Gladius!/Scutum!."
+										+ " Flipping to Gladius: next hit deals x" + ImpetusAbility.SWITCH_DEAL_MULT
+										+ " (" + (ImpetusAbility.SWITCH_DEAL_MS / 1000) + "s)."
+										+ " Flipping to Scutum: take x" + TestudoAbility.SWITCH_TAKE_MULT
+										+ " (" + ConditionalPassive.amount(TestudoAbility.SWITCH_TAKE_MS / 1000.0)
+										+ "s)."),
 						new ClassDefinition.ActiveAbility(
 								ImpetusAbility.NAME,
-								"In Gladius: melee hits within "
-										+ (ImpetusAbility.WINDOW_TICKS / 20) + "s deal +"
-										+ ConditionalPassive.amount(ImpetusAbility.IMPETUS_BONUS)
-										+ " damage, take x" + ImpetusAbility.IMPETUS_TAKEN_MULT
-										+ " (G, shares " + (Cooldowns.OATH_MS / 1000) + "s oath). "
-										+ ImpetusAbility.CAST_WORD),
+								ImpetusAbility.desc()),
 						new ClassDefinition.ActiveAbility(
 								TestudoAbility.NAME,
-								"In Scutum: +" + ConditionalPassive.amount(TestudoAbility.TESTUDO_ARMOR)
-										+ " armor and no knockback for "
-										+ (TestudoAbility.WINDOW_TICKS / 20) + "s, deal x"
-										+ TestudoAbility.TESTUDO_DEAL_MULT
-										+ " (G, shares " + (Cooldowns.OATH_MS / 1000) + "s oath). "
-										+ TestudoAbility.CAST_WORD))));
-
-		register(new ClassDefinition(
-				Identifier.fromNamespaceAndPath("infusedclasses", "ranger"),
-				"Ranger",
-				true,
-				List.of(),
-				List.of(),
-				0.0,
-				List.of(),
-				0xFF2ECC71,
-				"Wilds archer",
-				List.of()));
-
-		register(new ClassDefinition(
-				Identifier.fromNamespaceAndPath("infusedclasses", "mage"),
-				"Mage",
-				true,
-				List.of(),
-				List.of(),
-				0.0,
-				List.of(),
-				0xFF9B59B6,
-				"Arcane burst",
-				List.of()));
+								TestudoAbility.desc()),
+						new ClassDefinition.ActiveAbility(
+								AequilibriumAbility.NAME,
+								AequilibriumAbility.desc()))));
 	}
 
 	private ClassRegistry() {
 	}
 
 	private static void register(ClassDefinition d) {
-		if (d.locked()) {
-			if (!d.activeAbilities().isEmpty() || !d.passives().isEmpty() || !d.hpPassives().isEmpty()
-					|| d.maxHealthBonus() != 0) {
-				throw new IllegalArgumentException("Locked class " + d.id() + " must carry no abilities, passives, or health bonus");
-			}
-			if (!d.actives().isEmpty()) {
-				throw new IllegalArgumentException("Locked class " + d.id() + " must carry no actives");
-			}
-		} else if (d.activeAbilities().isEmpty()) {
+		if (d.activeAbilities().isEmpty()) {
 			throw new IllegalArgumentException("Playable class " + d.id() + " must carry an ability");
 		} else if (d.actives().isEmpty()) {
 			throw new IllegalArgumentException("Playable class " + d.id() + " must carry at least one active");

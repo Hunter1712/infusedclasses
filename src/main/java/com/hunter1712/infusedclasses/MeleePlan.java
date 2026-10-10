@@ -18,44 +18,43 @@ public final class MeleePlan {
 		return BonusCurve.isFullSwing(charge);
 	}
 
-	/** Outgoing melee multiplier for an attacker: the stance deal mult, 1.0 for anyone else. */
+	/** Outgoing melee multiplier for an attacker: the stance deal mult times the pending Impetus flip buff, 1.0 for anyone else. */
 	public static double dealFor(ClassDefinition atkDef, PlayerRuntime runtime, long now) {
 		if (atkDef == null || !atkDef.hasAbility(ClassRegistry.ROTATE_ABILITY)) {
 			return 1.0;
 		}
 		double base = RotateAbility.dealMult(runtime.stance());
-		double window = runtime.isTestudoLive(now) ? TestudoAbility.TESTUDO_DEAL_MULT : 1.0;
-		return base * window;
+		double flip = runtime.hasImpetusPending(now) ? ImpetusAbility.SWITCH_DEAL_MULT : 1.0;
+		return base * flip;
 	}
 
-	/** Incoming melee multiplier for a victim: the stance take mult, 1.0 for anyone else. */
+	/** Incoming melee multiplier for a victim: the stance take mult times the live Testudo flip catch, 1.0 for anyone else. */
 	public static double takeFor(ClassDefinition victimDef, Supplier<PlayerRuntime> runtime, long now) {
 		if (victimDef == null || !victimDef.hasAbility(ClassRegistry.ROTATE_ABILITY)) {
 			return 1.0;
 		}
 		PlayerRuntime r = runtime.get();
 		double base = RotateAbility.takeMult(r.stance());
-		double window = r.isImpetusLive(now) ? ImpetusAbility.IMPETUS_TAKEN_MULT : 1.0;
-		return base * window;
+		double flip = r.isTestudoBuffLive(now) ? TestudoAbility.SWITCH_TAKE_MULT : 1.0;
+		return base * flip;
 	}
 
-	/** Window bonus for an attacker inside a live Impetus window, through the charge curve. 0 otherwise. */
-	public static float impetusBonusFor(ClassDefinition atkDef, PlayerRuntime runtime, long now, float charge) {
+	/** Whether the attacker's Impetus flip buff is owed on this hit: any charge, spent once by the settle. False for anyone else. */
+	public static boolean impetusPendingFor(ClassDefinition atkDef, PlayerRuntime runtime, long now) {
 		if (atkDef == null || !atkDef.hasAbility(ClassRegistry.IMPETUS_ABILITY)
-				|| !runtime.isImpetusLive(now)) {
-			return 0;
+				|| runtime == null || !runtime.hasImpetusPending(now)) {
+			return false;
 		}
-		return ImpetusAbility.bonusFor(charge);
+		return true;
 	}
 
 	/**
 	 * What one melee hit earns and settles, decided in field order: stack bump, Rush credit,
-	 * Rend spend, Impetus bonus, then the stance mults. The hit settle applies the first
-	 * three in the same order and returns the stamped Rend bonus to land; bonuses land
-	 * and the combined mult settles after. One-shot flags are peeked here and consumed
-	 * there, at the same {@code now}.
+	 * Rend spend, Impetus spend, then the stance mults. The hit settle applies the first
+	 * four in the same order and returns the stamped Rend bonus to land; the combined mult
+	 * settles after. One-shot flags are peeked here and consumed there, at the same {@code now}.
 	 */
-	public record HitPlan(boolean bump, float charge, boolean rushBonus, int rendStacks, float rendHp, float impetusBonus,
+	public record HitPlan(boolean bump, float charge, boolean rushBonus, int rendStacks, float rendHp, boolean impetusPending,
 			double deal, double take, double combined) {
 	}
 
@@ -66,7 +65,7 @@ public final class MeleePlan {
 		boolean rushBonus = bump && atkRuntime != null && atkRuntime.hasRushBonusPending(now);
 		int rendStacks = atkRuntime == null ? -1 : atkRuntime.peekRendEmpowerStacks(now);
 		float rendHp = rendStacks > 0 ? RendAbility.bonusFor(rendStacks, charge) : 0;
-		float impetus = atkRuntime == null ? 0 : impetusBonusFor(atkDef, atkRuntime, now, charge);
+		boolean impetus = impetusPendingFor(atkDef, atkRuntime, now);
 		double deal = atkDef == null || atkRuntime == null ? 1.0 : dealFor(atkDef, atkRuntime, now);
 		double take = victimDef == null || victimRuntime == null ? 1.0 : takeFor(victimDef, victimRuntime, now);
 		return new HitPlan(bump, charge, rushBonus, rendStacks, rendHp, impetus, deal, take, deal * take);

@@ -94,17 +94,12 @@ public class InfusedClasses implements ModInitializer {
 					PlayerClasses classes = PlayerClassAccess.of(player);
 					ClassDefinition def = classes.currentDefinition();
 					PlayerRuntime runtime = runtime(player);
-					// Legionary reuses the G bind as the oath intent: stance morphs it.
-					switch (BindMorph.oathFor(def, runtime.stance())) {
-						case IMPETUS -> {
-							ImpetusAbility.Result result = ImpetusAbility.fire(def, runtime, now);
+					// Legionary reuses the G bind as the oath intent: every stance fires the ultimate.
+					switch (BindMorph.oathFor(def)) {
+						case AEQUILIBRIUM -> {
+							AequilibriumAbility.Result result = AequilibriumAbility.fire(def, runtime, now);
 							AbilityApplier.announceAndCast(player, result.announcement(),
-									result.kind() == ImpetusAbility.Kind.FIRED, ImpetusAbility.CAST_SOUND, true);
-						}
-						case TESTUDO -> {
-							TestudoAbility.Result result = TestudoAbility.fire(def, runtime, now);
-							AbilityApplier.announceAndCast(player, result.announcement(),
-									result.kind() == TestudoAbility.Kind.FIRED, TestudoAbility.CAST_SOUND, true);
+									result.kind() == AequilibriumAbility.Kind.FIRED, AequilibriumAbility.CAST_SOUND, true);
 						}
 						case REND -> {
 							RendAbility.Result result = RendAbility.fire(def, runtime, now);

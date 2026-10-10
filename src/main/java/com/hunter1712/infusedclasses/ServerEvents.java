@@ -21,7 +21,7 @@ final class ServerEvents {
 		ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> {
 			ServerPlayer player = handler.getPlayer();
 			if (!PlayerClassAccess.of(player).hasClass()) {
-				sender.sendPacket(new OpenClassScreenPayload());
+				sender.sendPacket(new OpenClassScreenPayload(""));
 			}
 		});
 
@@ -78,7 +78,7 @@ final class ServerEvents {
 
 	/**
 	 * One attacker melee hit, settled in field order: plan, settle (bump, Rush credit,
-	 * Rend spend), Rend bonus, Impetus bonus, stance settle. The sequence lives here so
+	 * Impetus spend, Rend spend), Rend bonus, stance settle. The sequence lives here so
 	 * the hook cannot reorder or half-apply it; the plan decides and the appliers apply.
 	 * A direct melee hit builds stacks for any class carrying an on-hit-dealt passive —
 	 * full swings only, spam earns zero — and a full swing inside a live Rush window
@@ -106,10 +106,8 @@ final class ServerEvents {
 		// applied through the adapter like every other outcome; the bonus is
 		// what the plan already decided, never recomputed.
 		DamageSettle.dealBonus(attacker, entity, rendHp);
-		// Impetus: every melee hit inside the window earns the curve bonus.
-		DamageSettle.dealBonus(attacker, entity, plan.impetusBonus());
 		// Stance mults: attacker deal times victim take, settled at once.
-		// Scutum + Testudo read x0.56, Gladius + Impetus x1.5: see HitPlan.combined.
+		// Gladius + Impetus reads x1.1 deal, Scutum + Testudo x0.85 take: see HitPlan.combined.
 		DamageSettle.settleMult(attacker, entity, baseDamageTaken, plan.combined());
 	}
 }

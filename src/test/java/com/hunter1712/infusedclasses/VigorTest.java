@@ -118,16 +118,14 @@ class VigorTest {
 	}
 
 	@Test
-	void cardShowsNamesWhileTooltipShowsFullForm() {
+	void cardShowsDetailLinesWhileVigorStaysGrouped() {
 		List<ClassPresentation.CardLine> lines = ClassPresentation.cardLinesFor(juggernaut());
-		List<String> names = lines.stream().map(ClassPresentation.CardLine::text).toList();
+		List<String> texts = lines.stream().map(ClassPresentation.CardLine::text).toList();
 
-		assertTrue(names.contains("Vigor"));
-		assertFalse(names.contains("Vigor Damage"));
-		assertFalse(names.contains("Vigor Speed"));
-
-		String tooltip = ClassPresentation.tooltipFor(juggernaut());
-		assertTrue(tooltip.contains("Passive: Vigor \u2014 " + damage().fullDesc() + " " + speed().fullDesc()));
+		assertTrue(texts.stream().anyMatch(t -> t.startsWith("Momentum \u2014 ")));
+		assertTrue(texts.stream().noneMatch(t -> t.equals("Vigor Damage") || t.equals("Vigor Speed")));
+		assertTrue(texts.stream().anyMatch(t -> t.startsWith("Vigor \u2014 ")
+				&& t.contains(damage().fullDesc()) && t.contains(speed().fullDesc())));
 	}
 
 	@Test

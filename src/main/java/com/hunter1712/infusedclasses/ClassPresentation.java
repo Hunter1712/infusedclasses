@@ -6,26 +6,25 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Pure presentation for class cards and tooltips. One seam for all renderers.
+ * Pure presentation for the focused picker card. One seam for all renderers:
+ * resolves the whole card (header text, detail lines with name plus description,
+ * accent, button data) from the class definition in one pure decision.
  */
 public final class ClassPresentation {
 	private static final int HEADER_COLOR = 0xFFFFFFFF;   // white for section headers
 	private static final int PASSIVE_COLOR = 0xFFBDBDBD;   // light gray for passive items
 	private static final int ABILITY_COLOR = 0xFF7ED6FF;   // blue for ability items
-	private static final int NOTICE_COLOR = 0xFFE8C15A;    // title gold for the coming-soon notice
 	private static final int BORDER_COLOR = 0xFF3A3A3A;
 	private static final int HOVER_BORDER_COLOR = 0xFF8A8A8A;
 	private static final int HOVER_WASH_COLOR = 0x14FFFFFF;
-	private static final int LOCKED_VEIL_COLOR = 0x50000000;
 	private static final int NAME_COLOR = 0xFFFFFFFF;
-	private static final int NAME_LOCKED_COLOR = 0xFF8A8A8A;
 
 	private ClassPresentation() {
 	}
 
 	/** One rendered card line plus which section it belongs to. */
 	public enum LineKind {
-		PASSIVE_HEADER, PASSIVE, ABILITY_HEADER, ABILITY, NOTICE
+		PASSIVE_HEADER, PASSIVE, ABILITY_HEADER, ABILITY
 	}
 
 	/** The colour and weight a line draws with. Decided by line kind, never by its text. */
@@ -40,13 +39,12 @@ public final class ClassPresentation {
 		}
 	}
 
-	/** Style per line kind: headers and the notice are bold, items are not. */
+	/** Style per line kind: headers are bold, items are not. Continuation lines draw with their parent item's style. */
 	public static LineStyle styleFor(LineKind kind) {
 		return switch (kind) {
 			case PASSIVE_HEADER, ABILITY_HEADER -> new LineStyle(HEADER_COLOR, true);
 			case PASSIVE -> new LineStyle(PASSIVE_COLOR, false);
 			case ABILITY -> new LineStyle(ABILITY_COLOR, false);
-			case NOTICE -> new LineStyle(NOTICE_COLOR, true);
 		};
 	}
 
@@ -55,44 +53,28 @@ public final class ClassPresentation {
 		return "Your choice shapes your ability";
 	}
 
-	/** Tooltip for the select button: concise passive/active summary. */
-	public static String tooltipFor(ClassDefinition def) {
-		if (def.locked()) {
-			return "Coming soon";
-		}
-		StringBuilder sb = new StringBuilder();
-		for (ConditionalPassive p : def.passives()) {
-			sb.append("Passive: ").append(p.name()).append(" \u2014 ").append(p.fullDesc()).append(" ");
-		}
-		for (Map.Entry<String, List<HpScaledPassive>> entry : groupedHp(def).entrySet()) {
-			sb.append("Passive: ").append(entry.getKey()).append(" \u2014 ");
-			for (HpScaledPassive hp : entry.getValue()) {
-				sb.append(hp.fullDesc()).append(" ");
-			}
-		}
-		for (ClassDefinition.ActiveAbility a : def.actives()) {
-			sb.append("Active: ").append(a.name()).append(" \u2014 ").append(a.desc()).append(" ");
-		}
-		sb.append("Click to choose ").append(def.displayName()).append(".");
-		return sb.toString();
-	}
-
-	/** Lines shown in the card body: Passives header + one line per passive (one per HP-scaled family), then Active header + one line per active. */
+	/**
+	 * Lines shown on the focused card: Passives header plus one detail line per passive
+	 * (one per HP-scaled family, with joined descriptions), then Active header plus one
+	 * detail line per active. Every detail line carries name plus full description, so
+	 * nothing hides behind hover.
+	 */
 	public static List<CardLine> cardLinesFor(ClassDefinition def) {
 		List<CardLine> lines = new ArrayList<>();
-		if (def.locked()) {
-			lines.add(new CardLine("Passives: ???", LineKind.PASSIVE));
-			lines.add(new CardLine("Active: ???", LineKind.ABILITY));
-			lines.add(new CardLine("COMING SOON", LineKind.NOTICE));
-			return lines;
-		}
 		lines.add(new CardLine("Passives", LineKind.PASSIVE_HEADER));
 		if (!def.passives().isEmpty() || !def.hpPassives().isEmpty()) {
 			for (ConditionalPassive p : def.passives()) {
-				lines.add(new CardLine(p.name(), LineKind.PASSIVE));
+				lines.add(new CardLine(p.name() + " \u2014 " + p.fullDesc(), LineKind.PASSIVE));
 			}
-			for (String group : groupedHp(def).keySet()) {
-				lines.add(new CardLine(group, LineKind.PASSIVE));
+			for (Map.Entry<String, List<HpScaledPassive>> entry : groupedHp(def).entrySet()) {
+				StringBuilder joined = new StringBuilder();
+				for (HpScaledPassive hp : entry.getValue()) {
+					if (!joined.isEmpty()) {
+						joined.append(" ");
+					}
+					joined.append(hp.fullDesc());
+				}
+				lines.add(new CardLine(entry.getKey() + " \u2014 " + joined, LineKind.PASSIVE));
 			}
 		} else {
 			lines.add(new CardLine("No passives yet", LineKind.PASSIVE));
@@ -100,7 +82,7 @@ public final class ClassPresentation {
 		if (!def.actives().isEmpty()) {
 			lines.add(new CardLine("Active", LineKind.ABILITY_HEADER));
 			for (ClassDefinition.ActiveAbility a : def.actives()) {
-				lines.add(new CardLine(a.name(), LineKind.ABILITY));
+				lines.add(new CardLine(a.name() + " \u2014 " + a.desc(), LineKind.ABILITY));
 			}
 		}
 		return lines;
@@ -115,28 +97,28 @@ public final class ClassPresentation {
 		return groups;
 	}
 
-	/** Accent color for card top strip (grey for locked). */
+	/** Accent color for the card top strip: the class's own accent. */
 	public static int accentFor(ClassDefinition def) {
-		return def.locked() ? 0xFF555555 : def.accentColor();
+		return def.accentColor();
 	}
 
-	/** Button label and active state. */
+	/** Button label and active state: every visible page is playable. */
 	public static ButtonData buttonFor(ClassDefinition def) {
-		return new ButtonData(def.locked() ? "Locked" : "Select", !def.locked());
+		return new ButtonData("Select", true);
 	}
 
 	public record ButtonData(String label, boolean active) {
 	}
 
 	/**
-	 * Hover-independent card text: lines, tooltip, accent, button. Resolved through
+	 * Hover-independent card text: lines, accent, button. Resolved through
 	 * {@link #cardFor} by every caller; kept public only as the seam tests pin.
 	 */
-	public record CardText(String displayName, String tagline, List<CardLine> lines, int accent, ButtonData button, String tooltip) {
+	public record CardText(String displayName, String tagline, List<CardLine> lines, int accent, ButtonData button) {
 	}
 
-	/** Hover-dependent style only: border, wash, veil, name colour. */
-	public record CardStyle(int borderColor, Integer washColor, Integer veilColor, int nameColor) {
+	/** Hover-dependent style only: border, wash, name colour. */
+	public record CardStyle(int borderColor, Integer washColor, int nameColor) {
 	}
 
 	/**
@@ -153,16 +135,12 @@ public final class ClassPresentation {
 				def.tagline(),
 				List.copyOf(cardLinesFor(def)),
 				accentFor(def),
-				buttonFor(def),
-				tooltipFor(def));
+				buttonFor(def));
 	}
 
 	public static CardStyle cardStyleFor(ClassDefinition def, boolean hovered) {
-		if (def.locked()) {
-			return new CardStyle(BORDER_COLOR, null, LOCKED_VEIL_COLOR, NAME_LOCKED_COLOR);
-		}
 		return new CardStyle(hovered ? HOVER_BORDER_COLOR : BORDER_COLOR,
-				hovered ? HOVER_WASH_COLOR : null, null, NAME_COLOR);
+				hovered ? HOVER_WASH_COLOR : null, NAME_COLOR);
 	}
 
 	/** Whole card in one decision: text + style. */

@@ -3,34 +3,34 @@ package com.hunter1712.infusedclasses.client;
 import com.hunter1712.infusedclasses.ClassPresentation;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.util.FormattedCharSequence;
 
 import java.util.List;
 
 /**
- * Everything one class card looks like: frame palette, accent strip, locked veil, hover
- * highlight and the card body text. Each line is drawn with the colour and weight the
+ * Everything the focused picker card looks like: frame palette, accent strip, hover
+ * highlight and the wrapped card body text. Each line is drawn with the colour and weight the
  * presentation module put on it, so nothing here has to know what a line says. The screen
- * decides where a card sits and whether it is hovered.
+ * decides which page shows; the rectangles below decide where it sits, all in pure ints.
  */
 public final class ClassCardRenderer {
-	/** Card size and inner padding: the card's own metrics, shared with the screen's layout. */
-	public static final int WIDTH = 120;
-	public static final int HEIGHT = 156;
+	/** Card chrome: inner padding, pinned select height, arrow and dot metrics. */
 	public static final int PAD = 10;
 	public static final int BUTTON_H = 20;
+	public static final int ARROW_W = 24;
+	public static final int ARROW_H = 24;
+	public static final int DOT_W = 20;
+	public static final int DOT_H = 14;
+	public static final int DOT_GAP = 4;
 
-	/** Button rect inside a card: the screen positions cards, never their internals. */
-	public record ButtonRect(int x, int y, int w, int h) {
+	/** Focused card rectangle, in screen pixels. */
+	public record CardRect(int x, int y, int w, int h) {
 	}
 
-	public static ButtonRect buttonRect(int cardX, int cardY) {
-		return new ButtonRect(
-				cardX + PAD,
-				cardY + HEIGHT - PAD - BUTTON_H,
-				WIDTH - PAD * 2,
-				BUTTON_H);
+	/** Widget rectangle inside screen pixels: the screen positions widgets, never card internals. */
+	public record ButtonRect(int x, int y, int w, int h) {
 	}
 
 	private static final int ACCENT_H = 3;
@@ -41,65 +41,136 @@ public final class ClassCardRenderer {
 	private ClassCardRenderer() {
 	}
 
-	/** Row math next to the metrics it uses, so the screen never repeats them. Pure ints. */
-	public static int rowWidth(int count, int gap) {
-		return count * WIDTH + (count - 1) * gap;
+	/**
+	 * Focused card math: one card per page, centered, two-thirds of the width and
+	 * three-fifths of the height, clamped so title, subtitle and footer stay visible.
+	 * Pure ints: the picker never overflows like the old fixed row.
+	 */
+	public static CardRect focusedCard(int screenWidth, int screenHeight) {
+		int w = Math.min(Math.max(screenWidth * 2 / 3, 160), 440);
+		if (w > screenWidth) {
+			w = screenWidth;
+		}
+		int h = Math.min(screenHeight * 3 / 5, 520);
+		if (h > screenHeight) {
+			h = screenHeight;
+		}
+		int x = (screenWidth - w) / 2;
+		int y = Math.max(52, (screenHeight - h) / 2 + 8);
+		return new CardRect(x, y, w, h);
 	}
 
-	public static int cardX(int index, int count, int screenWidth, int gap) {
-		return screenWidth / 2 - rowWidth(count, gap) / 2 + index * (WIDTH + gap);
+	/** Pinned select control: full inner width along the card bottom. */
+	public static ButtonRect selectRect(CardRect card) {
+		return new ButtonRect(
+				card.x() + PAD,
+				card.y() + card.h() - PAD - BUTTON_H,
+				card.w() - PAD * 2,
+				BUTTON_H);
 	}
 
-	public static int cardsTop(int screenHeight) {
-		return Math.max(64, screenHeight / 2 - HEIGHT / 2 + 12);
+	/** Previous-page arrow: left of the card, vertically centered, clamped on screen. */
+	public static ButtonRect prevRect(int screenWidth, CardRect card) {
+		return new ButtonRect(
+				Math.max(8, card.x() - ARROW_W - 12),
+				card.y() + card.h() / 2 - ARROW_H / 2,
+				ARROW_W,
+				ARROW_H);
 	}
 
-	public static boolean isHovering(int cardX, int cardY, int mouseX, int mouseY) {
-		return mouseX >= cardX && mouseX < cardX + WIDTH
-				&& mouseY >= cardY && mouseY < cardY + HEIGHT;
+	/** Next-page arrow: right of the card, vertically centered, clamped on screen. */
+	public static ButtonRect nextRect(int screenWidth, CardRect card) {
+		return new ButtonRect(
+				Math.min(screenWidth - ARROW_W - 8, card.x() + card.w() + 12),
+				card.y() + card.h() / 2 - ARROW_H / 2,
+				ARROW_W,
+				ARROW_H);
 	}
 
-	/** Body, accent strip, border, hover highlight and locked veil. Drawn behind the widgets. Takes the whole model, like the body pass, so the screen resolves once per card. */
-	public static void drawFrame(GuiGraphics graphics, int x, int y, ClassPresentation.CardModel model) {
+	/** Page dots live in one centered row between the card and the footer hint. */
+	public static int dotsY(CardRect card) {
+		return card.y() + card.h() + 6;
+	}
+
+	public static int dotX(int index, int count, int screenWidth) {
+		int rowWidth = count * DOT_W + (count - 1) * DOT_GAP;
+		return screenWidth / 2 - rowWidth / 2 + index * (DOT_W + DOT_GAP);
+	}
+
+	/** Title, subtitle and footer anchor off the card, so they never overlap it. */
+	public static int titleY(CardRect card) {
+		return card.y() - 44;
+	}
+
+	public static int subtitleY(CardRect card) {
+		return card.y() - 28;
+	}
+
+	public static int footerY(CardRect card) {
+		return card.y() + card.h() + 24;
+	}
+
+	/** Page math with wraparound at both ends, so navigation never dead-ends. */
+	public static int nextPage(int page, int count) {
+		return (page + 1) % count;
+	}
+
+	public static int prevPage(int page, int count) {
+		return (page + count - 1) % count;
+	}
+
+	public static boolean isHovering(CardRect card, int mouseX, int mouseY) {
+		return mouseX >= card.x() && mouseX < card.x() + card.w()
+				&& mouseY >= card.y() && mouseY < card.y() + card.h();
+	}
+
+	/** Body, accent strip, border and hover highlight. Drawn behind the widgets. Takes the whole model, like the body pass, so the screen resolves once per page. */
+	public static void drawFrame(GuiGraphics graphics, CardRect card, ClassPresentation.CardModel model) {
 		ClassPresentation.CardText text = model.text();
 		ClassPresentation.CardStyle style = model.style();
-		int accent = text.accent();
-		int x1 = x + WIDTH;
-		int y1 = y + HEIGHT;
-		graphics.fill(x, y, x1, y1, BODY_COLOR);
-		graphics.fill(x, y, x1, y + ACCENT_H, accent);
-		graphics.fill(x, y, x + 1, y1, style.borderColor());
-		graphics.fill(x1 - 1, y, x1, y1, style.borderColor());
-		graphics.fill(x, y, x1, y + 1, style.borderColor());
-		graphics.fill(x, y1 - 1, x1, y1, style.borderColor());
+		int x1 = card.x() + card.w();
+		int y1 = card.y() + card.h();
+		graphics.fill(card.x(), card.y(), x1, y1, BODY_COLOR);
+		graphics.fill(card.x(), card.y(), x1, card.y() + ACCENT_H, text.accent());
+		graphics.fill(card.x(), card.y(), card.x() + 1, y1, style.borderColor());
+		graphics.fill(x1 - 1, card.y(), x1, y1, style.borderColor());
+		graphics.fill(card.x(), card.y(), x1, card.y() + 1, style.borderColor());
+		graphics.fill(card.x(), y1 - 1, x1, y1, style.borderColor());
 		if (style.washColor() != null) {
-			graphics.fill(x + 1, y + ACCENT_H, x1 - 1, y1 - 1, style.washColor());
-		}
-		if (style.veilColor() != null) {
-			graphics.fill(x + 1, y + ACCENT_H, x1 - 1, y1 - 1, style.veilColor());
+			graphics.fill(card.x() + 1, card.y() + ACCENT_H, x1 - 1, y1 - 1, style.washColor());
 		}
 	}
 
-	/** Name, tagline, divider and the card lines from one card model: the screen resolves the model once, never the parts. */
-	public static void drawBody(GuiGraphics graphics, Font font, int x, int y, ClassPresentation.CardModel model) {
+	/**
+	 * Name, tagline, divider and the card detail lines from one card model: the screen resolves
+	 * the model once, never the parts. Long lines wrap inside the card and stop before the
+	 * pinned select control, so descriptions never overflow or overlap it.
+	 */
+	public static void drawBody(GuiGraphics graphics, Font font, CardRect card, ClassPresentation.CardModel model) {
 		ClassPresentation.CardStyle style = model.style();
 		List<ClassPresentation.CardLine> lines = model.text().lines();
-		int cx = x + WIDTH / 2;
-		int ty = y + 10;
+		int cx = card.x() + card.w() / 2;
+		int ty = card.y() + 10;
+		int stopY = card.y() + card.h() - PAD - BUTTON_H - 4;
 		graphics.drawCenteredString(font, model.text().displayName(), cx, ty, style.nameColor());
 		ty += 11;
 		graphics.drawCenteredString(font, model.text().tagline(), cx, ty, TAGLINE_COLOR);
 		ty += 12;
-		graphics.fill(x + PAD, ty, x + WIDTH - PAD, ty + 1, DIVIDER_COLOR);
+		graphics.fill(card.x() + PAD, ty, card.x() + card.w() - PAD, ty + 1, DIVIDER_COLOR);
 		ty += 6;
 
 		for (ClassPresentation.CardLine line : lines) {
-			MutableComponent text = Component.literal(line.text());
+			MutableComponent shaped = Component.literal(line.text());
 			if (line.style().bold()) {
-				text = text.withStyle(s -> s.withBold(true));
+				shaped.withStyle(s -> s.withBold(true));
 			}
-			graphics.drawCenteredString(font, text, cx, ty, line.style().color());
-			ty += 11;
+			for (FormattedCharSequence visual : font.split(shaped, card.w() - PAD * 2)) {
+				if (ty + 9 > stopY) {
+					return;
+				}
+				graphics.drawString(font, visual, cx - font.width(visual) / 2, ty, line.style().color());
+				ty += 11;
+			}
 		}
 	}
 }

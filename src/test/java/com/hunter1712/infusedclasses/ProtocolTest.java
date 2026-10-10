@@ -50,9 +50,13 @@ class ProtocolTest {
 		ByteBuf buf = Unpooled.buffer();
 		try {
 			buf.clear();
-			OpenClassScreenPayload.STREAM_CODEC.encode(buf, new OpenClassScreenPayload());
-			OpenClassScreenPayload decoded2 = OpenClassScreenPayload.STREAM_CODEC.decode(buf);
-			assertEquals(new OpenClassScreenPayload(), decoded2);
+			OpenClassScreenPayload.STREAM_CODEC.encode(buf, new OpenClassScreenPayload("infusedclasses:juggernaut"));
+			assertEquals(new OpenClassScreenPayload("infusedclasses:juggernaut"),
+					OpenClassScreenPayload.STREAM_CODEC.decode(buf));
+
+			buf.clear();
+			OpenClassScreenPayload.STREAM_CODEC.encode(buf, new OpenClassScreenPayload(""));
+			assertEquals(new OpenClassScreenPayload(""), OpenClassScreenPayload.STREAM_CODEC.decode(buf));
 
 			buf.clear();
 			ClassConfirmedPayload.STREAM_CODEC.encode(buf, new ClassConfirmedPayload());

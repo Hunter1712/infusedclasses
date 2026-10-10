@@ -5,20 +5,24 @@ import com.hunter1712.infusedclasses.ClassPresentation;
 import com.hunter1712.infusedclasses.ClassRegistry;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
-import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.input.KeyEvent;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.Identifier;
+import org.lwjgl.glfw.GLFW;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Picker screen: dimmed backdrop, one card per class with a select button. It builds the
- * widgets from the presentation data, tracks which card is hovered and lays the row out;
- * how a card is drawn is ClassCardRenderer's business.
+ * Focused picker screen: dimmed backdrop, one large class card per page with its full
+ * kit printed on the card and no tooltips anywhere. Side arrows, clickable dots and
+ * keyboard paging move between pages with wraparound. It builds the widgets from the
+ * presentation data and the renderer math; how a card is drawn is ClassCardRenderer's
+ * business, and what a card says is the card text's. Picking still closes only on
+ * server confirm, so a rejected pick stays open for retry.
  */
 public class ClassSelectScreen extends Screen {
-	private static final int GAP = 12;
-
 	private static final String TITLE = "Choose your class";
 
 	private static final Component TITLE_BOLD = Component.literal(TITLE).withStyle(s -> s.withBold(true));
@@ -28,63 +32,104 @@ public class ClassSelectScreen extends Screen {
 	private static final int FOOTER_COLOR = 0xFF777777;
 
 	private List<ClassDefinition> classes = List.of();
+	private final List<Button> dots = new ArrayList<>();
+	private int page;
 
-	protected ClassSelectScreen() {
+	public ClassSelectScreen(String currentClassId) {
 		super(Component.literal(TITLE));
+		Identifier current = currentClassId == null || currentClassId.isEmpty()
+				? null : Identifier.tryParse(currentClassId);
+		ClassDefinition def = current == null ? null : ClassRegistry.byId(current);
+		page = def == null ? 0 : Math.max(0, List.copyOf(ClassRegistry.all()).indexOf(def));
 	}
 
 	@Override
 	protected void init() {
 		classes = List.copyOf(ClassRegistry.all());
-		for (int i = 0; i < classes.size(); i++) {
-			ClassDefinition def = classes.get(i);
-			int cardX = cardX(i, classes.size());
-			int cardY = ClassCardRenderer.cardsTop(height);
-			ClassCardRenderer.ButtonRect bounds = ClassCardRenderer.buttonRect(cardX, cardY);
-			ClassPresentation.CardText text = ClassPresentation.cardTextFor(def);
-			Component tip = Component.literal(text.tooltip());
-			Button button = Button.builder(Component.literal(text.button().label()), b -> InfusedClassesClient.pickClass(def.id()))
-					.bounds(bounds.x(), bounds.y(), bounds.w(), bounds.h())
-					.tooltip(Tooltip.create(tip))
-					.build();
-			button.active = text.button().active();
-			addRenderableWidget(button);
+		dots.clear();
+		if (classes.isEmpty()) {
+			return;
 		}
+		page = Math.min(page, classes.size() - 1);
+		ClassCardRenderer.CardRect card = ClassCardRenderer.focusedCard(width, height);
+
+		ClassCardRenderer.ButtonRect prev = ClassCardRenderer.prevRect(width, card);
+		addRenderableWidget(Button.builder(Component.literal("<"), b -> page = ClassCardRenderer.prevPage(page, classes.size()))
+				.bounds(prev.x(), prev.y(), prev.w(), prev.h())
+				.build());
+		ClassCardRenderer.ButtonRect next = ClassCardRenderer.nextRect(width, card);
+		addRenderableWidget(Button.builder(Component.literal(">"), b -> page = ClassCardRenderer.nextPage(page, classes.size()))
+				.bounds(next.x(), next.y(), next.w(), next.h())
+				.build());
+
+		int dotsTop = ClassCardRenderer.dotsY(card);
+		for (int i = 0; i < classes.size(); i++) {
+			int dot = i;
+			Button dotButton = Button.builder(Component.literal(dot == page ? "\u25CF" : "\u25CB"),
+					b -> page = dot)
+					.bounds(ClassCardRenderer.dotX(i, classes.size(), width), dotsTop,
+							ClassCardRenderer.DOT_W, ClassCardRenderer.DOT_H)
+					.build();
+			dots.add(dotButton);
+			addRenderableWidget(dotButton);
+		}
+
+		ClassCardRenderer.ButtonRect select = ClassCardRenderer.selectRect(card);
+		ClassPresentation.ButtonData button = ClassPresentation.buttonFor(classes.get(page));
+		addRenderableWidget(Button.builder(Component.literal(button.label()),
+				b -> InfusedClassesClient.pickClass(classes.get(page).id()))
+				.bounds(select.x(), select.y(), select.w(), select.h())
+				.build());
 	}
 
 	@Override
 	public void renderBackground(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
 		super.renderBackground(graphics, mouseX, mouseY, partialTick);
 		graphics.fillGradient(0, 0, width, height, 0xC0101010, 0xD0101010);
-		for (int i = 0; i < classes.size(); i++) {
-			int cardX = cardX(i, classes.size());
-			int cardY = ClassCardRenderer.cardsTop(height);
-			ClassDefinition def = classes.get(i);
-			boolean hovered = ClassCardRenderer.isHovering(cardX, cardY, mouseX, mouseY);
-			ClassCardRenderer.drawFrame(graphics, cardX, cardY, ClassPresentation.cardFor(def, hovered));
+		if (classes.isEmpty()) {
+			return;
 		}
+		ClassCardRenderer.CardRect card = ClassCardRenderer.focusedCard(width, height);
+		ClassDefinition def = classes.get(page);
+		ClassCardRenderer.drawFrame(graphics, card,
+				ClassPresentation.cardFor(def, ClassCardRenderer.isHovering(card, mouseX, mouseY)));
 	}
 
 	@Override
 	public void render(GuiGraphics graphics, int mouseX, int mouseY, float delta) {
 		super.render(graphics, mouseX, mouseY, delta);
-		int top = ClassCardRenderer.cardsTop(height);
-		graphics.drawCenteredString(font, TITLE_BOLD, width / 2, top - 44, TITLE_COLOR);
-		graphics.drawCenteredString(font, ClassPresentation.subtitle(), width / 2, top - 28, SUBTITLE_COLOR);
-
-		for (int i = 0; i < classes.size(); i++) {
-			int cardX = cardX(i, classes.size());
-			int cardY = ClassCardRenderer.cardsTop(height);
-			ClassDefinition def = classes.get(i);
-			boolean hovered = ClassCardRenderer.isHovering(cardX, cardY, mouseX, mouseY);
-			ClassPresentation.CardModel model = ClassPresentation.cardFor(def, hovered);
-			ClassCardRenderer.drawBody(graphics, font, cardX, cardY, model);
+		if (classes.isEmpty()) {
+			return;
 		}
-		graphics.drawCenteredString(font, "Click a class to choose it", width / 2, top + ClassCardRenderer.HEIGHT + 14, FOOTER_COLOR);
+		ClassCardRenderer.CardRect card = ClassCardRenderer.focusedCard(width, height);
+		graphics.drawCenteredString(font, TITLE_BOLD, width / 2, ClassCardRenderer.titleY(card), TITLE_COLOR);
+		graphics.drawCenteredString(font, ClassPresentation.subtitle(), width / 2, ClassCardRenderer.subtitleY(card),
+				SUBTITLE_COLOR);
+
+		ClassDefinition def = classes.get(page);
+		boolean hovered = ClassCardRenderer.isHovering(card, mouseX, mouseY);
+		ClassCardRenderer.drawBody(graphics, font, card, ClassPresentation.cardFor(def, hovered));
+		for (int i = 0; i < dots.size(); i++) {
+			dots.get(i).setMessage(Component.literal(i == page ? "\u25CF" : "\u25CB"));
+		}
+		graphics.drawCenteredString(font, "Click a class to choose it", width / 2, ClassCardRenderer.footerY(card),
+				FOOTER_COLOR);
 	}
 
-	private int cardX(int index, int count) {
-		return ClassCardRenderer.cardX(index, count, width, GAP);
+	@Override
+	public boolean keyPressed(KeyEvent event) {
+		if (classes.isEmpty()) {
+			return super.keyPressed(event);
+		}
+		if (event.key() == GLFW.GLFW_KEY_LEFT || event.key() == GLFW.GLFW_KEY_A) {
+			page = ClassCardRenderer.prevPage(page, classes.size());
+			return true;
+		}
+		if (event.key() == GLFW.GLFW_KEY_RIGHT || event.key() == GLFW.GLFW_KEY_D) {
+			page = ClassCardRenderer.nextPage(page, classes.size());
+			return true;
+		}
+		return super.keyPressed(event);
 	}
 
 	@Override

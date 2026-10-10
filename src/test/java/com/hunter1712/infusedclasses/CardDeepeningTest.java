@@ -16,30 +16,18 @@ class CardDeepeningTest {
 		assertEquals(ClassPresentation.cardStyleFor(juggernaut, false), plain.style());
 		assertEquals(ClassPresentation.accentFor(juggernaut), plain.text().accent());
 		assertEquals(ClassPresentation.buttonFor(juggernaut), plain.text().button());
-		assertEquals(ClassPresentation.tooltipFor(juggernaut), plain.text().tooltip());
 		assertEquals(juggernaut.displayName(), plain.text().displayName());
 		assertEquals(juggernaut.tagline(), plain.text().tagline());
 	}
 
 	@Test
-	void lockedCardCarriesLockedLookInOnePlace() {
-		ClassDefinition ranger = ClassRegistry.byId(net.minecraft.resources.Identifier
-				.fromNamespaceAndPath("infusedclasses", "ranger"));
+	void selectRectStaysInsideTheFocusedCard() {
+		ClassCardRenderer.CardRect card = ClassCardRenderer.focusedCard(854, 480);
+		ClassCardRenderer.ButtonRect bounds = ClassCardRenderer.selectRect(card);
 
-		ClassPresentation.CardModel card = ClassPresentation.cardFor(ranger, false);
-
-		assertEquals("Locked", card.text().button().label());
-		assertEquals("Coming soon", card.text().tooltip());
-		assertEquals(0xFF555555, card.text().accent());
-	}
-
-	@Test
-	void buttonRectStaysInsideTheCard() {
-		ClassCardRenderer.ButtonRect bounds = ClassCardRenderer.buttonRect(10, 20);
-
-		assertEquals(10 + ClassCardRenderer.PAD, bounds.x());
-		assertEquals(10 + ClassCardRenderer.WIDTH - ClassCardRenderer.PAD, bounds.x() + bounds.w());
-		assertEquals(20 + ClassCardRenderer.HEIGHT - ClassCardRenderer.PAD, bounds.y() + bounds.h());
+		assertEquals(card.x() + ClassCardRenderer.PAD, bounds.x());
+		assertEquals(card.x() + card.w() - ClassCardRenderer.PAD, bounds.x() + bounds.w());
+		assertEquals(card.y() + card.h() - ClassCardRenderer.PAD, bounds.y() + bounds.h());
 		assertEquals(ClassCardRenderer.BUTTON_H, bounds.h());
 	}
 }

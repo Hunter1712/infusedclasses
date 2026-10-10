@@ -33,24 +33,24 @@ public final class RotateAbility {
 			Identifier.fromNamespaceAndPath(ClassPackets.MOD_ID, "scutum_toughness");
 	public static final Identifier SCUTUM_WEIGHT_ID =
 			Identifier.fromNamespaceAndPath(ClassPackets.MOD_ID, "scutum_weight");
-	/** Gladius aura: +2 attack damage, glass. */
-	public static final double GLADIUS_DAMAGE = 2.0;
-	/** Gladius aura: +0.2 attack speed. */
-	public static final double GLADIUS_SPEED = 0.2;
-	/** Scutum aura: +6 armor, plate. */
-	public static final double SCUTUM_ARMOR = 6.0;
+	/** Gladius aura: +1 attack damage, glass. */
+	public static final double GLADIUS_DAMAGE = 1.0;
+	/** Gladius aura: +0.3 attack speed, paying back part of the damage cut as rate. */
+	public static final double GLADIUS_SPEED = 0.3;
+	/** Scutum aura: +3 armor, plate. */
+	public static final double SCUTUM_ARMOR = 3.0;
 	/** Scutum aura: +1 armor toughness. */
 	public static final double SCUTUM_TOUGHNESS = 1.0;
-	// ponytail: absolute -0.008 (~-8% of the 0.1 base) through the ADD_VALUE
+	// ponytail: absolute -0.006 (~-6% of the 0.1 base) through the ADD_VALUE
 	// write path, so no per-operation plumbing for one slow. Revisit with a
 	// multiplied operation if base speed ever stops being 0.1.
-	/** Scutum aura: slower, about -8% move speed. */
-	public static final double SCUTUM_WEIGHT = -0.008;
+	/** Scutum aura: slower, about -6% move speed. */
+	public static final double SCUTUM_WEIGHT = -0.006;
 
-	/** Gladius downside: melee taken x1.2, glass reads as glass. */
-	public static final double GLADIUS_TAKEN_MULT = 1.2;
-	/** Scutum downside: melee dealt x0.8, plate reads as plate. */
-	public static final double SCUTUM_DEAL_MULT = 0.8;
+	/** Gladius downside: melee taken x1.1, glass reads as glass. */
+	public static final double GLADIUS_TAKEN_MULT = 1.1;
+	/** Scutum downside: melee dealt x0.9, plate reads as plate. */
+	public static final double SCUTUM_DEAL_MULT = 0.9;
 
 	public enum Kind {
 		FIRED,
@@ -100,16 +100,16 @@ public final class RotateAbility {
 			new PassiveEffect.Modifier(ClassRegistry.MOVEMENT_SPEED, SCUTUM_WEIGHT_ID, SCUTUM_WEIGHT));
 
 	/**
-	 * Outgoing melee multiplier for a stance (no oath window).
-	 * Scutum deals x0.8; Gladius deals x1.0. Oath windows apply their own factor in MeleePlan.
+	 * Outgoing melee multiplier for a stance (no flip buff).
+	 * Scutum deals x0.9; Gladius deals x1.0. The Impetus flip buff applies its own factor in MeleePlan.
 	 */
 	public static double dealMult(Stance stance) {
 		return stance == Stance.SCUTUM ? SCUTUM_DEAL_MULT : 1.0;
 	}
 
 	/**
-	 * Incoming melee multiplier for a stance (no oath window).
-	 * Gladius takes x1.2; Scutum takes x1.0. Oath windows apply their own factor in MeleePlan.
+	 * Incoming melee multiplier for a stance (no flip buff).
+	 * Gladius takes x1.1; Scutum takes x1.0. The Testudo flip buff applies its own factor in MeleePlan.
 	 */
 	public static double takeMult(Stance stance) {
 		return stance == Stance.GLADIUS ? GLADIUS_TAKEN_MULT : 1.0;
@@ -144,7 +144,7 @@ public final class RotateAbility {
 			if (!runtime.tryUseRotate(now)) {
 				return false;
 			}
-			runtime.flipStance();
+			runtime.flipStance(now, result.stance());
 			return true;
 		}, () -> runtime.rotateRemaining(now), Result::onCooldown);
 	}

@@ -49,10 +49,10 @@ class AbilityGateTest {
 				&& cold.rendRemaining(0) == 0);
 		assertTrue(RotateAbility.fire(null, cold, 0).kind() == RotateAbility.Kind.WRONG_CLASS
 				&& cold.rotateRemaining(0) == 0);
-		assertTrue(ImpetusAbility.fire(juggernaut, cold, 0).kind() == ImpetusAbility.Kind.WRONG_CLASS
+		assertTrue(AequilibriumAbility.fire(juggernaut, cold, 0).kind() == AequilibriumAbility.Kind.WRONG_CLASS
 				&& cold.oathRemaining(0) == 0);
-		assertTrue(TestudoAbility.fire(juggernaut, cold, 0).kind() == TestudoAbility.Kind.WRONG_CLASS
-				&& cold.oathRemaining(0) == 0);
+		assertEquals(AequilibriumAbility.Kind.FIRED,
+				AequilibriumAbility.fire(legionary, new PlayerRuntime(), 0).kind());
 		assertEquals(RotateAbility.Kind.FIRED, RotateAbility.fire(legionary, new PlayerRuntime(), 0).kind());
 	}
 }

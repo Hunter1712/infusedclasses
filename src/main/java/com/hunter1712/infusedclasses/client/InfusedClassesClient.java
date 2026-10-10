@@ -24,7 +24,7 @@ public class InfusedClassesClient implements ClientModInitializer {
 	public void onInitializeClient() {
 		ClientPlayNetworking.registerGlobalReceiver(OpenClassScreenPayload.TYPE,
 				(OpenClassScreenPayload payload, ClientPlayNetworking.Context context) -> context.client()
-						.execute(() -> context.client().setScreen(new ClassSelectScreen())));
+						.execute(() -> context.client().setScreen(new ClassSelectScreen(payload.currentClassId()))));
 
 		// Picker closes only on server confirm, so a rejected pick stays open for retry.
 		ClientPlayNetworking.registerGlobalReceiver(ClassConfirmedPayload.TYPE,

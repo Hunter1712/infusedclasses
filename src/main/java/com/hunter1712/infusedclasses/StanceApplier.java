@@ -8,8 +8,8 @@ import java.util.List;
 /**
  * Stance applier: the adapter that makes the player's attributes agree with the
  * Legionary stance. Only the current stance's modifiers sit on the player, the other
- * stance's come off, same write-only-on-change shape as the Vigor tick. Testudo plate
- * and brace ride the window while live. Non-Legionaries skip entirely; leaving the
+ * stance's come off, same write-only-on-change shape as the Vigor tick. Aequilibrium edge
+ * and plate ride the window while live. Non-Legionaries skip entirely; leaving the
  * class removes everything through {@link #onClassChanged}.
  */
 final class StanceApplier {
@@ -31,12 +31,12 @@ final class StanceApplier {
 		for (PassiveEffect.Modifier stale : RotateAbility.auraFor(RotateAbility.flipped(runtime.stance()))) {
 			AttributeWriter.remove(player, stale.attribute(), stale.modifierId());
 		}
-		if (runtime.isTestudoLive(now)) {
-			for (PassiveEffect.Modifier wanted : TestudoAbility.windowModifiers()) {
+		if (runtime.isAequilibriumLive(now)) {
+			for (PassiveEffect.Modifier wanted : AequilibriumAbility.windowModifiers()) {
 				AttributeWriter.write(player, wanted);
 			}
 		} else {
-			for (PassiveEffect.Modifier stale : TestudoAbility.windowModifiers()) {
+			for (PassiveEffect.Modifier stale : AequilibriumAbility.windowModifiers()) {
 				AttributeWriter.remove(player, stale.attribute(), stale.modifierId());
 			}
 		}
@@ -46,7 +46,7 @@ final class StanceApplier {
 	static void removeStanceModifiers(ServerPlayer player) {
 		List<PassiveEffect.Modifier> all = new ArrayList<>(RotateAbility.auraFor(RotateAbility.Stance.GLADIUS));
 		all.addAll(RotateAbility.auraFor(RotateAbility.Stance.SCUTUM));
-		all.addAll(TestudoAbility.windowModifiers());
+		all.addAll(AequilibriumAbility.windowModifiers());
 		for (PassiveEffect.Modifier stale : all) {
 			AttributeWriter.remove(player, stale.attribute(), stale.modifierId());
 		}

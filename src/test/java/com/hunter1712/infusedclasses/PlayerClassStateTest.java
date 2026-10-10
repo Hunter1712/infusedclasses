@@ -19,7 +19,7 @@ class PlayerClassStateTest {
 	}
 
 	@Test
-	void rejectsLockedUnknownAndMissing() {
+	void rejectsUnknownAndMissing() {
 		PlayerClasses classes = new PlayerClasses();
 
 		assertNull(classes.trySetClass(Identifier.fromNamespaceAndPath("infusedclasses", "ranger")));

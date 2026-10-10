@@ -7,7 +7,6 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ClassPresentationTest {
@@ -22,56 +21,43 @@ class ClassPresentationTest {
 	}
 
 	@Test
-	void comingSoonHasNoAbilityAndNoPassives() {
+	void everyRegisteredClassIsPlayableWithActives() {
 		for (ClassDefinition def : ClassRegistry.all()) {
-			if (!def.locked()) {
-				continue;
-			}
-			assertTrue(def.activeAbilities().isEmpty(), def.id() + " locked must carry no ability");
-			assertTrue(def.passives().isEmpty(), def.id() + " locked must carry no passives");
-			assertTrue(def.hpPassives().isEmpty(), def.id() + " locked must carry no HP-scaled passives");
-			assertTrue(def.actives().isEmpty(), def.id() + " locked must carry no actives");
+			assertFalse(def.locked(), def.id() + " must be playable");
+			assertFalse(def.activeAbilities().isEmpty(), def.id() + " must carry an ability");
+			assertFalse(def.actives().isEmpty(), def.id() + " must carry an active");
 		}
 	}
 
 	@Test
-	void lockedPlaceholdersStillCarryPickerText() {
-		ClassDefinition ranger = ClassRegistry.byId(
-				net.minecraft.resources.Identifier.fromNamespaceAndPath("infusedclasses", "ranger"));
+	void juggernautCardLinesCarryNamePlusDescription() {
+		ClassDefinition juggernaut = ClassRegistry.byId(ClassRegistry.JUGGERNAUT);
+		ConditionalPassive momentum = juggernaut.passives().get(0);
 
-		assertEquals("Wilds archer", ranger.tagline());
-		assertEquals(0xFF2ECC71, ranger.accentColor());
+		List<String> texts = ClassPresentation.cardLinesFor(juggernaut).stream()
+				.map(ClassPresentation.CardLine::text).toList();
+
+		assertTrue(texts.contains("Momentum \u2014 " + momentum.fullDesc()));
+		assertTrue(texts.stream().anyMatch(t -> t.contains("(max " + momentum.maxStacks() + ")")));
+		assertTrue(texts.stream().anyMatch(t -> t.startsWith("Rush \u2014 ")
+				&& t.contains("(R, " + (Cooldowns.RUSH_MS / 1000) + "s)")));
+		assertTrue(texts.stream().anyMatch(t -> t.startsWith("Rend \u2014 ")
+				&& t.contains("per Momentum stack")));
+		assertFalse(texts.stream().anyMatch(t -> t.contains("Roots")));
 	}
 
 	@Test
-	void juggernautTooltipJoinsAbilityLines() {
-		ClassDefinition juggernaut = ClassRegistry.byId(ClassRegistry.JUGGERNAUT);
+	void legionaryCardLinesShowPlaceholderPlusFourActives() {
+		ClassDefinition legionary = ClassRegistry.byId(ClassRegistry.LEGIONARY);
 
-		String tooltip = ClassPresentation.tooltipFor(juggernaut);
+		List<ClassPresentation.CardLine> lines = ClassPresentation.cardLinesFor(legionary);
+		List<String> texts = lines.stream().map(ClassPresentation.CardLine::text).toList();
 
-		ConditionalPassive momentum = juggernaut.passives().get(0);
-		// Tooltip shows passive, then one Active entry per active with honest numbers from the constants
-		assertTrue(tooltip.contains("Passive: Momentum \u2014 " + momentum.fullDesc()));
-		assertTrue(tooltip.contains("Active: Rush \u2014 Cleanses"));
-		assertTrue(tooltip.contains("(R, " + (Cooldowns.RUSH_MS / 1000) + "s)"));
-		assertTrue(tooltip.contains("+" + RushAbility.BONUS_STACKS + " Momentum"));
-		assertTrue(tooltip.contains("Active: Rend \u2014 Empowers"));
-		assertTrue(tooltip.contains("(G, " + (Cooldowns.REND_MS / 1000) + "s)"));
-		assertTrue(tooltip.contains("per Momentum stack"));
-		assertFalse(tooltip.contains("Roots you"));
-		assertTrue(tooltip.endsWith("Click to choose Juggernaut."));
-	}
-
-	@Test
-	void juggernautTooltipIncludesMaxStacks() {
-		ClassDefinition juggernaut = ClassRegistry.byId(ClassRegistry.JUGGERNAUT);
-
-		String tooltip = ClassPresentation.tooltipFor(juggernaut);
-
-		ConditionalPassive momentum = juggernaut.passives().get(0);
-		assertTrue(tooltip.contains(momentum.name()));
-		assertTrue(tooltip.contains(momentum.fullDesc()));
-		assertTrue(tooltip.contains("(max " + momentum.maxStacks() + ")"));
+		assertTrue(texts.contains("No passives yet"));
+		assertTrue(texts.stream().anyMatch(t -> t.startsWith("Rotate \u2014 ")));
+		assertTrue(texts.stream().anyMatch(t -> t.startsWith("Impetus \u2014 ")));
+		assertTrue(texts.stream().anyMatch(t -> t.startsWith("Testudo \u2014 ")));
+		assertTrue(texts.stream().anyMatch(t -> t.startsWith("Aequilibrium \u2014 ")));
 	}
 
 	@Test
@@ -80,17 +66,7 @@ class ClassPresentationTest {
 	}
 
 	@Test
-	void lockedTooltipIsComingSoon() {
-		ClassDefinition ranger = ClassRegistry.byId(
-				net.minecraft.resources.Identifier.fromNamespaceAndPath("infusedclasses", "ranger"));
-
-		String tooltip = ClassPresentation.tooltipFor(ranger);
-
-		assertEquals("Coming soon", tooltip);
-	}
-
-	@Test
-	void juggernautCardLinesIncludePassivesAndAbilities() {
+	void juggernautCardLinesIncludeHeadersAndDetails() {
 		ClassDefinition juggernaut = ClassRegistry.byId(ClassRegistry.JUGGERNAUT);
 
 		List<ClassPresentation.CardLine> lines = ClassPresentation.cardLinesFor(juggernaut);
@@ -100,49 +76,19 @@ class ClassPresentationTest {
 		assertEquals(ClassPresentation.LineKind.PASSIVE_HEADER, lines.get(0).kind());
 		assertEquals(0xFFFFFFFF, lines.get(0).style().color());
 		assertTrue(lines.get(0).style().bold());
-		assertEquals("Momentum", lines.get(1).text());
+		assertTrue(lines.get(1).text().startsWith("Momentum \u2014 "));
 		assertEquals(ClassPresentation.LineKind.PASSIVE, lines.get(1).kind());
 		assertEquals(0xFFBDBDBD, lines.get(1).style().color());
 		assertFalse(lines.get(1).style().bold());
-		assertEquals("Vigor", lines.get(2).text());
+		assertTrue(lines.get(2).text().startsWith("Vigor \u2014 "));
 		assertEquals(ClassPresentation.LineKind.PASSIVE, lines.get(2).kind());
-		assertEquals(0xFFBDBDBD, lines.get(2).style().color());
-		assertFalse(lines.get(2).style().bold());
 		// Active section
 		assertEquals("Active", lines.get(3).text());
 		assertEquals(ClassPresentation.LineKind.ABILITY_HEADER, lines.get(3).kind());
-		assertEquals(0xFFFFFFFF, lines.get(3).style().color());
-		assertTrue(lines.get(3).style().bold());
-		assertEquals("Rush", lines.get(4).text());
+		assertTrue(lines.get(4).text().startsWith("Rush \u2014 "));
 		assertEquals(ClassPresentation.LineKind.ABILITY, lines.get(4).kind());
 		assertEquals(0xFF7ED6FF, lines.get(4).style().color());
-		assertFalse(lines.get(4).style().bold());
-		assertEquals("Rend", lines.get(5).text());
-		assertEquals(ClassPresentation.LineKind.ABILITY, lines.get(5).kind());
-		assertEquals(0xFF7ED6FF, lines.get(5).style().color());
-		assertFalse(lines.get(5).style().bold());
-	}
-
-	@Test
-	void lockedCardLinesArePlaceholders() {
-		ClassDefinition ranger = ClassRegistry.byId(
-				net.minecraft.resources.Identifier.fromNamespaceAndPath("infusedclasses", "ranger"));
-
-		List<ClassPresentation.CardLine> lines = ClassPresentation.cardLinesFor(ranger);
-
-		assertEquals(3, lines.size());
-		assertEquals("Passives: ???", lines.get(0).text());
-		assertEquals(ClassPresentation.LineKind.PASSIVE, lines.get(0).kind());
-		assertEquals(0xFFBDBDBD, lines.get(0).style().color());
-		assertFalse(lines.get(0).style().bold());
-		assertEquals("Active: ???", lines.get(1).text());
-		assertEquals(ClassPresentation.LineKind.ABILITY, lines.get(1).kind());
-		assertEquals(0xFF7ED6FF, lines.get(1).style().color());
-		assertFalse(lines.get(1).style().bold());
-		assertEquals("COMING SOON", lines.get(2).text());
-		assertEquals(ClassPresentation.LineKind.NOTICE, lines.get(2).kind());
-		assertEquals(0xFFE8C15A, lines.get(2).style().color(), "notice draws in the title gold");
-		assertTrue(lines.get(2).style().bold(), "notice draws bold");
+		assertTrue(lines.get(5).text().startsWith("Rend \u2014 "));
 	}
 
 	@Test
@@ -155,39 +101,21 @@ class ClassPresentationTest {
 				ClassPresentation.styleFor(ClassPresentation.LineKind.ABILITY_HEADER));
 		assertEquals(new ClassPresentation.LineStyle(0xFF7ED6FF, false),
 				ClassPresentation.styleFor(ClassPresentation.LineKind.ABILITY));
-		assertEquals(new ClassPresentation.LineStyle(0xFFE8C15A, true),
-				ClassPresentation.styleFor(ClassPresentation.LineKind.NOTICE));
 	}
 
 	@Test
-	void lockedCardIsVeiledNeverHighlighted() {
-		ClassDefinition ranger = ClassRegistry.byId(
-				net.minecraft.resources.Identifier.fromNamespaceAndPath("infusedclasses", "ranger"));
+	void everyCardHighlightsOnlyOnHover() {
+		for (ClassDefinition def : ClassRegistry.all()) {
+			ClassPresentation.CardStyle plain = ClassPresentation.cardStyleFor(def, false);
+			assertEquals(0xFF3A3A3A, plain.borderColor());
+			assertEquals(null, plain.washColor());
+			assertEquals(0xFFFFFFFF, plain.nameColor());
 
-		for (boolean hovered : new boolean[] { false, true }) {
-			ClassPresentation.CardStyle style = ClassPresentation.cardStyleFor(ranger, hovered);
-			assertEquals(0xFF3A3A3A, style.borderColor());
-			assertNull(style.washColor());
-			assertEquals(0x50000000, style.veilColor());
-			assertEquals(0xFF8A8A8A, style.nameColor());
+			ClassPresentation.CardStyle hovered = ClassPresentation.cardStyleFor(def, true);
+			assertEquals(0xFF8A8A8A, hovered.borderColor());
+			assertEquals(0x14FFFFFF, hovered.washColor());
+			assertEquals(0xFFFFFFFF, hovered.nameColor());
 		}
-	}
-
-	@Test
-	void unlockedCardHighlightsOnlyOnHover() {
-		ClassDefinition juggernaut = ClassRegistry.byId(ClassRegistry.JUGGERNAUT);
-
-		ClassPresentation.CardStyle plain = ClassPresentation.cardStyleFor(juggernaut, false);
-		assertEquals(0xFF3A3A3A, plain.borderColor());
-		assertNull(plain.washColor());
-		assertNull(plain.veilColor());
-		assertEquals(0xFFFFFFFF, plain.nameColor());
-
-		ClassPresentation.CardStyle hovered = ClassPresentation.cardStyleFor(juggernaut, true);
-		assertEquals(0xFF8A8A8A, hovered.borderColor());
-		assertEquals(0x14FFFFFF, hovered.washColor());
-		assertNull(hovered.veilColor());
-		assertEquals(0xFFFFFFFF, hovered.nameColor());
 	}
 
 	@Test
@@ -201,23 +129,18 @@ class ClassPresentationTest {
 	}
 
 	@Test
-	void lockedAccentIsGrey() {
-		ClassDefinition ranger = ClassRegistry.byId(
-				net.minecraft.resources.Identifier.fromNamespaceAndPath("infusedclasses", "ranger"));
-		ClassDefinition juggernaut = ClassRegistry.byId(ClassRegistry.JUGGERNAUT);
-
-		assertEquals(0xFF555555, ClassPresentation.accentFor(ranger));
-		assertEquals(0xFFE74C3C, ClassPresentation.accentFor(juggernaut));
+	void accentIsTheClassColor() {
+		assertEquals(0xFFE74C3C,
+				ClassPresentation.accentFor(ClassRegistry.byId(ClassRegistry.JUGGERNAUT)));
+		assertEquals(0xFFB87333,
+				ClassPresentation.accentFor(ClassRegistry.byId(ClassRegistry.LEGIONARY)));
 	}
 
 	@Test
-	void buttonForLockedIsInactive() {
-		ClassDefinition ranger = ClassRegistry.byId(
-				net.minecraft.resources.Identifier.fromNamespaceAndPath("infusedclasses", "ranger"));
-		ClassDefinition juggernaut = ClassRegistry.byId(ClassRegistry.JUGGERNAUT);
-
-		assertEquals(new ClassPresentation.ButtonData("Locked", false), ClassPresentation.buttonFor(ranger));
-		assertEquals(new ClassPresentation.ButtonData("Select", true), ClassPresentation.buttonFor(juggernaut));
+	void buttonIsAlwaysActiveSelect() {
+		for (ClassDefinition def : ClassRegistry.all()) {
+			assertEquals(new ClassPresentation.ButtonData("Select", true), ClassPresentation.buttonFor(def));
+		}
 	}
 
 	@Test
@@ -234,7 +157,7 @@ class ClassPresentationTest {
 
 		List<ClassPresentation.CardLine> lines = ClassPresentation.cardLinesFor(def);
 
-		// Empty passives render the placeholder under the header (08)
+		// Empty passives render the placeholder under the header
 		assertEquals("Passives", lines.get(0).text());
 		assertEquals(ClassPresentation.LineKind.PASSIVE_HEADER, lines.get(0).kind());
 		assertEquals("No passives yet", lines.get(1).text());
@@ -243,9 +166,7 @@ class ClassPresentationTest {
 		assertFalse(lines.get(1).style().bold());
 		assertEquals("Active", lines.get(2).text());
 		assertEquals(ClassPresentation.LineKind.ABILITY_HEADER, lines.get(2).kind());
-		assertEquals(0xFFFFFFFF, lines.get(2).style().color());
-		assertTrue(lines.get(2).style().bold());
-		assertEquals("Ability line", lines.get(3).text());
+		assertEquals("Ability line \u2014 Does a thing.", lines.get(3).text());
 		assertEquals(ClassPresentation.LineKind.ABILITY, lines.get(3).kind());
 		assertEquals(0xFF7ED6FF, lines.get(3).style().color());
 		assertFalse(lines.get(3).style().bold());

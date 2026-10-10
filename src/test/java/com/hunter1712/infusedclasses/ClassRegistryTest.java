@@ -25,23 +25,20 @@ class ClassRegistryTest {
 	}
 
 	@Test
-	void plannedClassesArePresentAndLocked() {
+	void onlyPlayableClassesAreRegistered() {
 		long locked = ClassRegistry.all().stream().filter(ClassDefinition::locked).count();
 
-		assertEquals(4, ClassRegistry.all().size());
-		assertEquals(2, locked);
+		assertEquals(2, ClassRegistry.all().size());
+		assertEquals(0, locked);
+		assertNull(ClassRegistry.byId(Identifier.fromNamespaceAndPath("infusedclasses", "ranger")));
+		assertNull(ClassRegistry.byId(Identifier.fromNamespaceAndPath("infusedclasses", "mage")));
 		assertNull(ClassRegistry.byId(Identifier.fromNamespaceAndPath("infusedclasses", "bard")));
 	}
 
 	@Test
-	void juggernautCarriesNoHealthBonusWhileLockedCarriesNone() {
+	void playableClassesCarryNoHealthBonus() {
 		assertEquals(0.0, ClassRegistry.byId(ClassRegistry.JUGGERNAUT).maxHealthBonus());
-
-		for (ClassDefinition def : ClassRegistry.all()) {
-			if (def.locked()) {
-				assertEquals(0.0, def.maxHealthBonus(), def.id() + " locked must carry no health bonus");
-			}
-		}
+		assertEquals(0.0, ClassRegistry.byId(ClassRegistry.LEGIONARY).maxHealthBonus());
 	}
 
 	@Test

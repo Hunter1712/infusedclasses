@@ -29,22 +29,33 @@ public final class PlayerRuntime {
 	// Legionary form: transient per ADR-0002, every Legionary enters in Scutum.
 	// The choice stays in PlayerClasses; this is where the body is, not the pick.
 	private RotateAbility.Stance stance = RotateAbility.Stance.SCUTUM;
-	// Oath windows: press timestamps (millis), each live 6s after its fired
-	// press. Persistent, never consumed: every hit inside a live window earns, so the
-	// plan peeks them with isLive and nothing spends them. Milk-proof (timestamps, not
-	// effects); death ends them with everything else, so switch and respawn never
+	// Flip record: when the last Rotate flipped and where it landed. The Impetus
+	// flip buff peeks it (flipped to Gladius inside 5s, one-shot through the pending
+	// flag below) and the Testudo buff peeks it (flipped to Scutum inside 1.5s,
+	// timed, never consumed). Stamped by flipStance, cleared with everything else.
+	private long flipAt = -1L;
+	private RotateAbility.Stance flippedTo = null;
+	// Impetus one-shot: armed by flipping to Gladius, spent by the hit settle, so the
+	// buff lands at most once. Flipping away drops it with the stance that earned it.
+	private boolean impetusPending;
+	// Aequilibrium window: press timestamp (millis), live 6s after its fired press.
+	// Persistent, never consumed: every tick inside a live window wears the aura, so the
+	// applier peeks it with isLive and nothing spends it. Milk-proof (timestamps, not
+	// effects); death ends it with everything else, so switch and respawn never
 	// inherit a window.
-	private final Window impetusWindow = new Window();
-	private final Window testudoWindow = new Window();
+	private final Window aequilibriumWindow = new Window();
 
 	/** Current Legionary stance, SCUTUM until the first Rotate. */
 	public RotateAbility.Stance stance() {
 		return stance;
 	}
 
-	/** Flips the stance: Rotate's fire lands here with the lane arm. */
-	public void flipStance() {
-		stance = RotateAbility.flipped(stance);
+	/** Flips the stance and stamps the flip record: Rotate's fire lands here with the lane arm. */
+	public void flipStance(long now, RotateAbility.Stance landing) {
+		stance = landing;
+		flippedTo = landing;
+		flipAt = now;
+		impetusPending = landing == RotateAbility.Stance.GLADIUS;
 	}
 
 	// Joint arms: lane plus window stamped together, so a fired press can never arm
@@ -63,33 +74,48 @@ public final class PlayerRuntime {
 		return cooldowns.oathRemaining(now);
 	}
 
-	/** Arms the shared oath lane and stamps the Impetus window together. */
-	public boolean tryUseImpetus(long now) {
-		return armOath(now, impetusWindow);
-	}
-
-	/** Arms the shared oath lane and stamps the Testudo window together. */
-	public boolean tryUseTestudo(long now) {
-		return armOath(now, testudoWindow);
-	}
-
-	/** Single lane-arm for both oath windows: firing one locks the other. */
-	private boolean armOath(long now, Window window) {
+	/** Arms the shared oath lane and stamps the Aequilibrium window together. */
+	public boolean tryUseAequilibrium(long now) {
 		if (!cooldowns.useOath(now)) {
 			return false;
 		}
-		window.arm(now);
+		aequilibriumWindow.arm(now);
 		return true;
 	}
 
-	/** Whether a fired Impetus window is still live. Persistent: peeked every hit inside, never consumed. Expiry is silent. */
-	public boolean isImpetusLive(long now) {
-		return impetusWindow.isLive(ImpetusAbility.WINDOW_TICKS, now);
+	/** Whether a fired Aequilibrium window is still live. Persistent: peeked while live, never consumed. Expiry is silent. */
+	public boolean isAequilibriumLive(long now) {
+		return aequilibriumWindow.isLive(AequilibriumAbility.WINDOW_TICKS, now);
 	}
 
-	/** Whether a fired Testudo window is still live. Persistent: peeked every hit inside, never consumed. Expiry is silent. */
-	public boolean isTestudoLive(long now) {
-		return testudoWindow.isLive(TestudoAbility.WINDOW_TICKS, now);
+	/**
+	 * Peeks the Impetus flip buff without consuming: what the melee plan decides on.
+	 * Armed by flipping to Gladius, live 5s, one-shot through the pending flag.
+	 */
+	public boolean hasImpetusPending(long now) {
+		return impetusPending && flippedTo == RotateAbility.Stance.GLADIUS
+				&& flipAt >= 0 && now - flipAt < ImpetusAbility.SWITCH_DEAL_MS;
+	}
+
+	/**
+	 * Consumes the Impetus flip buff exactly once: true when a pending buff was waiting,
+	 * false when nothing was owed. An unswung flip simply stops being live.
+	 */
+	public boolean consumeImpetusBonus(long now) {
+		if (!hasImpetusPending(now)) {
+			return false;
+		}
+		impetusPending = false;
+		return true;
+	}
+
+	/**
+	 * Whether the Testudo flip catch is still live: flipped to Scutum inside 1.5s.
+	 * Timed, never consumed: every hit inside the catch is discounted. Expiry is silent.
+	 */
+	public boolean isTestudoBuffLive(long now) {
+		return flippedTo == RotateAbility.Stance.SCUTUM
+				&& flipAt >= 0 && now - flipAt < TestudoAbility.SWITCH_TAKE_MS;
 	}
 
 	// Lane reads: mechanical forwards over the hidden Cooldowns, so ability decisions
@@ -155,9 +181,12 @@ public final class PlayerRuntime {
 	/** Reset for class switch: a new class starts empty. The adapter calls this, not ability callers. */
 	public void resetCooldowns() {
 		cooldowns.reset();
-		for (Window w : new Window[]{rushWindow, rendWindow, impetusWindow, testudoWindow}) {
+		for (Window w : new Window[]{rushWindow, rendWindow, aequilibriumWindow}) {
 			w.clear();
 		}
+		flipAt = -1L;
+		flippedTo = null;
+		impetusPending = false;
 		stance = RotateAbility.Stance.SCUTUM;
 	}
 

@@ -19,13 +19,6 @@ class BonusCurveTest {
 	}
 
 	@Test
-	void impetusBonusAtQuarterOnHalfCharge() {
-		assertEquals(3.0F, ImpetusAbility.bonusFor(1.0F));
-		assertEquals(0.75F, ImpetusAbility.bonusFor(0.5F));
-		assertEquals(0.0F, ImpetusAbility.bonusFor(0.0F));
-	}
-
-	@Test
 	void rendBonusAtQuarterOnHalfCharge() {
 		float full = RendAbility.empowerFor(10);
 

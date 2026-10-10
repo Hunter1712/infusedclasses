@@ -19,20 +19,18 @@ class BindMorphTest {
 	}
 
 	@Test
-	void gMorphsOnStanceForLegionariesRendForEveryoneElse() {
+	void gIsUltimateForLegionariesRendForEveryoneElse() {
 		ClassDefinition legionary = ClassRegistry.byId(ClassRegistry.LEGIONARY);
 
-		assertEquals(BindMorph.OathTarget.IMPETUS,
-				BindMorph.oathFor(legionary, RotateAbility.Stance.GLADIUS));
-		assertEquals(BindMorph.OathTarget.TESTUDO,
-				BindMorph.oathFor(legionary, RotateAbility.Stance.SCUTUM));
+		assertEquals(BindMorph.OathTarget.AEQUILIBRIUM,
+				BindMorph.oathFor(legionary));
 		assertEquals(BindMorph.OathTarget.REND,
-				BindMorph.oathFor(ClassRegistry.byId(ClassRegistry.JUGGERNAUT), RotateAbility.Stance.GLADIUS));
-		assertEquals(BindMorph.OathTarget.REND, BindMorph.oathFor(null, RotateAbility.Stance.SCUTUM));
+				BindMorph.oathFor(ClassRegistry.byId(ClassRegistry.JUGGERNAUT)));
+		assertEquals(BindMorph.OathTarget.REND, BindMorph.oathFor(null));
 	}
 
 	@Test
-	void oathMorphKeysOnRotateNotOnOathIds() {
+	void oathKeysOnRotateNotOnOathIds() {
 		ClassDefinition rotateOnly = new ClassDefinition(
 				net.minecraft.resources.Identifier.fromNamespaceAndPath("infusedclasses", "test"), "Test", false,
 				java.util.List.of(), java.util.List.of(), 0.0, java.util.List.of(ClassRegistry.ROTATE_ABILITY), 0, "", java.util.List.of());
@@ -40,9 +38,9 @@ class BindMorphTest {
 				net.minecraft.resources.Identifier.fromNamespaceAndPath("infusedclasses", "test"), "Test", false,
 				java.util.List.of(), java.util.List.of(), 0.0, java.util.List.of(ClassRegistry.IMPETUS_ABILITY), 0, "", java.util.List.of());
 
-		assertEquals(BindMorph.OathTarget.IMPETUS,
-				BindMorph.oathFor(rotateOnly, RotateAbility.Stance.GLADIUS));
+		assertEquals(BindMorph.OathTarget.AEQUILIBRIUM,
+				BindMorph.oathFor(rotateOnly));
 		assertEquals(BindMorph.OathTarget.REND,
-				BindMorph.oathFor(impetusWithoutRotate, RotateAbility.Stance.GLADIUS));
+				BindMorph.oathFor(impetusWithoutRotate));
 	}
 }

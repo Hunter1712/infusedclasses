@@ -39,13 +39,14 @@ public final class ClassCommands {
 													return setClass(ctx.getSource(),
 															EntityArgument.getPlayer(ctx, "player"), id);
 												}))))
-						// testing-only: reopens the picker for GUI iteration. Picking is still server-validated,
-						// so reopening never bypasses the locked-class check.
+						// testing-only: reopens the picker for GUI iteration. Picking is still server-validated.
 						.then(Commands.literal("select")
 								.then(Commands.argument("player", EntityArgument.player())
 										.executes(ctx -> {
 											ServerPlayer player = EntityArgument.getPlayer(ctx, "player");
-											ServerPlayNetworking.send(player, new OpenClassScreenPayload());
+											String current = PlayerClassAccess.of(player).writeId();
+											ServerPlayNetworking.send(player,
+													new OpenClassScreenPayload(current == null ? "" : current));
 											ctx.getSource().sendSuccess(() -> Component.literal(
 													"Opened class picker for " + player.getName().getString()), true);
 											return 1;

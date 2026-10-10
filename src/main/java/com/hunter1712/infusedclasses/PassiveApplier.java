@@ -134,9 +134,10 @@ public final class PassiveApplier {
 	/**
 	 * Settles a planned hit and returns the stamped Rend bonus for this hit to land, 0 when
 	 * the plan saw nothing live, all at the same {@code now} the plan peeked them and in
-	 * field order with {@link MeleePlan#planHit}: the stack bump, the Rush credit, then
-	 * the Rend snapshot spend. The entry lands what this returns, so it cannot land a
-	 * bonus this did not spend, and empty hits never touch a window. Bonus damage itself
+	 * field order with {@link MeleePlan#planHit}: the stack bump, the Rush credit, the
+	 * Impetus spend, then the Rend snapshot spend. The entry lands what this returns, so it
+	 * cannot land a bonus this did not spend, and empty hits never touch a window. The Impetus
+	 * mult itself rides the plan's combined mult, never recomputed. Bonus damage itself
 	 * still lands from the plan's stamped {@code rendHp}, never recomputed.
 	 */
 	public static float settleHit(PlayerRuntime runtime, ClassDefinition def, MeleePlan.HitPlan plan,
@@ -151,6 +152,9 @@ public final class PassiveApplier {
 		}
 		if (plan.rushBonus()) {
 			grantRushBonus(runtime, def, now);
+		}
+		if (plan.impetusPending()) {
+			runtime.consumeImpetusBonus(now);
 		}
 		if (plan.rendStacks() > 0 && runtime.consumeRendEmpower(now) >= 0) {
 			return plan.rendHp();

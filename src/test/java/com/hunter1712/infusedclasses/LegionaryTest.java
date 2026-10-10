@@ -10,7 +10,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Legionary decisions: stance toggle, oath payoffs, and the mult matrix.
+ * Legionary decisions: stance toggle, flip buffs, the oath ultimate, and the mult matrix.
  * Adapters own the attributes and sounds; this pins what they are told.
  */
 class LegionaryTest {
@@ -19,32 +19,35 @@ class LegionaryTest {
 	}
 
 	@Test
-	void registryCarriesLegionaryWithThreeActives() {
+	void registryCarriesLegionaryWithFourActives() {
 		ClassDefinition def = legionary();
 
 		assertFalse(def.locked());
 		assertEquals("Legionary", def.displayName());
 		assertEquals(0xFFB87333, def.accentColor());
 		assertEquals(List.of(ClassRegistry.ROTATE_ABILITY, ClassRegistry.IMPETUS_ABILITY,
-				ClassRegistry.TESTUDO_ABILITY), def.activeAbilities());
-		assertEquals(List.of("Rotate", "Impetus", "Testudo"),
+				ClassRegistry.TESTUDO_ABILITY, ClassRegistry.AEQUILIBRIUM_ABILITY), def.activeAbilities());
+		assertEquals(List.of("Rotate", "Impetus", "Testudo", "Aequilibrium"),
 				def.actives().stream().map(ClassDefinition.ActiveAbility::name).toList());
 	}
 
 	@Test
 	void copyReflectsLiveNumbers() {
-		String tooltip = ClassPresentation.tooltipFor(legionary());
+		List<String> lines = ClassPresentation.cardLinesFor(legionary()).stream()
+				.map(ClassPresentation.CardLine::text).toList();
+		String copy = String.join("\n", lines);
 
-		assertTrue(tooltip.contains("(R, " + (Cooldowns.ROTATE_MS / 1000) + "s)"));
-		assertTrue(tooltip.contains("Announces Gladius!/Scutum!"));
-		assertTrue(tooltip.contains("+" + ConditionalPassive.amount(ImpetusAbility.IMPETUS_BONUS)));
-		assertTrue(tooltip.contains("x" + ImpetusAbility.IMPETUS_TAKEN_MULT));
-		assertTrue(tooltip.contains("+" + ConditionalPassive.amount(TestudoAbility.TESTUDO_ARMOR)));
-		assertTrue(tooltip.contains("x" + TestudoAbility.TESTUDO_DEAL_MULT));
-		assertTrue(tooltip.contains("shares " + (Cooldowns.OATH_MS / 1000) + "s oath"));
-		assertTrue(tooltip.contains(ImpetusAbility.CAST_WORD));
-		assertTrue(tooltip.contains(TestudoAbility.CAST_WORD));
-		assertFalse(tooltip.contains("Roots"));
+		assertTrue(copy.contains("(R, " + (Cooldowns.ROTATE_MS / 1000) + "s)"));
+		assertTrue(copy.contains("Announces Gladius!/Scutum!"));
+		assertTrue(copy.contains("next hit deals x" + ImpetusAbility.SWITCH_DEAL_MULT));
+		assertTrue(copy.contains("melee taken x" + TestudoAbility.SWITCH_TAKE_MULT));
+		assertTrue(copy.contains("+" + ConditionalPassive.amount(AequilibriumAbility.EDGE_BONUS) + " attack damage"));
+		assertTrue(copy.contains("+" + ConditionalPassive.amount(AequilibriumAbility.PLATE_BONUS) + " armor"));
+		assertTrue(copy.contains("shares " + (Cooldowns.OATH_MS / 1000) + "s oath"));
+		assertTrue(copy.contains("Aequilibrium!"));
+		assertFalse(copy.contains("knockback"));
+		assertFalse(copy.contains("Ha!"));
+		assertFalse(copy.contains("Hold!"));
 	}
 
 	@Test
@@ -85,85 +88,114 @@ class LegionaryTest {
 	@Test
 	void stanceMatrix() {
 		// Stance-only mults (RotateAbility)
-		assertEquals(1.2, RotateAbility.takeMult(RotateAbility.Stance.GLADIUS));
+		assertEquals(1.1, RotateAbility.takeMult(RotateAbility.Stance.GLADIUS));
 		assertEquals(1.0, RotateAbility.takeMult(RotateAbility.Stance.SCUTUM));
-		assertEquals(0.8, RotateAbility.dealMult(RotateAbility.Stance.SCUTUM));
+		assertEquals(0.9, RotateAbility.dealMult(RotateAbility.Stance.SCUTUM));
 		assertEquals(1.0, RotateAbility.dealMult(RotateAbility.Stance.GLADIUS));
-		// Window factors ride the same constants as the picker copy, so balance and copy cannot drift.
-		assertEquals(1.25, ImpetusAbility.IMPETUS_TAKEN_MULT);
-		assertEquals(0.7, TestudoAbility.TESTUDO_DEAL_MULT);
+		// Flip factors ride the same constants as the picker copy, so balance and copy cannot drift.
+		assertEquals(1.10, ImpetusAbility.SWITCH_DEAL_MULT);
+		assertEquals(0.85, TestudoAbility.SWITCH_TAKE_MULT);
 	}
 
 	@Test
-	void impetusFiresOnlyInGladiusAndLocksOath() {
+	void flipToGladiusArmsImpetusOnceAndExpires() {
 		PlayerRuntime runtime = new PlayerRuntime();
+		RotateAbility.fire(legionary(), runtime, 0);
 
-		// Scutum default: Impetus stays silent, Testudo fires.
-		assertEquals(ImpetusAbility.Kind.WRONG_CLASS,
-				ImpetusAbility.fire(legionary(), runtime, 0).kind());
-		TestudoAbility.Result testudo = TestudoAbility.fire(legionary(), runtime, 0);
+		assertTrue(runtime.hasImpetusPending(0));
+		assertTrue(runtime.hasImpetusPending(ImpetusAbility.SWITCH_DEAL_MS - 1));
+		assertFalse(runtime.hasImpetusPending(ImpetusAbility.SWITCH_DEAL_MS));
+		assertTrue(runtime.consumeImpetusBonus(0));
+		assertFalse(runtime.hasImpetusPending(0));
+		assertFalse(runtime.consumeImpetusBonus(0));
+	}
 
-		assertEquals(TestudoAbility.Kind.FIRED, testudo.kind());
-		assertEquals(Cooldowns.OATH_MS, runtime.oathRemaining(0));
-		assertTrue(runtime.isTestudoLive(0));
-		// Shared lane: rotating to Gladius does not free the oath.
-		assertEquals(RotateAbility.Kind.FIRED, RotateAbility.fire(legionary(), runtime, 0).kind());
-		ImpetusAbility.Result locked = ImpetusAbility.fire(legionary(), runtime, 1_000);
+	@Test
+	void flipToScutumArmsTestudoCatchAndExpires() {
+		PlayerRuntime runtime = new PlayerRuntime();
+		// No flip yet: no catch, even in the default stance.
+		assertFalse(runtime.isTestudoBuffLive(0));
+		runtime.flipStance(0, RotateAbility.Stance.SCUTUM);
 
-		assertEquals(ImpetusAbility.Kind.ON_COOLDOWN, locked.kind());
+		assertTrue(runtime.isTestudoBuffLive(0));
+		assertTrue(runtime.isTestudoBuffLive(TestudoAbility.SWITCH_TAKE_MS - 1));
+		assertFalse(runtime.isTestudoBuffLive(TestudoAbility.SWITCH_TAKE_MS));
+	}
+
+	@Test
+	void flippingAwayDropsTheImpetusBuff() {
+		PlayerRuntime runtime = new PlayerRuntime();
+		runtime.flipStance(0, RotateAbility.Stance.GLADIUS);
+		assertTrue(runtime.hasImpetusPending(0));
+
+		runtime.flipStance(1_000, RotateAbility.Stance.SCUTUM);
+
+		assertFalse(runtime.hasImpetusPending(1_000));
+		assertTrue(runtime.isTestudoBuffLive(1_000));
+	}
+
+	@Test
+	void aequilibriumFiresInEitherStanceAndLocksOath() {
+		PlayerRuntime scutum = new PlayerRuntime();
+		AequilibriumAbility.Result first = AequilibriumAbility.fire(legionary(), scutum, 0);
+
+		assertEquals(AequilibriumAbility.Kind.FIRED, first.kind());
+		assertEquals("Aequilibrium!", first.announcement().text());
+		assertEquals(Cooldowns.OATH_MS, scutum.oathRemaining(0));
+		assertTrue(scutum.isAequilibriumLive(0));
+
+		PlayerRuntime gladius = new PlayerRuntime();
+		gladius.flipStance(0, RotateAbility.Stance.GLADIUS);
+		assertEquals(AequilibriumAbility.Kind.FIRED, AequilibriumAbility.fire(legionary(), gladius, 0).kind());
+
+		AequilibriumAbility.Result locked = AequilibriumAbility.fire(legionary(), scutum, 1_000);
+		assertEquals(AequilibriumAbility.Kind.ON_COOLDOWN, locked.kind());
 		assertEquals(Cooldowns.OATH_MS - 1_000, locked.remainingMs());
 	}
 
 	@Test
-	void impetusWindowLivesSixSeconds() {
+	void aequilibriumWindowLivesSixSeconds() {
 		PlayerRuntime runtime = new PlayerRuntime();
-		RotateAbility.fire(legionary(), runtime, 0);
-		ImpetusAbility.fire(legionary(), runtime, 0);
+		AequilibriumAbility.fire(legionary(), runtime, 0);
 
-		assertTrue(runtime.isImpetusLive(0));
-		assertTrue(runtime.isImpetusLive(5_999));
-		assertFalse(runtime.isImpetusLive(6_000));
-		assertFalse(runtime.isTestudoLive(0));
+		assertTrue(runtime.isAequilibriumLive(0));
+		assertTrue(runtime.isAequilibriumLive(5_999));
+		assertFalse(runtime.isAequilibriumLive(6_000));
 	}
 
 	@Test
-	void wrongStanceAndClassArmNothing() {
+	void wrongClassArmsNothing() {
 		PlayerRuntime runtime = new PlayerRuntime();
-		TestudoAbility.Result gladius = TestudoAbility.fire(legionary(), flipToGladius(), 0);
 
-		assertEquals(TestudoAbility.Kind.WRONG_CLASS, gladius.kind());
-		assertNull(gladius.announcement());
+		assertEquals(AequilibriumAbility.Kind.WRONG_CLASS,
+				AequilibriumAbility.fire(ClassRegistry.byId(ClassRegistry.JUGGERNAUT), runtime, 0).kind());
+		assertEquals(AequilibriumAbility.Kind.WRONG_CLASS,
+				AequilibriumAbility.fire(null, runtime, 0).kind());
 		assertEquals(0, runtime.oathRemaining(0));
-		assertEquals(ImpetusAbility.Kind.WRONG_CLASS,
-				ImpetusAbility.fire(null, runtime, 0).kind());
+		assertFalse(runtime.isAequilibriumLive(0));
 	}
 
 	@Test
-	void resetClearsWindowsLanesAndStance() {
+	void resetClearsFlipWindowsLanesAndStance() {
 		PlayerRuntime runtime = new PlayerRuntime();
-		runtime.flipStance();
-		ImpetusAbility.fire(legionary(), runtime, 0);
+		runtime.flipStance(0, RotateAbility.Stance.GLADIUS);
+		AequilibriumAbility.fire(legionary(), runtime, 0);
 		RotateAbility.fire(legionary(), runtime, 10_000);
 		runtime.resetCooldowns();
 
 		assertEquals(0, runtime.oathRemaining(0));
 		assertEquals(0, runtime.rotateRemaining(0));
-		assertFalse(runtime.isImpetusLive(0));
-		assertFalse(runtime.isTestudoLive(0));
+		assertFalse(runtime.hasImpetusPending(0));
+		assertFalse(runtime.isTestudoBuffLive(0));
+		assertFalse(runtime.isAequilibriumLive(0));
 		assertEquals(RotateAbility.Stance.SCUTUM, runtime.stance());
-	}
-
-	private static PlayerRuntime flipToGladius() {
-		PlayerRuntime runtime = new PlayerRuntime();
-		runtime.flipStance();
-		return runtime;
 	}
 
 	@Test
 	void stanceAurasAreSingleSourced() {
 		var gladius = RotateAbility.auraFor(RotateAbility.Stance.GLADIUS);
 		var scutum = RotateAbility.auraFor(RotateAbility.Stance.SCUTUM);
-		var window = TestudoAbility.windowModifiers();
+		var window = AequilibriumAbility.windowModifiers();
 
 		// What the applier writes is what it removes: two auras plus the window pair.
 		assertEquals(
@@ -174,10 +206,13 @@ class LegionaryTest {
 						RotateAbility.SCUTUM_WEIGHT_ID),
 				scutum.stream().map(PassiveEffect.Modifier::modifierId).toList());
 		assertEquals(
-				java.util.List.of(TestudoAbility.TESTUDO_PLATE_ID, TestudoAbility.TESTUDO_BRACE_ID),
+				java.util.List.of(AequilibriumAbility.EDGE_ID, AequilibriumAbility.PLATE_ID),
 				window.stream().map(PassiveEffect.Modifier::modifierId).toList());
-		assertEquals(2.0, gladius.get(0).amount());
-		assertEquals(6.0, scutum.get(0).amount());
-		assertEquals(TestudoAbility.TESTUDO_ARMOR, window.get(0).amount());
+		assertEquals(1.0, gladius.get(0).amount());
+		assertEquals(0.3, gladius.get(1).amount());
+		assertEquals(3.0, scutum.get(0).amount());
+		assertEquals(-0.006, scutum.get(2).amount());
+		assertEquals(AequilibriumAbility.EDGE_BONUS, window.get(0).amount());
+		assertEquals(AequilibriumAbility.PLATE_BONUS, window.get(1).amount());
 	}
 }
