@@ -27,8 +27,10 @@ class LegionaryTest {
 		assertEquals(0xFFB87333, def.accentColor());
 		assertEquals(List.of(ClassRegistry.ROTATE_ABILITY, ClassRegistry.IMPETUS_ABILITY,
 				ClassRegistry.TESTUDO_ABILITY, ClassRegistry.AEQUILIBRIUM_ABILITY), def.activeAbilities());
-		assertEquals(List.of("Rotate", "Impetus", "Testudo", "Aequilibrium"),
+		assertEquals(List.of("Rotate", "Aequilibrium"),
 				def.actives().stream().map(ClassDefinition.ActiveAbility::name).toList());
+		assertEquals(List.of("Impetus", "Testudo"),
+				def.flipBuffs().stream().map(ClassDefinition.ActiveAbility::name).toList());
 	}
 
 	@Test

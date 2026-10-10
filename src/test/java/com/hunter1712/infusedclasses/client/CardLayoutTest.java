@@ -76,9 +76,9 @@ class CardLayoutTest {
 
 	@Test
 	void dimmedKeepsAlphaAndDarkens() {
-		assertEquals(0xFF5895B2, ClassCardRenderer.dimmed(0xFF7ED6FF));
-		assertEquals(0xFF848484, ClassCardRenderer.dimmed(0xFFBDBDBD));
-		assertEquals(0xFFB2B2B2, ClassCardRenderer.dimmed(0xFFFFFFFF));
+		assertEquals(0xFF6BB5D8, ClassCardRenderer.dimmed(0xFF7ED6FF));
+		assertEquals(0xFFA0A0A0, ClassCardRenderer.dimmed(0xFFBDBDBD));
+		assertEquals(0xFFD8D8D8, ClassCardRenderer.dimmed(0xFFFFFFFF));
 	}
 
 	@Test

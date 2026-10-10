@@ -51,12 +51,12 @@ class RendAbilityTest {
 		ConditionalPassive momentum = ClassRegistry.byId(ClassRegistry.JUGGERNAUT).passives().get(0);
 		ClassDefinition shuffled = new ClassDefinition(
 				Identifier.fromNamespaceAndPath("infusedclasses", "test"), "Test", false,
-				List.of(swift, momentum), List.of(), 0.0, List.of(ClassRegistry.REND_ABILITY), 0, "", List.of());
+				List.of(swift, momentum), List.of(), 0.0, List.of(ClassRegistry.REND_ABILITY), 0, "", List.of(), List.of());
 
 		assertEquals(momentum, shuffled.passiveForTrigger(ConditionalPassive.ON_HIT_DEALT));
 		assertNull(new ClassDefinition(
 				Identifier.fromNamespaceAndPath("infusedclasses", "empty"), "Empty", false,
-				List.of(), List.of(), 0.0, List.of(ClassRegistry.REND_ABILITY), 0, "", List.of())
+				List.of(), List.of(), 0.0, List.of(ClassRegistry.REND_ABILITY), 0, "", List.of(), List.of())
 				.passiveForTrigger(ConditionalPassive.ON_HIT_DEALT));
 	}
 

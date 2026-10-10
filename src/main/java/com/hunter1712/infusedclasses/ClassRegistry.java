@@ -91,7 +91,8 @@ public final class ClassRegistry {
 										+ ConditionalPassive.amount(RendAbility.BASE_HP)
 										+ " HP +" + ConditionalPassive.amount(RendAbility.HP_PER_STACK)
 										+ " per Momentum, spends stacks (G, "
-										+ (Cooldowns.REND_MS / 1000) + "s)."))));
+										+ (Cooldowns.REND_MS / 1000) + "s).")),
+				List.of()));
 
 		register(new ClassDefinition(
 				LEGIONARY,
@@ -112,21 +113,17 @@ public final class ClassRegistry {
 										+ ") or Scutum (+" + ConditionalPassive.amount(RotateAbility.SCUTUM_ARMOR)
 										+ " armor, +" + ConditionalPassive.amount(RotateAbility.SCUTUM_TOUGHNESS)
 										+ " toughness, slower) (R, "
-										+ (Cooldowns.ROTATE_MS / 1000) + "s)."
-										+ " Flip to Gladius: next hit x" + ImpetusAbility.SWITCH_DEAL_MULT
-										+ " (" + (ImpetusAbility.SWITCH_DEAL_MS / 1000) + "s)."
-										+ " Flip to Scutum: take x" + TestudoAbility.SWITCH_TAKE_MULT
-										+ " (" + ConditionalPassive.amount(TestudoAbility.SWITCH_TAKE_MS / 1000.0)
-										+ "s)."),
+										+ (Cooldowns.ROTATE_MS / 1000) + "s)."),
+						new ClassDefinition.ActiveAbility(
+								AequilibriumAbility.NAME,
+								AequilibriumAbility.desc())),
+				List.of(
 						new ClassDefinition.ActiveAbility(
 								ImpetusAbility.NAME,
 								ImpetusAbility.desc()),
 						new ClassDefinition.ActiveAbility(
 								TestudoAbility.NAME,
-								TestudoAbility.desc()),
-						new ClassDefinition.ActiveAbility(
-								AequilibriumAbility.NAME,
-								AequilibriumAbility.desc()))));
+								TestudoAbility.desc()))));
 	}
 
 	private ClassRegistry() {

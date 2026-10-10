@@ -31,11 +31,16 @@ public final class ClassPresentation {
 	public record LineStyle(int color, boolean bold) {
 	}
 
-	/** One rendered card line, the section it belongs to, and the style it draws with. */
-	public record CardLine(String text, LineKind kind, LineStyle style) {
+	/** One rendered card line: name plus optional description, the section it belongs to, and the style it draws with. */
+	public record CardLine(String name, String desc, LineKind kind, LineStyle style) {
 		/** A line's style comes from its kind, so a renderer never has to read the line. */
-		public CardLine(String text, LineKind kind) {
-			this(text, kind, styleFor(kind));
+		public CardLine(String name, String desc, LineKind kind) {
+			this(name, desc, kind, styleFor(kind));
+		}
+
+		/** Full text: name alone, or name plus description. The renderer draws the parts in two tones. */
+		public String text() {
+			return desc == null || desc.isEmpty() ? name : name + " \u2014 " + desc;
 		}
 	}
 
@@ -55,16 +60,16 @@ public final class ClassPresentation {
 
 	/**
 	 * Lines shown on the focused card: Passives header plus one detail line per passive
-	 * (one per HP-scaled family, with joined descriptions), then Active header plus one
-	 * detail line per active. Every detail line carries name plus full description, so
-	 * nothing hides behind hover.
+	 * (one per HP-scaled family, with joined descriptions) plus one per flip buff,
+	 * then Active header plus one detail line per fired active. Every detail line carries
+	 * name plus short description, so nothing hides behind hover.
 	 */
 	public static List<CardLine> cardLinesFor(ClassDefinition def) {
 		List<CardLine> lines = new ArrayList<>();
-		lines.add(new CardLine("Passives", LineKind.PASSIVE_HEADER));
-		if (!def.passives().isEmpty() || !def.hpPassives().isEmpty()) {
+		lines.add(new CardLine("Passives", null, LineKind.PASSIVE_HEADER));
+		if (!def.passives().isEmpty() || !def.hpPassives().isEmpty() || !def.flipBuffs().isEmpty()) {
 			for (ConditionalPassive p : def.passives()) {
-				lines.add(new CardLine(p.name() + " \u2014 " + p.fullDesc(), LineKind.PASSIVE));
+				lines.add(new CardLine(p.name(), p.fullDesc(), LineKind.PASSIVE));
 			}
 			for (Map.Entry<String, List<HpScaledPassive>> entry : groupedHp(def).entrySet()) {
 				StringBuilder joined = new StringBuilder();
@@ -74,15 +79,18 @@ public final class ClassPresentation {
 					}
 					joined.append(hp.fullDesc());
 				}
-				lines.add(new CardLine(entry.getKey() + " \u2014 " + joined, LineKind.PASSIVE));
+				lines.add(new CardLine(entry.getKey(), joined.toString(), LineKind.PASSIVE));
+			}
+			for (ClassDefinition.ActiveAbility f : def.flipBuffs()) {
+				lines.add(new CardLine(f.name(), f.desc(), LineKind.PASSIVE));
 			}
 		} else {
-			lines.add(new CardLine("No passives yet", LineKind.PASSIVE));
+			lines.add(new CardLine("No passives yet", null, LineKind.PASSIVE));
 		}
 		if (!def.actives().isEmpty()) {
-			lines.add(new CardLine("Active", LineKind.ABILITY_HEADER));
+			lines.add(new CardLine("Active", null, LineKind.ABILITY_HEADER));
 			for (ClassDefinition.ActiveAbility a : def.actives()) {
-				lines.add(new CardLine(a.name() + " \u2014 " + a.desc(), LineKind.ABILITY));
+				lines.add(new CardLine(a.name(), a.desc(), LineKind.ABILITY));
 			}
 		}
 		return lines;

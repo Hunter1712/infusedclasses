@@ -47,17 +47,23 @@ class ClassPresentationTest {
 	}
 
 	@Test
-	void legionaryCardLinesShowPlaceholderPlusFourActives() {
+	void legionaryCardLinesGroupFlipsAsPassives() {
 		ClassDefinition legionary = ClassRegistry.byId(ClassRegistry.LEGIONARY);
 
 		List<ClassPresentation.CardLine> lines = ClassPresentation.cardLinesFor(legionary);
 		List<String> texts = lines.stream().map(ClassPresentation.CardLine::text).toList();
 
-		assertTrue(texts.contains("No passives yet"));
+		assertFalse(texts.contains("No passives yet"));
 		assertTrue(texts.stream().anyMatch(t -> t.startsWith("Rotate \u2014 ")));
-		assertTrue(texts.stream().anyMatch(t -> t.startsWith("Impetus \u2014 ")));
-		assertTrue(texts.stream().anyMatch(t -> t.startsWith("Testudo \u2014 ")));
 		assertTrue(texts.stream().anyMatch(t -> t.startsWith("Aequilibrium \u2014 ")));
+		for (ClassPresentation.CardLine line : lines) {
+			if (line.text().startsWith("Impetus \u2014 ") || line.text().startsWith("Testudo \u2014 ")) {
+				assertEquals(ClassPresentation.LineKind.PASSIVE, line.kind());
+			}
+			if (line.text().startsWith("Rotate \u2014 ") || line.text().startsWith("Aequilibrium \u2014 ")) {
+				assertEquals(ClassPresentation.LineKind.ABILITY, line.kind());
+			}
+		}
 	}
 
 	@Test
@@ -153,7 +159,8 @@ class ClassPresentationTest {
 				0.0,
 				List.of(ClassRegistry.REND_ABILITY),
 				0xFFFFFF, "tag",
-				List.of(new ClassDefinition.ActiveAbility("Ability line", "Does a thing.")));
+				List.of(new ClassDefinition.ActiveAbility("Ability line", "Does a thing.")),
+				List.of());
 
 		List<ClassPresentation.CardLine> lines = ClassPresentation.cardLinesFor(def);
 

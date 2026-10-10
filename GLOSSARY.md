@@ -87,7 +87,8 @@ _Avoid_: description, lore text
 **Class** (`ClassDefinition`):
 A playable archetype, registered once with its id, display name, locked flag, passives, active
 ability ids, accent colour, tagline and the actives list (one name plus picker description per
-active). A class is data: it carries no player and no state of its own. The first passive on a
+fired active) plus the flip-buff list (one name plus description per trigger-fired
+active, shown under `Passives`). A class is data: it carries no player and no state of its own. The first passive on a
 trigger is found with `passiveForTrigger`, never by list position. Juggernaut and Legionary are the two
 playable classes today: `Juggernaut`, Rush (`infusedclasses:rush`) plus Rend
 (`infusedclasses:rend`), accent `0xFFE74C3C`,
@@ -372,10 +373,11 @@ _Avoid_: format, theme
 **Card lines** (`ClassPresentation.cardLinesFor`):
 The detail lines a focused card shows. A class shows a `Passives` header plus one
 name-plus-description line per passive (HP-scaled passives
-sharing a group read as one line with joined descriptions),
+sharing a group read as one line with joined descriptions) plus one per flip buff,
 or the
 header plus `No passives yet` when it has none, and an `Active` header plus one
-name-plus-description line per active. Nothing hides behind hover.
+name-plus-description line per fired active. Names draw bright, descriptions dimmed.
+Nothing hides behind hover.
 _Avoid_: card text
 
 **Picker subtitle** (`ClassPresentation.subtitle`):

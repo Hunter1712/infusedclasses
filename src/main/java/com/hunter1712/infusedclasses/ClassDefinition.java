@@ -15,7 +15,8 @@ public record ClassDefinition(
 		List<Identifier> activeAbilities,
 		int accentColor,
 		String tagline,
-		List<ActiveAbility> actives
+		List<ActiveAbility> actives,
+		List<ActiveAbility> flipBuffs
 ) {
 	/** One active on a card: its list line plus its tooltip description. Names never join with "+". */
 	public record ActiveAbility(String name, String desc) {

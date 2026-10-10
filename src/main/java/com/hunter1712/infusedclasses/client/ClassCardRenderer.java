@@ -3,10 +3,9 @@ package com.hunter1712.infusedclasses.client;
 import com.hunter1712.infusedclasses.ClassPresentation;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.util.FormattedCharSequence;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -139,12 +138,38 @@ public final class ClassCardRenderer {
 		return Math.max(0, Math.min(scroll, Math.max(0, maxScroll)));
 	}
 
+	/** One wrapped row: text plus where the description starts (name draws bright, desc dimmed). */
+	static record TextRow(String text, int descStart) {
+	}
+
+	/**
+	 * Greedy word wrap over the full line, tracking the name/desc split by character
+	 * offset so tone follows meaning, not row number. Names always fit row one.
+	 */
+	static List<TextRow> wrapRows(Font font, String name, String desc, int wrapW) {
+		String prefix = desc == null || desc.isEmpty() ? name : name + " \u2014 ";
+		String full = desc == null || desc.isEmpty() ? name : prefix + desc;
+		List<TextRow> rows = new ArrayList<>();
+		StringBuilder row = new StringBuilder();
+		for (String word : full.split(" ")) {
+			String add = row.isEmpty() ? word : " " + word;
+			if (!row.isEmpty() && font.width(row.toString() + add) > wrapW) {
+				rows.add(new TextRow(row.toString(), Math.min(row.length(), prefix.length())));
+				row = new StringBuilder(word);
+			} else {
+				row.append(add);
+			}
+		}
+		rows.add(new TextRow(row.toString(), Math.min(row.length(), prefix.length())));
+		return rows;
+	}
+
 	/** Dimmed copy of a line color for description continuations: names scan, descs recede. */
 	static int dimmed(int argb) {
 		int a = argb >>> 24;
-		int r = (argb >> 16 & 0xFF) * 7 / 10;
-		int g = (argb >> 8 & 0xFF) * 7 / 10;
-		int b = (argb & 0xFF) * 7 / 10;
+		int r = (argb >> 16 & 0xFF) * 85 / 100;
+		int g = (argb >> 8 & 0xFF) * 85 / 100;
+		int b = (argb & 0xFF) * 85 / 100;
 		return a << 24 | r << 16 | g << 8 | b;
 	}
 
@@ -215,19 +240,21 @@ public final class ClassCardRenderer {
 		int stop = stopY(card);
 		int rows = 0;
 		for (ClassPresentation.CardLine line : lines) {
-			MutableComponent shaped = Component.literal(line.text());
-			if (line.style().bold()) {
-				shaped.withStyle(s -> s.withBold(true));
-			}
-			boolean first = true;
-			for (FormattedCharSequence visual : font.split(shaped, card.w() - PAD * 2)) {
+			net.minecraft.network.chat.Style rowStyle = line.style().bold()
+					? net.minecraft.network.chat.Style.EMPTY.withBold(true)
+					: net.minecraft.network.chat.Style.EMPTY;
+			for (TextRow row : wrapRows(font, line.name(), line.desc(), card.w() - PAD * 2)) {
 				int y = top + rows * ROW_H - scrollPx;
 				if (y >= top && y + 9 <= stop) {
-					int color = first ? line.style().color() : dimmed(line.style().color());
-					graphics.drawString(font, visual, cx - font.width(visual) / 2, y, color);
+					String head = row.text().substring(0, row.descStart());
+					String tail = row.text().substring(row.descStart());
+					int x = cx - (font.width(head) + font.width(tail)) / 2;
+					graphics.drawString(font, FormattedCharSequence.forward(head, rowStyle), x, y,
+							line.style().color());
+					graphics.drawString(font, FormattedCharSequence.forward(tail, rowStyle),
+							x + font.width(head), y, dimmed(line.style().color()));
 				}
 				rows++;
-				first = false;
 			}
 		}
 		return layoutFor(card, rows);

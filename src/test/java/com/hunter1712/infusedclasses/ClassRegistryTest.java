@@ -112,6 +112,10 @@ class ClassRegistryTest {
 				assertTrue(a.desc().length() <= 200,
 						def.id() + " active \"" + a.name() + "\" must stay short (" + a.desc().length() + " chars)");
 			}
+			for (ClassDefinition.ActiveAbility f : def.flipBuffs()) {
+				assertTrue(f.desc().length() <= 200,
+						def.id() + " flip \"" + f.name() + "\" must stay short (" + f.desc().length() + " chars)");
+			}
 		}
 	}
 
