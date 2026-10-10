@@ -81,19 +81,21 @@ public final class ClassPresentation {
 				}
 				lines.add(new CardLine(entry.getKey(), joined.toString(), LineKind.PASSIVE));
 			}
-			for (ClassDefinition.ActiveAbility f : def.flipBuffs()) {
-				lines.add(new CardLine(f.name(), f.desc(), LineKind.PASSIVE));
-			}
+			addAbilities(lines, def.flipBuffs(), LineKind.PASSIVE);
 		} else {
 			lines.add(new CardLine("No passives yet", null, LineKind.PASSIVE));
 		}
 		if (!def.actives().isEmpty()) {
 			lines.add(new CardLine("Active", null, LineKind.ABILITY_HEADER));
-			for (ClassDefinition.ActiveAbility a : def.actives()) {
-				lines.add(new CardLine(a.name(), a.desc(), LineKind.ABILITY));
-			}
+			addAbilities(lines, def.actives(), LineKind.ABILITY);
 		}
 		return lines;
+	}
+
+	private static void addAbilities(List<CardLine> lines, List<ClassDefinition.ActiveAbility> abilities, LineKind kind) {
+		for (ClassDefinition.ActiveAbility ability : abilities) {
+			lines.add(new CardLine(ability.name(), ability.desc(), kind));
+		}
 	}
 
 	/** HP-scaled passives read as one entry per family, in first-appearance order. */

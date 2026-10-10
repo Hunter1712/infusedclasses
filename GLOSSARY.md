@@ -46,12 +46,12 @@ _Avoid_: ability result (that is the whole decision, gating included), buff
 **Ability applier** (`AbilityApplier`):
 The shared adapter seams every ability outcome and class-choice outcome passes through: the announcement
 on the action bar (abilities, rotate) or chat (class-choice), plus the cast fanfare (`playCast`) for fired abilities. Effect and sound ids resolve
-at their single use sites — Rush's Speed in its own adapter, the cast sound in the
+at their single use sites — Rush's stride stat in its own adapter, the cast sound in the
 fanfare itself — never behind shared lookups with one caller each. A result with nothing to grant and nothing
 to say — a wrong-class, on-cooldown or no-stacks press — lands nothing.
 A fired-or-fizzle press lands through `announceAndCast` alone — Rotate with no
 sound (it carries no cast sound, so it announces without fanfare); only Rush keeps its own
-adapter, for the cleanse and the Speed it lays, routing its fanfare through the shared path. Class-choice rejections and accepts route through `announce` with the `actionBar` flag.
+adapter, for the cleanse and the stride it lays, routing its fanfare through the shared path. Class-choice rejections and accepts route through `announce` with the `actionBar` flag.
 _Avoid_: ability system, effect handler
 
 **Gate-and-arm** (`AbilityGate`):
@@ -356,8 +356,8 @@ _Avoid_: runtime map, session cache
 ### Presentation
 
 **Card line** (`ClassPresentation.CardLine`):
-One line of a class card's body, carrying its text, the section it belongs to, and the colour and
-weight it draws with.
+One line of a class card's body, carrying its name plus optional description, the section it belongs to, and the colour and
+weight it draws with. Full text derives via `text()`.
 _Avoid_: row, string, label
 
 **Line kind** (`ClassPresentation.LineKind`):
@@ -426,7 +426,7 @@ pinned select never moves, and a new page always opens at the top.
 The frame and the body both draw from one card model; the screen passes the model,
 never the parts. Each visual line draws with
 the colour and weight it carries, so nothing here reads what a line says. Long lines
-wrap inside the card and stop before the pinned select.
+wrap inside the card and scroll above the pinned select.
 _Avoid_: card widget, draw helper
 
 ### Protocol and commands

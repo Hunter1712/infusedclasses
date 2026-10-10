@@ -61,10 +61,7 @@ public final class RendAbility {
 
 	/** Picker copy, generated from the numbers so it cannot drift from behaviour. */
 	public static String desc() {
-		String bonus = BASE_HP > 0
-				? "+" + ConditionalPassive.amount(BASE_HP) + " HP +"
-						+ ConditionalPassive.amount(HP_PER_STACK) + " per Momentum"
-				: "+" + ConditionalPassive.amount(HP_PER_STACK) + " per Momentum";
+		String bonus = "+" + ConditionalPassive.amount(HP_PER_STACK) + " per Momentum";
 		return "Next hit in " + (WINDOW_TICKS / 20) + "s: " + bonus
 				+ ", spends stacks (G, " + (Cooldowns.REND_MS / 1000) + "s).";
 	}
