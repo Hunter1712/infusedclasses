@@ -49,7 +49,7 @@ class ClassRegistryTest {
 		ConditionalPassive momentum = passives.get(0);
 		assertEquals("Momentum", momentum.name());
 		assertEquals("on_hit_dealt", momentum.trigger());
-		assertEquals(10, momentum.maxStacks());
+		assertEquals(20, momentum.maxStacks());
 		assertFalse(momentum.fullDesc().isBlank());
 	}
 
@@ -57,7 +57,7 @@ class ClassRegistryTest {
 	void juggernautPassiveCopySaysWhatItDoesToday() {
 		ConditionalPassive momentum = ClassRegistry.byId(ClassRegistry.JUGGERNAUT).passives().get(0);
 
-		assertEquals("Land a hit: +1 armor (max 10). 5s no hit: lose all.", momentum.fullDesc());
+		assertEquals("Land a hit: +0.4 armor (max 20). 5s no hit: lose all.", momentum.fullDesc());
 	}
 
 	@Test

@@ -14,10 +14,10 @@ import net.minecraft.resources.Identifier;
  */
 public final class RendAbility {
 	public static final String NAME = "Rend";
-	/** Base empower damage in HP: three hearts before stacks enter. */
-	public static final float BASE_HP = 6.0F;
-	/** Empower damage per Momentum stack in HP: half a heart each, 16 HP at full stacks. */
-	public static final float HP_PER_STACK = 1.0F;
+	/** Base empower damage in HP: no base, the stacks are the empower. */
+	public static final float BASE_HP = 0.0F;
+	/** Empower damage per Momentum stack in HP: half a heart each, 10 HP at full stacks. */
+	public static final float HP_PER_STACK = 0.5F;
 	/** Empower window in ticks: 6 seconds to land the hit, tracked as a press timestamp on the runtime. */
 	public static final int WINDOW_TICKS = 120;
 	/** Cast sound id, resolved by the adapter; the anvil land is the empower. */
@@ -57,6 +57,16 @@ public final class RendAbility {
 	}
 
 	private RendAbility() {
+	}
+
+	/** Picker copy, generated from the numbers so it cannot drift from behaviour. */
+	public static String desc() {
+		String bonus = BASE_HP > 0
+				? "+" + ConditionalPassive.amount(BASE_HP) + " HP +"
+						+ ConditionalPassive.amount(HP_PER_STACK) + " per Momentum"
+				: "+" + ConditionalPassive.amount(HP_PER_STACK) + " per Momentum";
+		return "Next hit in " + (WINDOW_TICKS / 20) + "s: " + bonus
+				+ ", spends stacks (G, " + (Cooldowns.REND_MS / 1000) + "s).";
 	}
 
 	/** Empower damage for a stack count: base plus stacks. Nothing at zero or below. */

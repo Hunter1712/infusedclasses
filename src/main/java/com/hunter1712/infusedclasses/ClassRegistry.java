@@ -55,10 +55,10 @@ public final class ClassRegistry {
 				List.of(new ConditionalPassive(
 						"Momentum",
 						ConditionalPassive.ON_HIT_DEALT,
-						10,
+						20,
 						ARMOR,
 						Identifier.fromNamespaceAndPath(ClassPackets.MOD_ID, "momentum_armor"),
-						1.0,
+						0.4,
 						5)),
 				List.of(
 						new HpScaledPassive(
@@ -66,13 +66,15 @@ public final class ClassRegistry {
 								ATTACK_DAMAGE,
 								Identifier.fromNamespaceAndPath(ClassPackets.MOD_ID, "vigor_damage"),
 								0.3,
-								"Vigor"),
+								"Vigor",
+								-1.0),
 						new HpScaledPassive(
 								"Vigor Speed",
 								ATTACK_SPEED,
 								Identifier.fromNamespaceAndPath(ClassPackets.MOD_ID, "vigor_speed"),
 								0.05,
-								"Vigor")),
+								"Vigor",
+								0.0)),
 				0.0,
 				List.of(RUSH_ABILITY, REND_ABILITY),
 				0xFFE74C3C,
@@ -80,18 +82,13 @@ public final class ClassRegistry {
 				List.of(
 						new ClassDefinition.ActiveAbility(
 								RushAbility.NAME,
-								"Cleanse + Speed I, "
-										+ (RushAbility.SPEED_TICKS / 20) + "s. Next full-swing hit: +"
+								"Cleanses harmful effects and quickens stride for "
+										+ (RushAbility.WINDOW_TICKS / 20) + "s. Next full-swing hit: +"
 										+ RushAbility.BONUS_STACKS + " Momentum (R, "
 										+ (Cooldowns.RUSH_MS / 1000) + "s)."),
 						new ClassDefinition.ActiveAbility(
 								RendAbility.NAME,
-								"Next hit in "
-										+ (RendAbility.WINDOW_TICKS / 20) + "s: +"
-										+ ConditionalPassive.amount(RendAbility.BASE_HP)
-										+ " HP +" + ConditionalPassive.amount(RendAbility.HP_PER_STACK)
-										+ " per Momentum, spends stacks (G, "
-										+ (Cooldowns.REND_MS / 1000) + "s).")),
+								RendAbility.desc())),
 				List.of()));
 
 		register(new ClassDefinition(

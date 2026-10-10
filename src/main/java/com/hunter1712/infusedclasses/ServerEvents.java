@@ -72,6 +72,7 @@ final class ServerEvents {
 				}
 				PlayerRuntime runtime = InfusedClasses.runtime(player);
 				PassiveApplier.apply(player, def, runtime, now);
+				RushApplier.tick(player, runtime, now);
 			}
 		});
 	}

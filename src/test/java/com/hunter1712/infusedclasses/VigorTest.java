@@ -59,16 +59,16 @@ class VigorTest {
 	}
 
 	@Test
-	void bonusIsBucketTimesPerStep() {
-		assertEquals(1.5, PassiveEffect.forBucket(damage(), 5).amount());
-		assertEquals(3.0, PassiveEffect.forBucket(damage(), 10).amount());
+	void bonusIsBasePlusBucketTimesPerStep() {
+		assertEquals(0.5, PassiveEffect.forBucket(damage(), 5).amount());
+		assertEquals(2.0, PassiveEffect.forBucket(damage(), 10).amount());
 		assertEquals(0.25, PassiveEffect.forBucket(speed(), 5).amount());
 		assertEquals(0.5, PassiveEffect.forBucket(speed(), 10).amount());
 	}
 
 	@Test
 	void bonusNeverExceedsTheCap() {
-		assertEquals(3.0, PassiveEffect.forBucket(damage(), 11).amount());
+		assertEquals(2.0, PassiveEffect.forBucket(damage(), 11).amount());
 		assertEquals(0.5, PassiveEffect.forBucket(speed(), 99).amount());
 	}
 
@@ -76,8 +76,8 @@ class VigorTest {
 	void damageShrinksTheBonus() {
 		assertEquals(5, HpScaledPassive.bucketForCurrent(10, 20));
 		assertEquals(9, HpScaledPassive.bucketForCurrent(18, 20));
-		assertEquals(1.5, PassiveEffect.forBucket(damage(), 5).amount());
-		assertEquals(2.7, PassiveEffect.forBucket(damage(), 9).amount(), 1e-9);
+		assertEquals(0.5, PassiveEffect.forBucket(damage(), 5).amount());
+		assertEquals(1.7, PassiveEffect.forBucket(damage(), 9).amount(), 1e-9);
 	}
 
 	@Test
@@ -99,21 +99,23 @@ class VigorTest {
 		assertEquals("Vigor Damage", pair.get(0).name());
 		assertEquals("Vigor", pair.get(0).group());
 		assertEquals(0.3, pair.get(0).perStep());
+		assertEquals(-1.0, pair.get(0).baseBonus());
 		assertEquals("Vigor Speed", pair.get(1).name());
 		assertEquals(0.05, pair.get(1).perStep());
+		assertEquals(0.0, pair.get(1).baseBonus());
 
 		ConditionalPassive momentum = juggernaut().passives().get(0);
 		assertEquals(1, juggernaut().passives().size());
 		assertEquals("Momentum", momentum.name());
 		assertEquals(ConditionalPassive.ON_HIT_DEALT, momentum.trigger());
-		assertEquals(10, momentum.maxStacks());
+		assertEquals(20, momentum.maxStacks());
 	}
 
 	@Test
 	void copyIsGeneratedFromTheNumbers() {
-		assertEquals("Per 10% HP: +0.3 attack damage (max +3 full HP).",
+		assertEquals("HP-scaled: -1 at 0 HP to +2 full HP.",
 				damage().fullDesc());
-		assertEquals("Per 10% HP: +0.05 attack speed (max +0.5 full HP).",
+		assertEquals("HP-scaled: 0 at 0 HP to +0.5 full HP.",
 				speed().fullDesc());
 	}
 

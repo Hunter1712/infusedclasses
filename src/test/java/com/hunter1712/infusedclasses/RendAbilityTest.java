@@ -30,17 +30,18 @@ class RendAbilityTest {
 	}
 
 	@Test
-	void empowerMathAtZeroOneTen() {
+	void empowerMathAtZeroOneTwenty() {
 		assertEquals(0, RendAbility.empowerFor(0));
-		assertEquals(7.0F, RendAbility.empowerFor(1));
-		assertEquals(16.0F, RendAbility.empowerFor(10));
+		assertEquals(0.5F, RendAbility.empowerFor(1));
+		assertEquals(5.0F, RendAbility.empowerFor(10));
+		assertEquals(10.0F, RendAbility.empowerFor(20));
 		assertEquals("minecraft:block.anvil.land", RendAbility.CAST_SOUND.toString());
 	}
 
 	@Test
 	void noExecuteBonusAtAnyTargetHp() {
 		// The empower is the empower: target health never enters the decision.
-		assertEquals(16.0F, RendAbility.empowerFor(10));
+		assertEquals(5.0F, RendAbility.empowerFor(10));
 		assertEquals(RendAbility.BASE_HP + 10 * RendAbility.HP_PER_STACK, RendAbility.empowerFor(10));
 	}
 
@@ -66,7 +67,7 @@ class RendAbilityTest {
 		RendAbility.Result result = RendAbility.fire(juggernautDef(), runtime, 0);
 
 		assertEquals(RendAbility.Kind.FIRED, result.kind());
-		assertEquals(11.0F, result.empowerHp());
+		assertEquals(2.5F, result.empowerHp());
 		assertTrue(result.consume());
 		assertEquals(Cooldowns.REND_MS, runtime.rendRemaining(0));
 		assertEquals(120, RendAbility.WINDOW_TICKS);

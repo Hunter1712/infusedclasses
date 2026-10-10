@@ -114,15 +114,15 @@ _Avoid_: ability (ambiguous with the gating id), spell
 A passive that earns stacks when a named trigger fires, rather than always being on. It carries its
 own numbers — stack cap, attribute, per-stack value, grace period — and its picker copy
 is generated from those numbers so the copy cannot claim something the behaviour does not do.
-Momentum, the Juggernaut passive, is `on_hit_dealt`, max 10, `minecraft:armor` under
-`infusedclasses:momentum_armor`, +1.0 per stack, 5s grace, all stacks drop at once after.
+Momentum, the Juggernaut passive, is `on_hit_dealt`, max 20, `minecraft:armor` under
+`infusedclasses:momentum_armor`, +0.4 per stack (max +8.0), 5s grace, all stacks drop at once after.
 _Avoid_: buff, stackable stat
 
 **Vigor** (`HpScaledPassive`):
 The Juggernaut's HP-scaled passive pair: current HP maps to stepped buckets, 10% per step
-over 10 steps, each step adding a fixed bonus — +0.3 attack damage
-(`infusedclasses:vigor_damage`, max +3.0) and +0.05 attack speed
-(`infusedclasses:vigor_speed`, max +0.5). Zero bonus at 0 HP, max at full HP.
+over 10 steps, each step adding a fixed bonus on top of a floor — +0.3 attack damage
+from -1.0 (`infusedclasses:vigor_damage`, -1 at 0 HP, +2.0 full) and +0.05 attack speed
+from 0.0 (`infusedclasses:vigor_speed`, max +0.5).
 The pair reads as one `Vigor` line on the card (see `HpScaledPassive.group`),
 with both bonus descs joined, so one passive never looks like two.
 Recomputed every tick from live HP, transient and never saved; Rend spends
@@ -149,19 +149,20 @@ for class switch and respawn. The lanes ride one map behind a private lane enum,
 so a fifth lane adds a value rather than a field; callers and tests cross the
 per-lane verbs, never the map. The engage window rides on the transient runtime next to
 the lanes: a fired Rush stamps the press time plus a one-shot next-hit bonus,
-`hasRushBonusPending` reads it against the 4s window, and switch and respawn clear it with
+`hasRushBonusPending` reads it against the 5s window, and switch and respawn clear it with
 everything else. Rush, Rend and Impetus windows are one-shot (the melee plan peeks them,
 the hit settle spends them, each bonus landing at most once); Testudo and Aequilibrium
 windows are timed (peeked while live, never consumed).
 _Avoid_: timer
 
 **Rush** (`RushAbility`):
-The Juggernaut's engage on `R`: cleanses every active harmful effect, lays Speed I for
-4s (`SPEED_TICKS`), and arms a one-shot bonus so the next full-swing melee hit inside
-the window earns +3 Momentum (`BONUS_STACKS`), on its own 25s lane. Spam leaves the bonus pending. Fires with zero stacks at full
+The Juggernaut's engage on `R`: cleanses every active harmful effect, quickens
+stride (+0.02 move speed, `infusedclasses:rush_stride`) for
+5s (`WINDOW_TICKS`), and arms a one-shot bonus so the next full-swing melee hit inside
+the window earns +5 Momentum (`BONUS_STACKS`), on its own 25s lane. Spam leaves the bonus pending. Fires with zero stacks at full
 HP — engaging topped-off is the normal case, not a reject — and rejected presses leave
 the lane, the window and the bonus untouched. Decided in the trigger/fire gate-and-arm
-shape.
+shape. A stat, never a vanilla effect: no effect icon, no effect dependency.
 Like every cast, firing plays its sound (see `Spellcast`): a wind-burst whoosh for the engage.
 _Avoid_: dash, charge
 
@@ -173,7 +174,7 @@ _Avoid_: cast time, wind-up
 
 **Rend** (`RendAbility`):
 The Juggernaut's Momentum spender on `G`: empowers the next melee hit landed within 6s
-(`WINDOW_TICKS`) for `6 HP + 1 HP per stack` bonus damage, and consumes
+(`WINDOW_TICKS`) for `0.5 HP per stack` bonus damage (10 HP at the full 20), and consumes
 every Momentum stack plus the armor they granted up front, on its own 60s lane. An
 unswung window simply expires with the stacks already spent. Zero stacks fizzles with a
 `No Momentum` line and arms nothing. Decided in the trigger/fire

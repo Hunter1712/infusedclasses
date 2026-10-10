@@ -37,7 +37,7 @@ class ConditionalPassiveStacksTest {
 			runtime.onTrigger(juggernaut(), "on_hit_dealt", base, 1.0F);
 		}
 
-		assertEquals(10, runtime.stacks(momentum()));
+		assertEquals(20, runtime.stacks(momentum()));
 	}
 
 	@Test

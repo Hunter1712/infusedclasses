@@ -38,14 +38,14 @@ class PassiveEffectTest {
 
 		assertEquals(ClassRegistry.ARMOR, wanted.attribute());
 		assertEquals(Identifier.fromNamespaceAndPath("infusedclasses", "momentum_armor"), wanted.modifierId());
-		assertEquals(1.0, wanted.amount());
+		assertEquals(0.4, wanted.amount());
 	}
 
 	@Test
 	void stacksScaleLinearlyToTheCap() {
 		PassiveEffect.Modifier atCap = PassiveEffect.forStacks(MOMENTUM, MOMENTUM.maxStacks());
 
-		assertEquals(10, atCap.amount());
+		assertEquals(8.0, atCap.amount());
 	}
 
 	@Test
@@ -71,7 +71,7 @@ class PassiveEffectTest {
 	@Test
 	void stacksWriteTheirModifier() {
 		assertTrue(PassiveEffect.planFor(MOMENTUM, 3, false) instanceof PassiveEffect.Plan.Write write
-				&& write.wanted().amount() == 3.0);
+				&& Math.abs(write.wanted().amount() - 1.2) < 1e-9);
 	}
 
 	@Test
@@ -86,7 +86,7 @@ class PassiveEffectTest {
 		HpScaledPassive vigor = ClassRegistry.byId(ClassRegistry.JUGGERNAUT).hpPassives().get(0);
 
 		assertTrue(PassiveEffect.planForBucket(vigor, 10) instanceof PassiveEffect.Plan.Write write
-				&& write.wanted().amount() == 3.0);
+				&& write.wanted().amount() == 2.0);
 		assertTrue(PassiveEffect.planForBucket(vigor, 0)
 				instanceof PassiveEffect.Plan.Remove remove
 				&& remove.attribute().equals(vigor.attribute()));

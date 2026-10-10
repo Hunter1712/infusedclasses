@@ -15,13 +15,16 @@ import net.minecraft.world.entity.ai.attributes.Attribute;
  * @param perStep what one step (10% current HP) contributes to that attribute
  * @param group the family this reads as on the card and tooltip: passives sharing
  * a group render as one line with their picker copy joined, so a pair never reads as two passives
+ * @param baseBonus the floor at 0 HP: full HP pays this plus every step, so a passive
+ * can punish the near-dead as well as reward the topped-off
  */
 public record HpScaledPassive(
 		String name,
 		ResourceKey<Attribute> attribute,
 		Identifier modifierId,
 		double perStep,
-		String group
+		String group,
+		double baseBonus
 ) {
 	/** Current-HP steps: 10% each, 10 total, zero bonus at 0 HP, max at full HP. */
 	public static final int STEPS = 10;
@@ -41,10 +44,14 @@ public record HpScaledPassive(
 		return Math.max(0, Math.min(STEPS, (int) Math.floor(currentHp / maxHp * STEPS + 1e-9)));
 	}
 
+	/** Bonus at full HP: the floor plus every step. */
+	public double maxBonus() {
+		return baseBonus + STEPS * perStep;
+	}
+
 	/** Short picker copy, generated from the numbers so it cannot drift from behaviour. */
 	public String fullDesc() {
-		return "Per 10% HP: +" + ConditionalPassive.amount(perStep)
-				+ " " + ConditionalPassive.wordFor(attribute)
-				+ " (max +" + ConditionalPassive.amount(perStep * STEPS) + " full HP).";
+		return "HP-scaled: " + ConditionalPassive.amount(baseBonus)
+				+ " at 0 HP to +" + ConditionalPassive.amount(maxBonus()) + " full HP.";
 	}
 }

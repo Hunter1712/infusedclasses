@@ -22,9 +22,9 @@ class BonusCurveTest {
 	void rendBonusAtQuarterOnHalfCharge() {
 		float full = RendAbility.empowerFor(10);
 
-		assertEquals(16.0F, full);
-		assertEquals(4.0F, BonusCurve.bonusFor(full, 0.5F));
-		assertEquals(16.0F, BonusCurve.bonusFor(full, 1.0F));
+		assertEquals(5.0F, full);
+		assertEquals(1.25F, BonusCurve.bonusFor(full, 0.5F));
+		assertEquals(5.0F, BonusCurve.bonusFor(full, 1.0F));
 	}
 
 	@Test

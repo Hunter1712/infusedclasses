@@ -18,11 +18,10 @@ class RushAbilityTest {
 
 	@Test
 	void windowAndBonusConstants() {
-		assertEquals(80, RushAbility.WINDOW_TICKS);
-		assertEquals(80, RushAbility.SPEED_TICKS);
-		assertEquals(0, RushAbility.SPEED_AMPLIFIER);
-		assertEquals(3, RushAbility.BONUS_STACKS);
-		assertEquals("minecraft:speed", RushAbility.SPEED_EFFECT.toString());
+		assertEquals(100, RushAbility.WINDOW_TICKS);
+		assertEquals(0.02, RushAbility.STRIDE_BONUS);
+		assertEquals("infusedclasses:rush_stride", RushAbility.STRIDE_ID.toString());
+		assertEquals(5, RushAbility.BONUS_STACKS);
 		assertEquals("minecraft:entity.wind_charge.wind_burst", RushAbility.CAST_SOUND.toString());
 	}
 
@@ -42,8 +41,8 @@ class RushAbilityTest {
 		assertEquals(Cooldowns.RUSH_MS, runtime.rushRemaining(0));
 		assertEquals(0, runtime.rendRemaining(0));
 		assertTrue(runtime.hasRushBonusPending(0));
-		assertTrue(runtime.hasRushBonusPending(3_999));
-		assertFalse(runtime.hasRushBonusPending(4_000));
+		assertTrue(runtime.hasRushBonusPending(4_999));
+		assertFalse(runtime.hasRushBonusPending(5_000));
 	}
 
 	@Test

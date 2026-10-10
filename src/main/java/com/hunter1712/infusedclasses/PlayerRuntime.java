@@ -147,6 +147,11 @@ public final class PlayerRuntime {
 		return rushWindow.hasPending(RushAbility.WINDOW_TICKS, now);
 	}
 
+	/** Whether a fired Rush window is still live: the stride aura rides it, spent bonus or not. */
+	public boolean isRushLive(long now) {
+		return rushWindow.isLive(RushAbility.WINDOW_TICKS, now);
+	}
+
 	public long rendRemaining(long now) {
 		return cooldowns.rendRemaining(now);
 	}

@@ -142,8 +142,8 @@ class MeleePlanTest {
 		// The settle returns the stamped bonus to land: the entry lands what it spent.
 		assertEquals(plan.rendHp(), landed);
 		assertTrue(landed > 0);
-		// Settle owns the bump too: full swing earns one (+1), Rush credits +3, Rend snapshot spent, not refunded.
-		assertEquals(9, runtime.stacks(momentum));
+		// Settle owns the bump too: full swing earns one (+1), Rush credits +5, Rend snapshot spent, not refunded.
+		assertEquals(11, runtime.stacks(momentum));
 		assertFalse(runtime.hasRushBonusPending(0));
 		assertEquals(-1, runtime.peekRendEmpowerStacks(0));
 	}

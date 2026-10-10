@@ -7,20 +7,19 @@ import net.minecraft.resources.Identifier;
  * Rush decisions: the Juggernaut's engage on {@code R}. Pure gate-and-arm shape
  * mirroring Rend, minus every fizzle but cooldown: a topped-off Juggernaut rushing
  * with zero stacks is the normal case, not a reject. Firing arms the transient
- * runtime's Rush lane and stamps the 4s window plus the one-shot next-hit bonus.
+ * runtime's Rush lane and stamps the 5s window plus the one-shot next-hit bonus.
  */
 public final class RushAbility {
 	public static final String NAME = "Rush";
-	/** Engage window in ticks: 4 seconds, tracked as a press timestamp on the runtime. */
-	public static final int WINDOW_TICKS = 80;
-	/** Speed effect length in ticks: as long as the window, so the icon is the timer. */
-	public static final int SPEED_TICKS = WINDOW_TICKS;
-	/** Speed amplifier: Speed I — sticky, not silly. */
-	public static final int SPEED_AMPLIFIER = 0;
+	/** Engage window in ticks: 5 seconds, tracked as a press timestamp on the runtime. */
+	public static final int WINDOW_TICKS = 100;
+	/** Stride granted while live: +0.02 movement speed, about +20% pace. A stat, never an effect. */
+	public static final double STRIDE_BONUS = 0.02;
+	/** Stride modifier id, resolved by the adapter. */
+	public static final Identifier STRIDE_ID =
+			Identifier.fromNamespaceAndPath(ClassPackets.MOD_ID, "rush_stride");
 	/** Next-hit Momentum bonus: what the first qualifying melee hit inside the window earns. */
-	public static final int BONUS_STACKS = 3;
-	/** Speed effect id, resolved by the adapter; vanilla Speed, so the icon is honest. */
-	public static final Identifier SPEED_EFFECT = Identifier.withDefaultNamespace("speed");
+	public static final int BONUS_STACKS = 5;
 	/** Cast sound id, resolved by the adapter; the wind burst is the engage. */
 	public static final Identifier CAST_SOUND = Identifier.withDefaultNamespace("entity.wind_charge.wind_burst");
 
@@ -43,6 +42,18 @@ public final class RushAbility {
 			return new Result(Kind.ON_COOLDOWN, remainingMs, ChatLine.cooldown(NAME, remainingMs));
 		}
 	}
+
+	/**
+	 * The stride aura as a modifier: what sits on the player while the engage window
+	 * is live. Single source for the applier's write and remove paths.
+	 * Shared instance: the tick iterates it, never mutates.
+	 */
+	public static PassiveEffect.Modifier strideModifier() {
+		return STRIDE;
+	}
+
+	private static final PassiveEffect.Modifier STRIDE = new PassiveEffect.Modifier(
+			ClassRegistry.MOVEMENT_SPEED, STRIDE_ID, STRIDE_BONUS);
 
 	private RushAbility() {
 	}
