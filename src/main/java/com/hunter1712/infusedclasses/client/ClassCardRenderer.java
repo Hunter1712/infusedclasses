@@ -143,6 +143,14 @@ public final class ClassCardRenderer {
 	}
 
 	/**
+	 * Where the description starts in a wrapped row: the name length on row one,
+	 * zero after (continuation rows are pure description). Pure ints, pinned by test.
+	 */
+	static int descStartFor(int rowIndex, int rowLength, int prefixLength) {
+		return rowIndex == 0 ? Math.min(rowLength, prefixLength) : 0;
+	}
+
+	/**
 	 * Greedy word wrap over the full line, tracking the name/desc split by character
 	 * offset so tone follows meaning, not row number. Names always fit row one.
 	 */
@@ -154,13 +162,13 @@ public final class ClassCardRenderer {
 		for (String word : full.split(" ")) {
 			String add = row.isEmpty() ? word : " " + word;
 			if (!row.isEmpty() && font.width(row.toString() + add) > wrapW) {
-				rows.add(new TextRow(row.toString(), Math.min(row.length(), prefix.length())));
+				rows.add(new TextRow(row.toString(), descStartFor(rows.size(), row.length(), prefix.length())));
 				row = new StringBuilder(word);
 			} else {
 				row.append(add);
 			}
 		}
-		rows.add(new TextRow(row.toString(), Math.min(row.length(), prefix.length())));
+		rows.add(new TextRow(row.toString(), descStartFor(rows.size(), row.length(), prefix.length())));
 		return rows;
 	}
 

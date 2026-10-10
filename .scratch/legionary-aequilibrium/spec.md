@@ -46,9 +46,9 @@ always-on stats, pay for the flip itself under the existing names, and give
   the Testudo buff is peeked by `takeFor` for 1500ms. `flipStance` gains a
   time/landing-stance signature; its three callers (`RotateAbility.fire`,
   tests) move together.
-- **Copy from constants.** `Rotate` desc gains the switch lines, the
-  `Impetus`/`Testudo` descs are rewritten from the new numbers (flip buffs,
-  not oath windows), the `Aequilibrium` desc is built from its constants.
+- **Copy from constants.** The `Impetus`/`Testudo` descs are written from the new numbers (flip buffs,
+  not oath windows), the `Aequilibrium` desc is built from its constants, and the `Rotate`
+  desc stays stance-only: the flip lines live once, on the flip-buff lines under `Passives`.
   Card actives become `[rotate, impetus, testudo, aequilibrium]`. No HUD, no
   sync signal: chat lines plus cast sound on FIRED only, timestamps on the
   transient runtime, death ends windows.

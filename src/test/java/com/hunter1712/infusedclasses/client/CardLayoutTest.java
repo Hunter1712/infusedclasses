@@ -82,6 +82,14 @@ class CardLayoutTest {
 	}
 
 	@Test
+	void descStartsOnlyOnRowOne() {
+		assertEquals(10, ClassCardRenderer.descStartFor(0, 20, 10));
+		assertEquals(5, ClassCardRenderer.descStartFor(0, 5, 10));
+		assertEquals(0, ClassCardRenderer.descStartFor(1, 20, 10));
+		assertEquals(0, ClassCardRenderer.descStartFor(2, 8, 10));
+	}
+
+	@Test
 	void pagingWrapsAtBothEnds() {
 		assertEquals(0, ClassCardRenderer.nextPage(1, 2));
 		assertEquals(1, ClassCardRenderer.nextPage(0, 2));

@@ -18,7 +18,7 @@ public record ClassDefinition(
 		List<ActiveAbility> actives,
 		List<ActiveAbility> flipBuffs
 ) {
-	/** One active on a card: its list line plus its tooltip description. Names never join with "+". */
+	/** One active on a card: its detail line plus its full description. Names never join with "+". */
 	public record ActiveAbility(String name, String desc) {
 	}
 

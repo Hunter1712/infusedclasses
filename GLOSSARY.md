@@ -193,8 +193,8 @@ The second playable class: `infusedclasses:legionary`, display `Legionary`,
 accent bronze `0xFFB87333`, tagline `Sword and shield`, actives Rotate plus the
 Impetus/Testudo flip buffs and the Aequilibrium oath ultimate. It carries no conditional passives and
 no HP-scaled pair: its stances are transient auras on the runtime (see below),
-not stacks, so the card shows `No passives yet` and the play lives in the
-actives. Every Legionary enters in `Scutum`.
+not stacks, so the card groups the flip buffs under `Passives` and the play lives
+in the fired actives. Every Legionary enters in `Scutum`.
 _Avoid_: roman, tank class
 
 **Gladius**:

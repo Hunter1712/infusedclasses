@@ -17,8 +17,8 @@ Halve the always-on stats in `RotateAbility`, numbers only, shape unchanged:
 - New constants `SWITCH_DEAL_MULT` 1.10, `SWITCH_DEAL_MS` 5_000,
   `SWITCH_TAKE_MULT` 0.85, `SWITCH_TAKE_MS` 1_500 next to the aura numbers.
 - `auraFor` / `dealMult` / `takeMult` keep shape. `StanceApplier` untouched
-  (iterates the same aura lists). `Rotate` picker desc gains the switch
-  lines, built from the constants.
+  (iterates the same aura lists). `Rotate` desc stays stance-only (the flip
+  lines live once, on the flip-buff lines under `Passives`).
 
 ## Acceptance
 
@@ -29,6 +29,7 @@ Halve the always-on stats in `RotateAbility`, numbers only, shape unchanged:
 
 ## Comments
 
-Landed: aura numbers retuned in `RotateAbility`, `Rotate` desc gains the switch lines built
-from the Impetus/Testudo switch constants. `SWITCH_*` live on the flip-buff abilities
-per ticket 01, not duplicated next to the auras.
+Landed: aura numbers retuned in `RotateAbility`. `Rotate` desc stays stance-only;
+the flip lines live once, on the flip-buff lines under `Passives` (later feedback:
+repeating them on `Rotate` doubled the longest card entry). `SWITCH_*` live on
+the flip-buff abilities per ticket 01, not duplicated next to the auras.
