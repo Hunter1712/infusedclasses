@@ -20,11 +20,16 @@ public final class MeleePlan {
 
 	/** Outgoing melee multiplier for an attacker: the stance deal mult times the pending Impetus flip buff, 1.0 for anyone else. */
 	public static double dealFor(ClassDefinition atkDef, PlayerRuntime runtime, long now) {
-		if (atkDef == null || !atkDef.hasAbility(ClassRegistry.ROTATE_ABILITY)) {
+		return dealWithImpetus(atkDef, runtime, impetusPendingFor(atkDef, runtime, now), now);
+	}
+
+	/** Outgoing mult sharing one Impetus peek: the plan peeks once, the spend decision and the mult read the same answer. */
+	private static double dealWithImpetus(ClassDefinition atkDef, PlayerRuntime runtime, boolean impetus, long now) {
+		if (atkDef == null || runtime == null || !atkDef.hasAbility(ClassRegistry.ROTATE_ABILITY)) {
 			return 1.0;
 		}
 		double base = RotateAbility.dealMult(runtime.stance());
-		double flip = runtime.hasImpetusPending(now) ? ImpetusAbility.SWITCH_DEAL_MULT : 1.0;
+		double flip = impetus ? RotateAbility.SWITCH_DEAL_MULT : 1.0;
 		return base * flip;
 	}
 
@@ -35,13 +40,13 @@ public final class MeleePlan {
 		}
 		PlayerRuntime r = runtime.get();
 		double base = RotateAbility.takeMult(r.stance());
-		double flip = r.isTestudoBuffLive(now) ? TestudoAbility.SWITCH_TAKE_MULT : 1.0;
+		double flip = r.isTestudoBuffLive(now) ? RotateAbility.SWITCH_TAKE_MULT : 1.0;
 		return base * flip;
 	}
 
 	/** Whether the attacker's Impetus flip buff is owed on this hit: any charge, spent once by the settle. False for anyone else. */
 	public static boolean impetusPendingFor(ClassDefinition atkDef, PlayerRuntime runtime, long now) {
-		if (atkDef == null || !atkDef.hasAbility(ClassRegistry.IMPETUS_ABILITY)
+		if (atkDef == null || !atkDef.hasAbility(ClassRegistry.ROTATE_ABILITY)
 				|| runtime == null || !runtime.hasImpetusPending(now)) {
 			return false;
 		}
@@ -64,9 +69,9 @@ public final class MeleePlan {
 		boolean bump = shouldBump(charge);
 		boolean rushBonus = bump && atkRuntime != null && atkRuntime.hasRushBonusPending(now);
 		int rendStacks = atkRuntime == null ? -1 : atkRuntime.peekRendEmpowerStacks(now);
-		float rendHp = rendStacks > 0 ? RendAbility.bonusFor(rendStacks, charge) : 0;
+		float rendHp = rendStacks > 0 ? BonusCurve.bonusFor(RendAbility.empowerFor(rendStacks), charge) : 0;
 		boolean impetus = impetusPendingFor(atkDef, atkRuntime, now);
-		double deal = atkDef == null || atkRuntime == null ? 1.0 : dealFor(atkDef, atkRuntime, now);
+		double deal = dealWithImpetus(atkDef, atkRuntime, impetus, now);
 		double take = victimDef == null || victimRuntime == null ? 1.0 : takeFor(victimDef, victimRuntime, now);
 		return new HitPlan(bump, charge, rushBonus, rendStacks, rendHp, impetus, deal, take, deal * take);
 	}

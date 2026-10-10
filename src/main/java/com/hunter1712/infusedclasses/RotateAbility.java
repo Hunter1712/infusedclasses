@@ -52,6 +52,18 @@ public final class RotateAbility {
 	/** Scutum downside: melee dealt x0.9, plate reads as plate. */
 	public static final double SCUTUM_DEAL_MULT = 0.9;
 
+	public static final String IMPETUS_NAME = "Impetus";
+	/** Flip buff: the next melee hit after flipping to Gladius deals x1.10, at any charge. */
+	public static final double SWITCH_DEAL_MULT = 1.10;
+	/** Flip buff window in millis: 5s after the flip, then the buff expires unspent. */
+	public static final long SWITCH_DEAL_MS = 5_000L;
+
+	public static final String TESTUDO_NAME = "Testudo";
+	/** Flip buff: melee taken within the catch window pays x0.85. */
+	public static final double SWITCH_TAKE_MULT = 0.85;
+	/** Flip buff window in millis: 1.5s after the flip, then the catch closes. */
+	public static final long SWITCH_TAKE_MS = 1_500L;
+
 	public enum Kind {
 		FIRED,
 		WRONG_CLASS,
@@ -118,6 +130,18 @@ public final class RotateAbility {
 	/** The other stance: firing always lands here, whichever is current. */
 	public static Stance flipped(Stance stance) {
 		return stance == Stance.GLADIUS ? Stance.SCUTUM : Stance.GLADIUS;
+	}
+
+	/** Picker copy for the Gladius-flip buff, generated from the numbers so it cannot drift from behaviour. */
+	public static String impetusDesc() {
+		return "Flip to Gladius: next hit x" + SWITCH_DEAL_MULT
+				+ ", any charge (" + (SWITCH_DEAL_MS / 1000) + "s, one-shot).";
+	}
+
+	/** Picker copy for the Scutum-flip buff, generated from the numbers so it cannot drift from behaviour. */
+	public static String testudoDesc() {
+		return "Flip to Scutum: take x" + SWITCH_TAKE_MULT
+				+ " for " + ConditionalPassive.amount(SWITCH_TAKE_MS / 1000.0) + "s.";
 	}
 
 	/** Decides flipping for Legionaries off the rotate lock. Never fizzles on stance. Pure and read-only: only {@link #fire} arms the lane and flips. */

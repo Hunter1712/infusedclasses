@@ -64,9 +64,9 @@ class MeleePlanTest {
 		PlayerRuntime gladius = inStance(RotateAbility.Stance.GLADIUS);
 
 		assertEquals(1.10,
-				MeleePlan.dealFor(legionary(), gladius, ImpetusAbility.SWITCH_DEAL_MS - 1), 1e-9);
+				MeleePlan.dealFor(legionary(), gladius, RotateAbility.SWITCH_DEAL_MS - 1), 1e-9);
 		assertEquals(1.0,
-				MeleePlan.dealFor(legionary(), gladius, ImpetusAbility.SWITCH_DEAL_MS), 1e-9);
+				MeleePlan.dealFor(legionary(), gladius, RotateAbility.SWITCH_DEAL_MS), 1e-9);
 	}
 
 	@Test
@@ -74,8 +74,8 @@ class MeleePlanTest {
 		PlayerRuntime scutum = inStance(RotateAbility.Stance.SCUTUM);
 
 		assertEquals(0.85, MeleePlan.takeFor(legionary(), () -> scutum, 0), 1e-9);
-		assertEquals(0.85, MeleePlan.takeFor(legionary(), () -> scutum, TestudoAbility.SWITCH_TAKE_MS - 1), 1e-9);
-		assertEquals(1.0, MeleePlan.takeFor(legionary(), () -> scutum, TestudoAbility.SWITCH_TAKE_MS), 1e-9);
+		assertEquals(0.85, MeleePlan.takeFor(legionary(), () -> scutum, RotateAbility.SWITCH_TAKE_MS - 1), 1e-9);
+		assertEquals(1.0, MeleePlan.takeFor(legionary(), () -> scutum, RotateAbility.SWITCH_TAKE_MS), 1e-9);
 	}
 
 	@Test

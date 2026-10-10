@@ -178,9 +178,8 @@ The Juggernaut's Momentum spender on `G`: empowers the next melee hit landed wit
 every Momentum stack plus the armor they granted up front, on its own 60s lane. An
 unswung window simply expires with the stacks already spent. Zero stacks fizzles with a
 `No Momentum` line and arms nothing. Decided in the trigger/fire
-gate-and-arm shape; the spent passive is found once with `RendAbility.spentPassive`
-(over `passiveForTrigger`, never by position), the
-empower snapshot rides the transient runtime next to the lane, and
+gate-and-arm shape; the spent passive is found once with `passiveForTrigger`
+(never by position), the empower snapshot rides the transient runtime next to the lane, and
 the consume flag rides in the result: the entry asks the passive applier to consume
 that passive while the hit settle spends the snapshot on the next hit and returns the
 stamped bonus, landing only what it spent, and only when the plan saw one live, so
@@ -221,14 +220,14 @@ the Juggernaut's Rush bind reused, so binds survive the class.
 Decided in the trigger/fire gate-and-arm shape.
 _Avoid_: swap stance, transform
 
-**Impetus** (`ImpetusAbility`):
+**Impetus** (`RotateAbility`):
 The Legionary's Gladius-flip buff: the next melee hit after flipping to `Gladius`
 deals x1.10 (`SWITCH_DEAL_MULT`), at any charge, one-shot through the
 peek/consume pair, expiring 5s after the flip (`SWITCH_DEAL_MS`).
 Flipping away drops it with the stance that earned it. No lane, no window to arm.
 _Avoid_: enrage, burst
 
-**Testudo** (`TestudoAbility`):
+**Testudo** (`RotateAbility`):
 The Legionary's Scutum-flip buff: melee taken pays x0.85 (`SWITCH_TAKE_MULT`)
 for 1.5s from the flip (`SWITCH_TAKE_MS`). Timed, never consumed: every hit
 inside the catch is discounted. No lane, no window to arm.
@@ -284,7 +283,7 @@ same thread, and the hook grants nothing twice while it is set. Replaces the twi
 `resolvingBonus` / `resolvingEmpower` flags.
 _Avoid_: recursion flag, lock
 
-**Stance applier** (`StanceApplier`):
+**Stance applier** (`PassiveApplier`):
 The adapter that makes the player's attributes agree with the Legionary stance: only
 the current stance's modifiers sit on the player, the other stance's come off, same
 write-only-on-change shape as the Vigor tick. Aequilibrium edge and plate ride the window
@@ -385,20 +384,20 @@ _Avoid_: card text
 The line under the picker title: `Your choice shapes your ability`.
 _Avoid_: header
 
-**Card accent** (`ClassPresentation.accentFor`):
+**Card accent** (`ClassPresentation.cardFor`):
 The colour of a card's top strip: the class's own accent.
 _Avoid_: highlight
 
-**Picker button** (`ClassPresentation.ButtonData`, `buttonFor`):
+**Picker button** (`ClassPresentation.ButtonData`, `cardFor`):
 A card's button label and active state: always `Select`/active, since every
-visible page is playable. Its rect comes from the card renderer's button math, never the screen's.
+visible page is playable. Its rect comes from the card layout's button math, never the screen's.
 _Avoid_: select button
 
-**Card text** (`ClassPresentation.CardText`, `cardTextFor`):
+**Card text** (`ClassPresentation.CardText`, `cardFor`):
 The card content: display name, tagline, detail lines (with kinds and styles), accent colour
 and button label/state. Buttons resolve it once per definition at init; frame and body resolve the card model once per page per frame.
 
-**Card style** (`ClassPresentation.CardStyle`, `cardStyleFor`):
+**Card style** (`ClassPresentation.CardStyle`, `cardFor`):
 The hover-dependent visual layer: border colour, hover wash and name colour. Derived per frame from `isHovering`.
 
 **Card model** (`ClassPresentation.CardModel`, `cardFor`):
@@ -415,14 +414,17 @@ widgets from the renderer's focused math, resolves one `CardModel`
 per frame; how the card draws is the card renderer's business, and what the card says is the card text's. It never pauses and never closes on Esc. A new class definition adds its own page with no layout change.
 _Avoid_: GUI, menu
 
+**Card layout** (`client/CardLayout`):
+Everything the focused card sits in: the focused math (centered card rectangle,
+two-thirds width up to 520, pinned select rect, side arrows, dot row,
+title/subtitle/footer anchors), the hover hit-test the screen positions with, and page
+wraparound. Rows past the visible slice scroll under the wheel with a thin scrollbar; the
+pinned select never moves, and a new page always opens at the top.
+
 **Card renderer** (`client/ClassCardRenderer`):
 Everything the focused card looks like: body, accent strip, border and hover highlight,
 plus the name, tagline, divider and wrapped detail lines. The first wrapped row
-of a line draws in its own color, continuations draw dimmed so names scan. It also owns the focused
-math (centered card rectangle, two-thirds width up to 520, pinned select rect,
-side arrows, dot row, title/subtitle/footer anchors) and the hover hit-test the screen positions with.
-Rows past the visible slice scroll under the wheel with a thin scrollbar; the
-pinned select never moves, and a new page always opens at the top.
+of a line draws in its own color, continuations draw dimmed so names scan.
 The frame and the body both draw from one card model; the screen passes the model,
 never the parts. Each visual line draws with
 the colour and weight it carries, so nothing here reads what a line says. Long lines
@@ -488,4 +490,7 @@ one-line Rend adapter, shared gate-and-arm, full hit plan, card back door, windo
 `0009` keeps oath dispatch in the server entry (morph stays pure) and single-sources
 the Legionary marker through `hasAbility`; `0010` pays the flip instead of the camp
 (halved base auras, Impetus/Testudo as switch buffs off the flip record) and gives `G`
-one clean ultimate (Aequilibrium on the reused oath lane, morph deleted).
+one clean ultimate (Aequilibrium on the reused oath lane, morph deleted);
+`0011` folds the stance adapter back into the passive applier (one adapter was
+a hypothetical seam, reopening `0007`) and homes both flip buffs on Rotate with
+one Legionary marker.

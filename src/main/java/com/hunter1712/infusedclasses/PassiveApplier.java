@@ -2,6 +2,8 @@ package com.hunter1712.infusedclasses;
 
 import net.minecraft.server.level.ServerPlayer;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 
 /** Adapter for {@link PassiveEffect}: makes the player's attributes agree with the decision. */
@@ -33,7 +35,7 @@ public final class PassiveApplier {
 		}
 		// ponytail: no max-health tick until a class carries one (all read 0.0 today).
 		// A class that sets maxHealthBonus re-adds one plan computation here; nothing else writes it.
-		StanceApplier.applyStance(player, def, runtime, now);
+		applyStance(player, def, runtime, now);
 		RushApplier.tick(player, runtime, now);
 	}
 
@@ -51,13 +53,54 @@ public final class PassiveApplier {
 	}
 
 	/**
+	 * Legionary stance auras: only the current stance's modifiers sit on the player,
+	 * the other stance's come off. Non-Legionaries skip entirely. Both sides iterate
+	 * the stance's single aura list, so write and remove cannot drift.
+	 */
+	private static void applyStance(ServerPlayer player, ClassDefinition def, PlayerRuntime runtime, long now) {
+		if (!def.hasAbility(ClassRegistry.ROTATE_ABILITY)) {
+			return;
+		}
+		for (PassiveEffect.Modifier wanted : RotateAbility.auraFor(runtime.stance())) {
+			AttributeWriter.write(player, wanted);
+		}
+		for (PassiveEffect.Modifier stale : RotateAbility.auraFor(RotateAbility.flipped(runtime.stance()))) {
+			AttributeWriter.remove(player, stale.attribute(), stale.modifierId());
+		}
+		if (runtime.isAequilibriumLive(now)) {
+			for (PassiveEffect.Modifier wanted : AequilibriumAbility.windowModifiers()) {
+				AttributeWriter.write(player, wanted);
+			}
+		} else {
+			for (PassiveEffect.Modifier stale : AequilibriumAbility.windowModifiers()) {
+				AttributeWriter.remove(player, stale.attribute(), stale.modifierId());
+			}
+		}
+	}
+
+	/** Every stance/window modifier in one place: leaving Legionary takes them all off. */
+	private static void removeStanceModifiers(ServerPlayer player) {
+		for (PassiveEffect.Modifier stale : allModifiers()) {
+			AttributeWriter.remove(player, stale.attribute(), stale.modifierId());
+		}
+	}
+
+	/** The full set both sides draw from, so write and remove cannot drift apart. */
+	private static List<PassiveEffect.Modifier> allModifiers() {
+		List<PassiveEffect.Modifier> all = new ArrayList<>(RotateAbility.auraFor(RotateAbility.Stance.GLADIUS));
+		all.addAll(RotateAbility.auraFor(RotateAbility.Stance.SCUTUM));
+		all.addAll(AequilibriumAbility.windowModifiers());
+		return all;
+	}
+
+	/**
 	 * Spender consume by class: resolves the priced passive by trigger and consumes it. The
 	 * single path for Rend, so the entry never looks the passive up itself: the definition
-	 * owns the one trigger scan, and the entry stays out. Resolved in
-	 * {@link RendAbility#spentPassive}, shared with the Rush grant and Rend's decide path.
+	 * owns the one trigger scan, and the entry stays out.
 	 */
 	public static boolean consumeSpent(ServerPlayer player, PlayerRuntime runtime, ClassDefinition def) {
-		return consumeStacks(player, runtime, RendAbility.spentPassive(def));
+		return def != null
+				&& consumeStacks(player, runtime, def.passiveForTrigger(ConditionalPassive.ON_HIT_DEALT));
 	}
 
 	/**
@@ -83,8 +126,11 @@ public final class PassiveApplier {
 				}
 			}
 			// Stance auras are transient like Vigor: leaving the class takes them off.
-			// The Legionary marker lives with the stance adapter, not here.
-			StanceApplier.onClassChanged(player, oldDef, newDef);
+			// The Legionary marker lives with the stance reconcile below, not with the passives.
+			if (oldDef.hasAbility(ClassRegistry.ROTATE_ABILITY)
+					&& (newDef == null || !newDef.hasAbility(ClassRegistry.ROTATE_ABILITY))) {
+				removeStanceModifiers(player);
+			}
 			runtime.clear(oldDef);
 		}
 		runtime.resetCooldowns();
@@ -125,7 +171,7 @@ public final class PassiveApplier {
 	 * grants; rejects, stale windows and a missing priced passive do nothing.
 	 */
 	public static void grantRushBonus(PlayerRuntime runtime, ClassDefinition def, long now) {
-		ConditionalPassive momentum = RendAbility.spentPassive(def);
+		ConditionalPassive momentum = def == null ? null : def.passiveForTrigger(ConditionalPassive.ON_HIT_DEALT);
 		if (momentum == null || !runtime.consumeRushBonus(now)) {
 			return;
 		}

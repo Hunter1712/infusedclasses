@@ -5,6 +5,8 @@ import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 
+import java.util.function.Supplier;
+
 /**
  * Damage settle adapter: the single guarded {@code hurt} for the whole mod plus the
  * stance-mult settle every melee branch funnels through. Bonus hurts re-enter the
@@ -39,27 +41,15 @@ public final class DamageSettle {
 	 * the guarded path (dead targets deal nothing); under 1.0 heals back
 	 * the discount, so the net hit reads as base times mult. Exactly 1.0 touches
 	 * nothing. The single home for stance settle: the entry maps, this applies.
+	 * The source arrives as a supplier so it is only resolved by this adapter, never
+	 * by the entry, whichever side dealt the hit.
 	 */
-	public static void settleMult(ServerPlayer attacker, Entity target, float baseDamageTaken, double mult) {
-		if (attacker == null) {
+	public static void settleTake(Entity target, float baseDamageTaken, double mult,
+			Supplier<DamageSource> source) {
+		if (target == null || source == null) {
 			return;
 		}
-		settleWithSource(target, baseDamageTaken, mult, attacker.damageSources().playerAttack(attacker));
-	}
-
-	/**
-	 * Mob-melee take on a Legionary: same settle, sourced from the mob so the entry
-	 * never resolves damage sources itself. Discounts (mult &lt; 1.0) heal back like
-	 * the player path, so both resolutions stay identical.
-	 */
-	public static void settleMobTake(ServerPlayer victim, LivingEntity mobAttacker, float baseDamageTaken,
-			double take) {
-		if (victim == null || mobAttacker == null) {
-			return;
-		}
-		DamageSource source = mobAttacker.damageSources().mobAttack(mobAttacker);
-		// Alive and 1.0 guards ride in the core, not here.
-		settleWithSource(victim, baseDamageTaken, take, source);
+		settleWithSource(target, baseDamageTaken, mult, source.get());
 	}
 
 	private static void settleWithSource(Entity target, float baseDamageTaken, double mult, DamageSource source) {

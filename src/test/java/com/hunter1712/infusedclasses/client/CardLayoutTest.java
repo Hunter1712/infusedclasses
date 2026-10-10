@@ -1,6 +1,6 @@
 package com.hunter1712.infusedclasses.client;
 
-import com.hunter1712.infusedclasses.client.ClassCardRenderer.CardRect;
+import com.hunter1712.infusedclasses.client.CardLayout.CardRect;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -12,28 +12,28 @@ class CardLayoutTest {
 	private static void assertOnScreen(int screenW, int screenH, CardRect card) {
 		assertTrue(card.x() >= 0, "card left on screen");
 		assertTrue(card.x() + card.w() <= screenW, "card right on screen");
-		assertTrue(ClassCardRenderer.titleY(card) >= 0, "title on screen");
-		assertTrue(ClassCardRenderer.footerY(card) <= screenH, "footer on screen");
+		assertTrue(CardLayout.titleY(card) >= 0, "title on screen");
+		assertTrue(CardLayout.footerY(card) <= screenH, "footer on screen");
 	}
 
 	private static void assertWidgetsOnScreen(int screenW, int screenH, CardRect card, int dots) {
-		var select = ClassCardRenderer.selectRect(card);
+		var select = CardLayout.selectRect(card);
 		assertTrue(select.x() >= card.x() && select.x() + select.w() <= card.x() + card.w());
 		assertTrue(select.y() >= card.y() && select.y() + select.h() <= card.y() + card.h());
-		var prev = ClassCardRenderer.prevRect(screenW, card);
-		var next = ClassCardRenderer.nextRect(screenW, card);
+		var prev = CardLayout.prevRect(screenW, card);
+		var next = CardLayout.nextRect(screenW, card);
 		assertTrue(prev.x() >= 0 && prev.x() + prev.w() <= screenW);
 		assertTrue(next.x() >= 0 && next.x() + next.w() <= screenW);
 		for (int i = 0; i < dots; i++) {
-			int x = ClassCardRenderer.dotX(i, dots, screenW);
-			assertTrue(x >= 0 && x + ClassCardRenderer.DOT_W <= screenW, "dot " + i + " on screen");
+			int x = CardLayout.dotX(i, dots, screenW);
+			assertTrue(x >= 0 && x + CardLayout.DOT_W <= screenW, "dot " + i + " on screen");
 		}
 	}
 
 	@Test
 	void focusedCardIsCentredAndContained() {
 		for (int[] size : new int[][]{{854, 480}, {1280, 720}, {426, 240}, {320, 240}}) {
-			CardRect card = ClassCardRenderer.focusedCard(size[0], size[1]);
+			CardRect card = CardLayout.focusedCard(size[0], size[1]);
 
 			assertTrue(Math.abs((card.x() + card.w() / 2) - size[0] / 2) <= 1, "card centred");
 			assertOnScreen(size[0], size[1], card);
@@ -43,7 +43,7 @@ class CardLayoutTest {
 
 	@Test
 	void wideCardStaysInsideTheMax() {
-		CardRect card = ClassCardRenderer.focusedCard(1920, 1080);
+		CardRect card = CardLayout.focusedCard(1920, 1080);
 
 		assertEquals(520, card.w());
 		assertTrue(card.x() >= 0 && card.x() + card.w() <= 1920);
@@ -51,27 +51,27 @@ class CardLayoutTest {
 
 	@Test
 	void scrollClampsAndScrollbarShowsOnlyOnOverflow() {
-		CardRect card = ClassCardRenderer.focusedCard(854, 480);
+		CardRect card = CardLayout.focusedCard(854, 480);
 
-		assertEquals(0, ClassCardRenderer.clampScroll(-5, 100));
-		assertEquals(100, ClassCardRenderer.clampScroll(999, 100));
-		assertEquals(30, ClassCardRenderer.clampScroll(30, 100));
-		assertEquals(0, ClassCardRenderer.clampScroll(10, 0));
+		assertEquals(0, CardLayout.clampScroll(-5, 100));
+		assertEquals(100, CardLayout.clampScroll(999, 100));
+		assertEquals(30, CardLayout.clampScroll(30, 100));
+		assertEquals(0, CardLayout.clampScroll(10, 0));
 
-		assertEquals(null, ClassCardRenderer.scrollBar(card,
-				ClassCardRenderer.layoutFor(card, 5), 0));
+		assertEquals(null, CardLayout.scrollBar(card,
+				CardLayout.layoutFor(card, 5), 0));
 
 		int rows = 60;
-		var layout = ClassCardRenderer.layoutFor(card, rows);
+		var layout = CardLayout.layoutFor(card, rows);
 		assertTrue(layout.maxScroll() > 0);
-		var bar = ClassCardRenderer.scrollBar(card, layout, 0);
+		var bar = CardLayout.scrollBar(card, layout, 0);
 		assertTrue(bar != null);
-		assertTrue(bar.y() >= ClassCardRenderer.bodyTop(card));
-		assertTrue(bar.y() + bar.h() <= ClassCardRenderer.stopY(card));
+		assertTrue(bar.y() >= CardLayout.bodyTop(card));
+		assertTrue(bar.y() + bar.h() <= CardLayout.stopY(card));
 		assertEquals(3, bar.w());
-		var end = ClassCardRenderer.scrollBar(card, layout, layout.maxScroll());
+		var end = CardLayout.scrollBar(card, layout, layout.maxScroll());
 		assertTrue(end.y() > bar.y());
-		assertTrue(end.y() + end.h() <= ClassCardRenderer.stopY(card) + 1);
+		assertTrue(end.y() + end.h() <= CardLayout.stopY(card) + 1);
 	}
 
 	@Test
@@ -91,19 +91,19 @@ class CardLayoutTest {
 
 	@Test
 	void pagingWrapsAtBothEnds() {
-		assertEquals(0, ClassCardRenderer.nextPage(1, 2));
-		assertEquals(1, ClassCardRenderer.nextPage(0, 2));
-		assertEquals(1, ClassCardRenderer.prevPage(0, 2));
-		assertEquals(0, ClassCardRenderer.prevPage(1, 2));
+		assertEquals(0, CardLayout.nextPage(1, 2));
+		assertEquals(1, CardLayout.nextPage(0, 2));
+		assertEquals(1, CardLayout.prevPage(0, 2));
+		assertEquals(0, CardLayout.prevPage(1, 2));
 	}
 
 	@Test
 	void hoveringIsTheCardRect() {
 		CardRect card = new CardRect(10, 20, 100, 80);
 
-		assertTrue(ClassCardRenderer.isHovering(card, 10, 20));
-		assertTrue(ClassCardRenderer.isHovering(card, 109, 99));
-		assertFalse(ClassCardRenderer.isHovering(card, 110, 20));
-		assertFalse(ClassCardRenderer.isHovering(card, 10, 100));
+		assertTrue(CardLayout.isHovering(card, 10, 20));
+		assertTrue(CardLayout.isHovering(card, 109, 99));
+		assertFalse(CardLayout.isHovering(card, 110, 20));
+		assertFalse(CardLayout.isHovering(card, 10, 100));
 	}
 }

@@ -18,7 +18,7 @@ import java.util.List;
  * Focused picker screen: dimmed backdrop, one large class card per page with its full
  * kit printed on the card and no tooltips anywhere. Side arrows, clickable dots and
  * keyboard paging move between pages with wraparound. It builds the widgets from the
- * presentation data and the renderer math; how a card is drawn is ClassCardRenderer's
+ * presentation data and the layout math; how a card is drawn is ClassCardRenderer's
  * business, and what a card says is the card text's. Picking still closes only on
  * server confirm, so a rejected pick stays open for retry.
  */
@@ -56,31 +56,31 @@ public class ClassSelectScreen extends Screen {
 			return;
 		}
 		page = Math.min(page, classes.size() - 1);
-		ClassCardRenderer.CardRect card = ClassCardRenderer.focusedCard(width, height);
+		CardLayout.CardRect card = CardLayout.focusedCard(width, height);
 
-		ClassCardRenderer.ButtonRect prev = ClassCardRenderer.prevRect(width, card);
-		addRenderableWidget(Button.builder(Component.literal("<"), b -> goTo(ClassCardRenderer.prevPage(page, classes.size())))
+		CardLayout.ButtonRect prev = CardLayout.prevRect(width, card);
+		addRenderableWidget(Button.builder(Component.literal("<"), b -> goTo(CardLayout.prevPage(page, classes.size())))
 				.bounds(prev.x(), prev.y(), prev.w(), prev.h())
 				.build());
-		ClassCardRenderer.ButtonRect next = ClassCardRenderer.nextRect(width, card);
-		addRenderableWidget(Button.builder(Component.literal(">"), b -> goTo(ClassCardRenderer.nextPage(page, classes.size())))
+		CardLayout.ButtonRect next = CardLayout.nextRect(width, card);
+		addRenderableWidget(Button.builder(Component.literal(">"), b -> goTo(CardLayout.nextPage(page, classes.size())))
 				.bounds(next.x(), next.y(), next.w(), next.h())
 				.build());
 
-		int dotsTop = ClassCardRenderer.dotsY(card);
+		int dotsTop = CardLayout.dotsY(card);
 		for (int i = 0; i < classes.size(); i++) {
 			int dot = i;
 			Button dotButton = Button.builder(Component.literal(dot == page ? "\u25CF" : "\u25CB"),
 					b -> goTo(dot))
-					.bounds(ClassCardRenderer.dotX(i, classes.size(), width), dotsTop,
-							ClassCardRenderer.DOT_W, ClassCardRenderer.DOT_H)
+					.bounds(CardLayout.dotX(i, classes.size(), width), dotsTop,
+							CardLayout.DOT_W, CardLayout.DOT_H)
 					.build();
 			dots.add(dotButton);
 			addRenderableWidget(dotButton);
 		}
 
-		ClassCardRenderer.ButtonRect select = ClassCardRenderer.selectRect(card);
-		ClassPresentation.ButtonData button = ClassPresentation.buttonFor(classes.get(page));
+		CardLayout.ButtonRect select = CardLayout.selectRect(card);
+		ClassPresentation.ButtonData button = ClassPresentation.cardFor(classes.get(page), false).text().button();
 		addRenderableWidget(Button.builder(Component.literal(button.label()),
 				b -> InfusedClassesClient.pickClass(classes.get(page).id()))
 				.bounds(select.x(), select.y(), select.w(), select.h())
@@ -94,9 +94,9 @@ public class ClassSelectScreen extends Screen {
 		if (classes.isEmpty()) {
 			return;
 		}
-		ClassCardRenderer.CardRect card = ClassCardRenderer.focusedCard(width, height);
+		CardLayout.CardRect card = CardLayout.focusedCard(width, height);
 		ClassDefinition def = classes.get(page);
-		frameModel = ClassPresentation.cardFor(def, ClassCardRenderer.isHovering(card, mouseX, mouseY));
+		frameModel = ClassPresentation.cardFor(def, CardLayout.isHovering(card, mouseX, mouseY));
 		ClassCardRenderer.drawFrame(graphics, card, frameModel);
 	}
 
@@ -106,36 +106,36 @@ public class ClassSelectScreen extends Screen {
 		if (classes.isEmpty()) {
 			return;
 		}
-		ClassCardRenderer.CardRect card = ClassCardRenderer.focusedCard(width, height);
-		graphics.drawCenteredString(font, TITLE_BOLD, width / 2, ClassCardRenderer.titleY(card), TITLE_COLOR);
-		graphics.drawCenteredString(font, ClassPresentation.subtitle(), width / 2, ClassCardRenderer.subtitleY(card),
+		CardLayout.CardRect card = CardLayout.focusedCard(width, height);
+		graphics.drawCenteredString(font, TITLE_BOLD, width / 2, CardLayout.titleY(card), TITLE_COLOR);
+		graphics.drawCenteredString(font, ClassPresentation.subtitle(), width / 2, CardLayout.subtitleY(card),
 				SUBTITLE_COLOR);
 
 		ClassDefinition def = classes.get(page);
-		boolean hovered = ClassCardRenderer.isHovering(card, mouseX, mouseY);
-		scrollPx = ClassCardRenderer.clampScroll(scrollPx, lastMaxScroll);
+		boolean hovered = CardLayout.isHovering(card, mouseX, mouseY);
+		scrollPx = CardLayout.clampScroll(scrollPx, lastMaxScroll);
 		ClassPresentation.CardModel model = frameModel != null ? frameModel
 				: ClassPresentation.cardFor(def, hovered);
-		ClassCardRenderer.BodyLayout layout =
+		CardLayout.BodyLayout layout =
 				ClassCardRenderer.drawBody(graphics, font, card, model, scrollPx);
 		lastMaxScroll = layout.maxScroll();
-		ClassCardRenderer.ButtonRect bar = ClassCardRenderer.scrollBar(card, layout, scrollPx);
+		CardLayout.ButtonRect bar = CardLayout.scrollBar(card, layout, scrollPx);
 		if (bar != null) {
 			graphics.fill(bar.x(), bar.y(), bar.x() + bar.w(), bar.y() + bar.h(), 0xFF8A8A8A);
 		}
 		for (int i = 0; i < dots.size(); i++) {
 			dots.get(i).setMessage(Component.literal(i == page ? "\u25CF" : "\u25CB"));
 		}
-		graphics.drawCenteredString(font, "Click a class to choose it", width / 2, ClassCardRenderer.footerY(card),
+		graphics.drawCenteredString(font, "Click a class to choose it", width / 2, CardLayout.footerY(card),
 				FOOTER_COLOR);
 	}
 
 	@Override
 	public boolean mouseScrolled(double mouseX, double mouseY, double horizontalAmount, double verticalAmount) {
 		if (!classes.isEmpty()) {
-			ClassCardRenderer.CardRect card = ClassCardRenderer.focusedCard(width, height);
-			if (ClassCardRenderer.isHovering(card, (int) mouseX, (int) mouseY)) {
-				scrollPx = ClassCardRenderer.clampScroll(scrollPx - (int) (verticalAmount * 12), lastMaxScroll);
+			CardLayout.CardRect card = CardLayout.focusedCard(width, height);
+			if (CardLayout.isHovering(card, (int) mouseX, (int) mouseY)) {
+				scrollPx = CardLayout.clampScroll(scrollPx - (int) (verticalAmount * 12), lastMaxScroll);
 				return true;
 			}
 		}
@@ -148,11 +148,11 @@ public class ClassSelectScreen extends Screen {
 			return super.keyPressed(event);
 		}
 		if (event.key() == GLFW.GLFW_KEY_LEFT || event.key() == GLFW.GLFW_KEY_A) {
-			goTo(ClassCardRenderer.prevPage(page, classes.size()));
+			goTo(CardLayout.prevPage(page, classes.size()));
 			return true;
 		}
 		if (event.key() == GLFW.GLFW_KEY_RIGHT || event.key() == GLFW.GLFW_KEY_D) {
-			goTo(ClassCardRenderer.nextPage(page, classes.size()));
+			goTo(CardLayout.nextPage(page, classes.size()));
 			return true;
 		}
 		return super.keyPressed(event);

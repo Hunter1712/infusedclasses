@@ -59,7 +59,8 @@ final class ServerEvents {
 				// takeFor is 1.0 for non-Legionaries, and the settle is a no-op at 1.0.
 				double take = MeleePlan.takeFor(PlayerClassAccess.of(victim).currentDefinition(),
 						() -> InfusedClasses.runtime(victim), now);
-				DamageSettle.settleMobTake(victim, mobAttacker, baseDamageTaken, take);
+				DamageSettle.settleTake(victim, baseDamageTaken, take,
+						() -> mobAttacker.damageSources().mobAttack(mobAttacker));
 			}
 		});
 
@@ -178,6 +179,7 @@ final class ServerEvents {
 		DamageSettle.dealBonus(attacker, entity, rendHp);
 		// Stance mults: attacker deal times victim take, settled at once.
 		// Gladius + Impetus reads x1.1 deal, Scutum + Testudo x0.85 take: see HitPlan.combined.
-		DamageSettle.settleMult(attacker, entity, baseDamageTaken, plan.combined());
+		DamageSettle.settleTake(entity, baseDamageTaken, plan.combined(),
+				() -> attacker.damageSources().playerAttack(attacker));
 	}
 }

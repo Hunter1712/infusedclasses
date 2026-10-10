@@ -25,8 +25,7 @@ class LegionaryTest {
 		assertFalse(def.locked());
 		assertEquals("Legionary", def.displayName());
 		assertEquals(0xFFB87333, def.accentColor());
-		assertEquals(List.of(ClassRegistry.ROTATE_ABILITY, ClassRegistry.IMPETUS_ABILITY,
-				ClassRegistry.TESTUDO_ABILITY, ClassRegistry.AEQUILIBRIUM_ABILITY), def.activeAbilities());
+		assertEquals(List.of(ClassRegistry.ROTATE_ABILITY, ClassRegistry.AEQUILIBRIUM_ABILITY), def.activeAbilities());
 		assertEquals(List.of("Rotate", "Aequilibrium"),
 				def.actives().stream().map(ClassDefinition.ActiveAbility::name).toList());
 		assertEquals(List.of("Impetus", "Testudo"),
@@ -42,8 +41,8 @@ class LegionaryTest {
 		assertTrue(copy.contains("(R, " + (Cooldowns.ROTATE_MS / 1000) + "s)"));
 		assertTrue(copy.contains("Flip to Gladius"));
 		assertTrue(copy.contains("Flip to Scutum"));
-		assertTrue(copy.contains("next hit x" + ImpetusAbility.SWITCH_DEAL_MULT));
-		assertTrue(copy.contains("take x" + TestudoAbility.SWITCH_TAKE_MULT));
+		assertTrue(copy.contains("next hit x" + RotateAbility.SWITCH_DEAL_MULT));
+		assertTrue(copy.contains("take x" + RotateAbility.SWITCH_TAKE_MULT));
 		assertTrue(copy.contains("+" + ConditionalPassive.amount(AequilibriumAbility.EDGE_BONUS) + " damage"));
 		assertTrue(copy.contains("+" + ConditionalPassive.amount(AequilibriumAbility.PLATE_BONUS) + " armor"));
 		assertTrue(copy.contains("(G, " + (Cooldowns.OATH_MS / 1000) + "s oath)"));
@@ -97,8 +96,8 @@ class LegionaryTest {
 		assertEquals(0.9, RotateAbility.dealMult(RotateAbility.Stance.SCUTUM));
 		assertEquals(1.0, RotateAbility.dealMult(RotateAbility.Stance.GLADIUS));
 		// Flip factors ride the same constants as the picker copy, so balance and copy cannot drift.
-		assertEquals(1.10, ImpetusAbility.SWITCH_DEAL_MULT);
-		assertEquals(0.85, TestudoAbility.SWITCH_TAKE_MULT);
+		assertEquals(1.10, RotateAbility.SWITCH_DEAL_MULT);
+		assertEquals(0.85, RotateAbility.SWITCH_TAKE_MULT);
 	}
 
 	@Test
@@ -107,8 +106,8 @@ class LegionaryTest {
 		RotateAbility.fire(legionary(), runtime, 0);
 
 		assertTrue(runtime.hasImpetusPending(0));
-		assertTrue(runtime.hasImpetusPending(ImpetusAbility.SWITCH_DEAL_MS - 1));
-		assertFalse(runtime.hasImpetusPending(ImpetusAbility.SWITCH_DEAL_MS));
+		assertTrue(runtime.hasImpetusPending(RotateAbility.SWITCH_DEAL_MS - 1));
+		assertFalse(runtime.hasImpetusPending(RotateAbility.SWITCH_DEAL_MS));
 		assertTrue(runtime.consumeImpetusBonus(0));
 		assertFalse(runtime.hasImpetusPending(0));
 		assertFalse(runtime.consumeImpetusBonus(0));
@@ -122,8 +121,8 @@ class LegionaryTest {
 		runtime.flipStance(0, RotateAbility.Stance.SCUTUM);
 
 		assertTrue(runtime.isTestudoBuffLive(0));
-		assertTrue(runtime.isTestudoBuffLive(TestudoAbility.SWITCH_TAKE_MS - 1));
-		assertFalse(runtime.isTestudoBuffLive(TestudoAbility.SWITCH_TAKE_MS));
+		assertTrue(runtime.isTestudoBuffLive(RotateAbility.SWITCH_TAKE_MS - 1));
+		assertFalse(runtime.isTestudoBuffLive(RotateAbility.SWITCH_TAKE_MS));
 	}
 
 	@Test

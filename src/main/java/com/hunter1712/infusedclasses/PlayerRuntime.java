@@ -92,7 +92,7 @@ public final class PlayerRuntime {
 	 */
 	public boolean hasImpetusPending(long now) {
 		return flippedTo == RotateAbility.Stance.GLADIUS
-				&& flipWindow.hasPending(ImpetusAbility.SWITCH_DEAL_MS, now);
+				&& flipWindow.hasPending(RotateAbility.SWITCH_DEAL_MS, now);
 	}
 
 	/**
@@ -101,7 +101,7 @@ public final class PlayerRuntime {
 	 */
 	public boolean consumeImpetusBonus(long now) {
 		return flippedTo == RotateAbility.Stance.GLADIUS
-				&& flipWindow.consume(ImpetusAbility.SWITCH_DEAL_MS, now);
+				&& flipWindow.consume(RotateAbility.SWITCH_DEAL_MS, now);
 	}
 
 	/**
@@ -110,7 +110,7 @@ public final class PlayerRuntime {
 	 */
 	public boolean isTestudoBuffLive(long now) {
 		return flippedTo == RotateAbility.Stance.SCUTUM
-				&& flipWindow.isLive(TestudoAbility.SWITCH_TAKE_MS, now);
+				&& flipWindow.isLive(RotateAbility.SWITCH_TAKE_MS, now);
 	}
 
 	// Lane reads: mechanical forwards over the hidden Cooldowns, so ability decisions

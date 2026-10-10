@@ -23,8 +23,6 @@ public final class ClassRegistry {
 	public static final Identifier REND_ABILITY = Identifier.fromNamespaceAndPath("infusedclasses", "rend");
 	public static final Identifier LEGIONARY = Identifier.fromNamespaceAndPath("infusedclasses", "legionary");
 	public static final Identifier ROTATE_ABILITY = Identifier.fromNamespaceAndPath("infusedclasses", "rotate");
-	public static final Identifier IMPETUS_ABILITY = Identifier.fromNamespaceAndPath("infusedclasses", "impetus");
-	public static final Identifier TESTUDO_ABILITY = Identifier.fromNamespaceAndPath("infusedclasses", "testudo");
 	public static final Identifier AEQUILIBRIUM_ABILITY =
 			Identifier.fromNamespaceAndPath("infusedclasses", "aequilibrium");
 	/** ponytail: attribute ids rather than vanilla holders, so the passive stays bootstrap-free. */
@@ -98,7 +96,7 @@ public final class ClassRegistry {
 				List.of(),
 				List.of(),
 				0.0,
-				List.of(ROTATE_ABILITY, IMPETUS_ABILITY, TESTUDO_ABILITY, AEQUILIBRIUM_ABILITY),
+				List.of(ROTATE_ABILITY, AEQUILIBRIUM_ABILITY),
 				0xFFB87333,
 				"Sword and shield",
 				List.of(
@@ -116,11 +114,11 @@ public final class ClassRegistry {
 								AequilibriumAbility.desc())),
 				List.of(
 						new ClassDefinition.ActiveAbility(
-								ImpetusAbility.NAME,
-								ImpetusAbility.desc()),
+								RotateAbility.IMPETUS_NAME,
+								RotateAbility.impetusDesc()),
 						new ClassDefinition.ActiveAbility(
-								TestudoAbility.NAME,
-								TestudoAbility.desc()))));
+								RotateAbility.TESTUDO_NAME,
+								RotateAbility.testudoDesc()))));
 	}
 
 	private ClassRegistry() {

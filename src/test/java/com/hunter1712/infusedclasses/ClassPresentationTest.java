@@ -112,12 +112,12 @@ class ClassPresentationTest {
 	@Test
 	void everyCardHighlightsOnlyOnHover() {
 		for (ClassDefinition def : ClassRegistry.all()) {
-			ClassPresentation.CardStyle plain = ClassPresentation.cardStyleFor(def, false);
+			ClassPresentation.CardStyle plain = ClassPresentation.cardFor(def, false).style();
 			assertEquals(0xFF3A3A3A, plain.borderColor());
 			assertEquals(null, plain.washColor());
 			assertEquals(0xFFFFFFFF, plain.nameColor());
 
-			ClassPresentation.CardStyle hovered = ClassPresentation.cardStyleFor(def, true);
+			ClassPresentation.CardStyle hovered = ClassPresentation.cardFor(def, true).style();
 			assertEquals(0xFF8A8A8A, hovered.borderColor());
 			assertEquals(0x14FFFFFF, hovered.washColor());
 			assertEquals(0xFFFFFFFF, hovered.nameColor());
@@ -137,15 +137,16 @@ class ClassPresentationTest {
 	@Test
 	void accentIsTheClassColor() {
 		assertEquals(0xFFE74C3C,
-				ClassPresentation.accentFor(ClassRegistry.byId(ClassRegistry.JUGGERNAUT)));
+				ClassPresentation.cardFor(ClassRegistry.byId(ClassRegistry.JUGGERNAUT), false).text().accent());
 		assertEquals(0xFFB87333,
-				ClassPresentation.accentFor(ClassRegistry.byId(ClassRegistry.LEGIONARY)));
+				ClassPresentation.cardFor(ClassRegistry.byId(ClassRegistry.LEGIONARY), false).text().accent());
 	}
 
 	@Test
 	void buttonIsAlwaysActiveSelect() {
 		for (ClassDefinition def : ClassRegistry.all()) {
-			assertEquals(new ClassPresentation.ButtonData("Select", true), ClassPresentation.buttonFor(def));
+			assertEquals(new ClassPresentation.ButtonData("Select", true),
+					ClassPresentation.cardFor(def, false).text().button());
 		}
 	}
 

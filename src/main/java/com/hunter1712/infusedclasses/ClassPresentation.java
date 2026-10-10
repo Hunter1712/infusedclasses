@@ -108,12 +108,12 @@ public final class ClassPresentation {
 	}
 
 	/** Accent color for the card top strip: the class's own accent. */
-	public static int accentFor(ClassDefinition def) {
+	private static int accentFor(ClassDefinition def) {
 		return def.accentColor();
 	}
 
 	/** Button label and active state: every visible page is playable. */
-	public static ButtonData buttonFor(ClassDefinition def) {
+	private static ButtonData buttonFor() {
 		return new ButtonData("Select", true);
 	}
 
@@ -121,8 +121,8 @@ public final class ClassPresentation {
 	}
 
 	/**
-	 * Hover-independent card text: lines, accent, button. Resolved through
-	 * {@link #cardFor} by every caller; kept public only as the seam tests pin.
+	 * Hover-independent card text: lines, accent, button. An internal seam of
+	 * {@link #cardFor}; callers and tests cross the whole card instead.
 	 */
 	public record CardText(String displayName, String tagline, List<CardLine> lines, int accent, ButtonData button) {
 	}
@@ -139,22 +139,22 @@ public final class ClassPresentation {
 	}
 
 	/** Resolves the hover-independent text once per definition. */
-	public static CardText cardTextFor(ClassDefinition def) {
+	private static CardText cardTextFor(ClassDefinition def) {
 		return new CardText(
 				def.displayName(),
 				def.tagline(),
 				List.copyOf(cardLinesFor(def)),
 				accentFor(def),
-				buttonFor(def));
+				buttonFor());
 	}
 
-	public static CardStyle cardStyleFor(ClassDefinition def, boolean hovered) {
+	private static CardStyle cardStyleFor(boolean hovered) {
 		return new CardStyle(hovered ? HOVER_BORDER_COLOR : BORDER_COLOR,
 				hovered ? HOVER_WASH_COLOR : null, NAME_COLOR);
 	}
 
 	/** Whole card in one decision: text + style. */
 	public static CardModel cardFor(ClassDefinition def, boolean hovered) {
-		return new CardModel(cardTextFor(def), cardStyleFor(def, hovered));
+		return new CardModel(cardTextFor(def), cardStyleFor(hovered));
 	}
 }

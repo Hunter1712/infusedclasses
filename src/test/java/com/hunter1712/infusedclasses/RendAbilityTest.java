@@ -154,9 +154,9 @@ class RendAbilityTest {
 		// The entry honors the flag through consumeSpent; its pure half is pinned
 		// here: stacks drop once, a second drop finds nothing, and the armed
 		// snapshot survives fire-time (hit-time spend is a separate event).
-		assertTrue(PassiveApplier.dropStacks(runtime, RendAbility.spentPassive(juggernautDef())));
+		assertTrue(PassiveApplier.dropStacks(runtime, juggernautDef().passiveForTrigger(ConditionalPassive.ON_HIT_DEALT)));
 		assertEquals(0, runtime.stacks(juggernautDef().passives().get(0)));
-		assertFalse(PassiveApplier.dropStacks(runtime, RendAbility.spentPassive(juggernautDef())));
+		assertFalse(PassiveApplier.dropStacks(runtime, juggernautDef().passiveForTrigger(ConditionalPassive.ON_HIT_DEALT)));
 		assertEquals(4, runtime.peekRendEmpowerStacks(0));
 	}
 }
