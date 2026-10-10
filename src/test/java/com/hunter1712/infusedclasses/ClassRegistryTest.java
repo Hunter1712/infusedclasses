@@ -36,12 +36,6 @@ class ClassRegistryTest {
 	}
 
 	@Test
-	void playableClassesCarryNoHealthBonus() {
-		assertEquals(0.0, ClassRegistry.byId(ClassRegistry.JUGGERNAUT).maxHealthBonus());
-		assertEquals(0.0, ClassRegistry.byId(ClassRegistry.LEGIONARY).maxHealthBonus());
-	}
-
-	@Test
 	void juggernautCarriesMomentumConditionalPassive() {
 		List<ConditionalPassive> passives = ClassRegistry.byId(ClassRegistry.JUGGERNAUT).passives();
 

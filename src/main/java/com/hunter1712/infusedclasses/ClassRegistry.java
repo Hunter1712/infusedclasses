@@ -32,16 +32,10 @@ public final class ClassRegistry {
 			ResourceKey.create(Registries.ATTRIBUTE, Identifier.withDefaultNamespace("attack_damage"));
 	public static final ResourceKey<Attribute> ATTACK_SPEED =
 			ResourceKey.create(Registries.ATTRIBUTE, Identifier.withDefaultNamespace("attack_speed"));
-	public static final ResourceKey<Attribute> MAX_HEALTH =
-			ResourceKey.create(Registries.ATTRIBUTE, Identifier.withDefaultNamespace("max_health"));
 	public static final ResourceKey<Attribute> MOVEMENT_SPEED =
 			ResourceKey.create(Registries.ATTRIBUTE, Identifier.withDefaultNamespace("movement_speed"));
 	public static final ResourceKey<Attribute> ARMOR_TOUGHNESS =
 			ResourceKey.create(Registries.ATTRIBUTE, Identifier.withDefaultNamespace("armor_toughness"));
-	public static final ResourceKey<Attribute> KNOCKBACK_RESISTANCE =
-			ResourceKey.create(Registries.ATTRIBUTE, Identifier.withDefaultNamespace("knockback_resistance"));
-	public static final Identifier BONUS_HEALTH_ID =
-			Identifier.fromNamespaceAndPath(ClassPackets.MOD_ID, "bonus_health");
 
 	private static final Map<Identifier, ClassDefinition> BY_ID = new LinkedHashMap<>();
 
@@ -73,7 +67,6 @@ public final class ClassRegistry {
 								0.075,
 								"Vigor",
 								-0.25)),
-				0.0,
 				List.of(RUSH_ABILITY, REND_ABILITY),
 				0xFFE74C3C,
 				"Frontline bruiser",
@@ -95,7 +88,6 @@ public final class ClassRegistry {
 				false,
 				List.of(),
 				List.of(),
-				0.0,
 				List.of(ROTATE_ABILITY, AEQUILIBRIUM_ABILITY),
 				0xFFB87333,
 				"Sword and shield",

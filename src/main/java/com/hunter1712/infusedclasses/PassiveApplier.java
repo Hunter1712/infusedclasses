@@ -33,8 +33,6 @@ public final class PassiveApplier {
 		for (HpScaledPassive hp : def.hpPassives()) {
 			settlePlan(player, PassiveEffect.planForBucket(hp, bucket));
 		}
-		// ponytail: no max-health tick until a class carries one (all read 0.0 today).
-		// A class that sets maxHealthBonus re-adds one plan computation here; nothing else writes it.
 		applyStance(player, def, runtime, now);
 		RushApplier.tick(player, runtime, now);
 	}
@@ -137,12 +135,6 @@ public final class PassiveApplier {
 	}
 
 	/**
-	 * Spender consume: drops the one passive's stacks and timestamp and takes the armor they
-	 * earned off the player. Reports whether anything was consumed. Nothing held means
-	 * nothing done. Only the priced passive is touched: a second stacker on the class
-	 * keeps every stack.
-	 */
-	/**
 	 * Pure stack drop: clears one passive's stacks and timestamp, reporting whether
 	 * anything was dropped. The JUnit-reachable half of the spender consume; the
 	 * attribute removal rides with the player in {@link #consumeSpent}.
@@ -155,6 +147,12 @@ public final class PassiveApplier {
 		return true;
 	}
 
+	/**
+	 * Spender consume: drops the one passive's stacks and timestamp and takes the armor they
+	 * earned off the player. Reports whether anything was consumed. Nothing held means
+	 * nothing done. Only the priced passive is touched: a second stacker on the class
+	 * keeps every stack.
+	 */
 	private static boolean consumeStacks(ServerPlayer player, PlayerRuntime runtime, ConditionalPassive passive) {
 		if (!dropStacks(runtime, passive)) {
 			return false;

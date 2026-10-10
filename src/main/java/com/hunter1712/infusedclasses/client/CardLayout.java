@@ -133,7 +133,6 @@ public final class CardLayout {
 
 	/** Layout for a wrapped row count: text height plus the scroll range that shows it all. */
 	public static BodyLayout layoutFor(CardRect card, int rows) {
-		int visibleH = stopY(card) - bodyTop(card);
 		int textH = rows * ROW_H;
 		return new BodyLayout(textH, Math.max(0, bodyTop(card) + textH - stopY(card)));
 	}

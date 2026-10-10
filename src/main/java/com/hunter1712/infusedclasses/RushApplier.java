@@ -32,11 +32,11 @@ public final class RushApplier {
 	 * Non-Juggernauts never arm the window, so they only ever meet the remove path.
 	 */
 	static void tick(ServerPlayer player, PlayerRuntime runtime, long now) {
+		PassiveEffect.Modifier stride = RushAbility.strideModifier();
 		if (runtime.isRushLive(now)) {
-			AttributeWriter.write(player, RushAbility.strideModifier());
+			AttributeWriter.write(player, stride);
 		} else {
-			AttributeWriter.remove(player, RushAbility.strideModifier().attribute(),
-					RushAbility.strideModifier().modifierId());
+			AttributeWriter.remove(player, stride.attribute(), stride.modifierId());
 		}
 	}
 
