@@ -42,9 +42,6 @@ public class InfusedClasses implements ModInitializer {
 
 	/** Switch path shared by the picker receiver and the admin command. */
 	static void onClassChanged(ServerPlayer player, ClassDefinition oldDef, ClassDefinition newDef) {
-		if (oldDef == newDef) {
-			return;
-		}
 		PlayerRuntime runtime = runtime(player);
 		PassiveApplier.onClassChanged(player, runtime, oldDef, newDef);
 	}

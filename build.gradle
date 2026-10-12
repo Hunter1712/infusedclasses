@@ -1,6 +1,5 @@
 plugins {
 	id 'fabric-loom' version '1.18.2'
-	id 'maven-publish'
 }
 
 version = project.mod_version
@@ -12,9 +11,6 @@ base {
 
 repositories {
 	mavenCentral()
-}
-
-loom {
 }
 
 dependencies {
@@ -69,19 +65,6 @@ tasks.register('deployClient', Copy) {
 }
 
 java {
-	withSourcesJar()
 	sourceCompatibility = JavaVersion.VERSION_21
 	targetCompatibility = JavaVersion.VERSION_21
-}
-
-publishing {
-	publications {
-		create('mavenJava', MavenPublication) {
-			artifactId = project.archives_base_name
-			from components.java
-		}
-	}
-
-	repositories {
-	}
 }

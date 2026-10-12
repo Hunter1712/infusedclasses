@@ -206,6 +206,7 @@ public final class PlayerRuntime {
 		void arm(long now) {
 			pressedAt = now;
 			pending = true;
+			payload = 0;
 		}
 
 		void arm(long now, int payload) {

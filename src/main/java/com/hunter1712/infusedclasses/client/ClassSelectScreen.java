@@ -37,7 +37,7 @@ public class ClassSelectScreen extends Screen {
 	private int scrollPx;
 	private int lastMaxScroll;
 	// One card model per frame: the background pass resolves it, the body pass reuses it,
-	// so cardLinesFor runs once instead of twice. Background always runs first per frame.
+	// so cardFor runs once instead of twice. Background always runs first per frame.
 	private ClassPresentation.CardModel frameModel;
 
 	public ClassSelectScreen(String currentClassId) {
@@ -58,7 +58,7 @@ public class ClassSelectScreen extends Screen {
 		page = Math.min(page, classes.size() - 1);
 		CardLayout.CardRect card = CardLayout.focusedCard(width, height);
 
-		CardLayout.ButtonRect prev = CardLayout.prevRect(width, card);
+		CardLayout.ButtonRect prev = CardLayout.prevRect(card);
 		addRenderableWidget(Button.builder(Component.literal("<"), b -> goTo(CardLayout.prevPage(page, classes.size())))
 				.bounds(prev.x(), prev.y(), prev.w(), prev.h())
 				.build());

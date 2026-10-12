@@ -56,7 +56,7 @@ public final class CardLayout {
 	}
 
 	/** Previous-page arrow: left of the card, vertically centered, clamped on screen. */
-	public static ButtonRect prevRect(int screenWidth, CardRect card) {
+	public static ButtonRect prevRect(CardRect card) {
 		return new ButtonRect(
 				Math.max(8, card.x() - ARROW_W - 12),
 				card.y() + card.h() / 2 - ARROW_H / 2,

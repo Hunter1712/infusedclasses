@@ -53,10 +53,13 @@ public final class DamageSettle {
 	}
 
 	private static void settleWithSource(Entity target, float baseDamageTaken, double mult, DamageSource source) {
-		if (target == null || !target.isAlive() || mult == 1.0 || source == null) {
+		if (target == null || !target.isAlive() || source == null) {
 			return;
 		}
 		float extra = settleMath(baseDamageTaken, mult);
+		if (extra == 0) {
+			return;
+		}
 		if (extra > 0) {
 			hurtGuarded(target, source, extra);
 		} else if (target instanceof LivingEntity living) {

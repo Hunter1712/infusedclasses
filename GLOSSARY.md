@@ -150,7 +150,7 @@ so a fifth lane adds a value rather than a field; callers and tests cross the
 per-lane verbs, never the map. The engage window rides on the transient runtime next to
 the lanes: a fired Rush stamps the press time plus a one-shot next-hit bonus,
 `hasRushBonusPending` reads it against the 5s window, and switch and respawn clear it with
-everything else. Rush, Rend and Impetus windows are one-shot (the melee plan peeks them,
+everything else. Rush and Rend windows are one-shot (the melee plan peeks them,
 the hit settle spends them, each bonus landing at most once); Testudo and Aequilibrium
 windows are timed (peeked while live, never consumed).
 _Avoid_: timer
@@ -304,8 +304,8 @@ _Avoid_: key routing, bind table
 The other half of the spam fix: the attacker branch reads `attackStrengthScale`
 once per swing and feeds conditional triggers only at full charge
 (`MeleePlan.shouldBump` over `BonusCurve.isFullSwing`), so spam
-earns zero stacks and timed swings earn one. Rush bonus stays ungated and scales
-via the curve. `Juggernaut Momentum` grace reads 5s to cover the swing timer
+earns zero stacks and timed swings earn one. Rush bonus is gated on the same bump
+and scales via the curve. `Juggernaut Momentum` grace reads 5s to cover the swing timer
 under the gate.
 _Avoid_: swing check, charge requirement
 

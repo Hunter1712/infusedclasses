@@ -38,12 +38,13 @@ final class AttributeWriter {
 	/** Takes off a modifier stacks used to earn. A no-op when there is none. */
 	static void remove(ServerPlayer player, ResourceKey<Attribute> attribute, Identifier modifierId) {
 		AttributeInstance instance = attribute(player, attribute);
-		if (instance != null) {
-			instance.removeModifier(modifierId);
+		if (instance == null || instance.getModifier(modifierId) == null) {
+			return;
 		}
+		instance.removeModifier(modifierId);
 	}
 
-	static AttributeInstance attribute(ServerPlayer player, ResourceKey<Attribute> key) {
+	private static AttributeInstance attribute(ServerPlayer player, ResourceKey<Attribute> key) {
 		Holder<Attribute> holder = player.registryAccess().lookupOrThrow(Registries.ATTRIBUTE)
 				.get(key)
 				.orElse(null);

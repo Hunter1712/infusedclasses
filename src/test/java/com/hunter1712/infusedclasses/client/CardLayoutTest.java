@@ -20,7 +20,7 @@ class CardLayoutTest {
 		var select = CardLayout.selectRect(card);
 		assertTrue(select.x() >= card.x() && select.x() + select.w() <= card.x() + card.w());
 		assertTrue(select.y() >= card.y() && select.y() + select.h() <= card.y() + card.h());
-		var prev = CardLayout.prevRect(screenW, card);
+		var prev = CardLayout.prevRect(card);
 		var next = CardLayout.nextRect(screenW, card);
 		assertTrue(prev.x() >= 0 && prev.x() + prev.w() <= screenW);
 		assertTrue(next.x() >= 0 && next.x() + next.w() <= screenW);

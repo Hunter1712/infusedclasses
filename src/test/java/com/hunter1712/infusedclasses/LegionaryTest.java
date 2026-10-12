@@ -19,7 +19,7 @@ class LegionaryTest {
 	}
 
 	@Test
-	void registryCarriesLegionaryWithFourActives() {
+	void registryCarriesLegionaryWithTwoActivesAndTwoFlipBuffs() {
 		ClassDefinition def = legionary();
 
 		assertFalse(def.locked());

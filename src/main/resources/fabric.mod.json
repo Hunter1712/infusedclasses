@@ -3,7 +3,7 @@
 	"id": "infusedclasses",
 	"version": "${version}",
 	"name": "Infused Classes",
-	"description": "Character classes for Minecraft. Start as a Juggernaut: Rush engage with cleanse, Momentum armor when landing hits, Rend execute to spend it.",
+	"description": "Character classes for Minecraft. Juggernaut: Rush engage with cleanse, Momentum armor when landing hits, Rend execute to spend it. Legionary: Rotate stances, Impetus/Testudo flip buffs, Aequilibrium oath.",
 	"authors": ["hunter1712"],
 	"license": "MIT",
 	"environment": "*",
