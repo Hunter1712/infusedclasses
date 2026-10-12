@@ -16,3 +16,4 @@ Status: done
 - Dummy targets (mod training dummies) skip the living-damage hook: unsupported, accepted.
 - Negative Vigor floors ride the attribute; vanilla clamps at zero where it must.
 - Copy regenerates from constants; active-desc 200-char cap still holds.
+- Dead zero deleted with the rebalance: `ClassDefinition.maxHealthBonus` plus the `MAX_HEALTH`/`BONUS_HEALTH_ID` registry keys (always 0.0, vanilla 20 HP stands).

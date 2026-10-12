@@ -73,7 +73,7 @@ _Avoid_: message, notification
 **Picker copy** (`ConditionalPassive.fullDesc`):
 The decision of what a conditional passive's picker copy says, generated from its own numbers so it
 cannot drift from behaviour. Every detail line shows name plus short copy
-(`Land a hit: +1 armor (max 10). 5s no hit: lose all.`).
+(`Land a hit: +0.4 armor (max 20). 5s no hit: lose all.`).
 Copy stays short on purpose: every active desc holds at most 200 chars, pinned by
 test, so full kits fit the focused card with little scroll.
 The two triggers the mod emits are described as events ("Land a hit"
@@ -453,8 +453,7 @@ The client's `infusedclasses:rend` intent: "I pressed the Rend key", sent while
 the `G` key (`key.infusedclasses.rend`) is consumed each client tick. The server
 validates class, stacks and cooldown; rejected presses leave the cooldown untouched,
 and the empower lands on the next melee hit inside the window.
-For a Legionary the same `G` bind arrives as the oath intent: Gladius morphs it
-to Impetus, Scutum to Testudo, so binds survive the class.
+For a Legionary the same `G` bind arrives as the oath intent (Aequilibrium in any stance), so binds survive the class.
 _Avoid_: heal packet, key packet
 
 **Picker signal** (`OpenClassScreenPayload`):
