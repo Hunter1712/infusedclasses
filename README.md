@@ -1,0 +1,47 @@
+# Infused Classes
+
+Character classes for Minecraft (Fabric). **Alpha — manual builds only.**
+
+- Juggernaut: Rush engage with cleanse, Momentum armor on landing hits, Rend execute to spend it.
+- Legionary: rotate stances, Impetus/Testudo flip buffs, Aequilibrium oath.
+
+## Requirements (0.x locked)
+
+- Minecraft **1.21.11** only (`~1.21.11` in `src/main/resources/fabric.mod.json:23`)
+- Fabric Loader `>=0.19.5`, Fabric API, Java 21
+- No Forge/Quilt support. No 1.20.x backports in 0.x. A 26.x port comes later as a separate branch.
+
+## Install (manual, forever)
+
+1. Install Fabric Loader for 1.21.11 + Fabric API.
+2. Build or fetch the jar: `gradle build` produces `build/libs/infusedclasses-0.1.0.jar` (`gradle.properties:8`, gitignored via `.gitignore:2`).
+3. Drop the jar in `mods/`. For the live dev instance: `gradle deployClient` (`build.gradle:50-65`).
+4. Reset class data after updates if told to: `/class select <player>`.
+
+No auto-updater. Modrinth + CurseForge listings (Alpha channel) are future manual uploads — this repo stays the source of truth.
+
+## Alpha contract
+
+- **Wipes/resets at any time in 0.x.** Worlds may break between alpha jars. No data migration until beta.
+- Balance/content is out of scope for alpha success; crash-hunt + core loop feel is the goal.
+- Support cap is best-effort. Off-topic reports (wrong loader/MC version, no log) close as wontfix.
+
+## Feedback
+
+Single funnel: [GitHub Issues](https://github.com/Hunter1712/infusedclasses/issues). Include:
+
+- `infusedclasses` version (jar name), MC / loader / Fabric API versions
+- `logs/latest.log` (crash section, not screenshots)
+- Repro steps (class, stance/passive, server or client)
+
+Homepage/sources: https://github.com/Hunter1712/infusedclasses
+
+## Draft listing blurb (Modrinth/CurseForge, when listed)
+
+> Infused Classes — ALPHA. Fabric 1.21.11 + Java 21 + Fabric API required. Manual installs only. Expect wipes and class resets between 0.x updates with no migration. Report crashes with latest.log to GitHub Issues.
+
+Icon art deferred — no `icon.png` in `src/main/resources/assets/infusedclasses/` yet; no `icon` field wired until the file lands.
+
+## License
+
+MIT — see `LICENSE`.
