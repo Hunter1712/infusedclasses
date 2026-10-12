@@ -10,7 +10,7 @@
 		"sources": "https://github.com/Hunter1712/infusedclasses",
 		"issues": "https://github.com/Hunter1712/infusedclasses/issues"
 	},
-	"license": "MIT",
+	"license": "ARR",
 	"environment": "*",
 	"mixins": [
 		"infusedclasses.mixins.json"
