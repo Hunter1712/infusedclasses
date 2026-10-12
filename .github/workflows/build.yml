@@ -16,4 +16,12 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: 9.7.1
+      - name: license-agreement
+        run: |
+          grep -q "All Rights Reserved" LICENSE
+          grep -q "All Rights Reserved" README.md
+          grep -q '"license": "ARR"' src/main/resources/fabric.mod.json
+          if grep -rnw "MIT" LICENSE README.md src/main/resources/fabric.mod.json; then
+            echo "license-agreement: stale MIT reference in license metadata"; exit 1
+          fi
       - run: gradle build --info
