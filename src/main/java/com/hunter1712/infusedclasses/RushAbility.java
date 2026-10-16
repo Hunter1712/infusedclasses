@@ -30,26 +30,6 @@ public final class RushAbility {
 				+ (Cooldowns.RUSH_MS / 1000) + "s).";
 	}
 
-	public enum Kind {
-		FIRED,
-		WRONG_CLASS,
-		ON_COOLDOWN
-	}
-
-	public record Result(Kind kind, long remainingMs, ChatLine announcement) {
-		public static Result fired() {
-			return new Result(Kind.FIRED, 0, new ChatLine(NAME + "!", ChatFormatting.YELLOW));
-		}
-
-		public static Result wrongClass() {
-			return new Result(Kind.WRONG_CLASS, 0, null);
-		}
-
-		public static Result onCooldown(long remainingMs) {
-			return new Result(Kind.ON_COOLDOWN, remainingMs, ChatLine.cooldown(NAME, remainingMs));
-		}
-	}
-
 	/**
 	 * The stride aura as a modifier: what sits on the player while the engage window
 	 * is live. Single source for the applier's write and remove paths.
@@ -65,15 +45,18 @@ public final class RushAbility {
 	private RushAbility() {
 	}
 
-	/** Decides engaging for Juggernauts off cooldown. Pure and read-only: only {@link #fire} arms the lane and the window. */
-	public static Result trigger(ClassDefinition def, long rushRemaining) {
+	/**
+	 * Decides engaging for Juggernauts off cooldown, its fired line yellow. Pure and
+	 * read-only: only {@link #fire} arms the lane and the window.
+	 */
+	public static AbilityOutcome trigger(ClassDefinition def, long rushRemaining) {
 		if (def == null || !def.hasAbility(ClassRegistry.RUSH_ABILITY)) {
-			return Result.wrongClass();
+			return AbilityOutcome.rejected();
 		}
 		if (rushRemaining > 0) {
-			return Result.onCooldown(rushRemaining);
+			return AbilityOutcome.onCooldown(NAME, rushRemaining);
 		}
-		return Result.fired();
+		return AbilityOutcome.fired(new ChatLine(NAME + "!", ChatFormatting.YELLOW));
 	}
 
 	/**
@@ -82,9 +65,9 @@ public final class RushAbility {
 	 * three untouched. An arm that somehow fails reports on-cooldown instead of a fire it
 	 * did not earn.
 	 */
-	public static Result fire(ClassDefinition def, PlayerRuntime runtime, long now) {
-		Result result = trigger(def, runtime.rushRemaining(now));
-		return AbilityGate.gate(result, result.kind() == Kind.FIRED, () -> runtime.tryUseRush(now),
-				() -> runtime.rushRemaining(now), Result::onCooldown);
+	public static AbilityOutcome fire(ClassDefinition def, PlayerRuntime runtime, long now) {
+		AbilityOutcome result = trigger(def, runtime.rushRemaining(now));
+		return AbilityGate.gate(result, result.fired(), () -> runtime.tryUseRush(now),
+				() -> runtime.rushRemaining(now), remaining -> AbilityOutcome.onCooldown(NAME, remaining));
 	}
 }

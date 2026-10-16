@@ -113,8 +113,8 @@ final class ServerEvents {
 					switch (BindMorph.rushFor(def)) {
 						case ROTATE -> {
 							RotateAbility.Result result = RotateAbility.fire(def, runtime, now);
-							AbilityApplier.announceAndCast(player, result.announcement(),
-									result.kind() == RotateAbility.Kind.FIRED, null, true);
+							AbilityApplier.announceAndCast(player, result.outcome().announcement(),
+									result.outcome().fired(), null, true);
 						}
 						case ROULETTE -> {
 							RouletteAbility.Result result =
@@ -122,7 +122,7 @@ final class ServerEvents {
 							RouletteApplier.apply(player, result);
 						}
 						case RUSH -> {
-							RushAbility.Result result = RushAbility.fire(def, runtime, now);
+							AbilityOutcome result = RushAbility.fire(def, runtime, now);
 							RushApplier.apply(player, result);
 						}
 					}
@@ -139,19 +139,19 @@ final class ServerEvents {
 					// Rend for everyone else.
 					switch (BindMorph.oathFor(def)) {
 						case AEQUILIBRIUM -> {
-							AequilibriumAbility.Result result = AequilibriumAbility.fire(def, runtime, now);
+							AbilityOutcome result = AequilibriumAbility.fire(def, runtime, now);
 							AbilityApplier.announceAndCast(player, result.announcement(),
-									result.kind() == AequilibriumAbility.Kind.FIRED, AequilibriumAbility.CAST_SOUND, true);
+									result.fired(), AequilibriumAbility.CAST_SOUND, true);
 						}
 						case ALL_IN -> {
-							AllInAbility.Result result = AllInAbility.fire(def, runtime, now);
+							AbilityOutcome result = AllInAbility.fire(def, runtime, now);
 							AbilityApplier.announceAndCast(player, result.announcement(),
-									result.kind() == AllInAbility.Kind.FIRED, AllInAbility.CAST_SOUND, true);
+									result.fired(), AllInAbility.CAST_SOUND, true);
 						}
 						case REND -> {
 							RendAbility.Result result = RendAbility.fire(def, runtime, now);
-							AbilityApplier.announceAndCast(player, result.announcement(),
-									result.kind() == RendAbility.Kind.FIRED, RendAbility.CAST_SOUND, true);
+							AbilityApplier.announceAndCast(player, result.outcome().announcement(),
+									result.outcome().fired(), RendAbility.CAST_SOUND, true);
 							// The adapter spends only the priced passive; a fizzle spends nothing.
 							// The empower damage lands on the next melee hit inside the window.
 							if (result.consume()) {

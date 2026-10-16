@@ -5,6 +5,7 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -83,10 +84,10 @@ class RouletteAbilityTest {
 
 		RouletteAbility.Result result = RouletteAbility.fire(gambler(), runtime, 0, 0.5F);
 
-		assertEquals(RouletteAbility.Kind.FIRED, result.kind());
-		assertEquals(RouletteAbility.Outcome.HASTE, result.outcome());
-		assertNotNull(result.announcement());
-		assertTrue(result.announcement().text().startsWith("Haste"));
+		assertTrue(result.outcome().fired());
+		assertEquals(RouletteAbility.Outcome.HASTE, result.band());
+		assertNotNull(result.outcome().announcement());
+		assertTrue(result.outcome().announcement().text().startsWith("Haste"));
 		assertEquals(Cooldowns.ROULETTE_MS, runtime.rouletteRemaining(0));
 		assertEquals(RouletteAbility.Outcome.HASTE, runtime.rouletteOutcome(0));
 		assertEquals(10, RouletteAbility.WINDOW_TICKS / 20);
@@ -110,9 +111,9 @@ class RouletteAbilityTest {
 		RouletteAbility.Result result = RouletteAbility.fire(
 				ClassRegistry.byId(ClassRegistry.JUGGERNAUT), runtime, 0, 0.1F);
 
-		assertEquals(RouletteAbility.Kind.WRONG_CLASS, result.kind());
-		assertNull(result.outcome());
-		assertNull(result.announcement());
+		assertFalse(result.outcome().fired());
+		assertNull(result.band());
+		assertNull(result.outcome().announcement());
 		assertEquals(0, runtime.rouletteRemaining(0));
 		assertNull(runtime.rouletteOutcome(0));
 	}
@@ -124,13 +125,13 @@ class RouletteAbilityTest {
 
 		RouletteAbility.Result second = RouletteAbility.fire(gambler(), runtime, 1_001, 0.5F);
 
-		assertEquals(RouletteAbility.Kind.ON_COOLDOWN, second.kind());
-		assertEquals(Cooldowns.ROULETTE_MS - 1, second.remainingMs());
-		assertNull(second.outcome());
+		assertFalse(second.outcome().fired());
+		assertEquals(Cooldowns.ROULETTE_MS - 1, second.outcome().remainingMs());
+		assertNull(second.band());
 		// Nothing was re-stamped: the first spin's outcome still stands.
 		assertEquals(RouletteAbility.Outcome.EDGE, runtime.rouletteOutcome(1_001));
 		// And the wheel fires again exactly when its 25s lane runs out.
-		assertEquals(RouletteAbility.Kind.FIRED, RouletteAbility.fire(gambler(), runtime, 26_000, 1.0F).kind());
+		assertTrue(RouletteAbility.fire(gambler(), runtime, 26_000, 1.0F).outcome().fired());
 	}
 
 	@Test

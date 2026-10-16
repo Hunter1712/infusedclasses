@@ -60,10 +60,10 @@ class LegionaryTest {
 
 		RotateAbility.Result first = RotateAbility.fire(legionary(), runtime, 0);
 
-		assertEquals(RotateAbility.Kind.FIRED, first.kind());
+		assertTrue(first.outcome().fired());
 		assertEquals(RotateAbility.Stance.GLADIUS, runtime.stance());
 		assertEquals(RotateAbility.Stance.GLADIUS, first.stance());
-		assertEquals("Gladius!", first.announcement().text());
+		assertEquals("Gladius!", first.outcome().announcement().text());
 		assertEquals(Cooldowns.ROTATE_MS, runtime.rotateRemaining(0));
 		// The rotate lane is its own: oath stays ready.
 		assertEquals(0, runtime.oathRemaining(0));
@@ -75,15 +75,15 @@ class LegionaryTest {
 		RotateAbility.fire(legionary(), runtime, 0);
 		RotateAbility.Result second = RotateAbility.fire(legionary(), runtime, 1_000);
 
-		assertEquals(RotateAbility.Kind.ON_COOLDOWN, second.kind());
+		assertFalse(second.outcome().fired());
 		assertNull(second.stance());
 		assertEquals(RotateAbility.Stance.GLADIUS, runtime.stance());
 
 		PlayerRuntime wrong = new PlayerRuntime();
 		RotateAbility.Result rejected = RotateAbility.fire(null, wrong, 0);
 
-		assertEquals(RotateAbility.Kind.WRONG_CLASS, rejected.kind());
-		assertNull(rejected.announcement());
+		assertFalse(rejected.outcome().fired());
+		assertNull(rejected.outcome().announcement());
 		assertEquals(0, wrong.rotateRemaining(0));
 		assertEquals(RotateAbility.Stance.SCUTUM, wrong.stance());
 	}
@@ -140,19 +140,19 @@ class LegionaryTest {
 	@Test
 	void aequilibriumFiresInEitherStanceAndLocksOath() {
 		PlayerRuntime scutum = new PlayerRuntime();
-		AequilibriumAbility.Result first = AequilibriumAbility.fire(legionary(), scutum, 0);
+		AbilityOutcome first = AequilibriumAbility.fire(legionary(), scutum, 0);
 
-		assertEquals(AequilibriumAbility.Kind.FIRED, first.kind());
+		assertTrue(first.fired());
 		assertEquals("Aequilibrium!", first.announcement().text());
 		assertEquals(Cooldowns.OATH_MS, scutum.oathRemaining(0));
 		assertTrue(scutum.isAequilibriumLive(0));
 
 		PlayerRuntime gladius = new PlayerRuntime();
 		gladius.flipStance(0, RotateAbility.Stance.GLADIUS);
-		assertEquals(AequilibriumAbility.Kind.FIRED, AequilibriumAbility.fire(legionary(), gladius, 0).kind());
+		assertTrue(AequilibriumAbility.fire(legionary(), gladius, 0).fired());
 
-		AequilibriumAbility.Result onCooldown = AequilibriumAbility.fire(legionary(), scutum, 1_000);
-		assertEquals(AequilibriumAbility.Kind.ON_COOLDOWN, onCooldown.kind());
+		AbilityOutcome onCooldown = AequilibriumAbility.fire(legionary(), scutum, 1_000);
+		assertFalse(onCooldown.fired());
 		assertEquals(Cooldowns.OATH_MS - 1_000, onCooldown.remainingMs());
 	}
 
@@ -170,10 +170,8 @@ class LegionaryTest {
 	void wrongClassArmsNothing() {
 		PlayerRuntime runtime = new PlayerRuntime();
 
-		assertEquals(AequilibriumAbility.Kind.WRONG_CLASS,
-				AequilibriumAbility.fire(ClassRegistry.byId(ClassRegistry.JUGGERNAUT), runtime, 0).kind());
-		assertEquals(AequilibriumAbility.Kind.WRONG_CLASS,
-				AequilibriumAbility.fire(null, runtime, 0).kind());
+		assertFalse(AequilibriumAbility.fire(ClassRegistry.byId(ClassRegistry.JUGGERNAUT), runtime, 0).fired());
+		assertFalse(AequilibriumAbility.fire(null, runtime, 0).fired());
 		assertEquals(0, runtime.oathRemaining(0));
 		assertFalse(runtime.isAequilibriumLive(0));
 	}

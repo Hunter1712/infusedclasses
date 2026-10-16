@@ -6,6 +6,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /** Gate-and-arm rule: rejects pass through, fires arm, failed arms cool down. */
@@ -43,16 +44,21 @@ class AbilityGateTest {
 		ClassDefinition legionary = ClassRegistry.byId(ClassRegistry.LEGIONARY);
 		PlayerRuntime cold = new PlayerRuntime();
 
-		assertTrue(RushAbility.fire(null, cold, 0).kind() == RushAbility.Kind.WRONG_CLASS
-				&& cold.rushRemaining(0) == 0);
-		assertTrue(RendAbility.fire(null, cold, 0).kind() == RendAbility.Kind.WRONG_CLASS
-				&& cold.rendRemaining(0) == 0);
-		assertTrue(RotateAbility.fire(null, cold, 0).kind() == RotateAbility.Kind.WRONG_CLASS
-				&& cold.rotateRemaining(0) == 0);
-		assertTrue(AequilibriumAbility.fire(juggernaut, cold, 0).kind() == AequilibriumAbility.Kind.WRONG_CLASS
-				&& cold.oathRemaining(0) == 0);
-		assertEquals(AequilibriumAbility.Kind.FIRED,
-				AequilibriumAbility.fire(legionary, new PlayerRuntime(), 0).kind());
-		assertEquals(RotateAbility.Kind.FIRED, RotateAbility.fire(legionary, new PlayerRuntime(), 0).kind());
+		assertRejected(RushAbility.fire(null, cold, 0));
+		assertEquals(0, cold.rushRemaining(0));
+		assertRejected(RendAbility.fire(null, cold, 0).outcome());
+		assertEquals(0, cold.rendRemaining(0));
+		assertRejected(RotateAbility.fire(null, cold, 0).outcome());
+		assertEquals(0, cold.rotateRemaining(0));
+		assertRejected(AequilibriumAbility.fire(juggernaut, cold, 0));
+		assertEquals(0, cold.oathRemaining(0));
+		assertTrue(AequilibriumAbility.fire(legionary, new PlayerRuntime(), 0).fired());
+		assertTrue(RotateAbility.fire(legionary, new PlayerRuntime(), 0).outcome().fired());
+	}
+
+	/** A wrong-class press: nothing fired, nothing said. */
+	private static void assertRejected(AbilityOutcome outcome) {
+		assertFalse(outcome.fired());
+		assertNull(outcome.announcement());
 	}
 }

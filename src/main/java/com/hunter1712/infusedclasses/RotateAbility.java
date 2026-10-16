@@ -64,30 +64,24 @@ public final class RotateAbility {
 	/** Flip buff window in millis: 1.5s after the flip, then the catch closes. */
 	public static final long SWITCH_TAKE_MS = 1_500L;
 
-	public enum Kind {
-		FIRED,
-		WRONG_CLASS,
-		ON_COOLDOWN
-	}
-
 	/**
 	 * What firing should do. {@code stance} is the new stance on fire, null on
 	 * rejects; the announcement names it verbatim.
 	 */
-	public record Result(Kind kind, long remainingMs, Stance stance, ChatLine announcement) {
+	public record Result(AbilityOutcome outcome, Stance stance) {
 		public static Result fired(Stance stance) {
 			ChatLine line = stance == Stance.GLADIUS
 					? new ChatLine("Gladius!", ChatFormatting.RED)
 					: new ChatLine("Scutum!", ChatFormatting.GRAY);
-			return new Result(Kind.FIRED, 0, stance, line);
+			return new Result(AbilityOutcome.fired(line), stance);
 		}
 
 		public static Result wrongClass() {
-			return new Result(Kind.WRONG_CLASS, 0, null, null);
+			return new Result(AbilityOutcome.rejected(), null);
 		}
 
 		public static Result onCooldown(long remainingMs) {
-			return new Result(Kind.ON_COOLDOWN, remainingMs, null, ChatLine.cooldown(NAME, remainingMs));
+			return new Result(AbilityOutcome.onCooldown(NAME, remainingMs), null);
 		}
 	}
 
@@ -175,7 +169,7 @@ public final class RotateAbility {
 	 */
 	public static Result fire(ClassDefinition def, PlayerRuntime runtime, long now) {
 		Result result = trigger(def, runtime.rotateRemaining(now), runtime.stance());
-		return AbilityGate.gate(result, result.kind() == Kind.FIRED, () -> {
+		return AbilityGate.gate(result, result.outcome().fired(), () -> {
 			if (!runtime.tryUseRotate(now)) {
 				return false;
 			}

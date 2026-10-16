@@ -41,26 +41,6 @@ public final class AequilibriumAbility {
 			new PassiveEffect.Modifier(ClassRegistry.ATTACK_DAMAGE, EDGE_ID, EDGE_BONUS),
 			new PassiveEffect.Modifier(ClassRegistry.ARMOR, PLATE_ID, PLATE_BONUS));
 
-	public enum Kind {
-		FIRED,
-		WRONG_CLASS,
-		ON_COOLDOWN
-	}
-
-	public record Result(Kind kind, long remainingMs, ChatLine announcement) {
-		public static Result fired() {
-			return new Result(Kind.FIRED, 0, new ChatLine(NAME + "!", ChatFormatting.GOLD));
-		}
-
-		public static Result wrongClass() {
-			return new Result(Kind.WRONG_CLASS, 0, null);
-		}
-
-		public static Result onCooldown(long remainingMs) {
-			return new Result(Kind.ON_COOLDOWN, remainingMs, ChatLine.cooldown(NAME, remainingMs));
-		}
-	}
-
 	private AequilibriumAbility() {
 	}
 
@@ -72,24 +52,27 @@ public final class AequilibriumAbility {
 				+ (Cooldowns.OATH_MS / 1000) + "s oath). No downside.";
 	}
 
-	/** Decides firing for Legionaries off the shared oath lane, in either stance. Pure and read-only: only {@link #fire} arms the lane and the window. */
-	public static Result trigger(ClassDefinition def, long oathRemaining) {
+	/**
+	 * Decides firing for Legionaries off the shared oath lane, in either stance, its
+	 * fired line gold. Pure and read-only: only {@link #fire} arms the lane and the window.
+	 */
+	public static AbilityOutcome trigger(ClassDefinition def, long oathRemaining) {
 		if (def == null || !def.hasAbility(ClassRegistry.AEQUILIBRIUM_ABILITY)) {
-			return Result.wrongClass();
+			return AbilityOutcome.rejected();
 		}
 		if (oathRemaining > 0) {
-			return Result.onCooldown(oathRemaining);
+			return AbilityOutcome.onCooldown(NAME, oathRemaining);
 		}
-		return Result.fired();
+		return AbilityOutcome.fired(new ChatLine(NAME + "!", ChatFormatting.GOLD));
 	}
 
 	/**
 	 * Gate and arm together: the production path. A fired press arms the shared
 	 * oath lane and stamps the window together; rejected presses leave both untouched.
 	 */
-	public static Result fire(ClassDefinition def, PlayerRuntime runtime, long now) {
-		Result result = trigger(def, runtime.oathRemaining(now));
-		return AbilityGate.gate(result, result.kind() == Kind.FIRED, () -> runtime.tryUseAequilibrium(now),
-				() -> runtime.oathRemaining(now), Result::onCooldown);
+	public static AbilityOutcome fire(ClassDefinition def, PlayerRuntime runtime, long now) {
+		AbilityOutcome result = trigger(def, runtime.oathRemaining(now));
+		return AbilityGate.gate(result, result.fired(), () -> runtime.tryUseAequilibrium(now),
+				() -> runtime.oathRemaining(now), remaining -> AbilityOutcome.onCooldown(NAME, remaining));
 	}
 }

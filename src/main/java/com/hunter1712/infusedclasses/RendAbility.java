@@ -21,35 +21,27 @@ public final class RendAbility {
 	/** Cast sound id, resolved by the adapter; the anvil land is the empower. */
 	public static final Identifier CAST_SOUND = Identifier.withDefaultNamespace("block.anvil.land");
 
-	public enum Kind {
-		FIRED,
-		WRONG_CLASS,
-		ON_COOLDOWN,
-		NO_MOMENTUM
-	}
-
 	/**
 	 * What firing should do. Consume is true only on fire, telling the adapter to drop
-	 * every Momentum stack; announcement is null only for wrong-class presses, which stay silent.
+	 * every Momentum stack; a wrong-class press rejects silently, a zero-stack fizzle
+	 * says its {@code No Momentum} line without a cast.
 	 */
-	public record Result(Kind kind, long remainingMs, boolean consume, ChatLine announcement) {
+	public record Result(AbilityOutcome outcome, boolean consume) {
 		public static Result fired() {
-			return new Result(Kind.FIRED, 0, true,
-					new ChatLine(NAME + "!", ChatFormatting.RED));
+			return new Result(AbilityOutcome.fired(new ChatLine(NAME + "!", ChatFormatting.RED)), true);
 		}
 
 		public static Result wrongClass() {
-			return new Result(Kind.WRONG_CLASS, 0, false, null);
+			return new Result(AbilityOutcome.rejected(), false);
 		}
 
 		public static Result onCooldown(long remainingMs) {
 			// Unstyled on purpose: this line has never carried a colour of its own.
-			return new Result(Kind.ON_COOLDOWN, remainingMs, false, ChatLine.cooldown(NAME, remainingMs));
+			return new Result(AbilityOutcome.onCooldown(NAME, remainingMs), false);
 		}
 
 		public static Result noMomentum() {
-			return new Result(Kind.NO_MOMENTUM, 0, false,
-					new ChatLine("No Momentum", null));
+			return new Result(AbilityOutcome.fizzled(new ChatLine("No Momentum", null)), false);
 		}
 	}
 
@@ -95,7 +87,7 @@ public final class RendAbility {
 		ConditionalPassive spent = def == null ? null : def.passiveForTrigger(ConditionalPassive.ON_HIT_DEALT);
 		int stacks = spent == null ? 0 : runtime.stacks(spent);
 		Result result = trigger(def, runtime.rendRemaining(now), stacks);
-		return AbilityGate.gate(result, result.kind() == Kind.FIRED, () -> runtime.tryUseRend(now, stacks),
+		return AbilityGate.gate(result, result.outcome().fired(), () -> runtime.tryUseRend(now, stacks),
 				() -> runtime.rendRemaining(now), Result::onCooldown);
 	}
 }

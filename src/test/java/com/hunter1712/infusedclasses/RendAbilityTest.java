@@ -67,7 +67,7 @@ class RendAbilityTest {
 		PlayerRuntime runtime = withStacks(5, 0);
 		RendAbility.Result result = RendAbility.fire(juggernautDef(), runtime, 0);
 
-		assertEquals(RendAbility.Kind.FIRED, result.kind());
+		assertTrue(result.outcome().fired());
 		assertTrue(result.consume());
 		assertEquals(Cooldowns.REND_MS, runtime.rendRemaining(0));
 		assertEquals(120, RendAbility.WINDOW_TICKS);
@@ -101,8 +101,8 @@ class RendAbilityTest {
 		PlayerRuntime runtime = withStacks(0, 0);
 		RendAbility.Result result = RendAbility.fire(juggernautDef(), runtime, 0);
 
-		assertEquals(RendAbility.Kind.NO_MOMENTUM, result.kind());
-		assertEquals("No Momentum", result.announcement().text());
+		assertFalse(result.outcome().fired());
+		assertEquals("No Momentum", result.outcome().announcement().text());
 		assertFalse(result.consume());
 		assertEquals(0, runtime.rendRemaining(0));
 		assertEquals(-1, runtime.peekRendEmpowerStacks(0));
@@ -113,8 +113,8 @@ class RendAbilityTest {
 		PlayerRuntime runtime = withStacks(5, 0);
 		RendAbility.Result result = RendAbility.fire(null, runtime, 0);
 
-		assertEquals(RendAbility.Kind.WRONG_CLASS, result.kind());
-		assertNull(result.announcement());
+		assertFalse(result.outcome().fired());
+		assertNull(result.outcome().announcement());
 		assertEquals(0, runtime.rendRemaining(0));
 		assertEquals(-1, runtime.peekRendEmpowerStacks(0));
 	}
@@ -127,8 +127,8 @@ class RendAbilityTest {
 		RendAbility.fire(juggernautDef(), runtime, 1_000);
 		RendAbility.Result second = RendAbility.fire(juggernautDef(), runtime, 16_000);
 
-		assertEquals(RendAbility.Kind.ON_COOLDOWN, second.kind());
-		assertEquals(45_000, second.remainingMs());
+		assertFalse(second.outcome().fired());
+		assertEquals(45_000, second.outcome().remainingMs());
 		assertEquals(45_000, runtime.rendRemaining(16_000));
 	}
 
@@ -148,7 +148,7 @@ class RendAbilityTest {
 		PlayerRuntime runtime = withStacks(4, 0);
 		RendAbility.Result result = RendAbility.fire(juggernautDef(), runtime, 0);
 
-		assertEquals(RendAbility.Kind.FIRED, result.kind());
+		assertTrue(result.outcome().fired());
 		assertTrue(result.consume());
 		// The entry honors the flag through consumeSpent; its pure half is pinned
 		// here: stacks drop once, a second drop finds nothing, and the armed

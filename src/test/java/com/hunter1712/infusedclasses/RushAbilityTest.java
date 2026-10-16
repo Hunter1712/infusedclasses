@@ -27,16 +27,15 @@ class RushAbilityTest {
 
 	@Test
 	void firesWithZeroStacksAtFullHp() {
-		assertEquals(RushAbility.Kind.FIRED,
-				RushAbility.trigger(juggernaut(), 0).kind());
+		assertTrue(RushAbility.trigger(juggernaut(), 0).fired());
 	}
 
 	@Test
 	void fireStampsWindowAndArmsOnlyItsOwnLane() {
 		PlayerRuntime runtime = new PlayerRuntime();
-		RushAbility.Result result = RushAbility.fire(juggernaut(), runtime, 0);
+		AbilityOutcome result = RushAbility.fire(juggernaut(), runtime, 0);
 
-		assertEquals(RushAbility.Kind.FIRED, result.kind());
+		assertTrue(result.fired());
 		assertEquals("Rush!", result.announcement().text());
 		assertEquals(Cooldowns.RUSH_MS, runtime.rushRemaining(0));
 		assertEquals(0, runtime.rendRemaining(0));
@@ -49,9 +48,9 @@ class RushAbilityTest {
 	void onCooldownReportsRemainingAndArmsNothing() {
 		PlayerRuntime runtime = new PlayerRuntime();
 		RushAbility.fire(juggernaut(), runtime, 1_000);
-		RushAbility.Result second = RushAbility.fire(juggernaut(), runtime, 11_000);
+		AbilityOutcome second = RushAbility.fire(juggernaut(), runtime, 11_000);
 
-		assertEquals(RushAbility.Kind.ON_COOLDOWN, second.kind());
+		assertFalse(second.fired());
 		assertEquals(15_000, second.remainingMs());
 		assertEquals("Rush: 15s", second.announcement().text());
 		assertEquals(15_000, runtime.rushRemaining(11_000));
@@ -62,9 +61,9 @@ class RushAbilityTest {
 	@Test
 	void wrongClassSilentAndUntouched() {
 		PlayerRuntime runtime = new PlayerRuntime();
-		RushAbility.Result result = RushAbility.fire(null, runtime, 0);
+		AbilityOutcome result = RushAbility.fire(null, runtime, 0);
 
-		assertEquals(RushAbility.Kind.WRONG_CLASS, result.kind());
+		assertFalse(result.fired());
 		assertNull(result.announcement());
 		assertEquals(0, runtime.rushRemaining(0));
 		assertFalse(runtime.hasRushBonusPending(0));
@@ -98,8 +97,7 @@ class RushAbilityTest {
 				java.util.List.of(),
 				CritRule.universal());
 
-		assertEquals(RushAbility.Kind.WRONG_CLASS,
-				RushAbility.trigger(rendOnly, 0).kind());
+		assertFalse(RushAbility.trigger(rendOnly, 0).fired());
 	}
 
 	@Test

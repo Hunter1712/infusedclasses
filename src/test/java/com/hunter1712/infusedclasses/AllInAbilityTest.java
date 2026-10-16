@@ -21,9 +21,9 @@ class AllInAbilityTest {
 	void fireArmsLaneAndFifteenSecondWindow() {
 		PlayerRuntime runtime = new PlayerRuntime();
 
-		AllInAbility.Result result = AllInAbility.fire(gambler(), runtime, 0);
+		AbilityOutcome result = AllInAbility.fire(gambler(), runtime, 0);
 
-		assertEquals(AllInAbility.Kind.FIRED, result.kind());
+		assertTrue(result.fired());
 		assertNotNull(result.announcement());
 		assertEquals(Cooldowns.ALL_IN_MS, runtime.allInRemaining(0));
 		assertTrue(runtime.isAllInLive(0));
@@ -36,10 +36,10 @@ class AllInAbilityTest {
 	void wrongClassSilentAndUntouched() {
 		PlayerRuntime runtime = new PlayerRuntime();
 
-		AllInAbility.Result result = AllInAbility.fire(
+		AbilityOutcome result = AllInAbility.fire(
 				ClassRegistry.byId(ClassRegistry.JUGGERNAUT), runtime, 0);
 
-		assertEquals(AllInAbility.Kind.WRONG_CLASS, result.kind());
+		assertFalse(result.fired());
 		assertNull(result.announcement());
 		assertEquals(0, runtime.allInRemaining(0));
 		assertFalse(runtime.isAllInLive(0));
@@ -50,9 +50,9 @@ class AllInAbilityTest {
 		PlayerRuntime runtime = new PlayerRuntime();
 		AllInAbility.fire(gambler(), runtime, 1_000);
 
-		AllInAbility.Result second = AllInAbility.fire(gambler(), runtime, 40_000);
+		AbilityOutcome second = AllInAbility.fire(gambler(), runtime, 40_000);
 
-		assertEquals(AllInAbility.Kind.ON_COOLDOWN, second.kind());
+		assertFalse(second.fired());
 		assertEquals(Cooldowns.ALL_IN_MS - 39_000, second.remainingMs());
 		// The first window is long gone; the reject did not restamp it.
 		assertFalse(runtime.isAllInLive(40_000));
@@ -63,10 +63,10 @@ class AllInAbilityTest {
 		PlayerRuntime runtime = new PlayerRuntime();
 
 		AllInAbility.fire(gambler(), runtime, 0);
-		assertEquals(RouletteAbility.Kind.FIRED, RouletteAbility.fire(gambler(), runtime, 0, 0.1F).kind());
+		assertTrue(RouletteAbility.fire(gambler(), runtime, 0, 0.1F).outcome().fired());
 
 		// The wheel fired at 0 and did not touch the All In lane; the ultimate did not touch Roulette's.
-		assertEquals(AllInAbility.Kind.ON_COOLDOWN, AllInAbility.fire(gambler(), runtime, 1).kind());
+		assertFalse(AllInAbility.fire(gambler(), runtime, 1).fired());
 		assertEquals(Cooldowns.ROULETTE_MS, runtime.rouletteRemaining(0));
 	}
 

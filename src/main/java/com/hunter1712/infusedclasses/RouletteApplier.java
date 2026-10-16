@@ -13,10 +13,11 @@ public final class RouletteApplier {
 	}
 
 	public static void apply(ServerPlayer player, RouletteAbility.Result result) {
-		boolean fired = result.kind() == RouletteAbility.Kind.FIRED;
-		if (fired && result.outcome().healHp() > 0) {
-			player.heal(result.outcome().healHp());
+		boolean fired = result.outcome().fired();
+		if (fired && result.band().healHp() > 0) {
+			player.heal(result.band().healHp());
 		}
-		AbilityApplier.announceAndCast(player, result.announcement(), fired, RouletteAbility.CAST_SOUND, true);
+		AbilityApplier.announceAndCast(player, result.outcome().announcement(), fired,
+				RouletteAbility.CAST_SOUND, true);
 	}
 }

@@ -11,16 +11,16 @@ import java.util.ArrayList;
 /**
  * Adapter for {@link RushAbility}: the single place an engage reaches the player.
  * Cleanses harmful effects, announces on the action bar
- * and plays {@link RushAbility#CAST_SOUND} — on FIRED only. Fizzles (wrong class, cooldown) say their line and
- * touch nothing. The stride stat rides the tick while the window is live; the Momentum
- * bonus lands later, on the next qualifying melee hit.
+ * and plays {@link RushAbility#CAST_SOUND} — on a fired outcome only. Rejects (wrong
+ * class, cooldown) say their line and touch nothing. The stride stat rides the tick
+ * while the window is live; the Momentum bonus lands later, on the next qualifying melee hit.
  */
 public final class RushApplier {
 	private RushApplier() {
 	}
 
-	public static void apply(ServerPlayer player, RushAbility.Result result) {
-		boolean fired = result.kind() == RushAbility.Kind.FIRED;
+	public static void apply(ServerPlayer player, AbilityOutcome result) {
+		boolean fired = result.fired();
 		if (fired) {
 			cleanse(player);
 		}

@@ -88,24 +88,18 @@ public final class RouletteAbility {
 		}
 	}
 
-	public enum Kind {
-		FIRED,
-		WRONG_CLASS,
-		ON_COOLDOWN
-	}
-
-	/** What firing should do. {@code outcome} is the landed band on fire, null on rejects. */
-	public record Result(Kind kind, long remainingMs, Outcome outcome, ChatLine announcement) {
-		public static Result fired(Outcome outcome) {
-			return new Result(Kind.FIRED, 0, outcome, new ChatLine(outcome.label() + "!", null));
+	/** What firing should do. {@code band} is the landed outcome on fire, null on rejects. */
+	public record Result(AbilityOutcome outcome, Outcome band) {
+		public static Result fired(Outcome band) {
+			return new Result(AbilityOutcome.fired(new ChatLine(band.label() + "!", null)), band);
 		}
 
 		public static Result wrongClass() {
-			return new Result(Kind.WRONG_CLASS, 0, null, null);
+			return new Result(AbilityOutcome.rejected(), null);
 		}
 
 		public static Result onCooldown(long remainingMs) {
-			return new Result(Kind.ON_COOLDOWN, remainingMs, null, ChatLine.cooldown(NAME, remainingMs));
+			return new Result(AbilityOutcome.onCooldown(NAME, remainingMs), null);
 		}
 	}
 
@@ -175,8 +169,8 @@ public final class RouletteAbility {
 	 */
 	public static Result fire(ClassDefinition def, PlayerRuntime runtime, long now, float roll) {
 		Result result = trigger(def, runtime.rouletteRemaining(now), roll);
-		return AbilityGate.gate(result, result.kind() == Kind.FIRED,
-				() -> runtime.tryUseRoulette(now, result.outcome()),
+		return AbilityGate.gate(result, result.outcome().fired(),
+				() -> runtime.tryUseRoulette(now, result.band()),
 				() -> runtime.rouletteRemaining(now), Result::onCooldown);
 	}
 
