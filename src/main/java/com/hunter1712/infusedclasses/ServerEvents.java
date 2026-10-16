@@ -114,7 +114,8 @@ final class ServerEvents {
 						case ROULETTE -> {
 							RouletteAbility.Result result =
 									RouletteAbility.fire(def, runtime, now, player.getRandom().nextFloat());
-							RouletteApplier.apply(player, result);
+							AbilityApplier.announceAndCast(player, result.outcome().announcement(),
+									result.outcome().fired(), RouletteAbility.CAST_SOUND, true);
 						}
 						case RUSH -> {
 							AbilityOutcome result = RushAbility.fire(def, runtime, now);

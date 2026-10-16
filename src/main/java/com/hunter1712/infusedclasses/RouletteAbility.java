@@ -6,12 +6,11 @@ import java.util.List;
 
 /**
  * Roulette decisions: the Gambler's free wheel on {@code R}. Pure gate-and-arm shape
- * on its own 25s lane: one roll over seven bands, good and bad, no HP cost anywhere.
+ * on its own 25s lane: one roll over six stat bands, good and bad, no HP cost anywhere.
  * Fired spins announce their outcome, arm the lane and stamp the 10s outcome window;
- * rejects arm and spend nothing. Vigor and Jackpot heal at fire; Ward and Haste stat
- * the player through the passive applier's window path while live; Edge, Jackpot and
- * Bust deal mults are read by the melee plan. Zero is a dead band: fired, announced,
- * and worth nothing.
+ * rejects arm and spend nothing. Ward and Haste stat the player through the passive
+ * applier's window path while live; Edge, Jackpot and Bust deal mults are read by the
+ * melee plan. Zero is a dead band: fired, announced, and worth nothing.
  */
 public final class RouletteAbility {
 	public static final String NAME = "Roulette";
@@ -23,10 +22,6 @@ public final class RouletteAbility {
 	public static final double WARD_ARMOR = 2.0;
 	/** Haste: +0.02 movement speed while its window is live. */
 	public static final double HASTE_SPEED = 0.02;
-	/** Vigor: instant 3 HP heal at fire. */
-	public static final float VIGOR_HEAL = 3.0F;
-	/** Jackpot: Edge, Ward and Haste plus an instant 4 HP heal. */
-	public static final float JACKPOT_HEAL = 4.0F;
 	/** Bust: melee dealt x0.75 while its window is live. */
 	public static final double BUST_MULT = 0.75;
 	/** Ward modifier id, resolved by the applier. */
@@ -37,29 +32,26 @@ public final class RouletteAbility {
 	public static final Identifier CAST_SOUND = Identifier.withDefaultNamespace("block.note_block.pling");
 
 	/**
-	 * The seven bands, in wheel order: the roll cuts land under {@link #outcomeFor}.
-	 * Band tops are floats like the rolls they cut: a roll of {@code 0.88F} lands Bust,
+	 * The six bands, in wheel order: the roll cuts land under {@link #outcomeFor}.
+	 * Band tops are floats like the rolls they cut: a roll of {@code 0.86F} lands Bust,
 	 * not Jackpot, because the cut compares at the same precision the wheel is spun at.
 	 */
 	public enum Outcome {
-		EDGE("Edge", 0.20F, EDGE_MULT, 0),
-		WARD("Ward", 0.40F, 1.0, 0),
-		HASTE("Haste", 0.60F, 1.0, 0),
-		VIGOR("Vigor", 0.80F, 1.0, VIGOR_HEAL),
-		JACKPOT("Jackpot", 0.88F, EDGE_MULT, JACKPOT_HEAL),
-		BUST("Bust", 0.96F, BUST_MULT, 0),
-		ZERO("Zero", 1.00F, 1.0, 0);
+		EDGE("Edge", 0.25F, EDGE_MULT),
+		WARD("Ward", 0.50F, 1.0),
+		HASTE("Haste", 0.75F, 1.0),
+		JACKPOT("Jackpot", 0.85F, EDGE_MULT),
+		BUST("Bust", 0.95F, BUST_MULT),
+		ZERO("Zero", 1.00F, 1.0);
 
 		private final String label;
 		private final float bandTop;
 		private final double dealMult;
-		private final float healHp;
 
-		Outcome(String label, float bandTop, double dealMult, float healHp) {
+		Outcome(String label, float bandTop, double dealMult) {
 			this.label = label;
 			this.bandTop = bandTop;
 			this.dealMult = dealMult;
-			this.healHp = healHp;
 		}
 
 		/** The outcome's own name, as announced. */
@@ -80,11 +72,6 @@ public final class RouletteAbility {
 		/** Melee dealt mult while this outcome's window is live: Edge and Jackpot x1.25, Bust x0.75, the rest 1.0. */
 		public double dealMult() {
 			return dealMult;
-		}
-
-		/** Instant heal at fire, 0 for every outcome but Vigor and Jackpot. */
-		public float healHp() {
-			return healHp;
 		}
 	}
 
@@ -116,9 +103,8 @@ public final class RouletteAbility {
 		return "One roll: Edge " + Outcome.EDGE.percent() + "% x" + ConditionalPassive.amount(EDGE_MULT)
 				+ ", Ward " + Outcome.WARD.percent() + "% +" + ConditionalPassive.amount(WARD_ARMOR)
 				+ " armor, Haste " + Outcome.HASTE.percent() + "% +" + ConditionalPassive.amount(HASTE_SPEED)
-				+ " speed, Vigor " + Outcome.VIGOR.percent() + "% heal " + ConditionalPassive.amount(VIGOR_HEAL)
-				+ ", Jackpot " + Outcome.JACKPOT.percent() + "% all + heal " + ConditionalPassive.amount(JACKPOT_HEAL)
-				+ ", Bust " + Outcome.BUST.percent() + "% x" + ConditionalPassive.amount(BUST_MULT)
+				+ " speed, Jackpot " + Outcome.JACKPOT.percent() + "% all, Bust " + Outcome.BUST.percent()
+				+ "% x" + ConditionalPassive.amount(BUST_MULT)
 				+ ", Zero " + Outcome.ZERO.percent() + "%; "
 				+ (WINDOW_TICKS / 20) + "s (R, " + (Cooldowns.ROULETTE_MS / 1000) + "s).";
 	}

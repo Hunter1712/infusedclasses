@@ -1,6 +1,6 @@
 # Spec: Roulette re-cut — no healing
 
-Status: ready-for-agent
+Status: done
 
 ## Problem Statement
 

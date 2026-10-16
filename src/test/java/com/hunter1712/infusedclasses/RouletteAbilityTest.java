@@ -21,18 +21,16 @@ class RouletteAbilityTest {
 
 	@Test
 	void bandsCutOnThePublishedTops() {
-		assertEquals(RouletteAbility.Outcome.EDGE, RouletteAbility.outcomeFor(0.199F));
-		assertEquals(RouletteAbility.Outcome.WARD, RouletteAbility.outcomeFor(0.20F));
-		assertEquals(RouletteAbility.Outcome.WARD, RouletteAbility.outcomeFor(0.399F));
-		assertEquals(RouletteAbility.Outcome.HASTE, RouletteAbility.outcomeFor(0.40F));
-		assertEquals(RouletteAbility.Outcome.HASTE, RouletteAbility.outcomeFor(0.599F));
-		assertEquals(RouletteAbility.Outcome.VIGOR, RouletteAbility.outcomeFor(0.60F));
-		assertEquals(RouletteAbility.Outcome.VIGOR, RouletteAbility.outcomeFor(0.799F));
-		assertEquals(RouletteAbility.Outcome.JACKPOT, RouletteAbility.outcomeFor(0.80F));
-		assertEquals(RouletteAbility.Outcome.JACKPOT, RouletteAbility.outcomeFor(0.879F));
-		assertEquals(RouletteAbility.Outcome.BUST, RouletteAbility.outcomeFor(0.88F));
-		assertEquals(RouletteAbility.Outcome.BUST, RouletteAbility.outcomeFor(0.959F));
-		assertEquals(RouletteAbility.Outcome.ZERO, RouletteAbility.outcomeFor(0.96F));
+		assertEquals(RouletteAbility.Outcome.EDGE, RouletteAbility.outcomeFor(0.249F));
+		assertEquals(RouletteAbility.Outcome.WARD, RouletteAbility.outcomeFor(0.25F));
+		assertEquals(RouletteAbility.Outcome.WARD, RouletteAbility.outcomeFor(0.499F));
+		assertEquals(RouletteAbility.Outcome.HASTE, RouletteAbility.outcomeFor(0.50F));
+		assertEquals(RouletteAbility.Outcome.HASTE, RouletteAbility.outcomeFor(0.749F));
+		assertEquals(RouletteAbility.Outcome.JACKPOT, RouletteAbility.outcomeFor(0.75F));
+		assertEquals(RouletteAbility.Outcome.JACKPOT, RouletteAbility.outcomeFor(0.849F));
+		assertEquals(RouletteAbility.Outcome.BUST, RouletteAbility.outcomeFor(0.85F));
+		assertEquals(RouletteAbility.Outcome.BUST, RouletteAbility.outcomeFor(0.949F));
+		assertEquals(RouletteAbility.Outcome.ZERO, RouletteAbility.outcomeFor(0.95F));
 		assertEquals(RouletteAbility.Outcome.ZERO, RouletteAbility.outcomeFor(1.0F));
 	}
 
@@ -44,23 +42,21 @@ class RouletteAbilityTest {
 		}
 
 		assertEquals(100, total);
-		assertEquals(20, RouletteAbility.Outcome.EDGE.percent());
-		assertEquals(20, RouletteAbility.Outcome.VIGOR.percent());
-		assertEquals(8, RouletteAbility.Outcome.JACKPOT.percent());
-		assertEquals(4, RouletteAbility.Outcome.ZERO.percent());
+		assertEquals(25, RouletteAbility.Outcome.EDGE.percent());
+		assertEquals(25, RouletteAbility.Outcome.WARD.percent());
+		assertEquals(25, RouletteAbility.Outcome.HASTE.percent());
+		assertEquals(10, RouletteAbility.Outcome.JACKPOT.percent());
+		assertEquals(10, RouletteAbility.Outcome.BUST.percent());
+		assertEquals(5, RouletteAbility.Outcome.ZERO.percent());
 	}
 
 	@Test
-	void goodAndBadBandsCarryTheirMultsAndHeals() {
+	void goodAndBadBandsCarryTheirMults() {
 		assertEquals(RouletteAbility.EDGE_MULT, RouletteAbility.Outcome.EDGE.dealMult(), 1e-9);
 		assertEquals(RouletteAbility.EDGE_MULT, RouletteAbility.Outcome.JACKPOT.dealMult(), 1e-9);
 		assertEquals(RouletteAbility.BUST_MULT, RouletteAbility.Outcome.BUST.dealMult(), 1e-9);
 		assertEquals(1.0, RouletteAbility.Outcome.WARD.dealMult(), 1e-9);
 		assertEquals(1.0, RouletteAbility.Outcome.ZERO.dealMult(), 1e-9);
-		assertEquals(RouletteAbility.VIGOR_HEAL, RouletteAbility.Outcome.VIGOR.healHp(), 1e-9);
-		assertEquals(RouletteAbility.JACKPOT_HEAL, RouletteAbility.Outcome.JACKPOT.healHp(), 1e-9);
-		assertEquals(0, RouletteAbility.Outcome.EDGE.healHp(), 1e-9);
-		assertEquals(0, RouletteAbility.Outcome.BUST.healHp(), 1e-9);
 	}
 
 	@Test
@@ -70,7 +66,7 @@ class RouletteAbilityTest {
 		assertEquals(1, RouletteAbility.statAuraFor(RouletteAbility.Outcome.WARD).size());
 		assertEquals(1, RouletteAbility.statAuraFor(RouletteAbility.Outcome.HASTE).size());
 		assertEquals(2, RouletteAbility.statAuraFor(RouletteAbility.Outcome.JACKPOT).size());
-		for (RouletteAbility.Outcome quiet : List.of(RouletteAbility.Outcome.EDGE, RouletteAbility.Outcome.VIGOR,
+		for (RouletteAbility.Outcome quiet : List.of(RouletteAbility.Outcome.EDGE,
 				RouletteAbility.Outcome.BUST, RouletteAbility.Outcome.ZERO)) {
 			assertTrue(RouletteAbility.statAuraFor(quiet).isEmpty(), quiet + " grants no stat");
 		}
@@ -146,8 +142,8 @@ class RouletteAbilityTest {
 
 	@Test
 	void descIsGeneratedFromTheNumbers() {
-		assertEquals("One roll: Edge 20% x1.25, Ward 20% +2 armor, Haste 20% +0.02 speed,"
-				+ " Vigor 20% heal 3, Jackpot 8% all + heal 4, Bust 8% x0.75, Zero 4%;"
-				+ " 10s (R, 25s).", RouletteAbility.desc());
+		assertEquals("One roll: Edge 25% x1.25, Ward 25% +2 armor, Haste 25% +0.02 speed,"
+				+ " Jackpot 10% all, Bust 10% x0.75, Zero 5%; 10s (R, 25s).",
+				RouletteAbility.desc());
 	}
 }

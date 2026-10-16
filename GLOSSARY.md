@@ -55,8 +55,8 @@ at their single use sites — Rush's stride stat in its own adapter, the cast so
 fanfare itself — never behind shared lookups with one caller each. A result with nothing to grant and nothing
 to say — a wrong-class, on-cooldown or no-stacks press — lands nothing.
 A fired-or-fizzle press lands through `announceAndCast` alone — Rotate with no
-sound (it carries no cast sound, so it announces without fanfare); only Rush and Roulette keep their own
-adapters — Rush for the cleanse and the stride it lays, Roulette for the instant heal — routing their fanfare
+sound (it carries no cast sound, so it announces without fanfare); only Rush keeps its own
+adapter — for the cleanse and the stride it lays — routing its fanfare
 through the shared path. Class-choice rejections and accepts route through `announce` with the `actionBar` flag.
 _Avoid_: ability system, effect handler
 
@@ -269,13 +269,13 @@ Streak render as its `Passives` lines, and the wheel is its utility.
 _Avoid_: casino class, luck build
 
 **Roulette** (`RouletteAbility`):
-The Gambler's free spin on `R`, 25s lane: one roll over seven bands — Edge
-×1.25 damage (20%), Ward +2 armor (20%), Haste +0.02 speed (20%), Vigor heal 3
-HP (20%), Jackpot all three stats plus heal 4 (8%), Bust ×0.75 melee (8%),
-Zero (4%) — the stat effects last 10s, the heals land at once. Fired spins
-announce their outcome; rejects arm nothing. Ward and Haste stat the player
-through the window-modifier path; Edge, Jackpot and Bust deal mults are read
-by the melee plan.
+The Gambler's free spin on `R`, 25s lane: one roll over six bands — Edge
+×1.25 damage (25%), Ward +2 armor (25%), Haste +0.02 speed (25%), Jackpot
+all three stats (10%), Bust ×0.75 melee (10%), Zero (5%) — the stat
+effects last 10s, and nothing touches HP. Fired spins announce their
+outcome; rejects arm nothing. Ward and Haste stat the player through the
+window-modifier path; Edge, Jackpot and Bust deal mults are read by the
+melee plan.
 _Avoid_: wheel button, gamble skill
 
 **All In** (`AllInAbility`):
