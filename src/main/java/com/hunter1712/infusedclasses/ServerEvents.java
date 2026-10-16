@@ -158,16 +158,17 @@ final class ServerEvents {
 	}
 
 	/**
-	 * One attacker melee hit, settled in field order: plan, settle (bump, dice movement,
-	 * Rush credit, Impetus spend, Rend spend), dice cue, Rend bonus, stance settle. The
-	 * sequence lives here so the hook cannot reorder or half-apply it; the plan decides
-	 * and the appliers apply. A direct melee hit builds stacks for any class carrying an
-	 * on-hit-dealt passive — full swings only, spam earns zero — and a full swing inside
-	 * a live Rush window with its bonus still pending lands the engage bonus too.
-	 * Classless players settle the universal crit and nothing else: the entry draws one
-	 * roll per landed full-charge hit for every player, classless included, and sweeps
-	 * draw per swept target. Self-damage excluded by the attacker check, projectiles and
-	 * spells by the direct check.
+	 * One attacker melee hit: the plan resolves the whole hit in field order (deciding,
+	 * then settling the bump, dice movement, Rush credit, Impetus spend and Rend spend
+	 * on the runtime), and this entry lands exactly what the resolve returned — the
+	 * verdict's cue, the Rend bonus, the stance/dice settle. The sequence lives behind
+	 * the seam so the hook cannot reorder or half-apply it. A direct melee hit builds
+	 * stacks for any class carrying an on-hit-dealt passive — full swings only, spam
+	 * earns zero — and a full swing inside a live Rush window with its bonus still
+	 * pending lands the engage bonus too. Classless players settle the universal crit
+	 * and nothing else: the entry draws one roll per landed full-charge hit for every
+	 * player, classless included, and sweeps draw per swept target. Self-damage
+	 * excluded by the attacker check, projectiles and spells by the direct check.
 	 */
 	private static void settleAttackerHit(ServerPlayer attacker, net.minecraft.world.entity.Entity entity,
 			float baseDamageTaken, long now) {
@@ -184,22 +185,22 @@ final class ServerEvents {
 				? PlayerClassAccess.of(v).currentDefinition() : null;
 		Supplier<PlayerRuntime> victimRt = entity instanceof ServerPlayer v2
 				? () -> InfusedClasses.runtime(v2) : null;
-		MeleePlan.HitPlan plan = MeleePlan.planHit(atkDef, atkRuntime, victimDef, victimRt, charge, now, roll);
-		// The settle returns the stamped Rend bonus to land, so this lands what it spent.
+		// The plan resolves the whole hit: it decides in field order and settles the
+		// runtime movements in the same order, returning exactly what this entry lands.
+		MeleePlan.Landed landed = MeleePlan.resolve(atkDef, atkRuntime, victimDef, victimRt, charge, now, roll);
 		// Spam grants zero stacks; the pending bonus waits for a full swing.
 		// Empty bonuses settle as no-ops in the adapter, so no pre-checks here.
-		float rendHp = PassiveApplier.settleHit(atkRuntime, atkDef, plan, now);
 		// The verdict's cue lands once per hit, classless included: a crit replays the
 		// vanilla particles and sound, a betrayal gets its own crack.
-		CritCue.apply(attacker, entity, plan.dice().verdict());
+		CritCue.apply(attacker, entity, landed.verdict());
 		// Rend empower: the stamped bonus lands on this hit and only this one,
 		// applied through the adapter like every other outcome; the bonus is
-		// what the plan already decided, never recomputed.
-		DamageSettle.dealBonus(attacker, entity, rendHp);
+		// what the resolve already settled, never recomputed.
+		DamageSettle.dealBonus(attacker, entity, landed.rendHp());
 		// Stance and dice mults: attacker deal times victim take times the dice mult,
 		// settled at once. Gladius + Impetus reads x1.1 deal, Scutum + Testudo x0.85
 		// take, a crit x1.25: see HitPlan.combined.
-		DamageSettle.settleTake(entity, baseDamageTaken, plan.combined(),
+		DamageSettle.settleTake(entity, baseDamageTaken, landed.combined(),
 				() -> attacker.damageSources().playerAttack(attacker));
 	}
 }

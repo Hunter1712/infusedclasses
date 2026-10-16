@@ -63,7 +63,8 @@ class MeleePlanTest {
 		// Any charge: spam still sees the flip buff (but earns no stacks, no roll).
 		assertTrue(plan.impetusPending());
 		assertFalse(plan.bump());
-		assertEquals(0.0F, PassiveApplier.settleHit(gladius, legionary(), plan, 0));
+		MeleePlan.Landed landed = MeleePlan.resolve(legionary(), gladius, null, null, 0.5F, 0, 0.5F);
+		assertEquals(0.0F, landed.rendHp());
 		assertFalse(gladius.hasImpetusPending(0));
 		assertEquals(1.0, dealOf(legionary(), gladius, 0), 1e-9);
 	}
@@ -194,7 +195,9 @@ class MeleePlanTest {
 		assertEquals(1.25, crit.combined(), 1e-9);
 		assertEquals(CritRoll.Movement.NONE, crit.dice().movement());
 		// Settling a classless hit touches no stacks, no lanes, no Streak.
-		assertEquals(0, PassiveApplier.settleHit(runtime, null, crit, 0));
+		MeleePlan.Landed landed = MeleePlan.resolve(null, runtime, null, null, 1.0F, 0, 0.05F);
+		assertEquals(0.0F, landed.rendHp());
+		assertEquals(CritRoll.Verdict.CRIT, landed.verdict());
 		assertEquals(0, runtime.streak());
 	}
 
@@ -202,18 +205,17 @@ class MeleePlanTest {
 	void settleAppliesTheDiceMovement() {
 		PlayerRuntime runtime = new PlayerRuntime();
 
-		PassiveApplier.settleHit(runtime, gambler(), MeleePlan.planHit(gambler(), runtime, null, null, 1.0F, 0, 0.5F), 0);
-		PassiveApplier.settleHit(runtime, gambler(), MeleePlan.planHit(gambler(), runtime, null, null, 1.0F, 0, 0.5F), 0);
+		MeleePlan.resolve(gambler(), runtime, null, null, 1.0F, 0, 0.5F);
+		MeleePlan.resolve(gambler(), runtime, null, null, 1.0F, 0, 0.5F);
 		assertEquals(2, runtime.streak());
 
-		PassiveApplier.settleHit(runtime, gambler(), MeleePlan.planHit(gambler(), runtime, null, null, 1.0F, 0, 0.1F), 0);
+		MeleePlan.resolve(gambler(), runtime, null, null, 1.0F, 0, 0.1F);
 		assertEquals(0, runtime.streak());
 
 		// Betrayal counts as a non-crit: the bad roll still loads the pocket.
-		MeleePlan.HitPlan betrayal = MeleePlan.planHit(gambler(), runtime, null, null, 1.0F, 0, 0.01F);
-		assertEquals(CritRoll.Verdict.BETRAYAL, betrayal.dice().verdict());
-		assertEquals(0.5, betrayal.dice().mult(), 1e-9);
-		PassiveApplier.settleHit(runtime, gambler(), betrayal, 0);
+		MeleePlan.Landed betrayal = MeleePlan.resolve(gambler(), runtime, null, null, 1.0F, 0, 0.01F);
+		assertEquals(CritRoll.Verdict.BETRAYAL, betrayal.verdict());
+		assertEquals(0.5, betrayal.combined(), 1e-9);
 		assertEquals(1, runtime.streak());
 	}
 
@@ -232,8 +234,10 @@ class MeleePlanTest {
 		assertEquals(CritRoll.Verdict.CRIT, plan.dice().verdict());
 		assertEquals(1.25, plan.dice().mult(), 1e-9);
 		assertEquals(RendAbility.empowerFor(5), plan.rendHp(), 1e-9);
-		assertEquals(plan.rendHp(), PassiveApplier.settleHit(runtime, juggernaut(), plan, 0));
-		// The settle bumps the stack it earned; the entry's consume is what drops them for the fire.
+		MeleePlan.Landed landed = MeleePlan.resolve(juggernaut(), runtime, null, null, 1.0F, 0, 0.05F);
+		assertEquals(plan.rendHp(), landed.rendHp(), 1e-9);
+		assertEquals(1.25, landed.combined(), 1e-9);
+		// The resolve bumps the stack it earned; the entry's consume is what drops them for the fire.
 		assertEquals(6, runtime.stacks(momentum));
 	}
 
@@ -248,11 +252,11 @@ class MeleePlanTest {
 		RendAbility.fire(juggernaut(), runtime, 0);
 		MeleePlan.HitPlan plan = MeleePlan.planHit(juggernaut(), runtime, null, null, 1.0F, 0, 0.5F);
 
-		float landed = PassiveApplier.settleHit(runtime, juggernaut(), plan, 0);
+		MeleePlan.Landed landed = MeleePlan.resolve(juggernaut(), runtime, null, null, 1.0F, 0, 0.5F);
 
-		// The settle returns the stamped bonus to land: the entry lands what it spent.
-		assertEquals(plan.rendHp(), landed);
-		assertTrue(landed > 0);
+		// The resolve returns the stamped bonus to land: the entry lands what it settled.
+		assertEquals(plan.rendHp(), landed.rendHp(), 1e-9);
+		assertTrue(landed.rendHp() > 0);
 		// Settle owns the bump too: full swing earns one (+1), Rush credits +5, Rend snapshot spent, not refunded.
 		assertEquals(11, runtime.stacks(momentum));
 		assertFalse(runtime.hasRushBonusPending(0));
@@ -262,9 +266,10 @@ class MeleePlanTest {
 	@Test
 	void settleTouchesNothingOnAnEmptyHit() {
 		PlayerRuntime runtime = new PlayerRuntime();
-		MeleePlan.HitPlan plan = MeleePlan.planHit(juggernaut(), runtime, null, null, 0.5F, 0, 0.5F);
 
-		assertEquals(0, PassiveApplier.settleHit(runtime, juggernaut(), plan, 0));
+		MeleePlan.Landed landed = MeleePlan.resolve(juggernaut(), runtime, null, null, 0.5F, 0, 0.5F);
+
+		assertEquals(0.0F, landed.rendHp());
 
 		assertEquals(0, runtime.stacks(juggernaut().passives().get(0)));
 		assertFalse(runtime.hasRushBonusPending(0));
@@ -272,27 +277,25 @@ class MeleePlanTest {
 	}
 
 	@Test
-	void settleLeavesUnseenImpetusPending() {
+	void flipLandedAfterTheHitStaysPending() {
 		PlayerRuntime runtime = new PlayerRuntime();
 		MeleePlan.HitPlan plan = MeleePlan.planHit(legionary(), runtime, null, null, 1.0F, 0, 0.5F);
-		// The flip lands after the plan peeked: the plan saw nothing, so the settle spends nothing.
+		// The hit resolves before the flip lands: it saw nothing, so it spends nothing.
+		MeleePlan.resolve(legionary(), runtime, null, null, 1.0F, 0, 0.5F);
 		runtime.flipStance(0, RotateAbility.Stance.GLADIUS);
 
 		assertFalse(plan.impetusPending());
-		PassiveApplier.settleHit(runtime, legionary(), plan, 0);
-
 		assertTrue(runtime.hasImpetusPending(0));
 	}
 
 	@Test
-	void settleCannotBumpWhatThePlanDidNotEarn() {
+	void resolveBumpsOnlyWhatFullSwingsEarned() {
 		PlayerRuntime runtime = new PlayerRuntime();
-		// A lying plan (bump claimed at spam charge): the settle replays the gated
-		// charge through the shared gate, so nothing bumps.
-		MeleePlan.HitPlan lying = new MeleePlan.HitPlan(true, 0.5F, false, -1, 0, false, 1.0, 1.0, 1.0,
-				CritRoll.Result.NONE);
 
-		assertEquals(0, PassiveApplier.settleHit(runtime, juggernaut(), lying, 0));
+		MeleePlan.resolve(juggernaut(), runtime, null, null, 0.5F, 0, 0.5F);
 		assertEquals(0, runtime.stacks(juggernaut().passives().get(0)));
+
+		MeleePlan.resolve(juggernaut(), runtime, null, null, 1.0F, 0, 0.5F);
+		assertEquals(1, runtime.stacks(juggernaut().passives().get(0)));
 	}
 }
