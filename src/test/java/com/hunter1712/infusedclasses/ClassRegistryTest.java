@@ -114,7 +114,7 @@ class ClassRegistryTest {
 				assertTrue(a.desc().length() <= 200,
 						def.id() + " active \"" + a.name() + "\" must stay short (" + a.desc().length() + " chars)");
 			}
-			for (ClassDefinition.ActiveAbility f : def.flipBuffs()) {
+			for (ClassDefinition.FlipBuff f : def.flipBuffs()) {
 				assertTrue(f.desc().length() <= 200,
 						def.id() + " flip \"" + f.name() + "\" must stay short (" + f.desc().length() + " chars)");
 			}
@@ -122,7 +122,7 @@ class ClassRegistryTest {
 	}
 
 	@Test
-	void hasAbilityReadsTheListAndIsNullSafeOnTheId() {
+	void hasAbilityReadsTheRowsAndIsNullSafeOnTheId() {
 		ClassDefinition juggernaut = ClassRegistry.byId(ClassRegistry.JUGGERNAUT);
 
 		assertTrue(juggernaut.hasAbility(ClassRegistry.RUSH_ABILITY));

@@ -84,7 +84,7 @@ class RushAbilityTest {
 	void juggernautCarriesBothAbilityIdsInOrder() {
 		assertEquals(
 				java.util.List.of(ClassRegistry.RUSH_ABILITY, ClassRegistry.REND_ABILITY),
-				juggernaut().activeAbilities());
+				juggernaut().actives().stream().map(ClassDefinition.ActiveAbility::id).toList());
 		assertTrue(juggernaut().actives().stream().map(ClassDefinition.ActiveAbility::name).toList()
 				.equals(java.util.List.of("Rush", "Rend")));
 	}
@@ -93,7 +93,9 @@ class RushAbilityTest {
 	void openerGatesOnItsOwnIdNotRends() {
 		ClassDefinition rendOnly = new ClassDefinition(
 				net.minecraft.resources.Identifier.fromNamespaceAndPath("infusedclasses", "test"), "Test",
-				java.util.List.of(), java.util.List.of(), java.util.List.of(ClassRegistry.REND_ABILITY), 0, "", java.util.List.of(), java.util.List.of(),
+				java.util.List.of(), java.util.List.of(), 0, "",
+				java.util.List.of(new ClassDefinition.ActiveAbility(ClassRegistry.REND_ABILITY, "Rend", "test copy")),
+				java.util.List.of(),
 				CritRule.universal());
 
 		assertEquals(RushAbility.Kind.WRONG_CLASS,

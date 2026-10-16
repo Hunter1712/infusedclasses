@@ -69,19 +69,11 @@ public final class ClassRegistry {
 								0.075,
 								"Vigor",
 								-0.25)),
-				List.of(RUSH_ABILITY, REND_ABILITY),
 				0xFFE74C3C,
 				"Frontline bruiser",
 				List.of(
-						new ClassDefinition.ActiveAbility(
-								RushAbility.NAME,
-								"Cleanses harmful effects and quickens stride for "
-										+ (RushAbility.WINDOW_TICKS / 20) + "s. Next full-swing hit: +"
-										+ RushAbility.BONUS_STACKS + " Momentum (R, "
-										+ (Cooldowns.RUSH_MS / 1000) + "s)."),
-						new ClassDefinition.ActiveAbility(
-								RendAbility.NAME,
-								RendAbility.desc())),
+						new ClassDefinition.ActiveAbility(RUSH_ABILITY, RushAbility.NAME, RushAbility.desc()),
+						new ClassDefinition.ActiveAbility(REND_ABILITY, RendAbility.NAME, RendAbility.desc())),
 				List.of(),
 				CritRule.universal()));
 
@@ -90,29 +82,15 @@ public final class ClassRegistry {
 				"Legionary",
 				List.of(),
 				List.of(),
-				List.of(ROTATE_ABILITY, AEQUILIBRIUM_ABILITY),
 				0xFFB87333,
 				"Sword and shield",
 				List.of(
+						new ClassDefinition.ActiveAbility(ROTATE_ABILITY, RotateAbility.NAME, RotateAbility.desc()),
 						new ClassDefinition.ActiveAbility(
-								RotateAbility.NAME,
-								"Gladius (+" + ConditionalPassive.amount(RotateAbility.GLADIUS_DAMAGE)
-										+ " damage, +" + ConditionalPassive.amount(RotateAbility.GLADIUS_SPEED)
-										+ " speed, take x" + RotateAbility.GLADIUS_TAKEN_MULT
-										+ ") or Scutum (+" + ConditionalPassive.amount(RotateAbility.SCUTUM_ARMOR)
-										+ " armor, +" + ConditionalPassive.amount(RotateAbility.SCUTUM_TOUGHNESS)
-										+ " toughness, slower) (R, "
-										+ (Cooldowns.ROTATE_MS / 1000) + "s)."),
-						new ClassDefinition.ActiveAbility(
-								AequilibriumAbility.NAME,
-								AequilibriumAbility.desc())),
+								AEQUILIBRIUM_ABILITY, AequilibriumAbility.NAME, AequilibriumAbility.desc())),
 				List.of(
-						new ClassDefinition.ActiveAbility(
-								RotateAbility.IMPETUS_NAME,
-								RotateAbility.impetusDesc()),
-						new ClassDefinition.ActiveAbility(
-								RotateAbility.TESTUDO_NAME,
-								RotateAbility.testudoDesc())),
+						new ClassDefinition.FlipBuff(RotateAbility.IMPETUS_NAME, RotateAbility.impetusDesc()),
+						new ClassDefinition.FlipBuff(RotateAbility.TESTUDO_NAME, RotateAbility.testudoDesc())),
 				CritRule.universal()));
 
 		register(new ClassDefinition(
@@ -120,16 +98,12 @@ public final class ClassRegistry {
 				"Gambler",
 				List.of(),
 				List.of(),
-				List.of(ROULETTE_ABILITY, ALL_IN_ABILITY),
 				0xFFD4AF37,
 				"Double or nothing",
 				List.of(
 						new ClassDefinition.ActiveAbility(
-								RouletteAbility.NAME,
-								RouletteAbility.desc()),
-						new ClassDefinition.ActiveAbility(
-								AllInAbility.NAME,
-								AllInAbility.desc())),
+								ROULETTE_ABILITY, RouletteAbility.NAME, RouletteAbility.desc()),
+						new ClassDefinition.ActiveAbility(ALL_IN_ABILITY, AllInAbility.NAME, AllInAbility.desc())),
 				List.of(),
 				CritRule.crookedDice()));
 	}
@@ -138,10 +112,8 @@ public final class ClassRegistry {
 	}
 
 	private static void register(ClassDefinition d) {
-		if (d.activeAbilities().isEmpty()) {
+		if (d.actives().isEmpty()) {
 			throw new IllegalArgumentException("Playable class " + d.id() + " must carry an ability");
-		} else if (d.actives().isEmpty()) {
-			throw new IllegalArgumentException("Playable class " + d.id() + " must carry at least one active");
 		}
 		BY_ID.put(d.id(), d);
 	}

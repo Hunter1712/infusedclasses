@@ -23,6 +23,13 @@ public final class RushAbility {
 	/** Cast sound id, resolved by the adapter; the wind burst is the engage. */
 	public static final Identifier CAST_SOUND = Identifier.withDefaultNamespace("entity.wind_charge.wind_burst");
 
+	/** Picker copy, generated from the numbers so it cannot drift from behaviour. */
+	public static String desc() {
+		return "Cleanses harmful effects and quickens stride for " + (WINDOW_TICKS / 20)
+				+ "s. Next full-swing hit: +" + BONUS_STACKS + " Momentum (R, "
+				+ (Cooldowns.RUSH_MS / 1000) + "s).";
+	}
+
 	public enum Kind {
 		FIRED,
 		WRONG_CLASS,

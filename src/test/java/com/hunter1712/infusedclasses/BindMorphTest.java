@@ -35,15 +35,21 @@ class BindMorphTest {
 	void morphKeysOnAbilityIdsNotOnClassNames() {
 		ClassDefinition rotateOnly = new ClassDefinition(
 				net.minecraft.resources.Identifier.fromNamespaceAndPath("infusedclasses", "test"), "Test",
-				java.util.List.of(), java.util.List.of(), java.util.List.of(ClassRegistry.ROTATE_ABILITY), 0, "", java.util.List.of(), java.util.List.of(),
+				java.util.List.of(), java.util.List.of(), 0, "",
+				java.util.List.of(new ClassDefinition.ActiveAbility(ClassRegistry.ROTATE_ABILITY, "Rotate", "test copy")),
+				java.util.List.of(),
 				CritRule.universal());
 		ClassDefinition otherWithoutRotate = new ClassDefinition(
 				net.minecraft.resources.Identifier.fromNamespaceAndPath("infusedclasses", "test"), "Test",
-				java.util.List.of(), java.util.List.of(), java.util.List.of(ClassRegistry.AEQUILIBRIUM_ABILITY), 0, "", java.util.List.of(), java.util.List.of(),
+				java.util.List.of(), java.util.List.of(), 0, "",
+				java.util.List.of(new ClassDefinition.ActiveAbility(ClassRegistry.AEQUILIBRIUM_ABILITY, "Aequilibrium", "test copy")),
+				java.util.List.of(),
 				CritRule.universal());
 		ClassDefinition allInOnly = new ClassDefinition(
 				net.minecraft.resources.Identifier.fromNamespaceAndPath("infusedclasses", "test"), "Test",
-				java.util.List.of(), java.util.List.of(), java.util.List.of(ClassRegistry.ALL_IN_ABILITY), 0, "", java.util.List.of(), java.util.List.of(),
+				java.util.List.of(), java.util.List.of(), 0, "",
+				java.util.List.of(new ClassDefinition.ActiveAbility(ClassRegistry.ALL_IN_ABILITY, "All In", "test copy")),
+				java.util.List.of(),
 				CritRule.universal());
 
 		assertEquals(BindMorph.RushTarget.ROTATE, BindMorph.rushFor(rotateOnly));

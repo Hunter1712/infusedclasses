@@ -4,21 +4,24 @@ import net.minecraft.resources.Identifier;
 
 import java.util.List;
 
-/** A character class: id, display name, passives, ability ids, picker presentation, crit rule. */
+/** A character class: id, display name, passives, actives with their copy, crit rule. */
 public record ClassDefinition(
 		Identifier id,
 		String displayName,
 		List<ConditionalPassive> passives,
 		List<HpScaledPassive> hpPassives,
-		List<Identifier> activeAbilities,
 		int accentColor,
 		String tagline,
 		List<ActiveAbility> actives,
-		List<ActiveAbility> flipBuffs,
+		List<FlipBuff> flipBuffs,
 		CritRule critRule
 ) {
-	/** One active on a card: its detail line plus its full description. Names never join with "+". */
-	public record ActiveAbility(String name, String desc) {
+	/** One playable active on a card: its ability id plus its card copy. Names never join with "+". */
+	public record ActiveAbility(Identifier id, String name, String desc) {
+	}
+
+	/** One flip buff on a card: display copy only, never gated. */
+	public record FlipBuff(String name, String desc) {
 	}
 
 	/**
@@ -36,11 +39,20 @@ public record ClassDefinition(
 	}
 
 	/**
-	 * Whether this class carries the ability: the single seam for ability-id checks, so
-	 * decisions never read the raw list. Null-safe on the id; a missing class never carries.
+	 * Whether this class carries the ability: the single seam for ability-id checks,
+	 * reading the active rows so a gated ability and its card copy cannot drift apart.
+	 * Null-safe on the id; a missing class never carries.
 	 */
 	public boolean hasAbility(Identifier ability) {
-		return ability != null && activeAbilities().contains(ability);
+		if (ability == null) {
+			return false;
+		}
+		for (ActiveAbility active : actives()) {
+			if (active.id().equals(ability)) {
+				return true;
+			}
+		}
+		return false;
 	}
 }
 

@@ -213,6 +213,6 @@ class ConditionalPassiveStacksTest {
 	/** A class carrying exactly the given passives, so a rule can be read off a passive of our own. */
 	private static ClassDefinition withPassives(ConditionalPassive... passives) {
 		return new ClassDefinition(Identifier.fromNamespaceAndPath("infusedclasses", "test"), "Test",
-				List.of(passives), List.of(), List.of(), 0, "", List.of(), List.of(), CritRule.universal());
+				List.of(passives), List.of(), 0, "", List.of(), List.of(), CritRule.universal());
 	}
 }

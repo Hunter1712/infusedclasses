@@ -132,6 +132,17 @@ public final class RotateAbility {
 		return stance == Stance.GLADIUS ? Stance.SCUTUM : Stance.GLADIUS;
 	}
 
+	/** Picker copy for the toggle, generated from the numbers so it cannot drift from behaviour. */
+	public static String desc() {
+		return "Gladius (+" + ConditionalPassive.amount(GLADIUS_DAMAGE)
+				+ " damage, +" + ConditionalPassive.amount(GLADIUS_SPEED)
+				+ " speed, take x" + GLADIUS_TAKEN_MULT
+				+ ") or Scutum (+" + ConditionalPassive.amount(SCUTUM_ARMOR)
+				+ " armor, +" + ConditionalPassive.amount(SCUTUM_TOUGHNESS)
+				+ " toughness, slower) (R, "
+				+ (Cooldowns.ROTATE_MS / 1000) + "s).";
+	}
+
 	/** Picker copy for the Gladius-flip buff, generated from the numbers so it cannot drift from behaviour. */
 	public static String impetusDesc() {
 		return "Flip to Gladius: next hit x" + SWITCH_DEAL_MULT

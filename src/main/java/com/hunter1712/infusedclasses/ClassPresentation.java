@@ -83,7 +83,7 @@ public final class ClassPresentation {
 				}
 				lines.add(new CardLine(entry.getKey(), joined.toString(), LineKind.PASSIVE));
 			}
-			addAbilities(lines, def.flipBuffs(), LineKind.PASSIVE);
+			addFlips(lines, def.flipBuffs());
 			if (def.critRule().hasDice()) {
 				lines.add(new CardLine(CritRule.CROOKED_DICE, def.critRule().crookedDiceDesc(), LineKind.PASSIVE));
 				lines.add(new CardLine(CritRule.STREAK, def.critRule().streakDesc(), LineKind.PASSIVE));
@@ -93,15 +93,25 @@ public final class ClassPresentation {
 		}
 		if (!def.actives().isEmpty()) {
 			lines.add(new CardLine("Active", null, LineKind.ABILITY_HEADER));
-			addAbilities(lines, def.actives(), LineKind.ABILITY);
+			addActives(lines, def.actives());
 		}
 		return lines;
 	}
 
-	private static void addAbilities(List<CardLine> lines, List<ClassDefinition.ActiveAbility> abilities, LineKind kind) {
-		for (ClassDefinition.ActiveAbility ability : abilities) {
-			lines.add(new CardLine(ability.name(), ability.desc(), kind));
+	private static void addActives(List<CardLine> lines, List<ClassDefinition.ActiveAbility> actives) {
+		for (ClassDefinition.ActiveAbility active : actives) {
+			addRow(lines, active.name(), active.desc(), LineKind.ABILITY);
 		}
+	}
+
+	private static void addFlips(List<CardLine> lines, List<ClassDefinition.FlipBuff> flips) {
+		for (ClassDefinition.FlipBuff flip : flips) {
+			addRow(lines, flip.name(), flip.desc(), LineKind.PASSIVE);
+		}
+	}
+
+	private static void addRow(List<CardLine> lines, String name, String desc, LineKind kind) {
+		lines.add(new CardLine(name, desc, kind));
 	}
 
 	/** HP-scaled passives read as one entry per family, in first-appearance order. */

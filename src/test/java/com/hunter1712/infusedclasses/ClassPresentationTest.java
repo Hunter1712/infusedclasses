@@ -7,6 +7,7 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ClassPresentationTest {
@@ -23,8 +24,10 @@ class ClassPresentationTest {
 	@Test
 	void everyRegisteredClassIsPlayableWithActives() {
 		for (ClassDefinition def : ClassRegistry.all()) {
-			assertFalse(def.activeAbilities().isEmpty(), def.id() + " must carry an ability");
-			assertFalse(def.actives().isEmpty(), def.id() + " must carry an active");
+			assertFalse(def.actives().isEmpty(), def.id() + " must carry an ability");
+			for (ClassDefinition.ActiveAbility active : def.actives()) {
+				assertNotNull(active.id(), def.id() + " active \"" + active.name() + "\" must carry its id");
+			}
 		}
 	}
 
@@ -174,9 +177,8 @@ class ClassPresentationTest {
 				customId, "Custom",
 				List.of(),
 				List.of(),
-				List.of(ClassRegistry.REND_ABILITY),
 				0xFFFFFF, "tag",
-				List.of(new ClassDefinition.ActiveAbility("Ability line", "Does a thing.")),
+				List.of(new ClassDefinition.ActiveAbility(ClassRegistry.REND_ABILITY, "Ability line", "Does a thing.")),
 				List.of(),
 				CritRule.universal());
 
