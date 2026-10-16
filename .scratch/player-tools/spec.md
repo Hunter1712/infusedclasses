@@ -1,6 +1,6 @@
 # Spec: Player-facing `/class info`, `/class pick`, and the client config file
 
-Status: ready-for-agent
+Status: done
 
 ## Problem Statement
 

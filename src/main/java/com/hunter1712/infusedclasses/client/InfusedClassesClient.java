@@ -22,6 +22,8 @@ public class InfusedClassesClient implements ClientModInitializer {
 
 	@Override
 	public void onInitializeClient() {
+		hudConfig = HudConfigFile.load();
+
 		ClientPlayNetworking.registerGlobalReceiver(OpenClassScreenPayload.TYPE,
 				(OpenClassScreenPayload payload, ClientPlayNetworking.Context context) -> context.client()
 						.execute(() -> context.client().setScreen(new ClassSelectScreen(payload.currentClassId()))));
@@ -56,5 +58,13 @@ public class InfusedClassesClient implements ClientModInitializer {
 
 	public static void pickClass(Identifier id) {
 		ClientPlayNetworking.send(new SelectClassPayload(id));
+	}
+
+	// Client config: loaded once at startup, read by the status HUD element.
+	private static HudConfig hudConfig = HudConfig.defaults();
+
+	/** The client config loaded at startup; defaults until {@link #onInitializeClient} runs. */
+	public static HudConfig hudConfig() {
+		return hudConfig;
 	}
 }

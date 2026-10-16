@@ -17,8 +17,19 @@ public final class RotateAbility {
 
 	/** Legionary form. Scutum is the default: every Legionary enters in plate. */
 	public enum Stance {
-		GLADIUS,
-		SCUTUM
+		GLADIUS("Gladius"),
+		SCUTUM("Scutum");
+
+		private final String displayName;
+
+		Stance(String displayName) {
+			this.displayName = displayName;
+		}
+
+		/** Display copy: the fire announcement and the info line share it. */
+		public String displayName() {
+			return displayName;
+		}
 	}
 
 	// Stance auras. Downsides ride in the damage hooks as multipliers, never as
@@ -70,10 +81,8 @@ public final class RotateAbility {
 	 */
 	public record Result(AbilityOutcome outcome, Stance stance) {
 		public static Result fired(Stance stance) {
-			ChatLine line = stance == Stance.GLADIUS
-					? new ChatLine("Gladius!", ChatFormatting.RED)
-					: new ChatLine("Scutum!", ChatFormatting.GRAY);
-			return new Result(AbilityOutcome.fired(line), stance);
+			ChatFormatting style = stance == Stance.GLADIUS ? ChatFormatting.RED : ChatFormatting.GRAY;
+			return new Result(AbilityOutcome.fired(new ChatLine(stance.displayName() + "!", style)), stance);
 		}
 
 		public static Result wrongClass() {
