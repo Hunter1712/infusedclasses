@@ -113,4 +113,13 @@ final class PassiveStacks {
 		}
 		return (now - lastTrigger) > graceSeconds * 1000L;
 	}
+
+	/** Millis left before this passive's stacks drop, 0 when it holds none. The same boundary as decay. */
+	long graceRemaining(ConditionalPassive passive, long now) {
+		Long lastTrigger = lastTriggerTime.get(passive);
+		if (stacks(passive) <= 0 || lastTrigger == null) {
+			return 0L;
+		}
+		return Math.max(0L, passive.graceSeconds() * 1000L - (now - lastTrigger));
+	}
 }

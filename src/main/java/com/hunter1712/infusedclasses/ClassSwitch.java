@@ -27,6 +27,8 @@ public final class ClassSwitch {
 		PlayerRuntime runtime = InfusedClasses.runtime(player);
 		PassiveApplier.onClassChanged(player, runtime, oldDef, def);
 		AbilityApplier.announce(player, ChatLine.classPicked(def.displayName()), false);
+		// Accepted switch: the new class's roster goes out at once (a rejected pick returned above).
+		StatusSync.maybeSend(player, System.currentTimeMillis());
 		return def;
 	}
 }

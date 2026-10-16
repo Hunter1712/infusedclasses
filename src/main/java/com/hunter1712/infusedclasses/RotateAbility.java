@@ -26,7 +26,7 @@ public final class RotateAbility {
 			this.displayName = displayName;
 		}
 
-		/** Display copy: the fire announcement and the info line share it. */
+		/** Display copy: the fire announcement, the info line and the strip share it. */
 		public String displayName() {
 			return displayName;
 		}

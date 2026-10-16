@@ -104,6 +104,11 @@ public final class PlayerRuntime {
 		return rouletteWindow.isLive(now) ? rouletteOutcome : null;
 	}
 
+	/** Millis left of the live Roulette outcome window, 0 when none is live. */
+	public long rouletteWindowRemaining(long now) {
+		return rouletteWindow.remainingMs(now);
+	}
+
 	/** Arms the All In lane and stamps its window together: fired presses only. */
 	public boolean tryUseAllIn(long now) {
 		if (!cooldowns.useAllIn(now)) {
@@ -120,6 +125,11 @@ public final class PlayerRuntime {
 	/** Whether a fired All In window is still live. Persistent: peeked while live, never consumed. */
 	public boolean isAllInLive(long now) {
 		return allInWindow.isLive(now);
+	}
+
+	/** Millis left of the live All In window, 0 when none is live. */
+	public long allInWindowRemaining(long now) {
+		return allInWindow.remainingMs(now);
 	}
 
 	/** The Gambler's current Streak: the crit chance the dice have loaded. */
@@ -151,6 +161,11 @@ public final class PlayerRuntime {
 		return aequilibriumWindow.isLive(now);
 	}
 
+	/** Millis left of the live Aequilibrium window, 0 when none is live. */
+	public long aequilibriumWindowRemaining(long now) {
+		return aequilibriumWindow.remainingMs(now);
+	}
+
 	/**
 	 * Peeks the Impetus flip buff without consuming: what the melee plan decides on.
 	 * Armed by flipping to Gladius, live 5s, one-shot through the pending flag.
@@ -176,6 +191,11 @@ public final class PlayerRuntime {
 	public boolean isTestudoBuffLive(long now) {
 		return flippedTo == RotateAbility.Stance.SCUTUM
 				&& flipWindow.isLive(now);
+	}
+
+	/** Millis left of the live flip window (Impetus or Testudo), 0 when none is live. */
+	public long flipWindowRemaining(long now) {
+		return flipWindow.remainingMs(now);
 	}
 
 	// Lane reads: mechanical forwards over the hidden Cooldowns, so ability decisions
@@ -212,6 +232,11 @@ public final class PlayerRuntime {
 		return rushWindow.isLive(now);
 	}
 
+	/** Millis left of the live Rush stride window, 0 when none is live. */
+	public long rushWindowRemaining(long now) {
+		return rushWindow.remainingMs(now);
+	}
+
 	public long rendRemaining(long now) {
 		return cooldowns.rendRemaining(now);
 	}
@@ -232,6 +257,11 @@ public final class PlayerRuntime {
 	/** Peeks the empower snapshot without consuming: what the melee plan decides on. -1 when nothing is owed. */
 	public int peekRendEmpowerStacks(long now) {
 		return rendWindow.peekPayload(now);
+	}
+
+	/** Millis left of the live Rend empower window, 0 when none is live. */
+	public long rendWindowRemaining(long now) {
+		return rendWindow.remainingMs(now);
 	}
 
 	/**
@@ -269,6 +299,13 @@ public final class PlayerRuntime {
 
 		boolean isLive(long now) {
 			return pressedAt >= 0 && now - pressedAt < durationMs;
+		}
+
+		long remainingMs(long now) {
+			if (!isLive(now)) {
+				return 0L;
+			}
+			return durationMs - (now - pressedAt);
 		}
 
 		void arm(long now, long durationMs) {
@@ -321,6 +358,11 @@ public final class PlayerRuntime {
 	/** Current stacks for a passive, 0 when never triggered. */
 	public int stacks(ConditionalPassive passive) {
 		return passiveStacks.stacks(passive);
+	}
+
+	/** Millis left before this passive's stacks drop, 0 when it holds none. Exactly at grace is still live. */
+	public long graceRemaining(ConditionalPassive passive, long now) {
+		return passiveStacks.graceRemaining(passive, now);
 	}
 
 	/** Bumps every passive on the given class whose trigger matches.

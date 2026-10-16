@@ -9,7 +9,7 @@ import net.minecraft.ChatFormatting;
  * Shared by every ability decision and class-choice outcome so none reaches into another's nested type.
  */
 public record ChatLine(String text, ChatFormatting style) {
-	/** Cooldown line: unstyled by decision, one-decimal rounding. One shape for every ability. */
+	/** Cooldown line: unstyled by decision, one-decimal rounding, the same `%.1fs` the strip draws. One shape for every ability. */
 	public static ChatLine cooldown(String abilityName, long remainingMs) {
 		return new ChatLine(
 				abilityName + ": " + String.format(java.util.Locale.ROOT, "%.1fs", remainingMs / 1000.0), null);

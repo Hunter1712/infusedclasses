@@ -2,12 +2,14 @@ package com.hunter1712.infusedclasses.client;
 
 import com.hunter1712.infusedclasses.ClassConfirmedPayload;
 import com.hunter1712.infusedclasses.OpenClassScreenPayload;
+import com.hunter1712.infusedclasses.PlayerStatusPayload;
 import com.hunter1712.infusedclasses.RendPayload;
 import com.hunter1712.infusedclasses.SelectClassPayload;
 import com.hunter1712.infusedclasses.RushPayload;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
+import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
@@ -37,6 +39,11 @@ public class InfusedClassesClient implements ClientModInitializer {
 								mc.setScreen(null);
 							}
 						}));
+
+		ClientPlayNetworking.registerGlobalReceiver(PlayerStatusPayload.TYPE,
+				(PlayerStatusPayload payload, ClientPlayNetworking.Context context) -> context.client()
+						.execute(() -> StatusStore.accept(payload, System.currentTimeMillis())));
+		ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> StatusStore.clear());
 
 		signatureKey = KeyBindingHelper.registerKeyBinding(new KeyMapping(
 				"key.infusedclasses.signature", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_R, KeyMapping.Category.GAMEPLAY));
