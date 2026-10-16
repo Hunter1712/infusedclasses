@@ -45,4 +45,22 @@ class CooldownsTest {
 		assertEquals(0, cooldowns.rushRemaining(0));
 		assertEquals(0, cooldowns.rendRemaining(0));
 	}
+
+	@Test
+	void gamblerLanesAdvanceIndependentlyAndResetTogether() {
+		Cooldowns cooldowns = new Cooldowns();
+		cooldowns.useRoulette(0);
+
+		assertEquals(Cooldowns.ROULETTE_MS, cooldowns.rouletteRemaining(0));
+		assertEquals(0, cooldowns.allInRemaining(0));
+		assertTrue(cooldowns.useAllIn(0));
+		assertEquals(Cooldowns.ALL_IN_MS, cooldowns.allInRemaining(0));
+		assertFalse(cooldowns.useRoulette(1));
+		assertTrue(cooldowns.useRoulette(Cooldowns.ROULETTE_MS));
+
+		cooldowns.reset();
+
+		assertEquals(0, cooldowns.rouletteRemaining(0));
+		assertEquals(0, cooldowns.allInRemaining(0));
+	}
 }

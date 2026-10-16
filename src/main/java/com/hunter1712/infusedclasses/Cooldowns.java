@@ -13,6 +13,10 @@ public final class Cooldowns {
 	public static final long ROTATE_MS = 8_000L;
 	/** Shared Legionary oath lane: firing Impetus locks Testudo and vice versa. */
 	public static final long OATH_MS = 50_000L;
+	/** Gambler Roulette lane: one free spin per 25s. */
+	public static final long ROULETTE_MS = 25_000L;
+	/** Gambler All In lane: the ultimate's 75s wait. */
+	public static final long ALL_IN_MS = 75_000L;
 
 	/**
 	 * One lane per ability family behind a single map: a fifth lane adds one value
@@ -23,7 +27,9 @@ public final class Cooldowns {
 		RUSH,
 		REND,
 		ROTATE,
-		OATH
+		OATH,
+		ROULETTE,
+		ALL_IN
 	}
 
 	private final EnumMap<Lane, Long> readyAt = new EnumMap<>(Lane.class);
@@ -34,6 +40,8 @@ public final class Cooldowns {
 			case REND -> REND_MS;
 			case ROTATE -> ROTATE_MS;
 			case OATH -> OATH_MS;
+			case ROULETTE -> ROULETTE_MS;
+			case ALL_IN -> ALL_IN_MS;
 		};
 	}
 
@@ -92,5 +100,25 @@ public final class Cooldowns {
 	/** Milliseconds left on the shared oath lane, 0 when ready. */
 	public long oathRemaining(long now) {
 		return remaining(Lane.OATH, now);
+	}
+
+	/** @return true if a spin fired; false if the Roulette lane is still on cooldown. Independent of every other lane. */
+	public boolean useRoulette(long now) {
+		return use(Lane.ROULETTE, now);
+	}
+
+	/** Milliseconds left on the Roulette lane, 0 when ready. */
+	public long rouletteRemaining(long now) {
+		return remaining(Lane.ROULETTE, now);
+	}
+
+	/** @return true if All In fired; false if its lane is still on cooldown. Independent of every other lane. */
+	public boolean useAllIn(long now) {
+		return use(Lane.ALL_IN, now);
+	}
+
+	/** Milliseconds left on the All In lane, 0 when ready. */
+	public long allInRemaining(long now) {
+		return remaining(Lane.ALL_IN, now);
 	}
 }

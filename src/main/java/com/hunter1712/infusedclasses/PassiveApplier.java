@@ -13,7 +13,8 @@ public final class PassiveApplier {
 
 	/**
 	 * One tick for one player: the single reconcile home. Decay, then conditionals, then
-	 * the HP-scaled pair, then the stance aura, then the stride aura, in that order; the switch cleanup mirrors
+	 * the HP-scaled pair, then the stance aura, then the wheel's window aura, then the
+	 * stride aura, in that order; the switch cleanup mirrors
 	 * it in {@link #onClassChanged}. Stance and stride ride here (not in the entry tick) so the tick
 	 * order and the write-only-on-change discipline are decided once. Idempotent: an
 	 * attribute is only written when what is applied differs from what should be,
@@ -34,6 +35,7 @@ public final class PassiveApplier {
 			settlePlan(player, PassiveEffect.planForBucket(hp, bucket));
 		}
 		applyStance(player, def, runtime, now);
+		applyRoulette(player, runtime, now);
 		RushApplier.tick(player, runtime, now);
 	}
 
@@ -76,9 +78,35 @@ public final class PassiveApplier {
 		}
 	}
 
+	/**
+	 * Roulette window auras: Ward and Haste sit on the player only while their spin is
+	 * live, and the write/remove sides iterate the same stat list, so they cannot drift.
+	 * A spin that is over reads as no window: everything comes off. Non-Gamblers never
+	 * arm the window, so they only ever meet the remove path.
+	 */
+	private static void applyRoulette(ServerPlayer player, PlayerRuntime runtime, long now) {
+		RouletteAbility.Outcome live = runtime.rouletteOutcome(now);
+		List<PassiveEffect.Modifier> wanted =
+				live == null ? List.of() : RouletteAbility.statAuraFor(live);
+		for (PassiveEffect.Modifier stat : RouletteAbility.allStatModifiers()) {
+			if (wanted.contains(stat)) {
+				AttributeWriter.write(player, stat);
+			} else {
+				AttributeWriter.remove(player, stat.attribute(), stat.modifierId());
+			}
+		}
+	}
+
 	/** Every stance/window modifier in one place: leaving Legionary takes them all off. */
 	private static void removeStanceModifiers(ServerPlayer player) {
 		for (PassiveEffect.Modifier stale : allModifiers()) {
+			AttributeWriter.remove(player, stale.attribute(), stale.modifierId());
+		}
+	}
+
+	/** Every wheel stat in one place: leaving the Gambler takes them all off. */
+	private static void removeRouletteModifiers(ServerPlayer player) {
+		for (PassiveEffect.Modifier stale : RouletteAbility.allStatModifiers()) {
 			AttributeWriter.remove(player, stale.attribute(), stale.modifierId());
 		}
 	}
@@ -128,6 +156,11 @@ public final class PassiveApplier {
 			if (oldDef.hasAbility(ClassRegistry.ROTATE_ABILITY)
 					&& (newDef == null || !newDef.hasAbility(ClassRegistry.ROTATE_ABILITY))) {
 				removeStanceModifiers(player);
+			}
+			// Wheel stats are transient too: leaving the Gambler takes the live spin's auras off.
+			if (oldDef.hasAbility(ClassRegistry.ROULETTE_ABILITY)
+					&& (newDef == null || !newDef.hasAbility(ClassRegistry.ROULETTE_ABILITY))) {
+				removeRouletteModifiers(player);
 			}
 			runtime.clear(oldDef);
 		}
@@ -179,11 +212,12 @@ public final class PassiveApplier {
 	/**
 	 * Settles a planned hit and returns the stamped Rend bonus for this hit to land, 0 when
 	 * the plan saw nothing live, all at the same {@code now} the plan peeked them and in
-	 * field order with {@link MeleePlan#planHit}: the stack bump, the Rush credit, the
-	 * Impetus spend, then the Rend snapshot spend. The entry lands what this returns, so it
-	 * cannot land a bonus this did not spend, and empty hits never touch a window. The Impetus
-	 * mult itself rides the plan's combined mult, never recomputed. Bonus damage itself
-	 * still lands from the plan's stamped {@code rendHp}, never recomputed.
+	 * field order with {@link MeleePlan#planHit}: the stack bump, the dice movement, the
+	 * Rush credit, the Impetus spend, then the Rend snapshot spend. The entry lands what
+	 * this returns, so it cannot land a bonus this did not spend, and empty hits never
+	 * touch a window. The Impetus mult itself rides the plan's combined mult, never
+	 * recomputed. Bonus damage itself still lands from the plan's stamped {@code rendHp},
+	 * never recomputed.
 	 */
 	public static float settleHit(PlayerRuntime runtime, ClassDefinition def, MeleePlan.HitPlan plan,
 			long now) {
@@ -194,6 +228,12 @@ public final class PassiveApplier {
 			// Replays the plan's gated charge through the shared gate, so the settle
 			// cannot bump what the plan did not earn.
 			runtime.onTrigger(def, ConditionalPassive.ON_HIT_DEALT, now, plan.charge());
+		}
+		switch (plan.dice().movement()) {
+			case BUMP -> runtime.bumpStreak();
+			case RESET -> runtime.resetStreak();
+			case NONE -> {
+			}
 		}
 		if (plan.rushBonus()) {
 			grantRushBonus(runtime, def, now);

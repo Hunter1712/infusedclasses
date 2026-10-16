@@ -55,24 +55,33 @@ public final class MeleePlan {
 
 	/**
 	 * What one melee hit earns and settles, decided in field order: stack bump, Rush credit,
-	 * Rend spend, Impetus spend, then the stance mults. The hit settle applies the first
-	 * four in the same order and returns the stamped Rend bonus to land; the combined mult
-	 * settles after. One-shot flags are peeked here and consumed there, at the same {@code now}.
+	 * Rend spend, Impetus spend, then the stance, wheel and dice mults. The hit settle applies
+	 * the first four and the dice movement in the same order and returns the stamped Rend bonus
+	 * to land; the combined mult (deal x take x dice) settles after. One-shot flags are peeked
+	 * here and consumed there, at the same {@code now}.
 	 */
 	public record HitPlan(boolean bump, float charge, boolean rushBonus, int rendStacks, float rendHp, boolean impetusPending,
-			double deal, double take, double combined) {
+			double deal, double take, double combined, CritRoll.Result dice) {
 	}
 
-	/** Full hit decision from definitions and transient state. Victim parts are 1.0 without a victim. */
+	/**
+	 * Full hit decision from definitions and transient state, the caller's roll included.
+	 * Victim parts are 1.0 without a victim; a missing class reads the universal crit rule.
+	 * Full swings roll for every class, classless included.
+	 */
 	public static HitPlan planHit(ClassDefinition atkDef, PlayerRuntime atkRuntime, ClassDefinition victimDef,
-			Supplier<PlayerRuntime> victimRuntime, float charge, long now) {
+			Supplier<PlayerRuntime> victimRuntime, float charge, long now, float roll) {
 		boolean bump = shouldBump(charge);
 		boolean rushBonus = bump && atkRuntime != null && atkRuntime.hasRushBonusPending(now);
 		int rendStacks = atkRuntime == null ? -1 : atkRuntime.peekRendEmpowerStacks(now);
 		float rendHp = rendStacks > 0 ? BonusCurve.bonusFor(RendAbility.empowerFor(rendStacks), charge) : 0;
 		boolean impetus = impetusPendingFor(atkDef, atkRuntime, now);
-		double deal = dealWithImpetus(atkDef, atkRuntime, impetus, now);
+		double deal = dealWithImpetus(atkDef, atkRuntime, impetus, now) * RouletteAbility.dealMult(atkRuntime, now);
 		double take = victimDef == null || victimRuntime == null ? 1.0 : takeFor(victimDef, victimRuntime, now);
-		return new HitPlan(bump, charge, rushBonus, rendStacks, rendHp, impetus, deal, take, deal * take);
+		CritRule rule = atkDef == null ? CritRule.universal() : atkDef.critRule();
+		boolean allIn = atkRuntime != null && atkRuntime.isAllInLive(now);
+		CritRoll.Result dice = CritRoll.roll(rule, atkRuntime == null ? 0 : atkRuntime.streak(), charge, roll, allIn);
+		return new HitPlan(bump, charge, rushBonus, rendStacks, rendHp, impetus, deal, take,
+				deal * take * dice.mult(), dice);
 	}
 }

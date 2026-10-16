@@ -4,7 +4,7 @@ import net.minecraft.resources.Identifier;
 
 import java.util.List;
 
-/** A character class: id, display name, playable yet, conditional passives, HP-scaled passives, active ability ids, picker presentation. */
+/** A character class: id, display name, playable yet, passives, ability ids, picker presentation, crit rule. */
 public record ClassDefinition(
 		Identifier id,
 		String displayName,
@@ -15,7 +15,8 @@ public record ClassDefinition(
 		int accentColor,
 		String tagline,
 		List<ActiveAbility> actives,
-		List<ActiveAbility> flipBuffs
+		List<ActiveAbility> flipBuffs,
+		CritRule critRule
 ) {
 	/** One active on a card: its detail line plus its full description. Names never join with "+". */
 	public record ActiveAbility(String name, String desc) {

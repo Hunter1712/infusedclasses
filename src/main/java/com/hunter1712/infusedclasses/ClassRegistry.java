@@ -15,7 +15,9 @@ import java.util.Map;
  * All classes. Adding a class = one definition here. Juggernaut carries Rush plus
  * Rend, one conditional passive (Momentum) and the Vigor HP-scaled pair.
  * Legionary carries Rotate plus the Impetus/Testudo flip buffs and the Aequilibrium
- * oath ultimate; its stances are transient auras, not passives.
+ * oath ultimate; its stances are transient auras, not passives. Gambler carries the
+ * free Roulette wheel and All In, with Crooked Dice and Streak generated from its
+ * crit rule and rendering as its passives.
  */
 public final class ClassRegistry {
 	public static final Identifier JUGGERNAUT = Identifier.fromNamespaceAndPath("infusedclasses", "juggernaut");
@@ -25,6 +27,9 @@ public final class ClassRegistry {
 	public static final Identifier ROTATE_ABILITY = Identifier.fromNamespaceAndPath("infusedclasses", "rotate");
 	public static final Identifier AEQUILIBRIUM_ABILITY =
 			Identifier.fromNamespaceAndPath("infusedclasses", "aequilibrium");
+	public static final Identifier GAMBLER = Identifier.fromNamespaceAndPath("infusedclasses", "gambler");
+	public static final Identifier ROULETTE_ABILITY = Identifier.fromNamespaceAndPath("infusedclasses", "roulette");
+	public static final Identifier ALL_IN_ABILITY = Identifier.fromNamespaceAndPath("infusedclasses", "all_in");
 	/** ponytail: attribute ids rather than vanilla holders, so the passive stays bootstrap-free. */
 	public static final ResourceKey<Attribute> ARMOR =
 			ResourceKey.create(Registries.ATTRIBUTE, Identifier.withDefaultNamespace("armor"));
@@ -80,7 +85,8 @@ public final class ClassRegistry {
 						new ClassDefinition.ActiveAbility(
 								RendAbility.NAME,
 								RendAbility.desc())),
-				List.of()));
+				List.of(),
+				CritRule.universal()));
 
 		register(new ClassDefinition(
 				LEGIONARY,
@@ -110,7 +116,27 @@ public final class ClassRegistry {
 								RotateAbility.impetusDesc()),
 						new ClassDefinition.ActiveAbility(
 								RotateAbility.TESTUDO_NAME,
-								RotateAbility.testudoDesc()))));
+								RotateAbility.testudoDesc())),
+				CritRule.universal()));
+
+		register(new ClassDefinition(
+				GAMBLER,
+				"Gambler",
+				false,
+				List.of(),
+				List.of(),
+				List.of(ROULETTE_ABILITY, ALL_IN_ABILITY),
+				0xFFD4AF37,
+				"Double or nothing",
+				List.of(
+						new ClassDefinition.ActiveAbility(
+								RouletteAbility.NAME,
+								RouletteAbility.desc()),
+						new ClassDefinition.ActiveAbility(
+								AllInAbility.NAME,
+								AllInAbility.desc())),
+				List.of(),
+				CritRule.crookedDice()));
 	}
 
 	private ClassRegistry() {

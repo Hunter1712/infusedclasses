@@ -19,7 +19,7 @@ class PlayerRuntimeDeepeningTest {
 
 	private static ClassDefinition withPassives(ConditionalPassive... passives) {
 		return new ClassDefinition(Identifier.fromNamespaceAndPath("infusedclasses", "test"), "Test", false,
-				List.of(passives), List.of(), List.of(), 0, "", List.of(), List.of());
+				List.of(passives), List.of(), List.of(), 0, "", List.of(), List.of(), CritRule.universal());
 	}
 
 	@Test
@@ -83,5 +83,59 @@ class PlayerRuntimeDeepeningTest {
 		assertEquals(Cooldowns.REND_MS, runtime.rendRemaining(0));
 		runtime.resetCooldowns();
 		assertEquals(0, runtime.rendRemaining(0));
+	}
+
+	@Test
+	void streakBumpsResetsAndWipesWithTheClass() {
+		PlayerRuntime runtime = new PlayerRuntime();
+		assertEquals(0, runtime.streak());
+
+		runtime.bumpStreak();
+		runtime.bumpStreak();
+		assertEquals(2, runtime.streak());
+
+		runtime.resetStreak();
+		assertEquals(0, runtime.streak());
+
+		runtime.bumpStreak();
+		runtime.resetCooldowns();
+		assertEquals(0, runtime.streak());
+	}
+
+	@Test
+	void rouletteWindowRoundTripsItsPayloadAndExpires() {
+		PlayerRuntime runtime = new PlayerRuntime();
+		assertNull(runtime.rouletteOutcome(0));
+
+		assertTrue(runtime.tryUseRoulette(1_000, RouletteAbility.Outcome.JACKPOT));
+
+		assertEquals(RouletteAbility.Outcome.JACKPOT, runtime.rouletteOutcome(1_000));
+		assertEquals(RouletteAbility.Outcome.JACKPOT, runtime.rouletteOutcome(10_999));
+		assertNull(runtime.rouletteOutcome(11_000));
+	}
+
+	@Test
+	void allInWindowIsFifteenSecondsAndResetWipesIt() {
+		PlayerRuntime runtime = new PlayerRuntime();
+
+		assertTrue(runtime.tryUseAllIn(0));
+		assertTrue(runtime.isAllInLive(14_999));
+		assertFalse(runtime.isAllInLive(15_000));
+
+		runtime.resetCooldowns();
+
+		assertFalse(runtime.isAllInLive(0));
+		assertEquals(0, runtime.allInRemaining(0));
+	}
+
+	@Test
+	void resetWipesTheLiveRouletteOutcomeToo() {
+		PlayerRuntime runtime = new PlayerRuntime();
+		runtime.tryUseRoulette(0, RouletteAbility.Outcome.EDGE);
+
+		runtime.resetCooldowns();
+
+		assertNull(runtime.rouletteOutcome(0));
+		assertEquals(0, runtime.rouletteRemaining(0));
 	}
 }

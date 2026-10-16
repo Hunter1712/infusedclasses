@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Gambler: Crooked Dice (20% crit at x1.5, fixed 5% betrayal at x0.5) with Streak loading the crit band to a 95/5 lock, the free Roulette wheel (`R`, seven bands, 25s lane) and the All In ultimate (`G`, 15s of x2.0 crits, 75s lane).
+- Mod-owned crits: vanilla jump crits are retired for every player; full-charge landed hits roll a universal 10% crit at x1.25 (classless included), with a per-class crit rule seam.
 - Future Modrinth/CurseForge listing skeleton: single project page (Alpha channel, manual jars), version-suffixed jar name reserved for listing time (`infusedclasses-<mod>+1.21.11.jar`), in-repo player guide, listing body and changelog. No upload yet.
 
 ### Changed

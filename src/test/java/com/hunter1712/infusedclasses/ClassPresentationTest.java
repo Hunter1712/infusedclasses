@@ -67,6 +67,30 @@ class ClassPresentationTest {
 	}
 
 	@Test
+	void gamblerCardShowsGeneratedDiceLinesUnderPassives() {
+		ClassDefinition gambler = ClassRegistry.byId(ClassRegistry.GAMBLER);
+		CritRule dice = gambler.critRule();
+
+		List<ClassPresentation.CardLine> lines = ClassPresentation.cardLinesFor(gambler);
+		List<String> texts = lines.stream().map(ClassPresentation.CardLine::text).toList();
+
+		assertFalse(texts.contains("No passives yet"));
+		assertTrue(texts.contains(CritRule.CROOKED_DICE + " \u2014 " + dice.crookedDiceDesc()));
+		assertTrue(texts.contains(CritRule.STREAK + " \u2014 " + dice.streakDesc()));
+		assertTrue(texts.contains("Roulette \u2014 " + RouletteAbility.desc()));
+		assertTrue(texts.contains("All In \u2014 " + AllInAbility.desc()));
+		// The dice lines are passives, not actives: they render above the Active header.
+		int activeHeader = texts.indexOf("Active");
+		assertTrue(texts.indexOf(CritRule.STREAK + " \u2014 " + dice.streakDesc()) < activeHeader);
+		for (ClassPresentation.CardLine line : lines) {
+			if (line.text().startsWith(CritRule.CROOKED_DICE + " \u2014 ")
+					|| line.text().startsWith(CritRule.STREAK + " \u2014 ")) {
+				assertEquals(ClassPresentation.LineKind.PASSIVE, line.kind());
+			}
+		}
+	}
+
+	@Test
 	void subtitleIsChoiceShapesAbility() {
 		assertEquals("Your choice shapes your ability", ClassPresentation.subtitle());
 	}
@@ -140,6 +164,8 @@ class ClassPresentationTest {
 				ClassPresentation.cardFor(ClassRegistry.byId(ClassRegistry.JUGGERNAUT), false).text().accent());
 		assertEquals(0xFFB87333,
 				ClassPresentation.cardFor(ClassRegistry.byId(ClassRegistry.LEGIONARY), false).text().accent());
+		assertEquals(0xFFD4AF37,
+				ClassPresentation.cardFor(ClassRegistry.byId(ClassRegistry.GAMBLER), false).text().accent());
 	}
 
 	@Test
@@ -160,7 +186,8 @@ class ClassPresentationTest {
 				List.of(ClassRegistry.REND_ABILITY),
 				0xFFFFFF, "tag",
 				List.of(new ClassDefinition.ActiveAbility("Ability line", "Does a thing.")),
-				List.of());
+				List.of(),
+				CritRule.universal());
 
 		List<ClassPresentation.CardLine> lines = ClassPresentation.cardLinesFor(def);
 

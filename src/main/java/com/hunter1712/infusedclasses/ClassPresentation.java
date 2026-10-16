@@ -60,14 +60,16 @@ public final class ClassPresentation {
 
 	/**
 	 * Lines shown on the focused card: Passives header plus one detail line per passive
-	 * (one per HP-scaled family, with joined descriptions) plus one per flip buff,
+	 * (one per HP-scaled family, with joined descriptions) plus one per flip buff plus
+	 * the generated Crooked Dice and Streak lines for a class carrying dice,
 	 * then Active header plus one detail line per fired active. Every detail line carries
 	 * name plus short description, so nothing hides behind hover.
 	 */
 	public static List<CardLine> cardLinesFor(ClassDefinition def) {
 		List<CardLine> lines = new ArrayList<>();
 		lines.add(new CardLine("Passives", null, LineKind.PASSIVE_HEADER));
-		if (!def.passives().isEmpty() || !def.hpPassives().isEmpty() || !def.flipBuffs().isEmpty()) {
+		if (!def.passives().isEmpty() || !def.hpPassives().isEmpty() || !def.flipBuffs().isEmpty()
+				|| def.critRule().hasDice()) {
 			for (ConditionalPassive p : def.passives()) {
 				lines.add(new CardLine(p.name(), p.fullDesc(), LineKind.PASSIVE));
 			}
@@ -82,6 +84,10 @@ public final class ClassPresentation {
 				lines.add(new CardLine(entry.getKey(), joined.toString(), LineKind.PASSIVE));
 			}
 			addAbilities(lines, def.flipBuffs(), LineKind.PASSIVE);
+			if (def.critRule().hasDice()) {
+				lines.add(new CardLine(CritRule.CROOKED_DICE, def.critRule().crookedDiceDesc(), LineKind.PASSIVE));
+				lines.add(new CardLine(CritRule.STREAK, def.critRule().streakDesc(), LineKind.PASSIVE));
+			}
 		} else {
 			lines.add(new CardLine("No passives yet", null, LineKind.PASSIVE));
 		}

@@ -4,6 +4,9 @@ Character classes for Minecraft (Fabric). **Alpha — manual builds only.**
 
 - Juggernaut: Rush engage with cleanse, Momentum armor on landing hits, Rend execute to spend it.
 - Legionary: rotate stances, Impetus/Testudo flip buffs, Aequilibrium oath.
+- Gambler: Crooked Dice crits with Streak loading the odds, free Roulette wheel, All In ultimate.
+
+Crits are a mod rule: vanilla jump crits are retired, and every full-charge landed hit rolls a flat 10% chance at x1.25 (classless players included), with a per-class crit rule on top — the Gambler's Crooked Dice is the first.
 
 ## Requirements (0.x locked)
 

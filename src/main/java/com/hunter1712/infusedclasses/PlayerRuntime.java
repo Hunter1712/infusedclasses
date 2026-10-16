@@ -43,6 +43,17 @@ public final class PlayerRuntime {
 	// effects); death ends it with everything else, so switch and respawn never
 	// inherit a window.
 	private final Window aequilibriumWindow = new Window();
+	// Roulette outcome window: press timestamp plus the spun Outcome beside it, live
+	// 10s after a fired spin. Persistent like Aequilibrium's: the passive applier
+	// peeks the outcome every tick, the melee plan reads its deal mult, nothing spends
+	// it. All In window: the ultimate's 15s stamp, same persistent shape. Both cleared
+	// with everything else, so no stale dice survive a switch or respawn.
+	private final Window rouletteWindow = new Window();
+	private RouletteAbility.Outcome rouletteOutcome = null;
+	private final Window allInWindow = new Window();
+	// Streak: the Gambler's loaded pocket, bumped and reset by the hit settle and
+	// nothing else. Transient like every earned count.
+	private int streak = 0;
 
 	/** Current Legionary stance, SCUTUM until the first Rotate. */
 	public RotateAbility.Stance stance() {
@@ -70,6 +81,58 @@ public final class PlayerRuntime {
 
 	public long oathRemaining(long now) {
 		return cooldowns.oathRemaining(now);
+	}
+
+	/** Arms the Roulette lane and stamps the outcome window together: fired spins only. */
+	public boolean tryUseRoulette(long now, RouletteAbility.Outcome outcome) {
+		if (!cooldowns.useRoulette(now)) {
+			return false;
+		}
+		rouletteWindow.arm(now);
+		rouletteOutcome = outcome;
+		return true;
+	}
+
+	public long rouletteRemaining(long now) {
+		return cooldowns.rouletteRemaining(now);
+	}
+
+	/** The live spin's outcome, null when no outcome window is live. Persistent: peeked, never consumed. */
+	public RouletteAbility.Outcome rouletteOutcome(long now) {
+		return rouletteWindow.isLive(RouletteAbility.WINDOW_TICKS * 50L, now) ? rouletteOutcome : null;
+	}
+
+	/** Arms the All In lane and stamps its window together: fired presses only. */
+	public boolean tryUseAllIn(long now) {
+		if (!cooldowns.useAllIn(now)) {
+			return false;
+		}
+		allInWindow.arm(now);
+		return true;
+	}
+
+	public long allInRemaining(long now) {
+		return cooldowns.allInRemaining(now);
+	}
+
+	/** Whether a fired All In window is still live. Persistent: peeked while live, never consumed. */
+	public boolean isAllInLive(long now) {
+		return allInWindow.isLive(AllInAbility.WINDOW_TICKS * 50L, now);
+	}
+
+	/** The Gambler's current Streak: the crit chance the dice have loaded. */
+	public int streak() {
+		return streak;
+	}
+
+	/** One non-crit full hit loads the pocket: called by the hit settle with the plan's movement. */
+	public void bumpStreak() {
+		streak++;
+	}
+
+	/** A landed crit spends the pocket: called by the hit settle with the plan's movement. */
+	public void resetStreak() {
+		streak = 0;
 	}
 
 	/** Arms the shared oath lane and stamps the Aequilibrium window together. */
@@ -181,10 +244,12 @@ public final class PlayerRuntime {
 	/** Reset for class switch: a new class starts empty. The adapter calls this, not ability callers. */
 	public void resetCooldowns() {
 		cooldowns.reset();
-		for (Window w : new Window[]{rushWindow, rendWindow, aequilibriumWindow, flipWindow}) {
+		for (Window w : new Window[]{rushWindow, rendWindow, aequilibriumWindow, flipWindow, rouletteWindow, allInWindow}) {
 			w.clear();
 		}
 		flippedTo = null;
+		rouletteOutcome = null;
+		streak = 0;
 		stance = RotateAbility.Stance.SCUTUM;
 	}
 

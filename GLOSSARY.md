@@ -31,7 +31,8 @@ changed what should be on the player, so it needs no attribute write. Movement t
 passive (`tickDecayMoved`), so a decayed passive never removes one sitting at zero; a class
 switch removes what the old class earned but the new one does not carry (`onClassChanged`),
 drops the old stacks and resets the cooldown. The hit settle (`settleHit`)
-owns bump, Rush credit, Impetus spend and Rend spend in field order and returns the Rend bonus to land.
+owns bump, the dice movement, Rush credit, Impetus spend and Rend spend in field order and
+returns the Rend bonus to land.
 The spender's stack drop (`dropStacks`) is the JUnit-reachable half of the consume; the
 attribute removal rides with the player.
 _Avoid_: passive system, stat updater
@@ -50,8 +51,9 @@ at their single use sites — Rush's stride stat in its own adapter, the cast so
 fanfare itself — never behind shared lookups with one caller each. A result with nothing to grant and nothing
 to say — a wrong-class, on-cooldown or no-stacks press — lands nothing.
 A fired-or-fizzle press lands through `announceAndCast` alone — Rotate with no
-sound (it carries no cast sound, so it announces without fanfare); only Rush keeps its own
-adapter, for the cleanse and the stride it lays, routing its fanfare through the shared path. Class-choice rejections and accepts route through `announce` with the `actionBar` flag.
+sound (it carries no cast sound, so it announces without fanfare); only Rush and Roulette keep their own
+adapters — Rush for the cleanse and the stride it lays, Roulette for the instant heal — routing their fanfare
+through the shared path. Class-choice rejections and accepts route through `announce` with the `actionBar` flag.
 _Avoid_: ability system, effect handler
 
 **Gate-and-arm** (`AbilityGate`):
@@ -89,13 +91,15 @@ A playable archetype, registered once with its id, display name, locked flag, pa
 ability ids, accent colour, tagline and the actives list (one name plus picker description per
 fired active) plus the flip-buff list (one name plus description per trigger-fired
 active, shown under `Passives`). A class is data: it carries no player and no state of its own. The first passive on a
-trigger is found with `passiveForTrigger`, never by list position. Juggernaut and Legionary are the two
+trigger is found with `passiveForTrigger`, never by list position. Juggernaut, Legionary and Gambler are the three
 playable classes today: `Juggernaut`, Rush (`infusedclasses:rush`) plus Rend
 (`infusedclasses:rend`), accent `0xFFE74C3C`,
 tagline `Frontline bruiser`, actives `Rush` and `Rend`, with picker copy
 generated from the ability constants, so the numbers
 cannot drift from behaviour; `Legionary` (see below), Rotate plus the Impetus/Testudo
-flip buffs and the Aequilibrium oath ultimate, accent `0xFFB87333`, tagline `Sword and shield`.
+flip buffs and the Aequilibrium oath ultimate, accent `0xFFB87333`, tagline `Sword and shield`;
+`Gambler` (see below), Roulette plus All In and a crit rule that doubles as its
+passives, accent `0xFFD4AF37`, tagline `Double or nothing`.
 Juggernaut carries no max-health bonus (vanilla 20 HP):
 Vigor below is the reward for staying topped, and Momentum is the armor for staying on target.
 _Avoid_: character class definition, build
@@ -137,13 +141,15 @@ at once, vanilla-style, and stacks are transient: they do not survive relog or r
 _Avoid_: charge, level, rank
 
 **Cooldown** (`Cooldowns`):
-The wait after an ability fires, tracked per player, also transient. Four lanes:
+The wait after an ability fires, tracked per player, also transient. Six lanes:
 Rush's 25s (`RUSH_MS`) and Rend's 60s (`REND_MS`): `useRush` /
 `useRend` fire only when their own lane is ready and report it, `rushRemaining` /
 `rendRemaining` report the milliseconds left, 0 when ready; Rotate's 8s
-(`ROTATE_MS`, `useRotate` / `rotateRemaining`, the only gate on both switch buffs)
-and the Legionary shared oath 50s
-(`OATH_MS`, `useOath` / `oathRemaining`, owned solely by Aequilibrium).
+(`ROTATE_MS`, `useRotate` / `rotateRemaining`, the only gate on both switch buffs);
+the Legionary shared oath 50s
+(`OATH_MS`, `useOath` / `oathRemaining`, owned solely by Aequilibrium); and the
+Gambler's Roulette 25s (`ROULETTE_MS`, `useRoulette` / `rouletteRemaining`) and
+All In 75s (`ALL_IN_MS`, `useAllIn` / `allInRemaining`) lanes.
 `reset` readies every lane again
 for class switch and respawn. The lanes ride one map behind a private lane enum,
 so a fifth lane adds a value rather than a field; callers and tests cross the
@@ -243,6 +249,29 @@ underneath and both layers count. Firing announces `Aequilibrium!` gold;
 rejects arm nothing. Decided in the trigger/fire gate-and-arm shape.
 _Avoid_: ultimate, finisher
 
+**Gambler** (`ClassRegistry`):
+The third playable class: `infusedclasses:gambler`, display `Gambler`, accent
+gold `0xFFD4AF37`, tagline `Double or nothing`, actives Roulette plus All In,
+and a crit rule (see below) that doubles as its passives: Crooked Dice and
+Streak render as its `Passives` lines, and the wheel is its utility.
+_Avoid_: casino class, luck build
+
+**Roulette** (`RouletteAbility`):
+The Gambler's free spin on `R`, 25s lane: one roll over seven bands — Edge
+×1.25 damage (20%), Ward +2 armor (20%), Haste +0.02 speed (20%), Vigor heal 3
+HP (20%), Jackpot all three stats plus heal 4 (8%), Bust ×0.75 melee (8%),
+Zero (4%) — the stat effects last 10s, the heals land at once. Fired spins
+announce their outcome; rejects arm nothing. Ward and Haste stat the player
+through the window-modifier path; Edge, Jackpot and Bust deal mults are read
+by the melee plan.
+_Avoid_: wheel button, gamble skill
+
+**All In** (`AllInAbility`):
+The Gambler's ultimate on `G`, 75s lane: crits deal ×2.0 instead of ×1.5 for
+15s. The dice rules never bend: betrayal, Streak resets and every band stay as
+they are.
+_Avoid_: double damage, ultimate form
+
 **Bonus curve** (`BonusCurve`):
 The universal melee rule: mod hook bonus damage scales quadratically with swing
 charge (`bonus x charge x charge`, half charge pays a quarter, spam pays chips).
@@ -254,16 +283,16 @@ _Avoid_: damage falloff, charge multiplier
 **Melee plan** (`MeleePlan`):
 The decision of what one melee hit earns and settles, taken from definitions and
 transient state: whether the swing earns stacks (full swings only, spam earns zero),
-the stance deal and take mults (1.0 for anyone else), and the Impetus flip buff
-(pending only, spent once, any charge). `planHit` decides the whole hit in
-field order — bump, Rush credit, Rend spend, Impetus spend, combined mult — and the hit settle (`settleHit`) applies the first
-four in
+the stance deal and take mults (1.0 for anyone else), the wheel's live deal mult and
+the Impetus flip buff (pending only, spent once, any charge). `planHit` decides the whole hit in
+field order — bump, Rush credit, Rend spend, Impetus spend, dice verdict, combined
+mult (deal x take x dice) — and the hit settle (`settleHit`) applies the first four and the dice movement in
 the same order at the same moment, returning the stamped Rend bonus for the entry
 to land, so the pairing the plan saw is the pairing that lands and empty hits never
 touch a window; the attacker branch (`settleAttackerHit`) owns the whole sequence
-(plan, settle, Rend bonus, combined mult) so the hook cannot reorder
+(plan, settle, cue, Rend bonus, combined mult) so the hook cannot reorder
 or half-apply it; Gladius plus Impetus reads
-x1.1 deal, Scutum plus Testudo x0.85 take, named once in the plan rather than emerging in the
+x1.1 deal, Scutum plus Testudo x0.85 take, a crit x1.25 deal, named once in the plan rather than emerging in the
 entry. The server entry maps, adapters
 apply; the victim runtime arrives lazily, so a non-Legionary victim costs no transient
 state. Owns every ability-id check the hook needs, so the entry never compares
@@ -288,14 +317,17 @@ The adapter that makes the player's attributes agree with the Legionary stance: 
 the current stance's modifiers sit on the player, the other stance's come off, same
 write-only-on-change shape as the Vigor tick. Aequilibrium edge and plate ride the window
 while live. Both sides iterate the stance's single aura list (`RotateAbility.auraFor`,
-`AequilibriumAbility.windowModifiers`), so write and remove cannot drift. Leaving the class
+`AequilibriumAbility.windowModifiers`), so write and remove cannot drift. The Roulette
+outcome window's stat auras ride the same tick (`applyRoulette`) and come off when the
+Gambler leaves (`removeRouletteModifiers`). Leaving the class
 takes them all off through `onClassChanged`, which also owns the Legionary marker.
 _Avoid_: stance system, aura updater
 
 **Bind morph** (`BindMorph`):
 The decision of what a reused bind means for a class: `R` arrives as the
-rotate intent for Legionaries and Rush for everyone else; `G` arrives as the
-oath ultimate for Legionaries in any stance and Rend for
+rotate intent for Legionaries, the roulette intent for Gamblers, and Rush for
+everyone else; `G` arrives as the
+oath ultimate for Legionaries in any stance, All In for Gamblers, and Rend for
 everyone else. The stance morph is gone with the oath pair: one `G`, one ultimate.
 The intent receivers wire, this decides.
 _Avoid_: key routing, bind table
@@ -305,9 +337,48 @@ The other half of the spam fix: the attacker branch reads `attackStrengthScale`
 once per swing and feeds conditional triggers only at full charge
 (`MeleePlan.shouldBump` over `BonusCurve.isFullSwing`), so spam
 earns zero stacks and timed swings earn one. Rush bonus is gated on the same bump
-and scales via the curve. `Juggernaut Momentum` grace reads 5s to cover the swing timer
+and scales via the curve. Crit rolls and Streak movement ride the same gate:
+half swings never roll and never load the pocket.
+`Juggernaut Momentum` grace reads 5s to cover the swing timer
 under the gate.
 _Avoid_: swing check, charge requirement
+
+### Crits and chance
+
+**Crit roll** (`CritRoll`):
+The decision of one full-charge landed hit's verdict — crit, betrayal or
+normal — from the class's crit rule, the current Streak, the All In window,
+the swing charge and a roll the caller drew. The universal baseline is 10%
+crit at ×1.25, full-charge hits only, no betrayal and no Streak movement; a
+class override replaces it, and a classless player reads as the baseline.
+Vanilla crits are retired: the mixin cancels `canCriticalAttack` for every
+player, so crits are a mod rule.
+_Avoid_: crit check, damage roll
+
+**Crit rule** (`CritRule`):
+A class's dice data: crit chance and mult, betrayal chance and mult, Streak
+step. One record; a class without one uses the universal baseline. The
+Gambler's `Crooked Dice` and `Streak` card lines are generated from it, so the
+Streak reset target cannot drift from the chance base.
+_Avoid_: crit config, dice passive
+
+**Crooked Dice**:
+The Gambler's crit rule: 20% crit at ×1.5, 5% betrayal at ×0.5, +15
+percentage points of crit per non-crit full hit. The crit band locks at 95%
+from streak 5; betrayal stays 5% forever.
+_Avoid_: luck passive
+
+**Betrayal**:
+The fixed band at the foot of the Gambler's crit roll: 5% of full-charge hits
+deal ×0.5. It never grows and is never removable, and it still feeds Streak.
+_Avoid_: backlash, mishap
+
+**Streak**:
+The Gambler's loaded pocket: +15 percentage points of crit chance per non-crit
+full hit (a betrayal counts as one); any crit resets it to base. The crit band
+stops growing at 95% from streak 5. A transient counter like every earned
+count: wiped by class switch, respawn and relog.
+_Avoid_: charge, counter
 
 ### Per-player state
 
@@ -334,7 +405,8 @@ for the server entry to reach a field a mixin added.
 _Avoid_: player hook, mixin state
 
 **Transient runtime** (`PlayerRuntime`):
-The per-player stacks and cooldowns that last only as long as the session. It is handed the class they
+The per-player stacks, cooldowns, ability windows and the Gambler's Streak
+counter that last only as long as the session. It is handed the class they
 belong to and the current time on each call, so it holds neither a clock nor a reference to anyone's
 choice, and it is owned per player by the server entry rather than stored on the player. Stack
 storage (counts plus last-trigger timestamps in definition-keyed maps) lives in `PassiveStacks`:
@@ -373,7 +445,8 @@ _Avoid_: format, theme
 **Card lines** (`ClassPresentation.cardLinesFor`):
 The detail lines a focused card shows. A class shows a `Passives` header plus one
 name-plus-description line per passive (HP-scaled passives
-sharing a group read as one line with joined descriptions) plus one per flip buff,
+sharing a group read as one line with joined descriptions) plus one per flip buff plus
+the generated `Crooked Dice` and `Streak` lines for a class carrying dice,
 or the
 header plus `No passives yet` when it has none, and an `Active` header plus one
 name-plus-description line per fired active. Names draw bright, descriptions dimmed.
@@ -444,8 +517,8 @@ The client's `infusedclasses:rush` intent: "I pressed the Rush key", sent while
 the `R` key (`key.infusedclasses.rush`) is consumed each client tick. The server
 validates class and cooldown; rejected presses leave the lane, the window and the
 bonus untouched.
-For a Legionary the same `R` bind arrives as the rotate intent, so binds survive
-the class.
+For a Legionary the same `R` bind arrives as the rotate intent and for a Gambler as
+the Roulette spin, so binds survive the class.
 _Avoid_: shout packet, key packet
 
 **Rend intent** (`RendPayload`):
@@ -453,7 +526,8 @@ The client's `infusedclasses:rend` intent: "I pressed the Rend key", sent while
 the `G` key (`key.infusedclasses.rend`) is consumed each client tick. The server
 validates class, stacks and cooldown; rejected presses leave the cooldown untouched,
 and the empower lands on the next melee hit inside the window.
-For a Legionary the same `G` bind arrives as the oath intent (Aequilibrium in any stance), so binds survive the class.
+For a Legionary the same `G` bind arrives as the oath intent (Aequilibrium in any stance) and for a
+Gambler as All In, so binds survive the class.
 _Avoid_: heal packet, key packet
 
 **Picker signal** (`OpenClassScreenPayload`):
@@ -492,4 +566,8 @@ the Legionary marker through `hasAbility`; `0010` pays the flip instead of the c
 one clean ultimate (Aequilibrium on the reused oath lane, morph deleted);
 `0011` folds the stance adapter back into the passive applier (one adapter was
 a hypothetical seam, reopening `0007`) and homes both flip buffs on Rotate with
-one Legionary marker.
+one Legionary marker; `0012` retires vanilla crits for every player
+(`canCriticalAttack` cancelled), replaces them with the universal 10% ×1.25
+full-swing crit for classless and classed alike, and makes chance a passed-in
+value: the entry draws the roll, `CritRoll` decides it, a class's `CritRule`
+gives it dice.

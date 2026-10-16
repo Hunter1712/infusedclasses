@@ -28,11 +28,32 @@ class ClassRegistryTest {
 	void onlyPlayableClassesAreRegistered() {
 		long locked = ClassRegistry.all().stream().filter(ClassDefinition::locked).count();
 
-		assertEquals(2, ClassRegistry.all().size());
+		assertEquals(3, ClassRegistry.all().size());
 		assertEquals(0, locked);
 		assertNull(ClassRegistry.byId(Identifier.fromNamespaceAndPath("infusedclasses", "ranger")));
 		assertNull(ClassRegistry.byId(Identifier.fromNamespaceAndPath("infusedclasses", "mage")));
 		assertNull(ClassRegistry.byId(Identifier.fromNamespaceAndPath("infusedclasses", "bard")));
+	}
+
+	@Test
+	void gamblerIsKnownAndCarriesItsDice() {
+		ClassDefinition gambler = ClassRegistry.byId(ClassRegistry.GAMBLER);
+
+		assertNotNull(gambler);
+		assertFalse(gambler.locked());
+		assertEquals("Gambler", gambler.displayName());
+		assertEquals("Double or nothing", gambler.tagline());
+		assertEquals(0xFFD4AF37, gambler.accentColor());
+		assertTrue(gambler.hasAbility(ClassRegistry.ROULETTE_ABILITY));
+		assertTrue(gambler.hasAbility(ClassRegistry.ALL_IN_ABILITY));
+		assertTrue(gambler.critRule().hasDice());
+	}
+
+	@Test
+	void wholeRosterCarriesACritRule() {
+		for (ClassDefinition def : ClassRegistry.all()) {
+			assertNotNull(def.critRule(), def.id() + " must carry a crit rule");
+		}
 	}
 
 	@Test
