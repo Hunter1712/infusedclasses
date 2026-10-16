@@ -23,8 +23,12 @@ public final class ClassCardRenderer {
 	private ClassCardRenderer() {
 	}
 
-	/** One wrapped row: text plus where the description starts (name draws bright, desc dimmed). */
-	static record TextRow(String text, int descStart) {
+	/** One wrapped row: its text, where the description starts, and the style it draws with. */
+	static record TextRow(String text, int descStart, ClassPresentation.LineStyle style) {
+	}
+
+	/** Wrapped body rows plus the scroll layout they imply: measured once per frame, drawn from the result. */
+	static record Measured(List<TextRow> rows, CardLayout.BodyLayout layout) {
 	}
 
 	/**
@@ -50,14 +54,30 @@ public final class ClassCardRenderer {
 		for (String word : full.split(" ")) {
 			String add = row.isEmpty() ? word : " " + word;
 			if (!row.isEmpty() && font.width(row.toString() + add) > wrapW) {
-				rows.add(new TextRow(row.toString(), descStartFor(rows.size(), row.length(), prefixLength)));
+				rows.add(new TextRow(row.toString(),
+						descStartFor(rows.size(), row.length(), prefixLength), line.style()));
 				row = new StringBuilder(word);
 			} else {
 				row.append(add);
 			}
 		}
-		rows.add(new TextRow(row.toString(), descStartFor(rows.size(), row.length(), prefixLength)));
+		rows.add(new TextRow(row.toString(),
+				descStartFor(rows.size(), row.length(), prefixLength), line.style()));
 		return rows;
+	}
+
+	/**
+	 * Wraps the whole body for one frame: every row with its style, plus the scroll
+	 * layout those rows imply. The caller clamps its scroll from the result before
+	 * drawing, so no frame draws past a range that frame already knows.
+	 */
+	static Measured measure(Font font, CardLayout.CardRect card, ClassPresentation.CardModel model) {
+		List<TextRow> rows = new ArrayList<>();
+		int wrapW = CardLayout.innerWidth(card);
+		for (ClassPresentation.CardLine line : model.text().lines()) {
+			rows.addAll(wrapRows(font, line, wrapW));
+		}
+		return new Measured(List.copyOf(rows), CardLayout.layoutFor(card, rows.size()));
 	}
 
 	/** Dimmed copy of a line color for description continuations: names scan, descs recede. */
@@ -87,45 +107,41 @@ public final class ClassCardRenderer {
 	}
 
 	/**
-	 * Name, tagline, divider and the card detail lines from one card model: the screen resolves
-	 * the model once, never the parts. Long lines wrap inside the card; rows past the
-	 * visible slice scroll under the wheel instead of clipping away, and the pinned
-	 * select control never moves. The first wrapped row of a line draws in its own
-	 * color, continuations draw dimmed. Returns the body layout for scroll clamping.
+	 * Name, tagline, divider and the measured body rows of one card: the screen resolves
+	 * the model once and measures once, never the parts. Long lines wrap inside the
+	 * card; rows past the visible slice scroll under the wheel instead of clipping
+	 * away, and the pinned select control never moves. The first wrapped row of a line
+	 * draws in its own color, continuations draw dimmed; where everything sits is
+	 * CardLayout's anchors.
 	 */
-	public static CardLayout.BodyLayout drawBody(GuiGraphics graphics, Font font, CardLayout.CardRect card,
-			ClassPresentation.CardModel model, int scrollPx) {
+	public static void drawBody(GuiGraphics graphics, Font font, CardLayout.CardRect card,
+			ClassPresentation.CardModel model, Measured measured, int scrollPx) {
 		ClassPresentation.CardStyle style = model.style();
-		List<ClassPresentation.CardLine> lines = model.text().lines();
 		int cx = card.x() + card.w() / 2;
-		int ty = card.y() + 10;
-		graphics.drawCenteredString(font, model.text().displayName(), cx, ty, style.nameColor());
-		ty += 11;
-		graphics.drawCenteredString(font, model.text().tagline(), cx, ty, TAGLINE_COLOR);
-		ty += 12;
-		graphics.fill(card.x() + CardLayout.PAD, ty, card.x() + card.w() - CardLayout.PAD, ty + 1, DIVIDER_COLOR);
+		graphics.drawCenteredString(font, model.text().displayName(), cx, CardLayout.nameY(card), style.nameColor());
+		graphics.drawCenteredString(font, model.text().tagline(), cx, CardLayout.taglineY(card), TAGLINE_COLOR);
+		graphics.fill(card.x() + CardLayout.PAD, CardLayout.dividerY(card),
+				card.x() + CardLayout.PAD + CardLayout.innerWidth(card),
+				CardLayout.dividerY(card) + CardLayout.DIVIDER_H, DIVIDER_COLOR);
 
 		int top = CardLayout.bodyTop(card);
 		int stop = CardLayout.stopY(card);
-		int rows = 0;
-		for (ClassPresentation.CardLine line : lines) {
-			net.minecraft.network.chat.Style rowStyle = line.style().bold()
-					? net.minecraft.network.chat.Style.EMPTY.withBold(true)
-					: net.minecraft.network.chat.Style.EMPTY;
-			for (TextRow row : wrapRows(font, line, card.w() - CardLayout.PAD * 2)) {
-				int y = top + rows * CardLayout.ROW_H - scrollPx;
-				if (y >= top && y + 9 <= stop) {
-					String head = row.text().substring(0, row.descStart());
-					String tail = row.text().substring(row.descStart());
-					int x = cx - (font.width(head) + font.width(tail)) / 2;
-					graphics.drawString(font, FormattedCharSequence.forward(head, rowStyle), x, y,
-							line.style().color());
-					graphics.drawString(font, FormattedCharSequence.forward(tail, rowStyle),
-							x + font.width(head), y, dimmed(line.style().color()));
-				}
-				rows++;
+		List<TextRow> rows = measured.rows();
+		for (int i = 0; i < rows.size(); i++) {
+			TextRow row = rows.get(i);
+			int y = top + i * CardLayout.ROW_H - scrollPx;
+			if (y >= top && y + font.lineHeight <= stop) {
+				net.minecraft.network.chat.Style rowStyle = row.style().bold()
+						? net.minecraft.network.chat.Style.EMPTY.withBold(true)
+						: net.minecraft.network.chat.Style.EMPTY;
+				String head = row.text().substring(0, row.descStart());
+				String tail = row.text().substring(row.descStart());
+				int x = cx - (font.width(head) + font.width(tail)) / 2;
+				graphics.drawString(font, FormattedCharSequence.forward(head, rowStyle), x, y,
+						row.style().color());
+				graphics.drawString(font, FormattedCharSequence.forward(tail, rowStyle),
+						x + font.width(head), y, dimmed(row.style().color()));
 			}
 		}
-		return CardLayout.layoutFor(card, rows);
 	}
 }

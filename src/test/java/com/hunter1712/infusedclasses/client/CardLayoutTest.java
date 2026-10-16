@@ -75,6 +75,16 @@ class CardLayoutTest {
 	}
 
 	@Test
+	void headerAnchorsStackNameTaglineDividerBody() {
+		CardRect card = CardLayout.focusedCard(854, 480);
+
+		assertEquals(card.y() + 10, CardLayout.nameY(card));
+		assertEquals(CardLayout.nameY(card) + 11, CardLayout.taglineY(card));
+		assertEquals(CardLayout.taglineY(card) + 12, CardLayout.dividerY(card));
+		assertEquals(CardLayout.dividerY(card) + CardLayout.DIVIDER_H + 6, CardLayout.bodyTop(card));
+	}
+
+	@Test
 	void dimmedKeepsAlphaAndDarkens() {
 		assertEquals(0xFF6BB5D8, ClassCardRenderer.dimmed(0xFF7ED6FF));
 		assertEquals(0xFFA0A0A0, ClassCardRenderer.dimmed(0xFFBDBDBD));

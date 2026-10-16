@@ -112,13 +112,15 @@ public class ClassSelectScreen extends Screen {
 
 		ClassDefinition def = classes.get(page);
 		boolean hovered = CardLayout.isHovering(card, mouseX, mouseY);
-		scrollPx = CardLayout.clampScroll(scrollPx, lastMaxScroll);
 		ClassPresentation.CardModel model = frameModel != null ? frameModel
 				: ClassPresentation.cardFor(def, hovered);
-		CardLayout.BodyLayout layout =
-				ClassCardRenderer.drawBody(graphics, font, card, model, scrollPx);
-		lastMaxScroll = layout.maxScroll();
-		CardLayout.ButtonRect bar = CardLayout.scrollBar(card, layout, scrollPx);
+		// Measure first: the scroll clamps against this frame's own content, so a page
+		// that shrank (or a reset) can never draw one frame past its end.
+		ClassCardRenderer.Measured measured = ClassCardRenderer.measure(font, card, model);
+		scrollPx = CardLayout.clampScroll(scrollPx, measured.layout().maxScroll());
+		lastMaxScroll = measured.layout().maxScroll();
+		ClassCardRenderer.drawBody(graphics, font, card, model, measured, scrollPx);
+		CardLayout.ButtonRect bar = CardLayout.scrollBar(card, measured.layout(), scrollPx);
 		if (bar != null) {
 			graphics.fill(bar.x(), bar.y(), bar.x() + bar.w(), bar.y() + bar.h(), 0xFF8A8A8A);
 		}

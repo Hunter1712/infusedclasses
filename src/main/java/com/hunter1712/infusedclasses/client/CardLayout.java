@@ -7,9 +7,10 @@ package com.hunter1712.infusedclasses.client;
  * wraparound math is pure and stays pinned without a running game.
  */
 public final class CardLayout {
-	/** Card chrome: inner padding, pinned select height, arrow and dot metrics. */
+	/** Card chrome: inner padding, pinned select height, divider height, arrow and dot metrics. */
 	public static final int PAD = 10;
 	public static final int BUTTON_H = 20;
+	public static final int DIVIDER_H = 1;
 	public static final int ARROW_W = 24;
 	public static final int ARROW_H = 24;
 	public static final int DOT_W = 20;
@@ -51,7 +52,7 @@ public final class CardLayout {
 		return new ButtonRect(
 				card.x() + PAD,
 				card.y() + card.h() - PAD - BUTTON_H,
-				card.w() - PAD * 2,
+				innerWidth(card),
 				BUTTON_H);
 	}
 
@@ -110,9 +111,29 @@ public final class CardLayout {
 				&& mouseY >= card.y() && mouseY < card.y() + card.h();
 	}
 
+	/** Name anchor: the first line of card text, below the accent strip. */
+	public static int nameY(CardRect card) {
+		return card.y() + 10;
+	}
+
+	/** Tagline anchor: directly under the name. */
+	public static int taglineY(CardRect card) {
+		return nameY(card) + 11;
+	}
+
+	/** Divider anchor: the header rule, {@link #DIVIDER_H} tall. */
+	public static int dividerY(CardRect card) {
+		return taglineY(card) + 12;
+	}
+
 	/** First text row of the body: name, tagline and divider sit above it. */
 	public static int bodyTop(CardRect card) {
-		return card.y() + 10 + 11 + 12 + 1 + 6;
+		return dividerY(card) + DIVIDER_H + 6;
+	}
+
+	/** Full inner width: the card minus its padding on both sides. */
+	public static int innerWidth(CardRect card) {
+		return card.w() - PAD * 2;
 	}
 
 	/** Last text row: the pinned select control sits below it, never scrolled. */
