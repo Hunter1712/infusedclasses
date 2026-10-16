@@ -17,7 +17,7 @@ Crits are a mod rule: vanilla jump crits are retired, and every full-charge land
 ## Install (manual, forever)
 
 1. Install Fabric Loader for 1.21.11 + Fabric API.
-2. Build or fetch the jar: `gradle build` produces `build/libs/infusedclasses-0.1.0.jar` (`gradle.properties:8`, gitignored via `.gitignore:2`). At listing time jars carry the game version (`infusedclasses-<mod>+1.21.11.jar`) so a future 26.x jar slots onto the same page.
+2. Build or fetch the jar: `gradle build` produces `build/libs/infusedclasses-0.2.0.jar` (`gradle.properties:8`, gitignored via `.gitignore:2`). At listing time jars carry the game version (`infusedclasses-<mod>+1.21.11.jar`) so a future 26.x jar slots onto the same page.
 3. Drop the same jar in `mods/` on **both client and server** (server-required; the supported setup installs both sides). For the live dev instance: `gradle deployClient` (`build.gradle:50-65`).
 4. Reset class data after updates if told to: `/class select <player>`.
 
