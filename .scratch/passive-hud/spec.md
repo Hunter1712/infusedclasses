@@ -1,4 +1,4 @@
-Status: superseded — effect-row HUD deleted; vanilla armor bar is the Bulwark display, no stacks signal.
+Status: superseded by `.scratch/status-hud` (the slot strip; see ADR-0014) — effect-row HUD deleted; vanilla armor bar is the Bulwark display, no stacks signal.
 
 ## Problem Statement
 
