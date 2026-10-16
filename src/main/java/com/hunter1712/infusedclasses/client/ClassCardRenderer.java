@@ -44,11 +44,9 @@ public final class ClassCardRenderer {
 	 * offset so tone follows meaning, not row number. Names always fit row one.
 	 */
 	static List<TextRow> wrapRows(Font font, ClassPresentation.CardLine line, int wrapW) {
-		// The join lives in CardLine.text: the split is where the description starts, never rebuilt.
+		// The join lives in CardLine.text; the boundary is derived there, never searched.
 		String full = line.text();
-		String desc = line.desc();
-		int at = desc == null || desc.isEmpty() ? full.length() : full.indexOf(desc);
-		int prefixLength = at < 0 ? full.length() : at;
+		int prefixLength = line.descStart();
 		List<TextRow> rows = new ArrayList<>();
 		StringBuilder row = new StringBuilder();
 		for (String word : full.split(" ")) {

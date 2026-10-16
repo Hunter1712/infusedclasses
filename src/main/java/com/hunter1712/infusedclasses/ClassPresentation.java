@@ -42,6 +42,15 @@ public final class ClassPresentation {
 		public String text() {
 			return desc == null || desc.isEmpty() ? name : name + " \u2014 " + desc;
 		}
+
+		/**
+		 * Where the description starts inside {@link #text()}: derived from the join, so
+		 * the tone boundary cannot drift from the text. A line without a description
+		 * has its boundary at the end, leaving the whole row the name.
+		 */
+		public int descStart() {
+			return desc == null || desc.isEmpty() ? text().length() : text().length() - desc.length();
+		}
 	}
 
 	/** Style per line kind: headers are bold, items are not. Continuation lines draw with their parent item's style. */

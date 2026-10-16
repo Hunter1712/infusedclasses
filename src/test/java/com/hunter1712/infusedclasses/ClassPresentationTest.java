@@ -49,6 +49,21 @@ class ClassPresentationTest {
 	}
 
 	@Test
+	void descStartIsDerivedFromTheJoin() {
+		ClassPresentation.CardLine withDesc =
+				new ClassPresentation.CardLine("Rush", "Engage.", ClassPresentation.LineKind.ABILITY);
+
+		assertEquals("Rush \u2014 ".length(), withDesc.descStart());
+		assertEquals("Engage.", withDesc.text().substring(withDesc.descStart()));
+
+		ClassPresentation.CardLine bare =
+				new ClassPresentation.CardLine("Passives", null, ClassPresentation.LineKind.PASSIVE_HEADER);
+
+		// No description: the boundary is the end, so the whole row reads as the name.
+		assertEquals(bare.text().length(), bare.descStart());
+	}
+
+	@Test
 	void legionaryCardLinesGroupFlipsAsPassives() {
 		ClassDefinition legionary = ClassRegistry.byId(ClassRegistry.LEGIONARY);
 
