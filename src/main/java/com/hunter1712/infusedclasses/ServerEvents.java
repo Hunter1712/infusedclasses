@@ -88,16 +88,11 @@ final class ServerEvents {
 		ServerPlayNetworking.registerGlobalReceiver(SelectClassPayload.TYPE, (payload, context) -> context.server()
 				.execute(() -> {
 					ServerPlayer player = context.player();
-					PlayerClasses classes = PlayerClassAccess.of(player);
-					ClassDefinition oldDef = classes.currentDefinition();
-					ClassDefinition def = classes.trySetClass(payload.classId());
+					ClassDefinition def = ClassSwitch.trySwitch(player, payload.classId());
 					if (def == null) {
-						AbilityApplier.announce(player, ChatLine.unknownOrLocked(), false);
 						return;
 					}
-					InfusedClasses.onClassChanged(player, oldDef, def);
 					context.responseSender().sendPacket(new ClassConfirmedPayload());
-					AbilityApplier.announce(player, ChatLine.classPicked(def.displayName()), false);
 				}));
 
 		ServerPlayNetworking.registerGlobalReceiver(RushPayload.TYPE, (payload, context) -> context.server()

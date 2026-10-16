@@ -39,10 +39,4 @@ public class InfusedClasses implements ModInitializer {
 	static PlayerRuntimes runtimes() {
 		return RUNTIMES;
 	}
-
-	/** Switch path shared by the picker receiver and the admin command. */
-	static void onClassChanged(ServerPlayer player, ClassDefinition oldDef, ClassDefinition newDef) {
-		PlayerRuntime runtime = runtime(player);
-		PassiveApplier.onClassChanged(player, runtime, oldDef, newDef);
-	}
 }

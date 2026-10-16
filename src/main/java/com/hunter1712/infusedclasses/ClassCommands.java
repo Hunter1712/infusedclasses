@@ -54,15 +54,6 @@ public final class ClassCommands {
 	}
 
 	private static int setClass(CommandSourceStack source, ServerPlayer player, Identifier id) {
-		PlayerClasses classes = PlayerClassAccess.of(player);
-		ClassDefinition oldDef = classes.currentDefinition();
-		ClassDefinition def = classes.trySetClass(id);
-		if (def != null) {
-			InfusedClasses.onClassChanged(player, oldDef, def);
-			AbilityApplier.announce(player, ChatLine.classPicked(def.displayName()), false);
-			return 1;
-		}
-		AbilityApplier.announce(player, ChatLine.unknownOrLocked(), false);
-		return 0;
+		return ClassSwitch.trySwitch(player, id) == null ? 0 : 1;
 	}
 }
