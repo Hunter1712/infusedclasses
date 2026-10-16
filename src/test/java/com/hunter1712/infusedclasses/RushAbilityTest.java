@@ -92,7 +92,7 @@ class RushAbilityTest {
 	@Test
 	void openerGatesOnItsOwnIdNotRends() {
 		ClassDefinition rendOnly = new ClassDefinition(
-				net.minecraft.resources.Identifier.fromNamespaceAndPath("infusedclasses", "test"), "Test", false,
+				net.minecraft.resources.Identifier.fromNamespaceAndPath("infusedclasses", "test"), "Test",
 				java.util.List.of(), java.util.List.of(), java.util.List.of(ClassRegistry.REND_ABILITY), 0, "", java.util.List.of(), java.util.List.of(),
 				CritRule.universal());
 

@@ -16,20 +16,16 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ClassRegistryTest {
 	@Test
-	void juggernautIsKnownAndUnlocked() {
+	void juggernautIsKnownAndPlayable() {
 		ClassDefinition juggernaut = ClassRegistry.byId(ClassRegistry.JUGGERNAUT);
 
 		assertNotNull(juggernaut);
-		assertFalse(juggernaut.locked());
 		assertEquals("Juggernaut", juggernaut.displayName());
 	}
 
 	@Test
 	void onlyPlayableClassesAreRegistered() {
-		long locked = ClassRegistry.all().stream().filter(ClassDefinition::locked).count();
-
 		assertEquals(3, ClassRegistry.all().size());
-		assertEquals(0, locked);
 		assertNull(ClassRegistry.byId(Identifier.fromNamespaceAndPath("infusedclasses", "ranger")));
 		assertNull(ClassRegistry.byId(Identifier.fromNamespaceAndPath("infusedclasses", "mage")));
 		assertNull(ClassRegistry.byId(Identifier.fromNamespaceAndPath("infusedclasses", "bard")));
@@ -40,7 +36,6 @@ class ClassRegistryTest {
 		ClassDefinition gambler = ClassRegistry.byId(ClassRegistry.GAMBLER);
 
 		assertNotNull(gambler);
-		assertFalse(gambler.locked());
 		assertEquals("Gambler", gambler.displayName());
 		assertEquals("Double or nothing", gambler.tagline());
 		assertEquals(0xFFD4AF37, gambler.accentColor());
@@ -101,14 +96,6 @@ class ClassRegistryTest {
 
 		assertNull(classes.writeId());
 		classes.readId("infusedclasses:juggernaut");
-		assertEquals(ClassRegistry.JUGGERNAUT, classes.classId());
-		assertEquals("infusedclasses:juggernaut", classes.writeId());
-
-		classes.readId("infusedclasses:berserker");
-		assertEquals(ClassRegistry.JUGGERNAUT, classes.classId());
-		assertEquals("infusedclasses:juggernaut", classes.writeId());
-
-		classes.readId("infusedclasses:warrior");
 		assertEquals(ClassRegistry.JUGGERNAUT, classes.classId());
 		assertEquals("infusedclasses:juggernaut", classes.writeId());
 

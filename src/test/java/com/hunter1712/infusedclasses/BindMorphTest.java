@@ -34,15 +34,15 @@ class BindMorphTest {
 	@Test
 	void morphKeysOnAbilityIdsNotOnClassNames() {
 		ClassDefinition rotateOnly = new ClassDefinition(
-				net.minecraft.resources.Identifier.fromNamespaceAndPath("infusedclasses", "test"), "Test", false,
+				net.minecraft.resources.Identifier.fromNamespaceAndPath("infusedclasses", "test"), "Test",
 				java.util.List.of(), java.util.List.of(), java.util.List.of(ClassRegistry.ROTATE_ABILITY), 0, "", java.util.List.of(), java.util.List.of(),
 				CritRule.universal());
 		ClassDefinition otherWithoutRotate = new ClassDefinition(
-				net.minecraft.resources.Identifier.fromNamespaceAndPath("infusedclasses", "test"), "Test", false,
+				net.minecraft.resources.Identifier.fromNamespaceAndPath("infusedclasses", "test"), "Test",
 				java.util.List.of(), java.util.List.of(), java.util.List.of(ClassRegistry.AEQUILIBRIUM_ABILITY), 0, "", java.util.List.of(), java.util.List.of(),
 				CritRule.universal());
 		ClassDefinition allInOnly = new ClassDefinition(
-				net.minecraft.resources.Identifier.fromNamespaceAndPath("infusedclasses", "test"), "Test", false,
+				net.minecraft.resources.Identifier.fromNamespaceAndPath("infusedclasses", "test"), "Test",
 				java.util.List.of(), java.util.List.of(), java.util.List.of(ClassRegistry.ALL_IN_ABILITY), 0, "", java.util.List.of(), java.util.List.of(),
 				CritRule.universal());
 

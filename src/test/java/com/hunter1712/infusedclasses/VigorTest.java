@@ -96,11 +96,9 @@ class VigorTest {
 		List<HpScaledPassive> pair = juggernaut().hpPassives();
 
 		assertEquals(2, pair.size());
-		assertEquals("Vigor Damage", pair.get(0).name());
 		assertEquals("Vigor", pair.get(0).group());
 		assertEquals(0.3, pair.get(0).perStep());
 		assertEquals(-1.0, pair.get(0).baseBonus());
-		assertEquals("Vigor Speed", pair.get(1).name());
 		assertEquals(0.075, pair.get(1).perStep());
 		assertEquals(-0.25, pair.get(1).baseBonus());
 
@@ -125,7 +123,6 @@ class VigorTest {
 		List<String> texts = lines.stream().map(ClassPresentation.CardLine::text).toList();
 
 		assertTrue(texts.stream().anyMatch(t -> t.startsWith("Momentum \u2014 ")));
-		assertTrue(texts.stream().noneMatch(t -> t.equals("Vigor Damage") || t.equals("Vigor Speed")));
 		assertTrue(texts.stream().anyMatch(t -> t.startsWith("Vigor \u2014 ")
 				&& t.contains(damage().fullDesc()) && t.contains(speed().fullDesc())));
 	}

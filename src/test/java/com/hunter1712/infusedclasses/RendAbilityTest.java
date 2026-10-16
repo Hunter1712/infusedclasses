@@ -42,7 +42,6 @@ class RendAbilityTest {
 	void noExecuteBonusAtAnyTargetHp() {
 		// The empower is the empower: target health never enters the decision.
 		assertEquals(5.0F, RendAbility.empowerFor(10));
-		assertEquals(RendAbility.BASE_HP + 10 * RendAbility.HP_PER_STACK, RendAbility.empowerFor(10));
 	}
 
 	@Test
@@ -51,13 +50,13 @@ class RendAbilityTest {
 				Identifier.fromNamespaceAndPath("infusedclasses", "swift_armor"), 0.5, 2);
 		ConditionalPassive momentum = ClassRegistry.byId(ClassRegistry.JUGGERNAUT).passives().get(0);
 		ClassDefinition shuffled = new ClassDefinition(
-				Identifier.fromNamespaceAndPath("infusedclasses", "test"), "Test", false,
+				Identifier.fromNamespaceAndPath("infusedclasses", "test"), "Test",
 				List.of(swift, momentum), List.of(), List.of(ClassRegistry.REND_ABILITY), 0, "", List.of(), List.of(),
 				CritRule.universal());
 
 		assertEquals(momentum, shuffled.passiveForTrigger(ConditionalPassive.ON_HIT_DEALT));
 		assertNull(new ClassDefinition(
-				Identifier.fromNamespaceAndPath("infusedclasses", "empty"), "Empty", false,
+				Identifier.fromNamespaceAndPath("infusedclasses", "empty"), "Empty",
 				List.of(), List.of(), List.of(ClassRegistry.REND_ABILITY), 0, "", List.of(), List.of(),
 				CritRule.universal())
 				.passiveForTrigger(ConditionalPassive.ON_HIT_DEALT));
@@ -69,7 +68,6 @@ class RendAbilityTest {
 		RendAbility.Result result = RendAbility.fire(juggernautDef(), runtime, 0);
 
 		assertEquals(RendAbility.Kind.FIRED, result.kind());
-		assertEquals(2.5F, result.empowerHp());
 		assertTrue(result.consume());
 		assertEquals(Cooldowns.REND_MS, runtime.rendRemaining(0));
 		assertEquals(120, RendAbility.WINDOW_TICKS);
@@ -105,7 +103,6 @@ class RendAbilityTest {
 
 		assertEquals(RendAbility.Kind.NO_MOMENTUM, result.kind());
 		assertEquals("No Momentum", result.announcement().text());
-		assertEquals(0, result.empowerHp());
 		assertFalse(result.consume());
 		assertEquals(0, runtime.rendRemaining(0));
 		assertEquals(-1, runtime.peekRendEmpowerStacks(0));

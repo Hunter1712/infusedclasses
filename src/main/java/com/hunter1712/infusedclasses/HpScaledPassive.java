@@ -19,7 +19,6 @@ import net.minecraft.world.entity.ai.attributes.Attribute;
  * can punish the near-dead as well as reward the topped-off
  */
 public record HpScaledPassive(
-		String name,
 		ResourceKey<Attribute> attribute,
 		Identifier modifierId,
 		double perStep,

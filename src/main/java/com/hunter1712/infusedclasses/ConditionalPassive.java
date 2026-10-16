@@ -52,7 +52,6 @@ public record ConditionalPassive(
 		};
 	}
 
-	/** Attribute name as the copy spells it: "minecraft:armor_toughness" reads as "armor toughness". */
 	private String word() {
 		return wordFor(attribute);
 	}

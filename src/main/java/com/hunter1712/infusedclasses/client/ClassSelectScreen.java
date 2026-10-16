@@ -80,8 +80,7 @@ public class ClassSelectScreen extends Screen {
 		}
 
 		CardLayout.ButtonRect select = CardLayout.selectRect(card);
-		ClassPresentation.ButtonData button = ClassPresentation.cardFor(classes.get(page), false).text().button();
-		addRenderableWidget(Button.builder(Component.literal(button.label()),
+		addRenderableWidget(Button.builder(Component.literal("Select"),
 				b -> InfusedClassesClient.pickClass(classes.get(page).id()))
 				.bounds(select.x(), select.y(), select.w(), select.h())
 				.build());

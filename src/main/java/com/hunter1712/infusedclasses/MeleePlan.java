@@ -18,11 +18,6 @@ public final class MeleePlan {
 		return BonusCurve.isFullSwing(charge);
 	}
 
-	/** Outgoing melee multiplier for an attacker: the stance deal mult times the pending Impetus flip buff, 1.0 for anyone else. */
-	public static double dealFor(ClassDefinition atkDef, PlayerRuntime runtime, long now) {
-		return dealWithImpetus(atkDef, runtime, impetusPendingFor(atkDef, runtime, now), now);
-	}
-
 	/** Outgoing mult sharing one Impetus peek: the plan peeks once, the spend decision and the mult read the same answer. */
 	private static double dealWithImpetus(ClassDefinition atkDef, PlayerRuntime runtime, boolean impetus, long now) {
 		if (atkDef == null || runtime == null || !atkDef.hasAbility(ClassRegistry.ROTATE_ABILITY)) {

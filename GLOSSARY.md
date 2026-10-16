@@ -38,8 +38,10 @@ attribute removal rides with the player.
 _Avoid_: passive system, stat updater
 
 **Applied outcome** (`RendAbility.Result`):
-The description an ability decision returns of what should be applied: how much
-to deal, whether to consume stacks, plus the announcement that goes with it.
+The description an ability decision returns of what should be applied: whether
+to consume stacks, plus the announcement that goes with it. The empower amount
+is not part of it: the fire stamps the stack count on the runtime, and hit time
+recomputes the amount from it.
 `trigger` gates read-only; `fire` gates and arms the transient runtime's cooldown together, so no
 caller can fire without arming, and rejected presses leave the cooldown untouched.
 _Avoid_: ability result (that is the whole decision, gating included), buff
@@ -87,7 +89,7 @@ _Avoid_: description, lore text
 ### Classes, passives and stacks
 
 **Class** (`ClassDefinition`):
-A playable archetype, registered once with its id, display name, locked flag, passives, active
+A playable archetype, registered once with its id, display name, passives, active
 ability ids, accent colour, tagline and the actives list (one name plus picker description per
 fired active) plus the flip-buff list (one name plus description per trigger-fired
 active, shown under `Passives`). A class is data: it carries no player and no state of its own. The first passive on a
@@ -105,8 +107,9 @@ Vigor below is the reward for staying topped, and Momentum is the armor for stay
 _Avoid_: character class definition, build
 
 **Locked class**:
-No locked classes exist: the picker only ever shows playable classes, and the
-registry rejects nothing by lock. Deleted with the Ranger/Mage placeholders.
+No locked classes exist: the definition carries no locked flag, the picker only
+ever shows playable classes, and nothing rejects by lock. The word survives only
+in the rejection line (`Unknown or locked class`).
 _Avoid_: unavailable class, future class, hidden class
 
 **Active** (`ClassDefinition.ActiveAbility`):
@@ -404,7 +407,7 @@ _Avoid_: selection (ambiguous with the picker's selection), equipped class
 The module that owns the class choice and nothing else: the id, validation, and the round-trip that
 saves it to player data under `InfusedClass`. It reads no clock and holds no transient state, so what
 it does is assertable without a game: `writeId`/`readId` for the save string, `trySetClass` for
-validated picks (unknown, missing and locked ids yield null), `currentDefinition` for the pure
+validated picks (unknown and missing ids yield null), `currentDefinition` for the pure
 current class, `copyFrom` for the respawn copy, which copies the choice and nothing else.
 _Avoid_: player classes, player state (both still suggest transient state; that is the transient
 runtime's job)
@@ -473,14 +476,14 @@ _Avoid_: header
 The colour of a card's top strip: the class's own accent.
 _Avoid_: highlight
 
-**Picker button** (`ClassPresentation.ButtonData`, `cardFor`):
-A card's button label and active state: always `Select`/active, since every
-visible page is playable. Its rect comes from the card layout's button math, never the screen's.
+**Picker button** (`ClassSelectScreen`):
+The `Select` control every focused card carries: always that label and always
+active, since every visible page is playable. Its rect comes from the card layout's button math, never the screen's.
 _Avoid_: select button
 
 **Card text** (`ClassPresentation.CardText`, `cardFor`):
-The card content: display name, tagline, detail lines (with kinds and styles), accent colour
-and button label/state. Buttons resolve it once per definition at init; frame and body resolve the card model once per page per frame.
+The card content: display name, tagline, detail lines (with kinds and styles) and accent colour.
+Frame and body resolve the card model once per page per frame.
 
 **Card style** (`ClassPresentation.CardStyle`, `cardFor`):
 The hover-dependent visual layer: border colour, hover wash and name colour. Derived per frame from `isHovering`.

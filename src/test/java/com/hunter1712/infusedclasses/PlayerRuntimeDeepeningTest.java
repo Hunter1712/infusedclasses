@@ -18,7 +18,7 @@ class PlayerRuntimeDeepeningTest {
 	}
 
 	private static ClassDefinition withPassives(ConditionalPassive... passives) {
-		return new ClassDefinition(Identifier.fromNamespaceAndPath("infusedclasses", "test"), "Test", false,
+		return new ClassDefinition(Identifier.fromNamespaceAndPath("infusedclasses", "test"), "Test",
 				List.of(passives), List.of(), List.of(), 0, "", List.of(), List.of(), CritRule.universal());
 	}
 
@@ -71,7 +71,6 @@ class PlayerRuntimeDeepeningTest {
 		runtime.clear(momentum());
 
 		assertEquals(0, runtime.stacks(momentum()));
-		assertNull(runtime.lastTrigger(momentum()));
 		assertEquals(1, runtime.stacks(swift));
 	}
 

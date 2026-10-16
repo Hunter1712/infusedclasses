@@ -22,7 +22,6 @@ class LegionaryTest {
 	void registryCarriesLegionaryWithTwoActivesAndTwoFlipBuffs() {
 		ClassDefinition def = legionary();
 
-		assertFalse(def.locked());
 		assertEquals("Legionary", def.displayName());
 		assertEquals(0xFFB87333, def.accentColor());
 		assertEquals(List.of(ClassRegistry.ROTATE_ABILITY, ClassRegistry.AEQUILIBRIUM_ABILITY), def.activeAbilities());
@@ -151,9 +150,9 @@ class LegionaryTest {
 		gladius.flipStance(0, RotateAbility.Stance.GLADIUS);
 		assertEquals(AequilibriumAbility.Kind.FIRED, AequilibriumAbility.fire(legionary(), gladius, 0).kind());
 
-		AequilibriumAbility.Result locked = AequilibriumAbility.fire(legionary(), scutum, 1_000);
-		assertEquals(AequilibriumAbility.Kind.ON_COOLDOWN, locked.kind());
-		assertEquals(Cooldowns.OATH_MS - 1_000, locked.remainingMs());
+		AequilibriumAbility.Result onCooldown = AequilibriumAbility.fire(legionary(), scutum, 1_000);
+		assertEquals(AequilibriumAbility.Kind.ON_COOLDOWN, onCooldown.kind());
+		assertEquals(Cooldowns.OATH_MS - 1_000, onCooldown.remainingMs());
 	}
 
 	@Test

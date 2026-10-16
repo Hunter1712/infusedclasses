@@ -4,9 +4,9 @@ Gamemaster-only `/class` wiring. All picks validate in the class choice module; 
 
 ## `/class set <player> <class>`
 
-Sets the player's class choice. Suggests registered playable ids only (no locked or unknown ids offered).
+Sets the player's class choice. Suggests registered playable ids only (no unknown ids offered).
 
-- One word, validated: unknown, missing or locked ids yield `Unknown or locked class` and leave the previous choice untouched.
+- One word, validated: unknown or missing ids yield `Unknown or locked class` and leave the previous choice untouched.
 - Accepted: writes the choice, clears old-class earnings, resets cooldowns.
 
 ## `/class select <player>`

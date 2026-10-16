@@ -28,9 +28,6 @@ public final class PlayerClasses {
 	}
 
 	public void readId(String id) {
-		if ("infusedclasses:warrior".equals(id) || "infusedclasses:berserker".equals(id)) {
-			id = "infusedclasses:juggernaut";
-		}
 		Identifier parsed = id == null ? null : Identifier.tryParse(id);
 		ClassDefinition def = parsed == null ? null : ClassRegistry.byId(parsed);
 		classId = def == null ? null : def.id();
@@ -41,10 +38,10 @@ public final class PlayerClasses {
 		return classId == null ? null : ClassRegistry.byId(classId);
 	}
 
-	/** Pure validation: unknown, missing, and locked ids yield null. No live player needed. */
+	/** Pure validation: unknown and missing ids yield null. No live player needed. */
 	public ClassDefinition trySetClass(Identifier id) {
 		ClassDefinition def = id == null ? null : ClassRegistry.byId(id);
-		if (def == null || def.locked()) {
+		if (def == null) {
 			return null;
 		}
 		classId = def.id();

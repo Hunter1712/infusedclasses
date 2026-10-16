@@ -15,7 +15,6 @@ class CardDeepeningTest {
 		assertEquals(ClassPresentation.cardLinesFor(juggernaut).size(), plain.text().lines().size());
 		assertEquals(new ClassPresentation.CardStyle(0xFF3A3A3A, null, 0xFFFFFFFF), plain.style());
 		assertEquals(juggernaut.accentColor(), plain.text().accent());
-		assertEquals(new ClassPresentation.ButtonData("Select", true), plain.text().button());
 		assertEquals(juggernaut.displayName(), plain.text().displayName());
 		assertEquals(juggernaut.tagline(), plain.text().tagline());
 	}

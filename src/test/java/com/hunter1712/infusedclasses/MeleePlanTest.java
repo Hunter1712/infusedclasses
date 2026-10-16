@@ -29,6 +29,11 @@ class MeleePlanTest {
 		return runtime;
 	}
 
+	/** The plan's deal mult at full charge with a normal roll: the read production actually uses. */
+	private static double dealOf(ClassDefinition def, PlayerRuntime runtime, long now) {
+		return MeleePlan.planHit(def, runtime, null, null, 1.0F, now, 0.5F).deal();
+	}
+
 	@Test
 	void fullSwingsBumpSpamDoesNot() {
 		assertTrue(MeleePlan.shouldBump(1.0F));
@@ -41,17 +46,17 @@ class MeleePlanTest {
 		PlayerRuntime scutum = inStance(RotateAbility.Stance.SCUTUM);
 		PlayerRuntime gladius = inStance(RotateAbility.Stance.GLADIUS);
 
-		assertEquals(0.9, MeleePlan.dealFor(legionary(), scutum, 0));
-		assertEquals(1.0, MeleePlan.dealFor(legionary(), gladius, 10_000));
-		assertEquals(1.0, MeleePlan.dealFor(juggernaut(), scutum, 0));
-		assertEquals(1.0, MeleePlan.dealFor(null, scutum, 0));
+		assertEquals(0.9, dealOf(legionary(), scutum, 0));
+		assertEquals(1.0, dealOf(legionary(), gladius, 10_000));
+		assertEquals(1.0, dealOf(juggernaut(), scutum, 0));
+		assertEquals(1.0, dealOf(null, scutum, 0));
 	}
 
 	@Test
 	void impetusFlipMultipliesDealAtAnyChargeAndSpendsOnce() {
 		PlayerRuntime gladius = inStance(RotateAbility.Stance.GLADIUS);
 
-		assertEquals(1.10, MeleePlan.dealFor(legionary(), gladius, 0), 1e-9);
+		assertEquals(1.10, dealOf(legionary(), gladius, 0), 1e-9);
 
 		MeleePlan.HitPlan plan = MeleePlan.planHit(legionary(), gladius, null, null, 0.5F, 0, 0.5F);
 
@@ -60,7 +65,7 @@ class MeleePlanTest {
 		assertFalse(plan.bump());
 		assertEquals(0.0F, PassiveApplier.settleHit(gladius, legionary(), plan, 0));
 		assertFalse(gladius.hasImpetusPending(0));
-		assertEquals(1.0, MeleePlan.dealFor(legionary(), gladius, 0), 1e-9);
+		assertEquals(1.0, dealOf(legionary(), gladius, 0), 1e-9);
 	}
 
 	@Test
@@ -68,9 +73,9 @@ class MeleePlanTest {
 		PlayerRuntime gladius = inStance(RotateAbility.Stance.GLADIUS);
 
 		assertEquals(1.10,
-				MeleePlan.dealFor(legionary(), gladius, RotateAbility.SWITCH_DEAL_MS - 1), 1e-9);
+				dealOf(legionary(), gladius, RotateAbility.SWITCH_DEAL_MS - 1), 1e-9);
 		assertEquals(1.0,
-				MeleePlan.dealFor(legionary(), gladius, RotateAbility.SWITCH_DEAL_MS), 1e-9);
+				dealOf(legionary(), gladius, RotateAbility.SWITCH_DEAL_MS), 1e-9);
 	}
 
 	@Test
@@ -97,9 +102,9 @@ class MeleePlanTest {
 		AequilibriumAbility.fire(legionary(), scutum, 0);
 
 		// The ultimate adds attributes, never mults: the stance tradeoff stays underneath.
-		assertEquals(0.9, MeleePlan.dealFor(legionary(), scutum, 0), 1e-9);
+		assertEquals(0.9, dealOf(legionary(), scutum, 0), 1e-9);
 		assertEquals(1.0, MeleePlan.takeFor(legionary(), () -> scutum, 0), 1e-9);
-		assertEquals(1.0, MeleePlan.dealFor(juggernaut(), scutum, 0));
+		assertEquals(1.0, dealOf(juggernaut(), scutum, 0));
 	}
 
 	@Test

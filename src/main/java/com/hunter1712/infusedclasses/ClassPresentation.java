@@ -118,19 +118,11 @@ public final class ClassPresentation {
 		return def.accentColor();
 	}
 
-	/** Button label and active state: every visible page is playable. */
-	private static ButtonData buttonFor() {
-		return new ButtonData("Select", true);
-	}
-
-	public record ButtonData(String label, boolean active) {
-	}
-
 	/**
-	 * Hover-independent card text: lines, accent, button. An internal seam of
+	 * Hover-independent card text: lines, accent. An internal seam of
 	 * {@link #cardFor}; callers and tests cross the whole card instead.
 	 */
-	public record CardText(String displayName, String tagline, List<CardLine> lines, int accent, ButtonData button) {
+	public record CardText(String displayName, String tagline, List<CardLine> lines, int accent) {
 	}
 
 	/** Hover-dependent style only: border, wash, name colour. */
@@ -150,8 +142,7 @@ public final class ClassPresentation {
 				def.displayName(),
 				def.tagline(),
 				List.copyOf(cardLinesFor(def)),
-				accentFor(def),
-				buttonFor());
+				accentFor(def));
 	}
 
 	private static CardStyle cardStyleFor(boolean hovered) {

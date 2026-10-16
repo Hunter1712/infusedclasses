@@ -5,8 +5,8 @@ import net.minecraft.resources.Identifier;
 
 /**
  * Rend decisions: the Juggernaut's Momentum spender on {@code G}. Pure gate-and-arm shape:
- * empowers the next melee hit landed inside the window for {@code BASE_HP + stacks *
- * HP_PER_STACK} bonus damage, and consumes every Momentum stack up front, on its own 60s
+ * empowers the next melee hit landed inside the window for {@code stacks * HP_PER_STACK}
+ * bonus damage, and consumes every Momentum stack up front, on its own 60s
  * lane. Zero stacks fizzles with a {@code No Momentum} line and arms nothing; an empowered
  * window left unswung simply expires, stacks already spent. The consume plan rides in the
  * result ({@link Result#consume()}): the entry asks the passive applier to consume the
@@ -14,8 +14,6 @@ import net.minecraft.resources.Identifier;
  */
 public final class RendAbility {
 	public static final String NAME = "Rend";
-	/** Base empower damage in HP: no base, the stacks are the empower. */
-	public static final float BASE_HP = 0.0F;
 	/** Empower damage per Momentum stack in HP: half a heart each, 10 HP at full stacks. */
 	public static final float HP_PER_STACK = 0.5F;
 	/** Empower window in ticks: 6 seconds to land the hit, tracked as a press timestamp on the runtime. */
@@ -31,27 +29,26 @@ public final class RendAbility {
 	}
 
 	/**
-	 * What firing should do. Empower damage is 0 when nothing is granted; consume is true only
-	 * on fire, telling the adapter to drop every Momentum stack; announcement is null only for
-	 * wrong-class presses, which stay silent.
+	 * What firing should do. Consume is true only on fire, telling the adapter to drop
+	 * every Momentum stack; announcement is null only for wrong-class presses, which stay silent.
 	 */
-	public record Result(Kind kind, long remainingMs, float empowerHp, boolean consume, ChatLine announcement) {
-		public static Result fired(float empowerHp) {
-			return new Result(Kind.FIRED, 0, empowerHp, true,
+	public record Result(Kind kind, long remainingMs, boolean consume, ChatLine announcement) {
+		public static Result fired() {
+			return new Result(Kind.FIRED, 0, true,
 					new ChatLine(NAME + "!", ChatFormatting.RED));
 		}
 
 		public static Result wrongClass() {
-			return new Result(Kind.WRONG_CLASS, 0, 0, false, null);
+			return new Result(Kind.WRONG_CLASS, 0, false, null);
 		}
 
 		public static Result onCooldown(long remainingMs) {
 			// Unstyled on purpose: this line has never carried a colour of its own.
-			return new Result(Kind.ON_COOLDOWN, remainingMs, 0, false, ChatLine.cooldown(NAME, remainingMs));
+			return new Result(Kind.ON_COOLDOWN, remainingMs, false, ChatLine.cooldown(NAME, remainingMs));
 		}
 
 		public static Result noMomentum() {
-			return new Result(Kind.NO_MOMENTUM, 0, 0, false,
+			return new Result(Kind.NO_MOMENTUM, 0, false,
 					new ChatLine("No Momentum", null));
 		}
 	}
@@ -66,12 +63,12 @@ public final class RendAbility {
 				+ ", spends stacks (G, " + (Cooldowns.REND_MS / 1000) + "s).";
 	}
 
-	/** Empower damage for a stack count: base plus stacks. Nothing at zero or below. */
+	/** Empower damage for a stack count: half a heart per stack. Nothing at zero or below. */
 	public static float empowerFor(int stacks) {
 		if (stacks <= 0) {
 			return 0;
 		}
-		return BASE_HP + stacks * HP_PER_STACK;
+		return stacks * HP_PER_STACK;
 	}
 
 	/** Decides firing for Juggernauts off cooldown holding stacks. Zero stacks fizzles before the cooldown is even read. Pure and read-only: only {@link #fire} arms the cooldown. */
@@ -85,7 +82,7 @@ public final class RendAbility {
 		if (rendRemaining > 0) {
 			return Result.onCooldown(rendRemaining);
 		}
-		return Result.fired(empowerFor(stacks));
+		return Result.fired();
 	}
 
 	/**

@@ -317,11 +317,6 @@ public final class PlayerRuntime {
 		return passiveStacks.stacks(passive);
 	}
 
-	/** Last-trigger millis for a passive, null when never triggered. Decay counts from it. */
-	public Long lastTrigger(ConditionalPassive passive) {
-		return passiveStacks.lastTrigger(passive);
-	}
-
 	/** Bumps every passive on the given class whose trigger matches.
 	 *  Unknown triggers, a missing class and trigger-less classes are inert.
 	 *  Only a full swing ({@code charge == 1.0}) earns stacks; spam earns zero.

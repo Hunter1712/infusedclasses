@@ -23,7 +23,6 @@ class ClassPresentationTest {
 	@Test
 	void everyRegisteredClassIsPlayableWithActives() {
 		for (ClassDefinition def : ClassRegistry.all()) {
-			assertFalse(def.locked(), def.id() + " must be playable");
 			assertFalse(def.activeAbilities().isEmpty(), def.id() + " must carry an ability");
 			assertFalse(def.actives().isEmpty(), def.id() + " must carry an active");
 		}
@@ -169,18 +168,10 @@ class ClassPresentationTest {
 	}
 
 	@Test
-	void buttonIsAlwaysActiveSelect() {
-		for (ClassDefinition def : ClassRegistry.all()) {
-			assertEquals(new ClassPresentation.ButtonData("Select", true),
-					ClassPresentation.cardFor(def, false).text().button());
-		}
-	}
-
-	@Test
 	void classWithNoPassivesShowsOnlyActive() {
 		Identifier customId = net.minecraft.resources.Identifier.fromNamespaceAndPath("infusedclasses", "custom");
 		ClassDefinition def = new ClassDefinition(
-				customId, "Custom", false,
+				customId, "Custom",
 				List.of(),
 				List.of(),
 				List.of(ClassRegistry.REND_ABILITY),
