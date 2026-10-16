@@ -43,7 +43,7 @@ Homepage/sources: https://github.com/Hunter1712/infusedclasses
 
 > Infused Classes — ALPHA. Fabric 1.21.11 + Java 21 + Fabric API required, server + client install. Manual installs only. Expect wipes and class resets between 0.x updates with no migration. Report crashes with latest.log to GitHub Issues.
 
-Icon art deferred — no `icon.png` in `src/main/resources/assets/infusedclasses/` yet; no `icon` field wired until the file lands. Listing stays unlisted until beta — prepped docs below, no upload yet.
+Icon: `src/main/resources/assets/infusedclasses/icon.png` (128x128, wired in `fabric.mod.json`). Listing stays unlisted until beta — prepped docs below, no upload yet.
 
 ## Player guide (prepped for listing, source of truth)
 

@@ -4,6 +4,7 @@
 	"version": "${version}",
 	"name": "Infused Classes",
 	"description": "Character classes for Minecraft. Juggernaut: Rush engage with cleanse, Momentum armor on hits, Rend to spend it. Legionary: Rotate stances, Impetus/Testudo flips, Aequilibrium oath. Gambler: Crooked Dice crits, Roulette wheel, All In.",
+	"icon": "assets/infusedclasses/icon.png",
 	"authors": ["hunter1712"],
 	"contact": {
 		"homepage": "https://github.com/Hunter1712/infusedclasses",
