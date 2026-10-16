@@ -17,8 +17,8 @@ import org.lwjgl.glfw.GLFW;
 
 /** Client: opens picker on server signal, sends class pick and ability keys as intents. */
 public class InfusedClassesClient implements ClientModInitializer {
-	private static KeyMapping rushKey;
-	private static KeyMapping rendKey;
+	private static KeyMapping signatureKey;
+	private static KeyMapping ultimateKey;
 
 	@Override
 	public void onInitializeClient() {
@@ -36,19 +36,19 @@ public class InfusedClassesClient implements ClientModInitializer {
 							}
 						}));
 
-		rushKey = KeyBindingHelper.registerKeyBinding(new KeyMapping(
-				"key.infusedclasses.rush", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_R, KeyMapping.Category.GAMEPLAY));
-		rendKey = KeyBindingHelper.registerKeyBinding(new KeyMapping(
-				"key.infusedclasses.rend", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_G, KeyMapping.Category.GAMEPLAY));
+		signatureKey = KeyBindingHelper.registerKeyBinding(new KeyMapping(
+				"key.infusedclasses.signature", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_R, KeyMapping.Category.GAMEPLAY));
+		ultimateKey = KeyBindingHelper.registerKeyBinding(new KeyMapping(
+				"key.infusedclasses.ultimate", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_V, KeyMapping.Category.GAMEPLAY));
 
 		ClientTickEvents.END_CLIENT_TICK.register(client -> {
 			if (client.player == null) {
 				return;
 			}
-			while (rushKey.consumeClick()) {
+			while (signatureKey.consumeClick()) {
 				ClientPlayNetworking.send(new RushPayload());
 			}
-			while (rendKey.consumeClick()) {
+			while (ultimateKey.consumeClick()) {
 				ClientPlayNetworking.send(new RendPayload());
 			}
 		});

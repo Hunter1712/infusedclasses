@@ -1,22 +1,23 @@
 package com.hunter1712.infusedclasses;
 
 /**
- * Bind morph decisions: what a reused bind means for a class. Every class reuses the
- * Juggernaut binds so binds survive the class: {@code R} arrives as the rotate intent
- * for Legionaries, the roulette intent for Gamblers, Rush for everyone else; {@code G}
- * arrives as the oath ultimate for Legionaries, All In for Gamblers, Rend for everyone
- * else. The intent receivers wire, this decides; decisions and applies stay pure/adapter.
+ * Bind morph decisions: what a reused slot bind means for a class. Every class reuses
+ * the two slot binds so binds survive the class: the signature slot arrives as the
+ * rotate intent for Legionaries, the roulette intent for Gamblers, Rush for everyone
+ * else; the ultimate slot arrives as the oath ultimate for Legionaries, All In for
+ * Gamblers, Rend for everyone else. The intent receivers wire, this decides; decisions
+ * and applies stay pure/adapter.
  */
 public final class BindMorph {
-	/** What {@code R} means once the class is known. */
-	public enum RushTarget {
+	/** What the signature slot means once the class is known. */
+	public enum SignatureTarget {
 		RUSH,
 		ROTATE,
 		ROULETTE
 	}
 
-	/** What {@code G} means once the class is known. One {@code G}, one ultimate per class. */
-	public enum OathTarget {
+	/** What the ultimate slot means once the class is known. One ultimate per class. */
+	public enum UltimateTarget {
 		REND,
 		AEQUILIBRIUM,
 		ALL_IN
@@ -25,31 +26,31 @@ public final class BindMorph {
 	private BindMorph() {
 	}
 
-	/** What {@code R} means: the wheel for Gamblers, the rotate intent for Legionaries, Rush for everyone else. */
-	public static RushTarget rushFor(ClassDefinition def) {
+	/** What the signature slot means: the wheel for Gamblers, the rotate intent for Legionaries, Rush for everyone else. */
+	public static SignatureTarget signatureFor(ClassDefinition def) {
 		if (def == null) {
-			return RushTarget.RUSH;
+			return SignatureTarget.RUSH;
 		}
 		if (def.hasAbility(ClassRegistry.ROULETTE_ABILITY)) {
-			return RushTarget.ROULETTE;
+			return SignatureTarget.ROULETTE;
 		}
 		if (def.hasAbility(ClassRegistry.ROTATE_ABILITY)) {
-			return RushTarget.ROTATE;
+			return SignatureTarget.ROTATE;
 		}
-		return RushTarget.RUSH;
+		return SignatureTarget.RUSH;
 	}
 
-	/** What {@code G} means: All In for Gamblers, the oath ultimate for Legionaries, Rend for everyone else. */
-	public static OathTarget oathFor(ClassDefinition def) {
+	/** What the ultimate slot means: All In for Gamblers, the oath ultimate for Legionaries, Rend for everyone else. */
+	public static UltimateTarget ultimateFor(ClassDefinition def) {
 		if (def == null) {
-			return OathTarget.REND;
+			return UltimateTarget.REND;
 		}
 		if (def.hasAbility(ClassRegistry.ALL_IN_ABILITY)) {
-			return OathTarget.ALL_IN;
+			return UltimateTarget.ALL_IN;
 		}
 		if (def.hasAbility(ClassRegistry.ROTATE_ABILITY)) {
-			return OathTarget.AEQUILIBRIUM;
+			return UltimateTarget.AEQUILIBRIUM;
 		}
-		return OathTarget.REND;
+		return UltimateTarget.REND;
 	}
 }

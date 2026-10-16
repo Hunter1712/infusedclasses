@@ -5,7 +5,7 @@ import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.Identifier;
 
-/** Client intent: "I pressed the Rush key". Server validates class and cooldown. */
+/** Signature slot intent: "I pressed the signature bind". Server validates class and cooldown. */
 public record RushPayload() implements CustomPacketPayload {
 	public static final CustomPacketPayload.Type<RushPayload> TYPE =
 			new CustomPacketPayload.Type<>(Identifier.fromNamespaceAndPath(ClassPackets.MOD_ID, "rush"));

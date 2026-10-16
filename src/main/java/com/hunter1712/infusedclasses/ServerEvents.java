@@ -102,10 +102,10 @@ final class ServerEvents {
 					PlayerClasses classes = PlayerClassAccess.of(player);
 					ClassDefinition def = classes.currentDefinition();
 					PlayerRuntime runtime = InfusedClasses.runtime(player);
-					// Reused R bind: the wheel for Gamblers, the rotate intent for Legionaries,
+					// Reused signature bind: the wheel for Gamblers, the rotate intent for Legionaries,
 					// Rush for everyone else, so binds survive the class.
 					// Rotate announces without fanfare on purpose: it carries no cast sound.
-					switch (BindMorph.rushFor(def)) {
+					switch (BindMorph.signatureFor(def)) {
 						case ROTATE -> {
 							RotateAbility.Result result = RotateAbility.fire(def, runtime, now);
 							AbilityApplier.announceAndCast(player, result.outcome().announcement(),
@@ -130,9 +130,9 @@ final class ServerEvents {
 					PlayerClasses classes = PlayerClassAccess.of(player);
 					ClassDefinition def = classes.currentDefinition();
 					PlayerRuntime runtime = InfusedClasses.runtime(player);
-					// Reused G bind: All In for Gamblers, the oath ultimate for Legionaries,
+					// Reused ultimate bind: All In for Gamblers, the oath ultimate for Legionaries,
 					// Rend for everyone else.
-					switch (BindMorph.oathFor(def)) {
+					switch (BindMorph.ultimateFor(def)) {
 						case AEQUILIBRIUM -> {
 							AbilityOutcome result = AequilibriumAbility.fire(def, runtime, now);
 							AbilityApplier.announceAndCast(player, result.announcement(),

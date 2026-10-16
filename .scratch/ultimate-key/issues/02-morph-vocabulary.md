@@ -6,12 +6,12 @@ Spec: `.scratch/ultimate-key/spec.md`
 
 **Blocked by:** None (can start immediately).
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] Every old assertion has a 1:1 successor in the renamed test; nothing added.
-- [ ] `grep -rn "rushFor\|oathFor\|RushTarget\|OathTarget" src/` clean.
-- [ ] `gradle test` green with zero behavioural delta.
+- [x] Every old assertion has a 1:1 successor in the renamed test; nothing added.
+- [x] `grep -rn "rushFor\|oathFor\|RushTarget\|OathTarget" src/` clean.
+- [x] `gradle test` green with zero behavioural delta.
 
 ## Comments
 
-None yet.
+- 2026-10-16 (wt-ultimate-key): `BindMorph` speaks slots — `signatureFor`/`SignatureTarget` (RUSH/ROTATE/ROULETTE), `ultimateFor`/`UltimateTarget` (REND/AEQUILIBRIUM/ALL_IN), javadoc rewritten, ability-id checks and order untouched. `ServerEvents` receiver comments and switch calls renamed to slot language; no logic change. `RushPayload`/`RendPayload` keep their names and channels, comments re-homed as the signature/ultimate slot's intents. `BindMorphTest` renamed: every old assertion has a 1:1 successor in the same order (4 + 4 + 6), nothing added — the diff is renames only, so behaviour is byte-for-byte identical. Both verification greps return nothing; `gradle test`: 181 tests, green.
