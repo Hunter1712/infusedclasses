@@ -30,21 +30,23 @@ modifier, take off what dead stacks earned, or nothing. A tick that moved no sta
 changed what should be on the player, so it needs no attribute write. Movement travels per
 passive (`tickDecayMoved`), so a decayed passive never removes one sitting at zero; a class
 switch removes what the old class earned but the new one does not carry (`onClassChanged`),
-drops the old stacks and resets the cooldown. The hit settle (`settleHit`)
-owns bump, the dice movement, Rush credit, Impetus spend and Rend spend in field order and
-returns the Rend bonus to land.
-The spender's stack drop (`dropStacks`) is the JUnit-reachable half of the consume; the
+drops the old stacks and resets the cooldown. The hit settle now belongs to the melee
+plan (see `Melee plan`); the spender half stays here: `consumeSpent` resolves the priced
+passive and drops its stacks, `dropStacks` is its JUnit-reachable core, and the
 attribute removal rides with the player.
 _Avoid_: passive system, stat updater
 
-**Applied outcome** (`RendAbility.Result`):
-The description an ability decision returns of what should be applied: whether
-to consume stacks, plus the announcement that goes with it. The empower amount
-is not part of it: the fire stamps the stack count on the runtime, and hit time
-recomputes the amount from it.
+**Ability outcome** (`AbilityOutcome`):
+The shared envelope every ability decision returns: whether the press fired, the
+announcement that goes with it, and the machine-readable remainder when a lane was on
+cooldown. `fired`, `rejected` (silent), `fizzled` (says its line, no cast) and
+`onCooldown` are the four factories. An ability with a payload wraps the envelope in its
+own `Result` record instead of widening it: Rotate's landed stance, Roulette's band,
+Rend's consume flag. The empower amount is not part of any of them: the fire stamps the
+stack count on the runtime, and hit time recomputes the amount from it.
 `trigger` gates read-only; `fire` gates and arms the transient runtime's cooldown together, so no
 caller can fire without arming, and rejected presses leave the cooldown untouched.
-_Avoid_: ability result (that is the whole decision, gating included), buff
+_Avoid_: applied outcome, ability result (both name the wrapper), buff
 
 **Ability applier** (`AbilityApplier`):
 The shared adapter seams every ability outcome and class-choice outcome passes through: the announcement
@@ -89,10 +91,10 @@ _Avoid_: description, lore text
 ### Classes, passives and stacks
 
 **Class** (`ClassDefinition`):
-A playable archetype, registered once with its id, display name, passives, active
-ability ids, accent colour, tagline and the actives list (one name plus picker description per
-fired active) plus the flip-buff list (one name plus description per trigger-fired
-active, shown under `Passives`). A class is data: it carries no player and no state of its own. The first passive on a
+A playable archetype, registered once with its id, display name, passives, accent
+colour, tagline, the actives list (one row per fired active: its ability id, name and
+picker description) plus the flip-buff list (one `FlipBuff` row per trigger-fired
+active: name plus description, shown under `Passives`). A class is data: it carries no player and no state of its own. The first passive on a
 trigger is found with `passiveForTrigger`, never by list position. Juggernaut, Legionary and Gambler are the three
 playable classes today: `Juggernaut`, Rush (`infusedclasses:rush`) plus Rend
 (`infusedclasses:rend`), accent `0xFFE74C3C`,
@@ -113,9 +115,16 @@ in the rejection line (`Unknown or locked class`).
 _Avoid_: unavailable class, future class, hidden class
 
 **Active** (`ClassDefinition.ActiveAbility`):
-One playable active on a class card: its detail line plus its full description. A class carries
-one per active — Juggernaut carries Rush and Rend — so names never join with `+`.
+One playable active on a class card: its ability id, name and picker description in one row.
+The id is what `hasAbility` reads, so a card row and its gate cannot drift apart. A class
+carries one per active — Juggernaut carries Rush and Rend — so names never join with `+`.
 _Avoid_: ability (ambiguous with the gating id), spell
+
+**Flip buff** (`ClassDefinition.FlipBuff`):
+One trigger-fired Legionary buff on a class card: name plus picker description, shown under
+`Passives` because no key presses it. Never gated: it carries no ability id and nothing reads
+`hasAbility` for it.
+_Avoid_: passive (it is not stack-driven), toggle
 
 **Conditional passive** (`ConditionalPassive`):
 A passive that earns stacks when a named trigger fires, rather than always being on. It carries its
@@ -160,7 +169,7 @@ per-lane verbs, never the map. The engage window rides on the transient runtime 
 the lanes: a fired Rush stamps the press time plus a one-shot next-hit bonus,
 `hasRushBonusPending` reads it against the 5s window, and switch and respawn clear it with
 everything else. Rush and Rend windows are one-shot (the melee plan peeks them,
-the hit settle spends them, each bonus landing at most once); Testudo and Aequilibrium
+its resolve spends them, each bonus landing at most once); Testudo and Aequilibrium
 windows are timed (peeked while live, never consumed).
 _Avoid_: timer
 
@@ -189,10 +198,10 @@ unswung window simply expires with the stacks already spent. Zero stacks fizzles
 `No Momentum` line and arms nothing. Decided in the trigger/fire
 gate-and-arm shape; the spent passive is found once with `passiveForTrigger`
 (never by position), the empower snapshot rides the transient runtime next to the lane, and
-the consume flag rides in the result: the entry asks the passive applier to consume
-that passive while the hit settle spends the snapshot on the next hit and returns the
-stamped bonus, landing only what it spent, and only when the plan saw one live, so
-empty hits never touch a window.
+the consume flag rides in the wrapper result: the entry asks the passive applier to consume
+that passive while `MeleePlan.resolve` spends the snapshot on the next hit and returns the
+stamped bonus in its `Landed`, landing only what it settled, and only when the plan saw one
+live, so empty hits never touch a window.
 Like every cast, firing plays its sound (see `Spellcast`): an anvil-land smash for the
 empower.
 _Avoid_: heal button, second ability
@@ -295,14 +304,14 @@ _Avoid_: damage falloff, charge multiplier
 The decision of what one melee hit earns and settles, taken from definitions and
 transient state: whether the swing earns stacks (full swings only, spam earns zero),
 the stance deal and take mults (1.0 for anyone else), the wheel's live deal mult and
-the Impetus flip buff (pending only, spent once, any charge). `planHit` decides the whole hit in
-field order — bump, Rush credit, Rend spend, Impetus spend, dice verdict, combined
-mult (deal x take x dice) — and the hit settle (`settleHit`) applies the first four and the dice movement in
-the same order at the same moment, returning the stamped Rend bonus for the entry
-to land, so the pairing the plan saw is the pairing that lands and empty hits never
-touch a window; the attacker branch (`settleAttackerHit`) owns the whole sequence
-(plan, settle, cue, Rend bonus, combined mult) so the hook cannot reorder
-or half-apply it; Gladius plus Impetus reads
+the Impetus flip buff (pending only, spent once, any charge). `planHit` is the pure half:
+it decides the whole hit in field order — bump, Rush credit, Rend spend, Impetus spend,
+dice verdict, combined mult (deal x take x dice) — peeking only. `resolve` plans through
+it and settles the runtime movements in the same order at the same moment, returning
+`Landed(rendHp, verdict, combined)` for the entry to land, so the pairing the plan saw
+is the pairing that lands and empty hits never touch a window; the attacker branch
+(`settleAttackerHit`) lands exactly what the resolve returned (cue, Rend bonus, combined
+mult) so the hook cannot reorder or half-apply it; Gladius plus Impetus reads
 x1.1 deal, Scutum plus Testudo x0.85 take, a crit x1.25 deal, named once in the plan rather than emerging in the
 entry. The server entry maps, adapters
 apply; the victim runtime arrives lazily, so a non-Legionary victim costs no transient
@@ -419,6 +428,14 @@ every player and holds one choice slot per player, saved with player data (`Valu
 for the server entry to reach a field a mixin added.
 _Avoid_: player hook, mixin state
 
+**Class switch** (`ClassSwitch`):
+The one adapter path behind both switch entries: validate the pick in the choice module,
+clean what the old class earned (`PassiveApplier.onClassChanged`) and announce the outcome,
+rejection included; it returns the new definition, or null when the pick was rejected.
+Callers keep only their own extra — the picker's confirm packet, the command's return
+code — so the two entries cannot sequence the switch differently.
+_Avoid_: class change, switch handler
+
 **Transient runtime** (`PlayerRuntime`):
 The per-player stacks, cooldowns, ability windows and the Gambler's Streak
 counter that last only as long as the session. It is handed the class they
@@ -430,7 +447,9 @@ every passive on the class whose trigger matches (unknown triggers, a missing cl
 classes are inert, each bump re-stamps grace), `tickDecayMoved` drops every stack of each
 passive on the class past its own grace, and reports the set that moved. `clear` drops one class's
 stacks; cooldowns go through the lane verbs, armed only by ability `fire` and reset by the adapter
-on switch. Callers and tests cross this module's seam; the stacks module is its implementation.
+on switch. Ability windows carry their own duration, stamped at arm time: reads take only the
+clock, and each ability names its window constant once, at its arm site. Callers and tests
+cross this module's seam; the stacks module is its implementation.
 _Avoid_: player state, live state, runtime (too generic on its own)
 
 **Transient runtime store** (`PlayerRuntimes`):
@@ -443,7 +462,8 @@ _Avoid_: runtime map, session cache
 
 **Card line** (`ClassPresentation.CardLine`):
 One line of a class card's body, carrying its name plus optional description, the section it belongs to, and the colour and
-weight it draws with. Full text derives via `text()`.
+weight it draws with. Full text derives via `text()`, and the tone boundary via `descStart()`: where the description starts
+in the joined text, derived from the join, never searched.
 _Avoid_: row, string, label
 
 **Line kind** (`ClassPresentation.LineKind`):
@@ -505,15 +525,20 @@ _Avoid_: GUI, menu
 **Card layout** (`client/CardLayout`):
 Everything the focused card sits in: the focused math (centered card rectangle,
 two-thirds width up to 520, pinned select rect, side arrows, dot row,
-title/subtitle/footer anchors), the hover hit-test the screen positions with, and page
-wraparound. Rows past the visible slice scroll under the wheel with a thin scrollbar; the
-pinned select never moves, and a new page always opens at the top.
+title/subtitle/footer anchors), the header's vertical model (name, tagline and divider
+anchors with the derived body top, the divider height, the inner width), the hover
+hit-test the screen positions with, and page wraparound. Rows past the visible slice
+scroll under the wheel with a thin scrollbar; the pinned select never moves, and a new
+page always opens at the top.
 
 **Card renderer** (`client/ClassCardRenderer`):
 Everything the focused card looks like: body, accent strip, border and hover highlight,
-plus the name, tagline, divider and wrapped detail lines. The first wrapped row
-of a line draws in its own color, continuations draw dimmed so names scan.
-The frame and the body both draw from one card model; the screen passes the model,
+plus the name, tagline, divider and wrapped detail lines. The screen measures the body
+once per frame (`measure` → `Measured(rows, layout)`), clamps the same frame's scroll
+from the result, then draws from it. The first wrapped row
+of a line draws in its own color, continuations draw dimmed so names scan, and the tone
+boundary is the line's own derived `descStart()`. The frame and the body both draw from
+one card model; the screen passes the model,
 never the parts. Each visual line draws with
 the colour and weight it carries, so nothing here reads what a line says. Long lines
 wrap inside the card and scroll above the pinned select.
@@ -585,4 +610,10 @@ one Legionary marker; `0012` retires vanilla crits for every player
 (`canCriticalAttack` cancelled), replaces them with the universal 10% ×1.25
 full-swing crit for classless and classed alike, and makes chance a passed-in
 value: the entry draws the roll, `CritRoll` decides it, a class's `CritRule`
-gives it dice.
+gives it dice. `0013` deepens the review's remaining seams: actives carry their
+own ability ids (the parallel id list is gone), one `AbilityOutcome` envelope replaces
+six per-ability result protocols, `ClassSwitch` is the one switch path, ability windows
+carry their duration (reads take only the clock), `MeleePlan.resolve` plans and settles
+in one call (reopening `0007`'s no-JUnit cost for the settle), card geometry lives in
+`CardLayout` anchors with one measure per frame, and the card tone boundary derives
+from the join.
