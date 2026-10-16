@@ -1,5 +1,6 @@
 package com.hunter1712.infusedclasses;
 
+import com.hunter1712.infusedclasses.mixin.LivingEntityAccessor;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
@@ -78,14 +79,34 @@ public final class DamageSettle {
 		return (float) (baseDamageTaken * (mult - 1.0));
 	}
 
-	/** Single guarded hurt: extra damage re-enters the damage hook on the same thread. */
+	/**
+	 * Single guarded hurt: extra damage re-enters the damage hook on the same thread.
+	 * Vanilla remembers the biggest hurt of the window in {@code lastHurt} and drops any
+	 * same-tick follow-up that does not beat it, so a bonus smaller than the base — a x1.25
+	 * crit on a wood sword is a quarter of it — used to land nothing at all. Clearing the
+	 * memory for the inner call routes the bonus through the difference branch instead:
+	 * armor, absorption, death protection and kill credit still apply, with no second
+	 * sound, knockback or hurt flash since the feedback belongs to the base hit. The
+	 * memory is left where a single hit of base plus bonus would have left it.
+	 */
 	private static boolean hurtGuarded(Entity target, DamageSource source, float amount) {
 		if (resolving) {
 			return false;
 		}
 		resolving = true;
 		try {
-			target.hurt(source, amount);
+			if (target instanceof LivingEntity living && amount > 0) {
+				LivingEntityAccessor access = (LivingEntityAccessor) living;
+				float lastHurt = access.infused$lastHurt();
+				access.infused$lastHurt(0.0F);
+				try {
+					target.hurt(source, amount);
+				} finally {
+					access.infused$lastHurt(lastHurt + amount);
+				}
+			} else {
+				target.hurt(source, amount);
+			}
 		} finally {
 			resolving = false;
 		}

@@ -272,6 +272,14 @@ The Gambler's ultimate on `G`, 75s lane: crits deal ×2.0 instead of ×1.5 for
 they are.
 _Avoid_: double damage, ultimate form
 
+**Swing charge** (`SwingChargeAccess`):
+The charge vanilla read for the swing being settled, captured one line before
+vanilla zeroes the attack-strength ticker in `onAttack`. The damage hook runs
+after that reset, so a read from there is always 0 and every full-swing gate
+(dice roll, stack bump, Rush credit, the Rend curve) would read zero; the capture
+is the hook's only source for it.
+_Avoid_: attack cooldown, swing timer
+
 **Bonus curve** (`BonusCurve`):
 The universal melee rule: mod hook bonus damage scales quadratically with swing
 charge (`bonus x charge x charge`, half charge pays a quarter, spam pays chips).
@@ -303,7 +311,11 @@ _Avoid_: damage handler, hook logic
 The single guarded hurt for the whole mod plus the stance-mult settle every melee
 branch funnels through. Over 1.0 lands extra hurt (dead targets deal nothing); under
 1.0 heals back the discount, so the net hit reads as base times mult; exactly 1.0
-touches nothing. Rend and Impetus bonuses land here too.
+touches nothing. Rend and Impetus bonuses land here too. Vanilla drops any same-tick
+follow-up that does not beat `lastHurt`, so the extra goes in with that memory
+cleared and leaves it at base plus bonus: the step lands silently with armor, death
+protection and kill credit intact, and later hits still compare against the
+combined swing.
 _Avoid_: damage handler, hurt helper
 
 **Hurt guard** (`DamageSettle.isResolving`):

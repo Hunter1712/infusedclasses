@@ -178,7 +178,10 @@ final class ServerEvents {
 			float baseDamageTaken, long now) {
 		ClassDefinition atkDef = PlayerClassAccess.of(attacker).currentDefinition();
 		PlayerRuntime atkRuntime = InfusedClasses.runtime(attacker);
-		float charge = attacker.getAttackStrengthScale(0.0F);
+		// Captured at swing time, not read here: vanilla zeroes the attack-strength
+		// ticker in onAttack() before the hit lands, so a read from this hook is always
+		// zero and every full-swing gate below it was dead until the capture landed.
+		float charge = SwingChargeAccess.of(attacker);
 		// The dice are the mod's, not the class's: every landed full-charge hit draws
 		// its own roll; half swings never roll and so never draw one.
 		float roll = BonusCurve.isFullSwing(charge) ? attacker.getRandom().nextFloat() : 0.0F;

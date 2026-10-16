@@ -15,6 +15,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - License replaced with All Rights Reserved (modpack inclusion with credit permitted; redistribution and derivatives require permission). See the player guide modpack notes.
 
+### Fixed
+- Full swings are recognised again: vanilla zeroes the attack-strength ticker before a hit lands, so the hit hook always read a charge of 0 — no crit was ever rolled and Momentum, Vigor and Rend stacks plus the Rush engage bonus never grew. The swing's charge is now captured before the reset.
+- Bonus melee steps land: vanilla drops any same-tick follow-up hurt that does not beat the base hit, which silently ate a crit's extra (x1.25 on a wood sword added nothing) and would have eaten Rend's bonus the same way. Extra steps now apply through vanilla's silent re-hit branch, so armor, death protection and kill credit stay intact and the numbers read as designed.
+
 ## [0.1.0] - 2026-10-12
 
 ### Added
