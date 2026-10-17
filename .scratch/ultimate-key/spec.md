@@ -1,6 +1,6 @@
 # Spec: The ultimate's own bind — Signature R, Ultimate V
 
-Status: ready-for-agent
+Status: done
 
 ## Problem Statement
 

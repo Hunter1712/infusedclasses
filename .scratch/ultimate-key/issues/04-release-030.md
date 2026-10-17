@@ -8,11 +8,11 @@ Spec: `.scratch/ultimate-key/spec.md`
 
 **Status:** ready-for-agent
 
-- [ ] `gradle test` and `gradle build` green; the built jar carries `0.3.0`.
+- [x] `gradle test` and `gradle build` green; the built jar carries `0.3.0`.
 - [ ] `gradle.properties` and README updated; the live `mods/` jar refreshed via `gradle deployClient`.
-- [ ] CHANGELOG `0.3.0` section dated, covering Added/Changed/Fixed per the spec.
+- [x] CHANGELOG `0.3.0` section dated, covering Added/Changed/Fixed per the spec.
 - [ ] Every checklist above done in one sitting.
 
 ## Comments
 
-None yet.
+Landed: `mod_version=0.3.0`, README jar example, dated `0.3.0` CHANGELOG section (Added/Changed across all four specs). `gradle build` green; the jar carries 0.3.0. The live-jar deploy and the one-sitting end-to-end pass inherit the open manual checks from status-hud 04, player-tools 01-04 and roulette 02 (deployClient runs last so the live jar carries the full reviewed wave, not an interim one).

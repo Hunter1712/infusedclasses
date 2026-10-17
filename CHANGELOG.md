@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0] - 2026-10-17
+
+### Added
+- Status HUD: a client slot strip of vanilla-slot-style chips anchored to a screen corner (bottom right by default) — lane countdowns (`SIG`/`ULT`), rider windows with their load markers, `MOM`/`STR`/`GLA`/`SCU` state chips and the wheel's outcome initial, all `%.1fs` precise and driven by server snapshots sent only at state change points (`infusedclasses:player_status`), so a quiet tick costs no packets. The strip hides on F1, while a screen is open, and for classless players; `hud.enabled=false` stops it, `hud.corner=bottom_left` moves it. See the guide's HUD page.
+- Player commands: bare `/class` and `/class info` are open to everyone and read for the invoking player (class line, per-lane `%.1fs` countdowns, the Legionary's stance, `No class chosen` for classless); `/class pick` reopens your own picker when you have cheats. `set` and `select` keep their gamemaster gates.
+- Client config file: `config/infusedclasses.json` (written with defaults on first run) with exactly `hud.enabled` (default true) and `hud.corner` (default `bottom_right`, or `bottom_left`); purely client-side, drawing only, never a crash on bad input. Documented in the guide.
+
+### Changed
+- The ultimate gets its own bind: `key.infusedclasses.signature` (default `R`) and `key.infusedclasses.ultimate` (default `V`) replace the old `rush`/`rend` key ids and their ability-named labels — anyone who had rebound the old keys starts from the new defaults once (accepted one-time reset in 0.x). Controls labels read "Signature" and "Ultimate"; copy names default keys (`(R, …)`/`(V, …)`); the HUD badges are slot names only.
+- Roulette re-cut to six stat bands: Edge 25% (x1.25), Ward 25% (+2 armor), Haste 25% (+0.02 speed), Jackpot 10% (all three), Bust 10% (x0.75), Zero 5% (dead). The three 20% stat bands became 25% and the 8%/4% bands became 10%/5% once the Vigor (heal 3) and Jackpot-heal (heal 4) bands left the wheel; the same 10s window, 25s lane, free spin and deal mults stay. No healing exists anywhere in the mod after this.
+- Chat cooldown lines moved from whole-second rounding to one decimal, matching the strip.
+
 ## [0.2.0] - 2026-10-16
 
 ### Added
