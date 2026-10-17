@@ -1,6 +1,6 @@
 # ADR-0018: The strip goes bare — a stack in a screen zone
 
-Status: accepted
+Status: superseded by ADR-0019 (the whole chain leaves the build; the HUD is scrapped pending a later implementation)
 
 ## Context
 

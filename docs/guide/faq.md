@@ -40,7 +40,7 @@ Rush has its own 25s lane. Rejected presses (wrong class, on cooldown) leave the
 Rotate has an 8s lock. Rejects arm nothing and grant no buff — flip when the lock is ready.
 
 **R and V do different things per class?**
-Yes. `R` is the Signature bind — Rush for Juggernaut, Rotate for Legionary, Roulette for Gambler; `V` is the Ultimate bind — Rend for Juggernaut, the Aequilibrium oath for Legionary, All In for Gambler. Binds survive the class by design. Keys are remappable: the HUD strip names the slots (SIG/ULT), never keys, and Controls is the truth for what a slot is bound to.
+Yes. `R` is the Signature bind — Rush for Juggernaut, Rotate for Legionary, Roulette for Gambler; `V` is the Ultimate bind — Rend for Juggernaut, the Aequilibrium oath for Legionary, All In for Gambler. Binds survive the class by design. Keys are remappable: Controls is the truth for what a slot is bound to, and `/class info` names the slots' abilities.
 
 ## Reporting problems
 

@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Removed
+- Status HUD scrapped pending a later implementation (ADR-0019): the on-screen strip, its client config file (`config/infusedclasses.json`) and its `infusedclasses:player_status` snapshot signal all leave the build. Lane countdowns stay readable through `/class info`, and a press on cooldown still says nothing (ADR-0017's silence carried at ADR-0019). The ADR 0014/0017/0018 chain and the `prototype/strip-goes-bare` branch record what the next HUD builds on.
+
 ## [0.3.0] - 2026-10-17
 
 ### Added

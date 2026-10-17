@@ -24,7 +24,6 @@ public class InfusedClasses implements ModInitializer {
 		PayloadTypeRegistry.playC2S().register(RendPayload.TYPE, RendPayload.STREAM_CODEC);
 		PayloadTypeRegistry.playS2C().register(OpenClassScreenPayload.TYPE, OpenClassScreenPayload.STREAM_CODEC);
 		PayloadTypeRegistry.playS2C().register(ClassConfirmedPayload.TYPE, ClassConfirmedPayload.STREAM_CODEC);
-		PayloadTypeRegistry.playS2C().register(PlayerStatusPayload.TYPE, PlayerStatusPayload.STREAM_CODEC);
 	}
 
 	/**

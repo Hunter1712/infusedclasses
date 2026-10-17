@@ -2,16 +2,13 @@ package com.hunter1712.infusedclasses.client;
 
 import com.hunter1712.infusedclasses.ClassConfirmedPayload;
 import com.hunter1712.infusedclasses.OpenClassScreenPayload;
-import com.hunter1712.infusedclasses.PlayerStatusPayload;
 import com.hunter1712.infusedclasses.RendPayload;
 import com.hunter1712.infusedclasses.SelectClassPayload;
 import com.hunter1712.infusedclasses.RushPayload;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
-import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
-import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.resources.Identifier;
@@ -25,8 +22,6 @@ public class InfusedClassesClient implements ClientModInitializer {
 
 	@Override
 	public void onInitializeClient() {
-		hudConfig = HudConfigFile.load();
-
 		ClientPlayNetworking.registerGlobalReceiver(OpenClassScreenPayload.TYPE,
 				(OpenClassScreenPayload payload, ClientPlayNetworking.Context context) -> context.client()
 						.execute(() -> context.client().setScreen(new ClassSelectScreen(payload.currentClassId()))));
@@ -40,14 +35,6 @@ public class InfusedClassesClient implements ClientModInitializer {
 								mc.setScreen(null);
 							}
 						}));
-
-		ClientPlayNetworking.registerGlobalReceiver(PlayerStatusPayload.TYPE,
-				(PlayerStatusPayload payload, ClientPlayNetworking.Context context) -> context.client()
-						.execute(() -> StatusStore.accept(payload, System.currentTimeMillis())));
-		ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> StatusStore.clear());
-
-		// The strip on screen: one element under its own id; what draws and what hides lives inside it.
-		HudElementRegistry.addLast(StatusHudElement.ID, new StatusHudElement());
 
 		signatureKey = KeyBindingHelper.registerKeyBinding(new KeyMapping(
 				"key.infusedclasses.signature", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_R, KeyMapping.Category.GAMEPLAY));
@@ -69,13 +56,5 @@ public class InfusedClassesClient implements ClientModInitializer {
 
 	public static void pickClass(Identifier id) {
 		ClientPlayNetworking.send(new SelectClassPayload(id));
-	}
-
-	// Client config: loaded once at startup, read by the status HUD element.
-	private static HudConfig hudConfig = HudConfig.defaults();
-
-	/** The client config loaded at startup; defaults until {@link #onInitializeClient} runs. */
-	public static HudConfig hudConfig() {
-		return hudConfig;
 	}
 }

@@ -25,9 +25,6 @@ final class ServerEvents {
 			if (!PlayerClassAccess.of(player).hasClass()) {
 				sender.sendPacket(new OpenClassScreenPayload(""));
 			}
-			// One forced snapshot per join, classless included: the client learns its class
-			// by fact, not by the absence of a packet.
-			StatusSync.sendNow(player, System.currentTimeMillis());
 		});
 
 		ServerPlayerEvents.AFTER_RESPAWN.register((oldPlayer, newPlayer, alive) -> {
@@ -36,14 +33,10 @@ final class ServerEvents {
 			// player's starts empty, which is what a respawn has always done to it.
 			// Load-bearing ordering lives in the runtime store: both players share one UUID.
 			InfusedClasses.runtimes().respawn(newPlayer.getUUID());
-			// The stale last-sent snapshot goes with the old runtime; the forced send re-seeds it.
-			StatusSync.forget(newPlayer.getUUID());
-			StatusSync.sendNow(newPlayer, System.currentTimeMillis());
 		});
 
 		ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> {
 			InfusedClasses.runtimes().remove(handler.getPlayer().getUUID());
-			StatusSync.forget(handler.getPlayer().getUUID());
 		});
 
 		ServerLivingEntityEvents.AFTER_DAMAGE.register((entity, source, baseDamageTaken, damageTaken, blocked) -> {
@@ -83,8 +76,6 @@ final class ServerEvents {
 				}
 				PlayerRuntime runtime = InfusedClasses.runtime(player);
 				PassiveApplier.apply(player, def, runtime, now);
-				// The decay pass owns the tick's only state movement; the snapshot follows it.
-				StatusSync.maybeSend(player, now);
 			}
 		});
 	}
@@ -132,8 +123,6 @@ final class ServerEvents {
 							RushApplier.apply(player, result);
 						}
 					}
-					// After the branch: a rejected press moved nothing, so this stays silent.
-					StatusSync.maybeSend(player, now);
 				}));
 
 		ServerPlayNetworking.registerGlobalReceiver(RendPayload.TYPE, (payload, context) -> context.server()
@@ -167,8 +156,6 @@ final class ServerEvents {
 							}
 						}
 					}
-					// After the branch: a rejected press moved nothing, so this stays silent.
-					StatusSync.maybeSend(player, now);
 				}));
 	}
 
@@ -217,8 +204,5 @@ final class ServerEvents {
 		// take, a crit x1.25: see HitPlan.combined.
 		DamageSettle.settleTake(entity, baseDamageTaken, landed.combined(),
 				() -> attacker.damageSources().playerAttack(attacker));
-		// After the settle: a hit that moved stacks, Streak or a one-shot sends; a spam
-		// swing that moved nothing stays silent.
-		StatusSync.maybeSend(attacker, now);
 	}
 }

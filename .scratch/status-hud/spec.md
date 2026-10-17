@@ -1,6 +1,6 @@
 # Spec: Status HUD (the slot strip)
 
-Status: done
+Status: superseded by ADR-0019 — the whole HUD chain (draw layer, client config file, snapshot payload and sync) scrapped from the build pending a later implementation
 
 ## Problem Statement
 

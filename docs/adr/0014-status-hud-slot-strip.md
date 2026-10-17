@@ -1,6 +1,6 @@
 # ADR-0014: The status HUD returns as the slot strip
 
-Status: accepted
+Status: superseded by ADR-0017, then ADR-0019 (the HUD leaves the build)
 
 ## Context
 

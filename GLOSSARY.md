@@ -70,9 +70,9 @@ _Avoid_: fire helper, trigger wrapper
 **Chat line** (`ChatLine`):
 The text and the chat style a decision returns for the server entry to send verbatim.
 Rend's fire line is `Rend!` in red, Rush's is `Rush!` in yellow. Fire lines and fizzles
-speak only what happened: a press on cooldown says nothing — the Status HUD lane already
-counts that number live (ADR-0017) — so `ChatLine.cooldown` (`%.1fs`, one decimal) is
-left as the `/class info` lane shape. Its wording, rounding and locale are decided with the ability (or class-choice outcome),
+speak only what happened: a press on cooldown says nothing, so `ChatLine.cooldown`
+(`%.1fs`, one decimal) stays the `/class info` lane shape (ADR-0017, whose silence
+carried at ADR-0019). Its wording, rounding and locale are decided with the ability (or class-choice outcome),
 not formatted by whoever sends it. Class-choice lines use the same seam: `unknownOrLocked()` (red, action bar)
 for a rejected pick, and `classPicked(displayName)` (gray, chat) for an accepted switch.
 _Avoid_: message, notification, cooldown echo
@@ -545,31 +545,6 @@ the colour and weight it carries, so nothing here reads what a line says. Long l
 wrap inside the card and scroll above the pinned select.
 _Avoid_: card widget, draw helper
 
-**Status HUD** (`StatusHud`, `client/StatusHudElement`):
-The strip on screen for a class's live state: a stack of bare text zoned into the
-screen — one line per row, no box, no icon, no texture, no dot — flush 2 gui from
-the screen's chosen edge (left by default), the block vertically centered on the
-screen, top-down with the signature row leading. A line is its facts only: a
-cooling lane `SIG 25s`, a ready lane its dim bare badge, windows and stacks riding
-their lane's line (`ALL 13s`, `MOM 2 4s`, a rider's bare `9.8s`), never a whole word — names stay
-in fire lines and `/class info`. `rows(status, elapsed)` is the pure
-half: given the last snapshot and the millis since it arrived, it returns the whole strip as
-rows — the roster per class (badges `SIG`/`ULT`, `MOM`, `STR`, `GLA`/`SCU`, `IMP`/`TES`,
-`AEQ`, `ALL`, and the Roulette outcome initials, never Zero), riders riding
-their lane chips, the `+` marker only where the chip outlives its load, ready lanes dim with
-no number, live chips lit, whole-second countdowns at ten and above and one decimal below,
-clamped at zero — and the element draws
-exactly those rows, one line each (ADR-0018: the strip goes bare in a screen zone —
-it supersedes ADR-0014's side-label boxes, ADR-0017's pills and 0018's own
-hotbar sweep in look, keeps every decision's content).
-Hiding is the adapter's, never the decision's: no class, F1, any open
-screen; `hud.enabled=false` stops the drawing and nothing else, `hud.corner` chooses the
-screen zone (`left`/`right` — the retired hotbar spellings carry their side), `hud.scale` sizes the stack.
-A zone line grows into the open screen, so no roster can clip it.
-Badges are slot and state names, never keys: the strip never reads a KeyMapping, so a
-remapped bind cannot make it lie (ADR-0014).
-_Avoid_: cooldown bar, effect strip, buff icons, pills, side labels
-
 ### Protocol and commands
 
 **Select intent** (`SelectClassPayload`):
@@ -611,20 +586,6 @@ _Avoid_: open packet
 The server's `infusedclasses:class_confirmed` reply. The client closes the picker only on this, so
 a rejected pick stays open for retry.
 _Avoid_: confirm packet
-
-**Status snapshot** (`PlayerStatusPayload`, `client/StatusStore`):
-The strip's state at send time, carried by the server's S2C `infusedclasses:player_status`
-signal beside its payload siblings and read by the status HUD element alone: class id,
-per-lane remaining ms, per-window remaining ms plus their load flags, Momentum stacks plus
-grace, stance, flip target, Streak, Roulette outcome. Emission is guarded by `movedSince`:
-the server sends one only when something a client cannot derive has changed — a fired
-ability, a melee settle, a moving decay tick, a class switch — and never for pure time
-decay; join and respawn send unconditionally so a client always learns its class
-(`StatusSync` holds the last-sent snapshot per player UUID). The client holds one: the last
-snapshot plus its receipt time, overwritten whole per payload, cleared on disconnect
-— countdowns interpolate from the receipt time, and no second copy of status state exists
-client-side (ADR-0014).
-_Avoid_: status packet, status cache, HUD state
 
 **Class command** (`ClassCommands`):
 The `/class` tree. Bare `/class` and `/class info` are open to everyone and read for the
@@ -679,4 +640,7 @@ full roster in-game, the sweep gave way to a flush screen zone — one line per
 row, flush 2 gui from the screen's edge, vertically centered — with
 `hud.scale` owning the size and the old hotbar spellings carrying their side
 in the config. `0017`'s silence
-and compressed numbers carry into the stack.
+and compressed numbers carry into the stack. `0019` scraps this chain from the
+build pending a later reimplementation: draw layer, client config file, the
+snapshot payload and its sync callers all leave; the pill-look lessons live in
+the prototypes.

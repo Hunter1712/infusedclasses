@@ -47,8 +47,8 @@ Icon: `src/main/resources/assets/infusedclasses/icon.png` (128x128, wired in `fa
 
 ## Player guide (prepped for listing, source of truth)
 
-- [Installation](docs/guide/installation.md) · [Classes](docs/guide/classes.md) · [Stances & passives](docs/guide/stances-passives.md) · [Status HUD](docs/guide/hud.md) · [Commands](docs/guide/commands.md)
-- [Configuration](docs/guide/configuration.md) · [Compatibility](docs/guide/compatibility.md) · [Version policy](docs/guide/version-policy.md) · [Modpack authors](docs/guide/modpack-authors.md) · [FAQ](docs/guide/faq.md)
+- [Installation](docs/guide/installation.md) · [Classes](docs/guide/classes.md) · [Stances & passives](docs/guide/stances-passives.md) · [Commands](docs/guide/commands.md)
+- [Compatibility](docs/guide/compatibility.md) · [Version policy](docs/guide/version-policy.md) · [Modpack authors](docs/guide/modpack-authors.md) · [FAQ](docs/guide/faq.md)
 
 ## License
 
