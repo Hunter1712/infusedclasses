@@ -70,8 +70,8 @@ _Avoid_: fire helper, trigger wrapper
 **Chat line** (`ChatLine`):
 The text and the chat style a decision returns for the server entry to send verbatim,
 including the remaining-seconds message for a press on cooldown. Rend's fire line is
-`Rend!` in red, Rush's is `Rush!` in yellow; a cooldown line is `Rend: %.0fs` with no style of its own,
-rounded with `%.0f`. Its wording, rounding and locale are decided with the ability (or class-choice outcome),
+`Rend!` in red, Rush's is `Rush!` in yellow; a cooldown line is `Rend: %.1fs` with no style of its own,
+rounded to one decimal like the strip (`%.1f`, ADR-0014). Its wording, rounding and locale are decided with the ability (or class-choice outcome),
 not formatted by whoever sends it. Class-choice lines use the same seam: `unknownOrLocked()` (red, action bar)
 for a rejected pick, and `classPicked(displayName)` (gray, chat) for an accepted switch.
 _Avoid_: message, notification
@@ -544,6 +544,22 @@ the colour and weight it carries, so nothing here reads what a line says. Long l
 wrap inside the card and scroll above the pinned select.
 _Avoid_: card widget, draw helper
 
+**Status HUD** (`StatusHud`, `client/StatusHudElement`):
+The strip on screen for a class's live state: one vertical strip of vanilla-slot-style badge
+boxes anchored to a screen corner (bottom right by default, chat owns the left), labels on
+the inner side mirrored per corner, growing up from the corner, no backdrop, letters and
+numbers only — no icons, no textures, no animations. `rows(status, elapsed)` is the pure
+half: given the last snapshot and the millis since it arrived, it returns the whole strip as
+rows — the roster per class (badges `SIG`/`ULT`, `MOM`, `STR`, `GLA`/`SCU`, `IMP`/`TES`,
+`AEQ`, `ALL`, and the Roulette outcome initials, never Zero), riders riding
+their lane chips, the `+` marker only where the chip outlives its load, ready lanes dim with
+no number, live chips lit, `%.1fs` countdowns clamped at zero — and the element draws
+exactly those rows. Hiding is the adapter's, never the decision's: no class, F1, any open
+screen; `hud.enabled=false` stops the drawing and nothing else, `hud.corner` moves it.
+Badges are slot and state names, never keys: the strip never reads a KeyMapping, so a
+remapped bind cannot make it lie (ADR-0014).
+_Avoid_: cooldown bar, effect strip, buff icons
+
 ### Protocol and commands
 
 **Select intent** (`SelectClassPayload`):
@@ -586,6 +602,20 @@ The server's `infusedclasses:class_confirmed` reply. The client closes the picke
 a rejected pick stays open for retry.
 _Avoid_: confirm packet
 
+**Status snapshot** (`PlayerStatusPayload`, `client/StatusStore`):
+The strip's state at send time, carried by the server's S2C `infusedclasses:player_status`
+signal beside its payload siblings and read by the status HUD element alone: class id,
+per-lane remaining ms, per-window remaining ms plus their load flags, Momentum stacks plus
+grace, stance, flip target, Streak, Roulette outcome. Emission is guarded by `movedSince`:
+the server sends one only when something a client cannot derive has changed — a fired
+ability, a melee settle, a moving decay tick, a class switch — and never for pure time
+decay; join and respawn send unconditionally so a client always learns its class
+(`StatusSync` holds the last-sent snapshot per player UUID). The client holds one: the last
+snapshot plus its receipt time, overwritten whole per payload, cleared on disconnect
+— countdowns interpolate from the receipt time, and no second copy of status state exists
+client-side (ADR-0014).
+_Avoid_: status packet, status cache, HUD state
+
 **Class command** (`ClassCommands`):
 The gamemaster-only `/class` wiring. `/class set <player> <class>` suggests registered ids
 (playable only), parses
@@ -621,4 +651,8 @@ six per-ability result protocols, `ClassSwitch` is the one switch path, ability 
 carry their duration (reads take only the clock), `MeleePlan.resolve` plans and settles
 in one call (reopening `0007`'s no-JUnit cost for the settle), card geometry lives in
 `CardLayout` anchors with one measure per frame, and the card tone boundary derives
-from the join.
+from the join. `0014` reinstates the HUD as the slot strip (`.scratch/passive-hud` is
+closed with the effect-row approach): the rows decision stays pure
+(`StatusHud.rows`), one client element at its own `infusedclasses:status` id draws it,
+the server snapshots at change points into one payload guarded by `movedSince`, and
+chat joins the strip's one-decimal countdowns.
