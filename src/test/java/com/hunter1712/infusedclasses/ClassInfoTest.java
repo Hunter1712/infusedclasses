@@ -67,9 +67,8 @@ class ClassInfoTest {
 	@Test
 	void coolingLegionaryPinsOneDecimalAndTheFlippedStance() {
 		PlayerRuntime runtime = new PlayerRuntime();
-		runtime.tryUseRotate(0);
+		runtime.tryUseRotate(0, RotateAbility.Stance.GLADIUS);
 		runtime.tryUseAequilibrium(0);
-		runtime.flipStance(0, RotateAbility.Stance.GLADIUS);
 
 		assertEquals(List.of("Class: Legionary", "Rotate: 1.4s", "Aequilibrium: 43.4s", "Stance: Gladius"),
 				texts(legionary(), runtime, 6_600));

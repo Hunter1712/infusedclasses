@@ -14,8 +14,8 @@ public final class PassiveApplier {
 	/**
 	 * One tick for one player: the single reconcile home. Decay, then conditionals, then
 	 * the HP-scaled pair, then the stance aura, then the wheel's window aura, then the
-	 * stride aura, in that order; the switch cleanup mirrors
-	 * it in {@link #onClassChanged}. Stance and stride ride here (not in the entry tick) so the tick
+	 * Rush window's speed, in that order; the switch cleanup mirrors
+	 * it in {@link #onClassChanged}. Stance and the Rush speed ride here (not in the entry tick) so the tick
 	 * order and the write-only-on-change discipline are decided once. Idempotent: an
 	 * attribute is only written when what is applied differs from what should be,
 	 * so the modifier is created once and left alone while the stacks hold still.

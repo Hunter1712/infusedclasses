@@ -14,7 +14,7 @@ import net.minecraft.resources.Identifier;
  */
 public record OpenClassScreenPayload(String currentClassId) implements CustomPacketPayload {
 	public static final CustomPacketPayload.Type<OpenClassScreenPayload> TYPE =
-			new CustomPacketPayload.Type<>(Identifier.fromNamespaceAndPath(ClassPackets.MOD_ID, "open_class_screen"));
+			new CustomPacketPayload.Type<>(Identifier.fromNamespaceAndPath(InfusedClasses.MOD_ID, "open_class_screen"));
 
 	public static final StreamCodec<ByteBuf, OpenClassScreenPayload> STREAM_CODEC =
 			StreamCodec.composite(ByteBufCodecs.STRING_UTF8, OpenClassScreenPayload::currentClassId,

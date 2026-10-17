@@ -65,6 +65,9 @@ class LegionaryTest {
 		assertEquals(RotateAbility.Stance.GLADIUS, first.stance());
 		assertEquals("Gladius!", first.outcome().announcement().text());
 		assertEquals(Cooldowns.ROTATE_MS, runtime.rotateRemaining(0));
+		// The arm is joint: the lane and the flip window are stamped together.
+		assertEquals(RotateAbility.SWITCH_DEAL_MS, runtime.flipWindowRemaining(0));
+		assertTrue(runtime.hasImpetusPending(0));
 		// The rotate lane is its own: oath stays ready.
 		assertEquals(0, runtime.oathRemaining(0));
 	}
@@ -78,6 +81,9 @@ class LegionaryTest {
 		assertFalse(second.outcome().fired());
 		assertNull(second.stance());
 		assertEquals(RotateAbility.Stance.GLADIUS, runtime.stance());
+		// The reject left the flip record alone: it still reads the first flip.
+		assertEquals(RotateAbility.Stance.GLADIUS, runtime.flipTarget(1_000));
+		assertEquals(RotateAbility.SWITCH_DEAL_MS - 1_000, runtime.flipWindowRemaining(1_000));
 
 		PlayerRuntime wrong = new PlayerRuntime();
 		RotateAbility.Result rejected = RotateAbility.fire(null, wrong, 0);
@@ -86,6 +92,7 @@ class LegionaryTest {
 		assertNull(rejected.outcome().announcement());
 		assertEquals(0, wrong.rotateRemaining(0));
 		assertEquals(RotateAbility.Stance.SCUTUM, wrong.stance());
+		assertNull(wrong.flipTarget(0));
 	}
 
 	@Test

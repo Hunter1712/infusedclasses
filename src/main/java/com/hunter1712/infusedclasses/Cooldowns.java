@@ -11,7 +11,7 @@ public final class Cooldowns {
 	public static final long REND_MS = 60_000L;
 	/** Rotate lock in millis: 8s between stance flips. Owned here with the lane that enforces it. */
 	public static final long ROTATE_MS = 8_000L;
-	/** Shared Legionary oath lane: firing Impetus locks Testudo and vice versa. */
+	/** The Legionary shared oath lane: 50s, owned solely by Aequilibrium. */
 	public static final long OATH_MS = 50_000L;
 	/** Gambler Roulette lane: one free spin per 25s. */
 	public static final long ROULETTE_MS = 25_000L;

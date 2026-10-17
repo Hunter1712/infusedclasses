@@ -25,9 +25,9 @@ public final class RouletteAbility {
 	/** Bust: melee dealt x0.75 while its window is live. */
 	public static final double BUST_MULT = 0.75;
 	/** Ward modifier id, resolved by the applier. */
-	public static final Identifier WARD_ID = Identifier.fromNamespaceAndPath(ClassPackets.MOD_ID, "roulette_ward");
+	public static final Identifier WARD_ID = Identifier.fromNamespaceAndPath(InfusedClasses.MOD_ID, "roulette_ward");
 	/** Haste modifier id, resolved by the applier. */
-	public static final Identifier HASTE_ID = Identifier.fromNamespaceAndPath(ClassPackets.MOD_ID, "roulette_haste");
+	public static final Identifier HASTE_ID = Identifier.fromNamespaceAndPath(InfusedClasses.MOD_ID, "roulette_haste");
 	/** Cast sound id, resolved by the adapter; the pling is the spin. */
 	public static final Identifier CAST_SOUND = Identifier.withDefaultNamespace("block.note_block.pling");
 

@@ -13,11 +13,11 @@ public final class RushAbility {
 	public static final String NAME = "Rush";
 	/** Engage window in ticks: 5 seconds, tracked as a press timestamp on the runtime. */
 	public static final int WINDOW_TICKS = 100;
-	/** Stride granted while live: +0.02 movement speed, about +20% pace. A stat, never an effect. */
-	public static final double STRIDE_BONUS = 0.02;
-	/** Stride modifier id, resolved by the adapter. */
-	public static final Identifier STRIDE_ID =
-			Identifier.fromNamespaceAndPath(ClassPackets.MOD_ID, "rush_stride");
+	/** Speed granted while the window is live: +0.02 movement speed, about +20% pace. A stat, never an effect. */
+	public static final double SPEED_BONUS = 0.02;
+	/** Speed modifier id, resolved by the adapter. */
+	public static final Identifier SPEED_ID =
+			Identifier.fromNamespaceAndPath(InfusedClasses.MOD_ID, "rush_speed");
 	/** Next-hit Momentum bonus: what the first qualifying melee hit inside the window earns. */
 	public static final int BONUS_STACKS = 5;
 	/** Cast sound id, resolved by the adapter; the wind burst is the engage. */
@@ -25,22 +25,17 @@ public final class RushAbility {
 
 	/** Picker copy, generated from the numbers so it cannot drift from behaviour. */
 	public static String desc() {
-		return "Cleanses harmful effects and quickens stride for " + (WINDOW_TICKS / 20)
+		return "Cleanses harmful effects and quickens you for " + (WINDOW_TICKS / 20)
 				+ "s. Next full-swing hit: +" + BONUS_STACKS + " Momentum (R, "
 				+ (Cooldowns.RUSH_MS / 1000) + "s).";
 	}
 
 	/**
-	 * The stride aura as a modifier: what sits on the player while the engage window
-	 * is live. Single source for the applier's write and remove paths.
-	 * Shared instance: the tick iterates it, never mutates.
+	 * The window's speed as a modifier (shared, never mutated): single source for the
+	 * applier's write and remove paths, so they cannot drift.
 	 */
-	public static PassiveEffect.Modifier strideModifier() {
-		return STRIDE;
-	}
-
-	private static final PassiveEffect.Modifier STRIDE = new PassiveEffect.Modifier(
-			ClassRegistry.MOVEMENT_SPEED, STRIDE_ID, STRIDE_BONUS);
+	public static final PassiveEffect.Modifier SPEED = new PassiveEffect.Modifier(
+			ClassRegistry.MOVEMENT_SPEED, SPEED_ID, SPEED_BONUS);
 
 	private RushAbility() {
 	}

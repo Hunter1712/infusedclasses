@@ -20,16 +20,16 @@ import java.util.Map;
  * crit rule and rendering as its passives.
  */
 public final class ClassRegistry {
-	public static final Identifier JUGGERNAUT = Identifier.fromNamespaceAndPath(ClassPackets.MOD_ID, "juggernaut");
-	public static final Identifier RUSH_ABILITY = Identifier.fromNamespaceAndPath(ClassPackets.MOD_ID, "rush");
-	public static final Identifier REND_ABILITY = Identifier.fromNamespaceAndPath(ClassPackets.MOD_ID, "rend");
-	public static final Identifier LEGIONARY = Identifier.fromNamespaceAndPath(ClassPackets.MOD_ID, "legionary");
-	public static final Identifier ROTATE_ABILITY = Identifier.fromNamespaceAndPath(ClassPackets.MOD_ID, "rotate");
+	public static final Identifier JUGGERNAUT = Identifier.fromNamespaceAndPath(InfusedClasses.MOD_ID, "juggernaut");
+	public static final Identifier RUSH_ABILITY = Identifier.fromNamespaceAndPath(InfusedClasses.MOD_ID, "rush");
+	public static final Identifier REND_ABILITY = Identifier.fromNamespaceAndPath(InfusedClasses.MOD_ID, "rend");
+	public static final Identifier LEGIONARY = Identifier.fromNamespaceAndPath(InfusedClasses.MOD_ID, "legionary");
+	public static final Identifier ROTATE_ABILITY = Identifier.fromNamespaceAndPath(InfusedClasses.MOD_ID, "rotate");
 	public static final Identifier AEQUILIBRIUM_ABILITY =
-			Identifier.fromNamespaceAndPath(ClassPackets.MOD_ID, "aequilibrium");
-	public static final Identifier GAMBLER = Identifier.fromNamespaceAndPath(ClassPackets.MOD_ID, "gambler");
-	public static final Identifier ROULETTE_ABILITY = Identifier.fromNamespaceAndPath(ClassPackets.MOD_ID, "roulette");
-	public static final Identifier ALL_IN_ABILITY = Identifier.fromNamespaceAndPath(ClassPackets.MOD_ID, "all_in");
+			Identifier.fromNamespaceAndPath(InfusedClasses.MOD_ID, "aequilibrium");
+	public static final Identifier GAMBLER = Identifier.fromNamespaceAndPath(InfusedClasses.MOD_ID, "gambler");
+	public static final Identifier ROULETTE_ABILITY = Identifier.fromNamespaceAndPath(InfusedClasses.MOD_ID, "roulette");
+	public static final Identifier ALL_IN_ABILITY = Identifier.fromNamespaceAndPath(InfusedClasses.MOD_ID, "all_in");
 	/** ponytail: attribute ids rather than vanilla holders, so the passive stays bootstrap-free. */
 	public static final ResourceKey<Attribute> ARMOR =
 			ResourceKey.create(Registries.ATTRIBUTE, Identifier.withDefaultNamespace("armor"));
@@ -53,19 +53,19 @@ public final class ClassRegistry {
 						ConditionalPassive.ON_HIT_DEALT,
 						20,
 						ARMOR,
-						Identifier.fromNamespaceAndPath(ClassPackets.MOD_ID, "momentum_armor"),
+						Identifier.fromNamespaceAndPath(InfusedClasses.MOD_ID, "momentum_armor"),
 						0.4,
 						5)),
 				List.of(
 						new HpScaledPassive(
 								ATTACK_DAMAGE,
-								Identifier.fromNamespaceAndPath(ClassPackets.MOD_ID, "vigor_damage"),
+								Identifier.fromNamespaceAndPath(InfusedClasses.MOD_ID, "vigor_damage"),
 								0.3,
 								"Vigor",
 								-1.0),
 						new HpScaledPassive(
 								ATTACK_SPEED,
-								Identifier.fromNamespaceAndPath(ClassPackets.MOD_ID, "vigor_speed"),
+								Identifier.fromNamespaceAndPath(InfusedClasses.MOD_ID, "vigor_speed"),
 								0.075,
 								"Vigor",
 								-0.25)),

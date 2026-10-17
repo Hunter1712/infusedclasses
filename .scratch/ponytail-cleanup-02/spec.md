@@ -36,7 +36,7 @@ harness; no new tests were needed.
   time recomputes the amount from it; the fire-time copy had no reader.
 - `PlayerClasses.readId` drops the warrior/berserker remap: pre-release ids
   never shipped; a stale id now reads as no class and the picker re-asks.
-- `ClassRegistry` identifier literals route through `ClassPackets.MOD_ID`.
+- `ClassRegistry` identifier literals route through one `MOD_ID` holder: `ClassPackets.MOD_ID`, later hoisted to `InfusedClasses.MOD_ID` and `ClassPackets` deleted.
 - `fabric.mod.json` description names all three classes.
 - GLOSSARY synced: Class, Locked class, Class choice module, Applied outcome,
   Card text, Picker button. `docs/guide/commands.md` drops its lock wording;

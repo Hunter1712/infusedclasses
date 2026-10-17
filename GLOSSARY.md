@@ -42,7 +42,7 @@ announcement that goes with it, and the machine-readable remainder when a lane w
 cooldown. `fired`, `rejected` (silent), `fizzled` (says its line, no cast) and
 `onCooldown` are the four factories. An ability with a payload wraps the envelope in its
 own `Result` record instead of widening it: Rotate's landed stance, Roulette's band,
-Rend's consume flag. The empower amount is not part of any of them: the fire stamps the
+Rend's consume flag. The Rend window's amount is not part of any of them: the fire stamps the
 stack count on the runtime, and hit time recomputes the amount from it.
 `trigger` gates read-only; `fire` gates and arms the transient runtime's cooldown together, so no
 caller can fire without arming, and rejected presses leave the cooldown untouched.
@@ -51,12 +51,12 @@ _Avoid_: applied outcome, ability result (both name the wrapper), buff
 **Ability applier** (`AbilityApplier`):
 The shared adapter seams every ability outcome and class-choice outcome passes through: the announcement
 on the action bar (abilities, rotate) or chat (class-choice), plus the cast fanfare (`playCast`) for fired abilities. Effect and sound ids resolve
-at their single use sites — Rush's stride stat in its own adapter, the cast sound in the
+at their single use sites — Rush's speed stat in its own adapter, the cast sound in the
 fanfare itself — never behind shared lookups with one caller each. A result with nothing to grant and nothing
 to say — a wrong-class, on-cooldown or no-stacks press — lands nothing.
 A fired-or-fizzle press lands through `announceAndCast` alone — Rotate with no
 sound (it carries no cast sound, so it announces without fanfare); only Rush keeps its own
-adapter — for the cleanse and the stride it lays — routing its fanfare
+adapter — for the cleanse and the speed it grants — routing its fanfare
 through the shared path. Class-choice rejections and accepts route through `announce` with the `actionBar` flag.
 _Avoid_: ability system, effect handler
 
@@ -166,7 +166,7 @@ All In 75s (`ALL_IN_MS`, `useAllIn` / `allInRemaining`) lanes.
 `reset` readies every lane again
 for class switch and respawn. The lanes ride one map behind a private lane enum,
 so a fifth lane adds a value rather than a field; callers and tests cross the
-per-lane verbs, never the map. The engage window rides on the transient runtime next to
+per-lane verbs, never the map. The Rush window rides on the transient runtime next to
 the lanes: a fired Rush stamps the press time plus a one-shot next-hit bonus,
 `hasRushBonusPending` reads it against the 5s window, and switch and respawn clear it with
 everything else. Rush and Rend windows are one-shot (the melee plan peeks them,
@@ -175,9 +175,9 @@ windows are timed (peeked while live, never consumed).
 _Avoid_: timer
 
 **Rush** (`RushAbility`):
-The Juggernaut's engage on `R`: cleanses every active harmful effect, quickens
-stride (+0.02 move speed, `infusedclasses:rush_stride`) for
-5s (`WINDOW_TICKS`), and arms a one-shot bonus so the next full-swing melee hit inside
+The Juggernaut's engage on `R`: cleanses every active harmful effect, quickens the player
+(+0.02 move speed, `infusedclasses:rush_speed`) for 5s (`WINDOW_TICKS`, the Rush window),
+and arms a one-shot bonus so the next full-swing melee hit inside
 the window earns +5 Momentum (`BONUS_STACKS`), on its own 25s lane. Spam leaves the bonus pending. Fires with zero stacks at full
 HP — engaging topped-off is the normal case, not a reject — and rejected presses leave
 the lane, the window and the bonus untouched. Decided in the trigger/fire gate-and-arm
@@ -192,19 +192,18 @@ nothing and stay silent. The single play path lives here so appliers never dupli
 _Avoid_: cast time, wind-up
 
 **Rend** (`RendAbility`):
-The Juggernaut's Momentum spender on `V`: empowers the next melee hit landed within 6s
-(`WINDOW_TICKS`) for `0.5 HP per stack` bonus damage (10 HP at the full 20), and consumes
-every Momentum stack plus the armor they granted up front, on its own 60s lane. An
+The Juggernaut's Momentum spender on `V`: arms the Rend window — the next melee hit landed
+within 6s (`WINDOW_TICKS`) deals `0.5 HP per stack` bonus damage (10 HP at the full 20) — and
+consumes every Momentum stack plus the armor they granted up front, on its own 60s lane. An
 unswung window simply expires with the stacks already spent. Zero stacks fizzles with a
 `No Momentum` line and arms nothing. Decided in the trigger/fire
 gate-and-arm shape; the spent passive is found once with `passiveForTrigger`
-(never by position), the empower snapshot rides the transient runtime next to the lane, and
+(never by position), the stamped amount rides the transient runtime next to the lane, and
 the consume flag rides in the wrapper result: the entry asks the passive applier to consume
 that passive while `MeleePlan.resolve` spends the snapshot on the next hit and returns the
 stamped bonus in its `Landed`, landing only what it settled, and only when the plan saw one
 live, so empty hits never touch a window.
-Like every cast, firing plays its sound (see `Spellcast`): an anvil-land smash for the
-empower.
+Like every cast, firing plays its sound (see `Spellcast`): an anvil-land smash for the spend.
 _Avoid_: heal button, second ability
 
 **Legionary** (`ClassRegistry`):
@@ -545,6 +544,57 @@ the colour and weight it carries, so nothing here reads what a line says. Long l
 wrap inside the card and scroll above the pinned select.
 _Avoid_: card widget, draw helper
 
+### Status HUD
+
+**Status HUD** (`StatusHud`, `StatusHudElement`):
+The one thing on screen that shows class state: a vertical text stack anchored to the left
+screen edge, the block vertically centred. One row per chip family — the Legionary's stance,
+the signature lane, the ultimate lane, then the Momentum and Streak rows — with the anchored
+chip's name first and its number after it, and riders after the number as dotted counts. The
+names are the glossary's own nouns in Title Case, never keys. Countdowns are whole seconds,
+rounded up, so a live chip never reads zero; a ready lane draws dim with no number, and the
+missing number is what marks it ready. A single space holds a word and its number together —
+rows read as written, numbers ragged down the stack, never padded into a column. The rows
+come from the pure `StatusHud.rows` decision; the element only draws them and owns hiding
+(classless, F1, any open screen, no snapshot). No icons and no textures ship, no config file
+exists and there is no layout knob: the left-centre anchor is a constant.
+_Avoid_: strip, overlay, widget
+
+**Rider**:
+A chip that draws on its lane's row after the lane's number: a window or one-shot that rides
+its ability rather than owning a row. Riders are bare dotted counts — `Rush 25s · 5s`; one
+window per lane, so the number needs no word — with one exception: the Roulette outcome keeps
+its band word (`· Jackpot 8s`) because which band spun is the information. There are no
+badges and no `+` marker: the `IMP`/`TES`/`AEQ`/`ALL` vocabulary retired with ADR-0021, and
+the Rush window's count reads the same spent or loaded. A one-shot's rider vanishes on the
+spend (the Rend window works that way); a Zero outcome draws no rider at all.
+_Avoid_: window chip, badge
+
+**Status snapshot** (`PlayerStatusPayload`):
+The S2C `infusedclasses:player_status` snapshot and wire payload in one: the class id, every
+lane and window remainder, the load flags, Momentum stacks plus grace and the grace stamp, the
+stance, the flip target, Streak and the Roulette outcome. Built only from the transient
+runtime plus a `now`, so it can be asserted without a player. `movedSince` is the emission
+guard: discrete fields only — including the grace stamp, which moves on every re-stamp, so a
+hit at the stack cap still reaches the client — never the raw remainders that decay every
+rebuild. An empty class id is a state, not an absence — a classless join sends one so the
+client hides the stack by fact.
+_Avoid_: state packet, sync payload
+
+**Status sync** (`StatusSync`):
+The emission adapter: one last-sent snapshot per player UUID. `maybeSend` runs at every change
+point — intent receivers after their branch, the melee settle, the server tick after the
+decay pass, an accepted class switch — and sends only when `movedSince` says something moved,
+so a rejected press, a spam swing or a quiet tick costs no packets. `sendNow` forces one
+snapshot on join and respawn (classless included); `forget` drops the entry on logout.
+_Avoid_: broadcaster, syncer
+
+**Status store** (`StatusStore`):
+The client's one snapshot copy plus its receipt time. The HUD element interpolates its
+countdowns from that stamp and reads no other status state; a disconnect clears both fields,
+because the snapshot is session data.
+_Avoid_: cache
+
 ### Protocol and commands
 
 **Select intent** (`SelectClassPayload`):
@@ -570,8 +620,8 @@ ultimate key", sent while the `V` key (`key.infusedclasses.ultimate`) is
 consumed each client tick. The payload class and channel keep their old `rend`
 names on purpose — the wire is not the player surface, so the protocol and the
 player vocabulary diverge by design. The server validates class, stacks and
-cooldown; rejected presses leave the cooldown untouched, and the empower lands
-on the next melee hit inside the window.
+cooldown; rejected presses leave the cooldown untouched, and the Rend window's
+bonus lands on the next melee hit inside it.
 For a Legionary the same bind arrives as the oath intent (Aequilibrium in any stance) and for a
 Gambler as All In, so binds survive the class.
 _Avoid_: heal packet, key packet
@@ -604,8 +654,8 @@ _Avoid_: admin command, cheat
 
 Recorded in `docs/adr/`. `0001` is the decide-then-apply rule these terms are named after; `0002`
 owns the choice/transient split; `0003` defers the class-lookup seam until a second source of
-classes exists; `0004` inverts the Juggernaut kit to high-HP rewards (Vigor plus Momentum, Rush engage
-plus Rend empower) with sound replacing root; `0005` moves the hit-gating decision out of the
+classes exists; `0004` inverts the Juggernaut kit to high-HP rewards (Vigor plus Momentum, the Rush engage
+plus the Rend window) with sound replacing root; `0005` moves the hit-gating decision out of the
 server entry, the stack storage out of the transient runtime, and the trigger scan onto the class;
 `0006` adds the Legionary stance tradeoff plus the universal charged curve and stack gate;
 `0007` deepens the melee hook (plan, settle, morph) and splits the adapters, revisiting
@@ -643,4 +693,17 @@ in the config. `0017`'s silence
 and compressed numbers carry into the stack. `0019` scraps this chain from the
 build pending a later reimplementation: draw layer, client config file, the
 snapshot payload and its sync callers all leave; the pill-look lessons live in
-the prototypes.
+the prototypes. `0020` brings the HUD back as the left-centre icon stack: the
+rows decision and the transport return from the archive, anchored chips trade
+the old badge names for generated 16x16 icons while riders keep the badge
+vocabulary, countdowns print whole seconds rounded up, and no config file
+exists. `0021` makes the stack speak words: the icon column gives way to a text
+stack — glossary names with a single space before their numbers (no padded
+column; the first cut read as tab stops), riders as bare dotted numbers
+except the Roulette band word, the Rush `+` marker dropped, the ten generated
+icons, their script and the whole texture tree deleted — and the snapshot
+carries the Momentum grace stamp, so a re-stamp at the stack cap is never
+invisible to the client. The same decision renames the code's window nouns:
+`stride` and `empower` leave identifiers, comments, tests and the picker copy
+for `SPEED_BONUS` at `infusedclasses:rush_speed`, `RendAbility.bonusFor` and the
+`peekRendBonusStacks` / `consumeRendBonus` pair.

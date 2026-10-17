@@ -35,15 +35,15 @@ public final class RotateAbility {
 	// Stance auras. Downsides ride in the damage hooks as multipliers, never as
 	// negative attributes (armor reads back 0 under negatives).
 	public static final Identifier GLADIUS_DAMAGE_ID =
-			Identifier.fromNamespaceAndPath(ClassPackets.MOD_ID, "gladius_damage");
+			Identifier.fromNamespaceAndPath(InfusedClasses.MOD_ID, "gladius_damage");
 	public static final Identifier GLADIUS_ALACRITY_ID =
-			Identifier.fromNamespaceAndPath(ClassPackets.MOD_ID, "gladius_alacrity");
+			Identifier.fromNamespaceAndPath(InfusedClasses.MOD_ID, "gladius_alacrity");
 	public static final Identifier SCUTUM_PLATE_ID =
-			Identifier.fromNamespaceAndPath(ClassPackets.MOD_ID, "scutum_plate");
+			Identifier.fromNamespaceAndPath(InfusedClasses.MOD_ID, "scutum_plate");
 	public static final Identifier SCUTUM_TOUGHNESS_ID =
-			Identifier.fromNamespaceAndPath(ClassPackets.MOD_ID, "scutum_toughness");
+			Identifier.fromNamespaceAndPath(InfusedClasses.MOD_ID, "scutum_toughness");
 	public static final Identifier SCUTUM_WEIGHT_ID =
-			Identifier.fromNamespaceAndPath(ClassPackets.MOD_ID, "scutum_weight");
+			Identifier.fromNamespaceAndPath(InfusedClasses.MOD_ID, "scutum_weight");
 	/** Gladius aura: +1 attack damage, glass. */
 	public static final double GLADIUS_DAMAGE = 1.0;
 	/** Gladius aura: +0.3 attack speed, paying back part of the damage cut as rate. */
@@ -177,8 +177,7 @@ public final class RotateAbility {
 	public static Result fire(ClassDefinition def, PlayerRuntime runtime, long now) {
 		Result result = trigger(def, runtime.rotateRemaining(now), runtime.stance());
 		if (result.outcome().fired()) {
-			runtime.tryUseRotate(now);
-			runtime.flipStance(now, result.stance());
+			runtime.tryUseRotate(now, result.stance());
 		}
 		return result;
 	}

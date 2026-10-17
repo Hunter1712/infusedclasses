@@ -126,7 +126,7 @@ class MeleePlanTest {
 		assertFalse(spam.bump());
 		assertTrue(full.rushBonus());
 		assertFalse(spam.rushBonus());
-		assertEquals(-1, full.rendStacks());
+		assertEquals(0, full.rendStacks());
 		assertEquals(0, full.rendHp());
 	}
 
@@ -223,10 +223,10 @@ class MeleePlanTest {
 
 		MeleePlan.HitPlan plan = MeleePlan.planHit(juggernaut(), runtime, null, null, 1.0F, 0, 0.05F);
 
-		// The empower is its own bonus: the crit folds into the settled mult, never into rendHp.
+		// The Rend bonus is its own: the crit folds into the settled mult, never into rendHp.
 		assertEquals(CritRoll.Verdict.CRIT, plan.dice().verdict());
 		assertEquals(1.25, plan.dice().mult(), 1e-9);
-		assertEquals(RendAbility.empowerFor(5), plan.rendHp(), 1e-9);
+		assertEquals(RendAbility.bonusFor(5), plan.rendHp(), 1e-9);
 		MeleePlan.Landed landed = MeleePlan.resolve(juggernaut(), runtime, null, null, 1.0F, 0, 0.05F);
 		assertEquals(plan.rendHp(), landed.rendHp(), 1e-9);
 		assertEquals(1.25, landed.combined(), 1e-9);
@@ -253,7 +253,7 @@ class MeleePlanTest {
 		// Settle owns the bump too: full swing earns one (+1), Rush credits +5, Rend snapshot spent, not refunded.
 		assertEquals(11, runtime.stacks(momentum));
 		assertFalse(runtime.hasRushBonusPending(0));
-		assertEquals(-1, runtime.peekRendEmpowerStacks(0));
+		assertEquals(0, runtime.peekRendBonusStacks(0));
 	}
 
 	@Test
@@ -266,7 +266,7 @@ class MeleePlanTest {
 
 		assertEquals(0, runtime.stacks(juggernaut().passives().get(0)));
 		assertFalse(runtime.hasRushBonusPending(0));
-		assertEquals(-1, runtime.peekRendEmpowerStacks(0));
+		assertEquals(0, runtime.peekRendBonusStacks(0));
 	}
 
 	@Test

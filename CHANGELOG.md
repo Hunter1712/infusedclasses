@@ -7,8 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Status HUD returns as the left-centre text stack (ADR-0021): a vertical column of words on the left screen edge, vertically centred — each chip draws its ability, stance or state name with its countdown one space after it in whole seconds rounded up, and a ready lane dims and drops its number. Rows: the Legionary's stance, the signature lane, the ultimate lane, then the Momentum (stacks · grace) and Streak state rows; window riders draw beside their lane's number as dotted counts (`Rush 25s · 5s`, the Roulette outcome keeping its band word: `· Jackpot 8s`). Driven by the `infusedclasses:player_status` snapshot sent only at change points, guarded by `movedSince`; text only — no icons, no textures, no column padding, no config file, no knobs. `docs/guide/hud.md` returns with it.
+
+### Fixed
+- The Momentum grace clock is visible while you keep hitting: a hit at the stack cap re-stamps the grace without moving the count, and the snapshot now carries the grace stamp so that re-stamp reaches the client (it used to run the displayed grace down to `0s` and leave it there mid-combat). The Momentum row also never prints `0s`: a stale snapshot draws bare stacks instead.
+
+### Changed
+- Vocabulary sweep (ADR-0021): `stride` and `empower` leave the code — the Rush speed stat is `SPEED_BONUS` at `infusedclasses:rush_speed`, the Rend bonus math is `RendAbility.bonusFor`, the runtime reads are `peekRendBonusStacks`/`consumeRendBonus`, and comments, test names and the prototype speak the Rush window and the Rend window. Rush's picker card now reads `Cleanses harmful effects and quickens you for 5s` (was `quickens stride`).
+
 ### Removed
 - Status HUD scrapped pending a later implementation (ADR-0019): the on-screen strip, its client config file (`config/infusedclasses.json`) and its `infusedclasses:player_status` snapshot signal all leave the build. Lane countdowns stay readable through `/class info`, and a press on cooldown still says nothing (ADR-0017's silence carried at ADR-0019). The ADR 0014/0017/0018 chain and the `prototype/strip-goes-bare` branch record what the next HUD builds on.
+- The generated HUD icons (ADR-0021): the ten PNGs, `tools/generate-hud-icons.ps1` and `textures/gui/ability/` are deleted — the stack speaks words, so no GUI textures ship.
 
 ## [0.3.0] - 2026-10-17
 

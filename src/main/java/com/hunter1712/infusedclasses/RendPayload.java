@@ -8,7 +8,7 @@ import net.minecraft.resources.Identifier;
 /** Ultimate slot intent: "I pressed the ultimate bind". Server validates class, stacks and cooldown. */
 public record RendPayload() implements CustomPacketPayload {
 	public static final CustomPacketPayload.Type<RendPayload> TYPE =
-			new CustomPacketPayload.Type<>(Identifier.fromNamespaceAndPath(ClassPackets.MOD_ID, "rend"));
+			new CustomPacketPayload.Type<>(Identifier.fromNamespaceAndPath(InfusedClasses.MOD_ID, "rend"));
 
 	public static final StreamCodec<ByteBuf, RendPayload> STREAM_CODEC =
 			StreamCodec.unit(new RendPayload());

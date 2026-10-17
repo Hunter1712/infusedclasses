@@ -25,6 +25,9 @@ final class ServerEvents {
 			if (!PlayerClassAccess.of(player).hasClass()) {
 				sender.sendPacket(new OpenClassScreenPayload(""));
 			}
+			// One forced snapshot on join, classless included: the client starts from a
+			// known state instead of guessing until the first change point.
+			StatusSync.sendNow(player, System.currentTimeMillis());
 		});
 
 		ServerPlayerEvents.AFTER_RESPAWN.register((oldPlayer, newPlayer, alive) -> {
@@ -33,10 +36,13 @@ final class ServerEvents {
 			// player's starts empty, which is what a respawn has always done to it.
 			// Load-bearing ordering lives in the runtime store: both players share one UUID.
 			InfusedClasses.runtimes().respawn(newPlayer.getUUID());
+			StatusSync.forget(newPlayer.getUUID());
+			StatusSync.sendNow(newPlayer, System.currentTimeMillis());
 		});
 
 		ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> {
 			InfusedClasses.runtimes().remove(handler.getPlayer().getUUID());
+			StatusSync.forget(handler.getPlayer().getUUID());
 		});
 
 		ServerLivingEntityEvents.AFTER_DAMAGE.register((entity, source, baseDamageTaken, damageTaken, blocked) -> {
@@ -76,6 +82,9 @@ final class ServerEvents {
 				}
 				PlayerRuntime runtime = InfusedClasses.runtime(player);
 				PassiveApplier.apply(player, def, runtime, now);
+				// Post-decay emission: a tick that moved stacks tells the client; a quiet
+				// tick rebuilds and compares for free.
+				StatusSync.maybeSend(player, now);
 			}
 		});
 	}
@@ -123,6 +132,9 @@ final class ServerEvents {
 							RushApplier.apply(player, result);
 						}
 					}
+					// Post-press emission: a fire, a fizzle or a rejected press rebuilds
+					// and compares; only one that moved state costs a packet.
+					StatusSync.maybeSend(player, now);
 				}));
 
 		ServerPlayNetworking.registerGlobalReceiver(RendPayload.TYPE, (payload, context) -> context.server()
@@ -150,12 +162,15 @@ final class ServerEvents {
 							AbilityApplier.announceAndCast(player, result.outcome().announcement(),
 									result.outcome().fired(), RendAbility.CAST_SOUND, true);
 							// The adapter spends only the priced passive; a fizzle spends nothing.
-							// The empower damage lands on the next melee hit inside the window.
+							// The Rend bonus lands on the next melee hit inside the window.
 							if (result.consume()) {
 								PassiveApplier.consumeSpent(player, runtime, def);
 							}
 						}
 					}
+					// Post-press emission: the ultimate's fire, window and consume all
+					// land in this branch, so the stack learns them here.
+					StatusSync.maybeSend(player, now);
 				}));
 	}
 
@@ -195,7 +210,7 @@ final class ServerEvents {
 		// The verdict's cue lands once per hit, classless included: a crit replays the
 		// vanilla particles and sound, a betrayal gets its own crack.
 		CritCue.apply(attacker, entity, landed.verdict());
-		// Rend empower: the stamped bonus lands on this hit and only this one,
+		// Rend window: the stamped bonus lands on this hit and only this one,
 		// applied through the adapter like every other outcome; the bonus is
 		// what the resolve already settled, never recomputed.
 		DamageSettle.dealBonus(attacker, entity, landed.rendHp());
@@ -204,5 +219,8 @@ final class ServerEvents {
 		// take, a crit x1.25: see HitPlan.combined.
 		DamageSettle.settleTake(entity, baseDamageTaken, landed.combined(),
 				() -> attacker.damageSources().playerAttack(attacker));
+		// Post-settle emission: the hit may have bumped stacks, moved the dice, spent a
+		// one-shot or reset Streak; a hit that moved nothing sends nothing.
+		StatusSync.maybeSend(attacker, now);
 	}
 }

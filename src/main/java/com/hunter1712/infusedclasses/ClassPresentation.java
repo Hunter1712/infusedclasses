@@ -92,7 +92,9 @@ public final class ClassPresentation {
 				}
 				lines.add(new CardLine(entry.getKey(), joined.toString(), LineKind.PASSIVE));
 			}
-			addFlips(lines, def.flipBuffs());
+			for (ClassDefinition.FlipBuff flip : def.flipBuffs()) {
+				lines.add(new CardLine(flip.name(), flip.desc(), LineKind.PASSIVE));
+			}
 			if (def.critRule().hasDice()) {
 				lines.add(new CardLine(CritRule.CROOKED_DICE, def.critRule().crookedDiceDesc(), LineKind.PASSIVE));
 				lines.add(new CardLine(CritRule.STREAK, def.critRule().streakDesc(), LineKind.PASSIVE));
@@ -102,25 +104,11 @@ public final class ClassPresentation {
 		}
 		if (!def.actives().isEmpty()) {
 			lines.add(new CardLine("Active", null, LineKind.ABILITY_HEADER));
-			addActives(lines, def.actives());
+			for (ClassDefinition.ActiveAbility active : def.actives()) {
+				lines.add(new CardLine(active.name(), active.desc(), LineKind.ABILITY));
+			}
 		}
 		return lines;
-	}
-
-	private static void addActives(List<CardLine> lines, List<ClassDefinition.ActiveAbility> actives) {
-		for (ClassDefinition.ActiveAbility active : actives) {
-			addRow(lines, active.name(), active.desc(), LineKind.ABILITY);
-		}
-	}
-
-	private static void addFlips(List<CardLine> lines, List<ClassDefinition.FlipBuff> flips) {
-		for (ClassDefinition.FlipBuff flip : flips) {
-			addRow(lines, flip.name(), flip.desc(), LineKind.PASSIVE);
-		}
-	}
-
-	private static void addRow(List<CardLine> lines, String name, String desc, LineKind kind) {
-		lines.add(new CardLine(name, desc, kind));
 	}
 
 	/** HP-scaled passives read as one entry per family, in first-appearance order. */
@@ -130,11 +118,6 @@ public final class ClassPresentation {
 			groups.computeIfAbsent(hp.group(), k -> new ArrayList<>()).add(hp);
 		}
 		return groups;
-	}
-
-	/** Accent color for the card top strip: the class's own accent. */
-	private static int accentFor(ClassDefinition def) {
-		return def.accentColor();
 	}
 
 	/**
@@ -161,7 +144,7 @@ public final class ClassPresentation {
 				def.displayName(),
 				def.tagline(),
 				List.copyOf(cardLinesFor(def)),
-				accentFor(def));
+				def.accentColor());
 	}
 
 	private static CardStyle cardStyleFor(boolean hovered) {

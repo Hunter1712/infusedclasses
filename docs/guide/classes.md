@@ -8,8 +8,8 @@ Rush engage plus Rend execute. No max-health bonus (vanilla 20 HP): Vigor reward
 
 **Actives**
 
-- **Rush** (`R`): cleanses every active harmful effect, quickens stride (+0.02 move speed) for 5s, and arms a one-shot bonus so the next full-swing melee hit inside the window earns +5 Momentum. Own 25s lane. Fires with zero stacks at full HP — engaging topped-off is the normal case, not a reject. Rejected presses leave the lane, window and bonus untouched. Cast fanfare: wind-burst whoosh.
-- **Rend** (`V`): empowers the next melee hit landed within 6s for 0.5 HP per Momentum stack bonus damage (10 HP at the full 20), and consumes every Momentum stack plus the armor they granted up front. Own 60s lane. Zero stacks fizzles with a `No Momentum` line and arms nothing. An unswung window expires with the stacks already spent. Cast fanfare: anvil-land smash.
+- **Rush** (`R`): cleanses every active harmful effect, quickens the player (+0.02 move speed) for 5s (the Rush window), and arms a one-shot bonus so the next full-swing melee hit inside the window earns +5 Momentum. Own 25s lane. Fires with zero stacks at full HP — engaging topped-off is the normal case, not a reject. Rejected presses leave the lane, window and bonus untouched. Cast fanfare: wind-burst whoosh.
+- **Rend** (`V`): arms the Rend window — the next melee hit landed within 6s deals 0.5 HP per Momentum stack bonus damage (10 HP at the full 20) — and consumes every Momentum stack plus the armor they granted up front. Own 60s lane. Zero stacks fizzles with a `No Momentum` line and arms nothing. An unswung window expires with the stacks already spent. Cast fanfare: anvil-land smash.
 
 **Passives**
 

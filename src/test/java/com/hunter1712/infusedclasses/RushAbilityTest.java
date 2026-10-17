@@ -19,8 +19,8 @@ class RushAbilityTest {
 	@Test
 	void windowAndBonusConstants() {
 		assertEquals(100, RushAbility.WINDOW_TICKS);
-		assertEquals(0.02, RushAbility.STRIDE_BONUS);
-		assertEquals("infusedclasses:rush_stride", RushAbility.STRIDE_ID.toString());
+		assertEquals(0.02, RushAbility.SPEED_BONUS);
+		assertEquals("infusedclasses:rush_speed", RushAbility.SPEED_ID.toString());
 		assertEquals(5, RushAbility.BONUS_STACKS);
 		assertEquals("minecraft:entity.wind_charge.wind_burst", RushAbility.CAST_SOUND.toString());
 	}

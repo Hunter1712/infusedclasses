@@ -1,6 +1,6 @@
 # 02: Stacks sync signal
 
-**What to build:** New server-to-client signal (same family as the picker signal and pick confirm) carrying per-passive entries: passive name, stacks, per-stack value, grace seconds, and millis-until-decay at send time. Payload record owns its `Type` and codec; `ClassPackets` stays the `MOD_ID` holder.
+**What to build:** New server-to-client signal (same family as the picker signal and pick confirm) carrying per-passive entries: passive name, stacks, per-stack value, grace seconds, and millis-until-decay at send time. Payload record owns its `Type` and codec; the `MOD_ID` holder is `InfusedClasses` (`ClassPackets` was deleted in a later wave).
 
 **Blocked by:** 01.
 

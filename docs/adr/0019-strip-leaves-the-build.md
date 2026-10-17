@@ -1,6 +1,6 @@
 # ADR-0019: The strip leaves the build
 
-Status: accepted
+Status: superseded by ADR-0020 (the left-centre icon stack), then ADR-0021 (the stack speaks words)
 
 ## Context
 

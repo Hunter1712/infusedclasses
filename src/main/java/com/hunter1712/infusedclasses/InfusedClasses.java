@@ -7,6 +7,8 @@ import net.minecraft.server.level.ServerPlayer;
 /** Server side. Authoritative: client sends intents, every decision happens here. */
 public class InfusedClasses implements ModInitializer {
 	static final String UNKNOWN_OR_LOCKED = "Unknown or locked class";
+	/** Mod namespace, owned here: the one field every id, payload type and modifier id builds on. */
+	public static final String MOD_ID = "infusedclasses";
 	/** The transient half of per-player state, held here because it is not reachable from the player. */
 	private static final PlayerRuntimes RUNTIMES = new PlayerRuntimes();
 
@@ -24,6 +26,7 @@ public class InfusedClasses implements ModInitializer {
 		PayloadTypeRegistry.playC2S().register(RendPayload.TYPE, RendPayload.STREAM_CODEC);
 		PayloadTypeRegistry.playS2C().register(OpenClassScreenPayload.TYPE, OpenClassScreenPayload.STREAM_CODEC);
 		PayloadTypeRegistry.playS2C().register(ClassConfirmedPayload.TYPE, ClassConfirmedPayload.STREAM_CODEC);
+		PayloadTypeRegistry.playS2C().register(PlayerStatusPayload.TYPE, PlayerStatusPayload.STREAM_CODEC);
 	}
 
 	/**

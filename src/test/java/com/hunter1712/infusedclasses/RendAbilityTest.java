@@ -30,18 +30,18 @@ class RendAbilityTest {
 	}
 
 	@Test
-	void empowerMathAtZeroOneTwenty() {
-		assertEquals(0, RendAbility.empowerFor(0));
-		assertEquals(0.5F, RendAbility.empowerFor(1));
-		assertEquals(5.0F, RendAbility.empowerFor(10));
-		assertEquals(10.0F, RendAbility.empowerFor(20));
+	void bonusMathAtZeroOneTwenty() {
+		assertEquals(0, RendAbility.bonusFor(0));
+		assertEquals(0.5F, RendAbility.bonusFor(1));
+		assertEquals(5.0F, RendAbility.bonusFor(10));
+		assertEquals(10.0F, RendAbility.bonusFor(20));
 		assertEquals("minecraft:block.anvil.land", RendAbility.CAST_SOUND.toString());
 	}
 
 	@Test
 	void noExecuteBonusAtAnyTargetHp() {
-		// The empower is the empower: target health never enters the decision.
-		assertEquals(5.0F, RendAbility.empowerFor(10));
+		// The bonus stands alone: target health never enters the decision.
+		assertEquals(5.0F, RendAbility.bonusFor(10));
 	}
 
 	@Test
@@ -63,7 +63,7 @@ class RendAbilityTest {
 	}
 
 	@Test
-	void fireEmpowersAndArmsOnlyItsOwnLane() {
+	void fireArmsOnlyItsOwnLane() {
 		PlayerRuntime runtime = withStacks(5, 0);
 		RendAbility.Result result = RendAbility.fire(juggernautDef(), runtime, 0);
 
@@ -74,15 +74,15 @@ class RendAbilityTest {
 	}
 
 	@Test
-	void fireStampsASingleUseEmpower() {
+	void fireStampsASingleUseBonus() {
 		PlayerRuntime runtime = withStacks(10, 0);
 		RendAbility.fire(juggernautDef(), runtime, 0);
 
-		assertEquals(10, runtime.peekRendEmpowerStacks(0));
-		assertEquals(10, runtime.peekRendEmpowerStacks(5_999));
-		assertEquals(-1, runtime.peekRendEmpowerStacks(6_000));
-		assertEquals(10, runtime.consumeRendEmpower(0));
-		assertEquals(-1, runtime.consumeRendEmpower(0));
+		assertEquals(10, runtime.peekRendBonusStacks(0));
+		assertEquals(10, runtime.peekRendBonusStacks(5_999));
+		assertEquals(0, runtime.peekRendBonusStacks(6_000));
+		assertEquals(10, runtime.consumeRendBonus(0));
+		assertEquals(0, runtime.consumeRendBonus(0));
 	}
 
 	@Test
@@ -90,8 +90,8 @@ class RendAbilityTest {
 		PlayerRuntime runtime = withStacks(10, 0);
 		RendAbility.fire(juggernautDef(), runtime, 0);
 
-		assertEquals(-1, runtime.peekRendEmpowerStacks(6_001));
-		assertEquals(-1, runtime.consumeRendEmpower(6_001));
+		assertEquals(0, runtime.peekRendBonusStacks(6_001));
+		assertEquals(0, runtime.consumeRendBonus(6_001));
 		// The lane stays armed: the whiff cost time, and the stacks are already spent.
 		assertEquals(Cooldowns.REND_MS - 6_001, runtime.rendRemaining(6_001));
 	}
@@ -105,7 +105,7 @@ class RendAbilityTest {
 		assertEquals("No Momentum", result.outcome().announcement().text());
 		assertFalse(result.consume());
 		assertEquals(0, runtime.rendRemaining(0));
-		assertEquals(-1, runtime.peekRendEmpowerStacks(0));
+		assertEquals(0, runtime.peekRendBonusStacks(0));
 	}
 
 	@Test
@@ -116,7 +116,7 @@ class RendAbilityTest {
 		assertFalse(result.outcome().fired());
 		assertNull(result.outcome().announcement());
 		assertEquals(0, runtime.rendRemaining(0));
-		assertEquals(-1, runtime.peekRendEmpowerStacks(0));
+		assertEquals(0, runtime.peekRendBonusStacks(0));
 	}
 
 	@Test
@@ -133,14 +133,14 @@ class RendAbilityTest {
 	}
 
 	@Test
-	void resetReadiesTheLaneAndClearsTheEmpower() {
+	void resetReadiesTheLaneAndClearsTheBonus() {
 		PlayerRuntime runtime = withStacks(5, 0);
 		RendAbility.fire(juggernautDef(), runtime, 0);
 		runtime.resetCooldowns();
 
 		assertEquals(0, runtime.rendRemaining(0));
-		assertEquals(-1, runtime.peekRendEmpowerStacks(0));
-		assertEquals(-1, runtime.consumeRendEmpower(0));
+		assertEquals(0, runtime.peekRendBonusStacks(0));
+		assertEquals(0, runtime.consumeRendBonus(0));
 	}
 
 	@Test
@@ -156,6 +156,6 @@ class RendAbilityTest {
 		assertTrue(PassiveApplier.dropStacks(runtime, juggernautDef().passiveForTrigger(ConditionalPassive.ON_HIT_DEALT)));
 		assertEquals(0, runtime.stacks(juggernautDef().passives().get(0)));
 		assertFalse(PassiveApplier.dropStacks(runtime, juggernautDef().passiveForTrigger(ConditionalPassive.ON_HIT_DEALT)));
-		assertEquals(4, runtime.peekRendEmpowerStacks(0));
+		assertEquals(4, runtime.peekRendBonusStacks(0));
 	}
 }

@@ -122,4 +122,13 @@ final class PassiveStacks {
 		}
 		return Math.max(0L, passive.graceSeconds() * 1000L - (now - lastTrigger));
 	}
+
+	/**
+	 * The grace clock's last stamp for this passive, 0 when it holds none. Not remaining
+	 * time: the same value across a quiet second, and a new value every re-stamp — a hit
+	 * at the stack cap re-stamps without moving the count, and this is how that reads.
+	 */
+	long graceStamp(ConditionalPassive passive) {
+		return lastTriggerTime.getOrDefault(passive, 0L);
+	}
 }

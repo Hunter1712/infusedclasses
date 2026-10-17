@@ -60,8 +60,8 @@ public final class PlayerRuntime {
 		return stance;
 	}
 
-	/** Flips the stance and stamps the flip record: Rotate's fire lands here with the lane arm. */
-	public void flipStance(long now, RotateAbility.Stance landing) {
+	/** Flips the stance and stamps the flip record: the joint rotate arm lands here, tests stamp states. */
+	void flipStance(long now, RotateAbility.Stance landing) {
 		stance = landing;
 		flippedTo = landing;
 		long windowMs = landing == RotateAbility.Stance.GLADIUS
@@ -72,9 +72,13 @@ public final class PlayerRuntime {
 	// Joint arms: lane plus window stamped together, so a fired press can never arm
 	// one without the other. This coordination is the module's own job; the lane map
 	// itself stays hidden inside Cooldowns.
-	/** Arms the rotate lock: fired Rotate presses only. The flip rides with it. */
-	public boolean tryUseRotate(long now) {
-		return cooldowns.useRotate(now);
+	/** Arms the rotate lock and flips to the landing together: fired Rotate presses only. */
+	public boolean tryUseRotate(long now, RotateAbility.Stance landing) {
+		if (!cooldowns.useRotate(now)) {
+			return false;
+		}
+		flipStance(now, landing);
+		return true;
 	}
 
 	public long rotateRemaining(long now) {
@@ -198,6 +202,11 @@ public final class PlayerRuntime {
 		return flipWindow.remainingMs(now);
 	}
 
+	/** The live flip window's landing, the flip record's own read; null when no flip window is live. */
+	public RotateAbility.Stance flipTarget(long now) {
+		return flipWindow.isLive(now) ? flippedTo : null;
+	}
+
 	// Lane reads: mechanical forwards over the hidden Cooldowns, so ability decisions
 	// never touch the lane map. No coordination lives here, only remaining-time answers.
 	/** Cooldown verbs: arming runs through here; the lanes stay the module's implementation. */
@@ -227,12 +236,12 @@ public final class PlayerRuntime {
 		return rushWindow.hasPending(now);
 	}
 
-	/** Whether a fired Rush window is still live: the stride aura rides it, spent bonus or not. */
+	/** Whether a fired Rush window is still live: the speed rides it, spent bonus or not. */
 	public boolean isRushLive(long now) {
 		return rushWindow.isLive(now);
 	}
 
-	/** Millis left of the live Rush stride window, 0 when none is live. */
+	/** Millis left of the live Rush window, 0 when none is live. */
 	public long rushWindowRemaining(long now) {
 		return rushWindow.remainingMs(now);
 	}
@@ -242,9 +251,9 @@ public final class PlayerRuntime {
 	}
 
 	/**
-	 * Arms the Rend lane and stamps the empower snapshot together: fired presses only.
-	 * The snapshot is what the next hit inside the window is worth; the stacks themselves
-	 * are consumed separately by the entry through the passive applier.
+	 * Arms the Rend lane and stamps the window's bonus together: fired presses only.
+	 * The stamped stack count is what the next hit inside the window is worth; the stacks
+	 * themselves are consumed separately by the entry through the passive applier.
 	 */
 	public boolean tryUseRend(long now, int stacks) {
 		if (!cooldowns.useRend(now)) {
@@ -254,27 +263,27 @@ public final class PlayerRuntime {
 		return true;
 	}
 
-	/** Peeks the empower snapshot without consuming: what the melee plan decides on. -1 when nothing is owed. */
-	public int peekRendEmpowerStacks(long now) {
+	/** Peeks the bonus stamp without consuming: what the melee plan decides on. 0 when nothing is owed (a fired window always stamps at least one stack). */
+	public int peekRendBonusStacks(long now) {
 		return rendWindow.peekPayload(now);
 	}
 
-	/** Whether a fired Rend window still owes its empower bonus, whatever its size. */
+	/** Whether a fired Rend window still owes its bonus, whatever its size. */
 	public boolean hasRendBonusPending(long now) {
 		return rendWindow.hasPending(now);
 	}
 
-	/** Millis left of the live Rend empower window, 0 when none is live. */
+	/** Millis left of the live Rend window, 0 when none is live. */
 	public long rendWindowRemaining(long now) {
 		return rendWindow.remainingMs(now);
 	}
 
 	/**
-	 * Spends the Rend empower exactly once: the stamped stack snapshot when a live empower
-	 * was waiting, -1 when nothing was owed. An unswung window simply stops being live;
+	 * Spends the Rend bonus exactly once: the stamped stacks when a live window was
+	 * waiting, 0 when nothing was owed. An unswung window simply stops being live;
 	 * the stacks it cost are already gone.
 	 */
-	public int consumeRendEmpower(long now) {
+	public int consumeRendBonus(long now) {
 		return rendWindow.consumePayload(now);
 	}
 
@@ -340,16 +349,15 @@ public final class PlayerRuntime {
 		}
 
 		int peekPayload(long now) {
-			return hasPending(now) ? payload : -1;
+			return hasPending(now) ? payload : 0;
 		}
 
 		int consumePayload(long now) {
-			int seen = peekPayload(now);
-			if (seen < 0) {
-				return -1;
+			if (!hasPending(now)) {
+				return 0;
 			}
 			pending = false;
-			return seen;
+			return payload;
 		}
 
 		void clear() {
@@ -368,6 +376,11 @@ public final class PlayerRuntime {
 	/** Millis left before this passive's stacks drop, 0 when it holds none. Exactly at grace is still live. */
 	public long graceRemaining(ConditionalPassive passive, long now) {
 		return passiveStacks.graceRemaining(passive, now);
+	}
+
+	/** The grace clock's last stamp for this passive, 0 when it holds none. Compared for movement, never read as time. */
+	public long graceStamp(ConditionalPassive passive) {
+		return passiveStacks.graceStamp(passive);
 	}
 
 	/** Bumps every passive on the given class whose trigger matches.

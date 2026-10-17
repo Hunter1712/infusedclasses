@@ -21,10 +21,10 @@ public final class AequilibriumAbility {
 	public static final int WINDOW_TICKS = 120;
 	/** Modifier id for the window edge. */
 	public static final Identifier EDGE_ID =
-			Identifier.fromNamespaceAndPath(ClassPackets.MOD_ID, "aequilibrium_edge");
+			Identifier.fromNamespaceAndPath(InfusedClasses.MOD_ID, "aequilibrium_edge");
 	/** Modifier id for the window plate. */
 	public static final Identifier PLATE_ID =
-			Identifier.fromNamespaceAndPath(ClassPackets.MOD_ID, "aequilibrium_plate");
+			Identifier.fromNamespaceAndPath(InfusedClasses.MOD_ID, "aequilibrium_plate");
 	/** Cast sound id, resolved by the adapter; fail silent if missing. */
 	public static final Identifier CAST_SOUND = Identifier.withDefaultNamespace("entity.player.levelup");
 

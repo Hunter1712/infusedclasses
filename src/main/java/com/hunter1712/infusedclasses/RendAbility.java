@@ -5,20 +5,20 @@ import net.minecraft.resources.Identifier;
 
 /**
  * Rend decisions: the Juggernaut's Momentum spender on {@code V}. Pure gate-and-arm shape:
- * empowers the next melee hit landed inside the window for {@code stacks * HP_PER_STACK}
- * bonus damage, and consumes every Momentum stack up front, on its own 60s
- * lane. Zero stacks fizzles with a {@code No Momentum} line and arms nothing; an empowered
+ * on fire, the next melee hit landed inside the window deals {@code stacks * HP_PER_STACK}
+ * bonus damage, and every Momentum stack is consumed up front, on its own 60s
+ * lane. Zero stacks fizzles with a {@code No Momentum} line and arms nothing; a
  * window left unswung simply expires, stacks already spent. The consume plan rides in the
  * result ({@link Result#consume()}): the entry asks the passive applier to consume the
- * trigger-found passive, and the damage hook spends the empower snapshot on the next hit.
+ * trigger-found passive, and the damage hook spends the stamp on the next hit.
  */
 public final class RendAbility {
 	public static final String NAME = "Rend";
-	/** Empower damage per Momentum stack in HP: half a heart each, 10 HP at full stacks. */
+	/** Bonus damage per Momentum stack in HP: half a heart each, 10 HP at full stacks. */
 	public static final float HP_PER_STACK = 0.5F;
-	/** Empower window in ticks: 6 seconds to land the hit, tracked as a press timestamp on the runtime. */
+	/** Rend window in ticks: 6 seconds to land the hit, tracked as a press timestamp on the runtime. */
 	public static final int WINDOW_TICKS = 120;
-	/** Cast sound id, resolved by the adapter; the anvil land is the empower. */
+	/** Cast sound id, resolved by the adapter; the anvil smash is the spend. */
 	public static final Identifier CAST_SOUND = Identifier.withDefaultNamespace("block.anvil.land");
 
 	/**
@@ -55,8 +55,8 @@ public final class RendAbility {
 				+ ", spends stacks (V, " + (Cooldowns.REND_MS / 1000) + "s).";
 	}
 
-	/** Empower damage for a stack count: half a heart per stack. Nothing at zero or below. */
-	public static float empowerFor(int stacks) {
+	/** Bonus damage for a stack count: half a heart per stack. Nothing at zero or below. */
+	public static float bonusFor(int stacks) {
 		if (stacks <= 0) {
 			return 0;
 		}
@@ -78,8 +78,8 @@ public final class RendAbility {
 	}
 
 	/**
-	 * Arms the lane and the empower snapshot together on a fired press; rejected presses
-	 * leave the lane untouched. The arm reads the same lane and now the trigger just
+	 * Arms the lane and stamps the window's bonus together on a fired press; rejected
+	 * presses leave the lane untouched. The arm reads the same lane and now the trigger just
 	 * checked, so it cannot fail.
 	 */
 	public static Result fire(ClassDefinition def, PlayerRuntime runtime, long now) {

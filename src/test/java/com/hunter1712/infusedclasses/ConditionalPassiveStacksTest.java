@@ -152,7 +152,7 @@ class ConditionalPassiveStacksTest {
 	}
 
 	@Test
-	void newTriggerResetsGraceTimer() {
+	void newTriggerRestampsTheGrace() {
 		PlayerRuntime runtime = new PlayerRuntime();
 		long base = System.currentTimeMillis();
 		runtime.onTrigger(juggernaut(), "on_hit_dealt", base, 1.0F);

@@ -114,6 +114,70 @@ class PlayerRuntimeDeepeningTest {
 	}
 
 	@Test
+	void everyWindowReadsZeroWhenDeadAndItsExactBoundaryWhenLive() {
+		PlayerRuntime runtime = new PlayerRuntime();
+		long base = 1_000L;
+		assertTrue(runtime.tryUseRush(base));
+		assertTrue(runtime.tryUseRend(base, 4));
+		assertTrue(runtime.tryUseRotate(base, RotateAbility.Stance.GLADIUS));
+		assertTrue(runtime.tryUseAequilibrium(base));
+		assertTrue(runtime.tryUseRoulette(base, RouletteAbility.Outcome.EDGE));
+		assertTrue(runtime.tryUseAllIn(base));
+
+		assertEquals(5_000, runtime.rushWindowRemaining(base));
+		assertEquals(1, runtime.rushWindowRemaining(base + 4_999));
+		assertEquals(0, runtime.rushWindowRemaining(base + 5_000));
+
+		assertEquals(6_000, runtime.rendWindowRemaining(base));
+		assertEquals(1, runtime.rendWindowRemaining(base + 5_999));
+		assertEquals(0, runtime.rendWindowRemaining(base + 6_000));
+
+		assertEquals(5_000, runtime.flipWindowRemaining(base));
+		assertEquals(RotateAbility.Stance.GLADIUS, runtime.flipTarget(base));
+		assertEquals(1, runtime.flipWindowRemaining(base + 4_999));
+		assertEquals(0, runtime.flipWindowRemaining(base + 5_000));
+		assertNull(runtime.flipTarget(base + 5_000));
+
+		assertEquals(6_000, runtime.aequilibriumWindowRemaining(base));
+		assertEquals(1, runtime.aequilibriumWindowRemaining(base + 5_999));
+		assertEquals(0, runtime.aequilibriumWindowRemaining(base + 6_000));
+
+		assertEquals(10_000, runtime.rouletteWindowRemaining(base));
+		assertEquals(1, runtime.rouletteWindowRemaining(base + 9_999));
+		assertEquals(0, runtime.rouletteWindowRemaining(base + 10_000));
+
+		assertEquals(15_000, runtime.allInWindowRemaining(base));
+		assertEquals(1, runtime.allInWindowRemaining(base + 14_999));
+		assertEquals(0, runtime.allInWindowRemaining(base + 15_000));
+
+		PlayerRuntime dead = new PlayerRuntime();
+		assertEquals(0, dead.rushWindowRemaining(0));
+		assertEquals(0, dead.rendWindowRemaining(0));
+		assertEquals(0, dead.flipWindowRemaining(0));
+		assertEquals(0, dead.aequilibriumWindowRemaining(0));
+		assertEquals(0, dead.rouletteWindowRemaining(0));
+		assertEquals(0, dead.allInWindowRemaining(0));
+		assertNull(dead.flipTarget(0));
+	}
+
+	@Test
+	void resetWipesEveryWindowAndTheFlipRecord() {
+		PlayerRuntime runtime = new PlayerRuntime();
+		assertTrue(runtime.tryUseRush(0));
+		assertTrue(runtime.tryUseRend(0, 4));
+		assertTrue(runtime.tryUseRotate(0, RotateAbility.Stance.GLADIUS));
+		assertTrue(runtime.tryUseAequilibrium(0));
+
+		runtime.resetCooldowns();
+
+		assertEquals(0, runtime.rushWindowRemaining(0));
+		assertEquals(0, runtime.rendWindowRemaining(0));
+		assertEquals(0, runtime.flipWindowRemaining(0));
+		assertEquals(0, runtime.aequilibriumWindowRemaining(0));
+		assertNull(runtime.flipTarget(0));
+	}
+
+	@Test
 	void allInWindowIsFifteenSecondsAndResetWipesIt() {
 		PlayerRuntime runtime = new PlayerRuntime();
 
@@ -136,66 +200,5 @@ class PlayerRuntimeDeepeningTest {
 
 		assertNull(runtime.rouletteOutcome(0));
 		assertEquals(0, runtime.rouletteRemaining(0));
-	}
-
-	@Test
-	void windowRemainingVerbsReadExactValuesAndZeroWhenDead() {
-		PlayerRuntime runtime = new PlayerRuntime();
-		long base = 1_000_000L;
-		assertEquals(0, runtime.rushWindowRemaining(base));
-		assertEquals(0, runtime.rendWindowRemaining(base));
-		assertEquals(0, runtime.flipWindowRemaining(base));
-		assertEquals(0, runtime.rouletteWindowRemaining(base));
-		assertEquals(0, runtime.aequilibriumWindowRemaining(base));
-		assertEquals(0, runtime.allInWindowRemaining(base));
-
-		runtime.tryUseRush(base);
-		runtime.tryUseRend(base, 0);
-		runtime.tryUseRotate(base);
-		runtime.flipStance(base, RotateAbility.Stance.GLADIUS);
-		runtime.tryUseRoulette(base, RouletteAbility.Outcome.EDGE);
-		runtime.tryUseAequilibrium(base);
-		runtime.tryUseAllIn(base);
-
-		assertEquals(RushAbility.WINDOW_TICKS * 50L, runtime.rushWindowRemaining(base));
-		assertEquals(1, runtime.rushWindowRemaining(base + 4_999));
-		assertEquals(0, runtime.rushWindowRemaining(base + 5_000));
-		assertEquals(RendAbility.WINDOW_TICKS * 50L, runtime.rendWindowRemaining(base));
-		assertEquals(1, runtime.rendWindowRemaining(base + 5_999));
-		assertEquals(0, runtime.rendWindowRemaining(base + 6_000));
-		assertEquals(RotateAbility.SWITCH_DEAL_MS, runtime.flipWindowRemaining(base));
-		assertEquals(1, runtime.flipWindowRemaining(base + 4_999));
-		assertEquals(0, runtime.flipWindowRemaining(base + 5_000));
-		assertEquals(RouletteAbility.WINDOW_TICKS * 50L, runtime.rouletteWindowRemaining(base));
-		assertEquals(0, runtime.rouletteWindowRemaining(base + 10_000));
-		assertEquals(AequilibriumAbility.WINDOW_TICKS * 50L, runtime.aequilibriumWindowRemaining(base));
-		assertEquals(0, runtime.aequilibriumWindowRemaining(base + 6_000));
-		assertEquals(AllInAbility.WINDOW_TICKS * 50L, runtime.allInWindowRemaining(base));
-		assertEquals(0, runtime.allInWindowRemaining(base + 15_000));
-
-		runtime.resetCooldowns();
-
-		assertEquals(0, runtime.rushWindowRemaining(base));
-		assertEquals(0, runtime.rendWindowRemaining(base));
-		assertEquals(0, runtime.flipWindowRemaining(base));
-		assertEquals(0, runtime.rouletteWindowRemaining(base));
-		assertEquals(0, runtime.aequilibriumWindowRemaining(base));
-		assertEquals(0, runtime.allInWindowRemaining(base));
-	}
-
-	@Test
-	void graceRemainingCountsDownAndReadsZeroWithoutStacks() {
-		PlayerRuntime runtime = new PlayerRuntime();
-		long base = 1_000_000L;
-		assertEquals(0, runtime.graceRemaining(momentum(), base));
-
-		runtime.bumpPassive(momentum(), 1, base);
-
-		assertEquals(momentum().graceSeconds() * 1000L, runtime.graceRemaining(momentum(), base));
-		assertEquals(1, runtime.graceRemaining(momentum(), base + 4_999));
-		assertEquals(0, runtime.graceRemaining(momentum(), base + 5_000));
-
-		runtime.clear(momentum());
-		assertEquals(0, runtime.graceRemaining(momentum(), base));
 	}
 }

@@ -2,6 +2,7 @@ package com.hunter1712.infusedclasses;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
+import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.Identifier;
 import org.junit.jupiter.api.Test;
 
@@ -17,18 +18,19 @@ class ProtocolTest {
 				SelectClassPayload.TYPE.id(),
 				OpenClassScreenPayload.TYPE.id(),
 				RendPayload.TYPE.id(),
-				ClassConfirmedPayload.TYPE.id()));
+				ClassConfirmedPayload.TYPE.id(),
+				PlayerStatusPayload.TYPE.id()));
 
-		assertEquals(4, ids.size());
+		assertEquals(5, ids.size());
 		for (Identifier id : ids) {
-			assertEquals(ClassPackets.MOD_ID, id.getNamespace());
+			assertEquals(InfusedClasses.MOD_ID, id.getNamespace());
 		}
 	}
 
 	@Test
 	void rushPayloadHasItsOwnChannel() {
 		assertEquals("infusedclasses:rush", RushPayload.TYPE.id().toString());
-		assertEquals(ClassPackets.MOD_ID, RushPayload.TYPE.id().getNamespace());
+		assertEquals(InfusedClasses.MOD_ID, RushPayload.TYPE.id().getNamespace());
 	}
 
 	@Test
@@ -42,6 +44,30 @@ class ProtocolTest {
 			assertEquals(id, decoded.classId());
 		} finally {
 			buf.release();
+		}
+	}
+
+	@Test
+	void playerStatusCodecRoundTripsPopulatedAndNulls() {
+		PlayerStatusPayload populated = new PlayerStatusPayload(
+				"infusedclasses:gambler", 25_000, 60_000, 0, 0, 12_345, 75_000,
+				4_000, true, 5_000, false, 1_500, RotateAbility.Stance.SCUTUM, true,
+				9_000, RouletteAbility.Outcome.JACKPOT, 6_000, 15_000,
+				7, 3_500, 2_500, RotateAbility.Stance.GLADIUS, 2);
+		ByteBuf raw = Unpooled.buffer();
+		FriendlyByteBuf buf = new FriendlyByteBuf(raw);
+		try {
+			PlayerStatusPayload.STREAM_CODEC.encode(buf, populated);
+			assertEquals(populated, PlayerStatusPayload.STREAM_CODEC.decode(buf));
+
+			buf.clear();
+			PlayerStatusPayload bare = new PlayerStatusPayload(
+					"", 0, 0, 0, 0, 0, 0, 0, false, 0, false, 0, null, false,
+					0, null, 0, 0, 0, 0, 0, RotateAbility.Stance.SCUTUM, 0);
+			PlayerStatusPayload.STREAM_CODEC.encode(buf, bare);
+			assertEquals(bare, PlayerStatusPayload.STREAM_CODEC.decode(buf));
+		} finally {
+			raw.release();
 		}
 	}
 

@@ -60,8 +60,8 @@ public final class MeleePlan {
 			Supplier<PlayerRuntime> victimRuntime, float charge, long now, float roll) {
 		boolean bump = BonusCurve.isFullSwing(charge);
 		boolean rushBonus = bump && atkRuntime != null && atkRuntime.hasRushBonusPending(now);
-		int rendStacks = atkRuntime == null ? -1 : atkRuntime.peekRendEmpowerStacks(now);
-		float rendHp = rendStacks > 0 ? BonusCurve.bonusFor(RendAbility.empowerFor(rendStacks), charge) : 0;
+		int rendStacks = atkRuntime == null ? 0 : atkRuntime.peekRendBonusStacks(now);
+		float rendHp = rendStacks > 0 ? BonusCurve.bonusFor(RendAbility.bonusFor(rendStacks), charge) : 0;
 		boolean impetus = atkDef != null && atkDef.hasAbility(ClassRegistry.ROTATE_ABILITY)
 				&& atkRuntime != null && atkRuntime.hasImpetusPending(now);
 		double deal = dealWithImpetus(atkDef, atkRuntime, impetus, now) * RouletteAbility.dealMult(atkRuntime, now);
@@ -109,7 +109,7 @@ public final class MeleePlan {
 		if (plan.impetusPending()) {
 			runtime.consumeImpetusBonus(now);
 		}
-		if (plan.rendStacks() > 0 && runtime.consumeRendEmpower(now) >= 0) {
+		if (plan.rendStacks() > 0 && runtime.consumeRendBonus(now) > 0) {
 			return plan.rendHp();
 		}
 		return 0;

@@ -27,6 +27,9 @@ public final class ClassSwitch {
 		PlayerRuntime runtime = InfusedClasses.runtime(player);
 		PassiveApplier.onClassChanged(player, runtime, oldDef, def);
 		AbilityApplier.announce(player, ChatLine.classPicked(def.displayName()), false);
+		// One emission seam for both switch entries: the picker receiver and /class set
+		// tell the client what the stack shows now, and a rejected pick sent nothing.
+		StatusSync.maybeSend(player, System.currentTimeMillis());
 		return def;
 	}
 }
