@@ -34,7 +34,18 @@ drops the old stacks and resets the cooldown. The hit settle now belongs to the 
 plan (see `Melee plan`); the spender half stays here: `consumeSpent` resolves the priced
 passive and drops its stacks, `dropStacks` is its JUnit-reachable core, and the
 attribute removal rides with the player.
+The window-driven half reconciles as `Window aura family` entries.
 _Avoid_: passive system, stat updater
+
+**Window aura family** (`PassiveApplier.WindowFamily`):
+One window ability's aura group: the marker ability that owns it, every modifier the family can
+write, and `wanted(state)`, the pure decision of what the ability's live windows earn. The tick
+reconciles each family once after the stack and Vigor passes — a held marker writes what is wanted
+and removes the rest, so the write and remove sides cannot drift; an absent marker sweeps
+everything the family could write, so removal has one home beside the write. The Rush window's
+speed is a family member like the stance and the wheel; `RushApplier` keeps only the cleanse and
+the announce.
+_Avoid_: aura group, modifier set, buff family
 
 **Ability outcome** (`AbilityOutcome`):
 The shared envelope every ability decision returns: whether the press fired, the
@@ -59,6 +70,17 @@ sound (it carries no cast sound, so it announces without fanfare); only Rush kee
 adapter — for the cleanse and the speed it grants — routing its fanfare
 through the shared path. Class-choice rejections and accepts route through `announce` with the `actionBar` flag.
 _Avoid_: ability system, effect handler
+
+**Ability roster** (`AbilityRoster`):
+The one table of the abilities the mod fires: a row per ability carrying the id that gates it,
+its Title Case word (the ability module's own `NAME`), the lane read over the runtime state,
+and the slot binds it answers. `/class info` draws a lane line per row the class carries, the
+HUD's rows decision takes its ability words from the rows, and `BindMorph` resolves what a
+reused slot means by walking the class's actives through the rows (the first row that answers
+wins), so a word, a lane read or a bind cannot drift between the consumers. The ultimate keys
+on the `ROTATE` row (ADR-0009): the Aequilibrium row carries a word and a lane read, no bind.
+A new ability adds a row; a test pins that every registered active id has one.
+_Avoid_: ability list, lane table, ability registry
 
 **Gate-and-arm** (`AbilityGate`):
 The one rule every ability firing shares: a rejected trigger passes through untouched,
@@ -452,6 +474,15 @@ clock, and each ability names its window constant once, at its arm site. Callers
 cross this module's seam; the stacks module is its implementation.
 _Avoid_: player state, live state, runtime (too generic on its own)
 
+**Runtime state** (`PlayerRuntime.State`):
+The whole transient read at one clock: six lane remainders, six window remainders with their
+load flags, the flip target, the unspent Rend stacks, the stance and the Streak, taken in one
+`PlayerRuntime.state(now)` call. It is the one read every status path crosses — the snapshot
+builder, `/class info`, the melee plan, the ability fires and the passive applier — so lane and
+window semantics cannot be re-stated per caller; the per-window read verbs are gone, while
+arms, consumes, movement verbs and the passive-stack verbs stay verbs.
+_Avoid_: runtime read, state object, snapshot
+
 **Transient runtime store** (`PlayerRuntimes`):
 The one module that owns the transient runtime's lifetime: one per UUID, created on first use
 (`runtime`), dropped on logout (`remove`), empty again after a respawn (`respawn`, which removes
@@ -706,4 +737,8 @@ carries the Momentum grace stamp, so a re-stamp at the stack cap is never
 invisible to the client. The same decision renames the code's window nouns:
 `stride` and `empower` leave identifiers, comments, tests and the picker copy
 for `SPEED_BONUS` at `infusedclasses:rush_speed`, `RendAbility.bonusFor` and the
-`peekRendBonusStacks` / `consumeRendBonus` pair.
+`peekRendBonusStacks` / `consumeRendBonus` pair. `0022` makes the tick the one steady-state
+emission point: the post-branch sends (both intent receivers, the hit settle, the accepted
+switch) call `maybeSend` no more — a press, a spend, a decay or a switch reaches the client on
+the next tick, at most 50 ms — while join and respawn keep their forced sends and a quiet tick
+still sends nothing.

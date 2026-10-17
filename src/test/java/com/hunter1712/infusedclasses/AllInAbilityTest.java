@@ -25,10 +25,10 @@ class AllInAbilityTest {
 
 		assertTrue(result.fired());
 		assertNotNull(result.announcement());
-		assertEquals(Cooldowns.ALL_IN_MS, runtime.allInRemaining(0));
-		assertTrue(runtime.isAllInLive(0));
-		assertTrue(runtime.isAllInLive(14_999));
-		assertFalse(runtime.isAllInLive(15_000));
+		assertEquals(Cooldowns.ALL_IN_MS, runtime.state(0).allInRemaining());
+		assertTrue(runtime.state(0).allInWindowRemaining() > 0);
+		assertTrue(runtime.state(14_999).allInWindowRemaining() > 0);
+		assertFalse(runtime.state(15_000).allInWindowRemaining() > 0);
 		assertEquals(15, AllInAbility.WINDOW_TICKS / 20);
 	}
 
@@ -41,8 +41,8 @@ class AllInAbilityTest {
 
 		assertFalse(result.fired());
 		assertNull(result.announcement());
-		assertEquals(0, runtime.allInRemaining(0));
-		assertFalse(runtime.isAllInLive(0));
+		assertEquals(0, runtime.state(0).allInRemaining());
+		assertFalse(runtime.state(0).allInWindowRemaining() > 0);
 	}
 
 	@Test
@@ -55,7 +55,7 @@ class AllInAbilityTest {
 		assertFalse(second.fired());
 		assertEquals(Cooldowns.ALL_IN_MS - 39_000, second.remainingMs());
 		// The first window is long gone; the reject did not restamp it.
-		assertFalse(runtime.isAllInLive(40_000));
+		assertFalse(runtime.state(40_000).allInWindowRemaining() > 0);
 	}
 
 	@Test
@@ -67,7 +67,7 @@ class AllInAbilityTest {
 
 		// The wheel fired at 0 and did not touch the All In lane; the ultimate did not touch Roulette's.
 		assertFalse(AllInAbility.fire(gambler(), runtime, 1).fired());
-		assertEquals(Cooldowns.ROULETTE_MS, runtime.rouletteRemaining(0));
+		assertEquals(Cooldowns.ROULETTE_MS, runtime.state(0).rouletteRemaining());
 	}
 
 	@Test

@@ -134,6 +134,8 @@ class PlayerStatusTest {
 		assertEquals("", classless.classId());
 		assertEquals(0, classless.momentumStacks());
 		assertEquals(0, classless.momentumGraceRemainingMs());
+		// The classless factory is the same shape with no state read at all.
+		assertEquals(PlayerStatusPayload.classless(), classless);
 
 		PlayerStatusPayload unknown = PlayerStatusPayload.of(
 				Identifier.fromNamespaceAndPath("infusedclasses", "nope"), runtime, 0);
@@ -211,10 +213,10 @@ class PlayerStatusTest {
 		PlayerRuntime runtime = new PlayerRuntime();
 		assertTrue(runtime.tryUseRush(1_000));
 
-		assertEquals(5_000, runtime.rushWindowRemaining(1_000));
-		assertEquals(1, runtime.rushWindowRemaining(5_999));
-		assertEquals(0, runtime.rushWindowRemaining(6_000));
-		assertEquals(0, runtime.flipWindowRemaining(1_000));
+		assertEquals(5_000, runtime.state(1_000).rushWindowRemaining());
+		assertEquals(1, runtime.state(5_999).rushWindowRemaining());
+		assertEquals(0, runtime.state(6_000).rushWindowRemaining());
+		assertEquals(0, runtime.state(1_000).flipWindowRemaining());
 
 		runtime.onTrigger(juggernaut(), ConditionalPassive.ON_HIT_DEALT, 1_000, 1.0F);
 		ConditionalPassive momentum = juggernaut().passiveForTrigger(ConditionalPassive.ON_HIT_DEALT);

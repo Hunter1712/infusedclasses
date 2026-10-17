@@ -9,12 +9,12 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * The status emission adapter: one last-sent snapshot per player, and a send only when
- * the snapshot decision says something a client cannot derive moved. Every gameplay
- * change point calls in — intent receivers after their branch, the melee settle, the
- * server tick after the decay-and-apply pass, an accepted class switch — so a rejected
- * press, a spam swing or a quiet tick costs no packets. Join and respawn force one so
- * a client always learns its class, classless included. Logout (and before a respawn's
- * forced send) drops the entry: the snapshot is session data.
+ * the snapshot decision says something a client cannot derive moved. The server tick is
+ * the one steady-state change point — a fire, a spend, a stack decay, a switch and a
+ * melee settle all rebuild-and-compare there within a tick — so a rejected press and a
+ * quiet tick cost no packets. Join and respawn force one so a client always learns its
+ * class, classless included. Logout (and before a respawn's forced send) drops the
+ * entry: the snapshot is session data.
  */
 public final class StatusSync {
 	private static final Map<UUID, PlayerStatusPayload> lastSent = new ConcurrentHashMap<>();
@@ -45,8 +45,11 @@ public final class StatusSync {
 		lastSent.remove(id);
 	}
 
+	/** The snapshot at now: a classed player reads its runtime; a classless one is the empty shape, no state at all. */
 	private static PlayerStatusPayload snapshot(ServerPlayer player, long now) {
 		ClassDefinition def = PlayerClassAccess.of(player).currentDefinition();
-		return PlayerStatusPayload.of(def == null ? null : def.id(), InfusedClasses.runtime(player), now);
+		return def == null
+				? PlayerStatusPayload.classless()
+				: PlayerStatusPayload.of(def.id(), InfusedClasses.runtime(player), now);
 	}
 }

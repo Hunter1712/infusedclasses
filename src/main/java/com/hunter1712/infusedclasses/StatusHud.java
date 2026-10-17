@@ -14,7 +14,9 @@ import java.util.Locale;
  *
  * <p>The stack speaks words: ability, stance and state names in Title Case, never badges
  * and never keys — a remapped key cannot make the stack lie, and a name reads without a
- * legend. Row order is fixed: the anchored stance (Legionary), the signature row, the
+ * legend. The words are the owners' own: the {@link AbilityRoster} carries the ability
+ * names, the stance its display name, the passive and the crit rule their own. Row order
+ * is fixed: the anchored stance (Legionary), the signature row, the
  * ultimate row, then the state rows (Momentum, Streak). Windows ride beside their lane
  * chip as dotted bare numbers — one window per lane, so the number needs no word; the
  * Roulette outcome rider is the one rider that keeps its word, because which band spun
@@ -24,18 +26,6 @@ import java.util.Locale;
  * lane draws dim with no number and the missing number is what marks it ready.
  */
 public final class StatusHud {
-	/** The stack's words: ability, stance and state names in Title Case, never keys. */
-	public static final String RUSH = "Rush";
-	public static final String REND = "Rend";
-	public static final String ROTATE = "Rotate";
-	public static final String AEQUILIBRIUM = "Aequilibrium";
-	public static final String ROULETTE = "Roulette";
-	public static final String ALL_IN = "All In";
-	public static final String GLADIUS = "Gladius";
-	public static final String SCUTUM = "Scutum";
-	public static final String MOMENTUM = "Momentum";
-	public static final String STREAK = "Streak";
-
 	/**
 	 * One chip: its words (empty on a bare rider), its number text (empty for a ready lane
 	 * and for the stance), lit versus dim, and whether it rides another chip's line.
@@ -61,17 +51,18 @@ public final class StatusHud {
 		long elapsed = Math.max(0L, elapsedMs);
 		List<Row> rows = new ArrayList<>();
 		if (def.hasAbility(ClassRegistry.ROTATE_ABILITY)) {
-			rows.add(new Row(List.of(new Chip(
-					status.stance() == RotateAbility.Stance.GLADIUS ? GLADIUS : SCUTUM, "", true, false))));
+			RotateAbility.Stance stance = status.stance() == null
+					? RotateAbility.Stance.SCUTUM : status.stance();
+			rows.add(new Row(List.of(new Chip(stance.displayName(), "", true, false))));
 		}
 		rows.add(signatureRow(status, def, elapsed));
 		rows.add(ultimateRow(status, def, elapsed));
 		ConditionalPassive momentum = def.passiveForTrigger(ConditionalPassive.ON_HIT_DEALT);
 		if (momentum != null && status.momentumStacks() > 0) {
-			rows.add(new Row(List.of(new Chip(MOMENTUM, momentumValue(status, elapsed), true, false))));
+			rows.add(new Row(List.of(new Chip(momentum.name(), momentumValue(status, elapsed), true, false))));
 		}
 		if (def.critRule().hasDice() && status.streak() > 0) {
-			rows.add(new Row(List.of(new Chip(STREAK, Integer.toString(status.streak()), true, false))));
+			rows.add(new Row(List.of(new Chip(CritRule.STREAK, Integer.toString(status.streak()), true, false))));
 		}
 		// A definition whose abilities map to no lane draws no row rather than a blank one.
 		rows.removeIf(row -> row.chips().isEmpty());
@@ -82,14 +73,14 @@ public final class StatusHud {
 	private static Row signatureRow(PlayerStatusPayload status, ClassDefinition def, long elapsed) {
 		List<Chip> chips = new ArrayList<>();
 		if (def.hasAbility(ClassRegistry.RUSH_ABILITY)) {
-			chips.add(lane(RUSH, status.rushRemainingMs(), elapsed));
+			chips.add(lane(AbilityRoster.RUSH.name(), status.rushRemainingMs(), elapsed));
 			// The Rush window's rider counts while the window lives, spent or not: the
 			// loaded bonus draws nothing of its own, the number is the whole story.
 			if (status.rushWindowRemainingMs() > elapsed) {
 				chips.add(rider("", status.rushWindowRemainingMs() - elapsed));
 			}
 		} else if (def.hasAbility(ClassRegistry.ROTATE_ABILITY)) {
-			chips.add(lane(ROTATE, status.rotateRemainingMs(), elapsed));
+			chips.add(lane(AbilityRoster.ROTATE.name(), status.rotateRemainingMs(), elapsed));
 			// Impetus is one-shot (pending only), so its rider vanishes on the spend;
 			// Testudo is the timed catch, live for its window in scutum.
 			if (status.impetusPending() && status.flipWindowRemainingMs() > elapsed) {
@@ -99,7 +90,7 @@ public final class StatusHud {
 				chips.add(rider("", status.flipWindowRemainingMs() - elapsed));
 			}
 		} else if (def.hasAbility(ClassRegistry.ROULETTE_ABILITY)) {
-			chips.add(lane(ROULETTE, status.rouletteRemainingMs(), elapsed));
+			chips.add(lane(AbilityRoster.ROULETTE.name(), status.rouletteRemainingMs(), elapsed));
 			RouletteAbility.Outcome outcome = status.rouletteOutcome();
 			if (showsOutcome(outcome) && status.rouletteWindowRemainingMs() > elapsed) {
 				chips.add(rider(outcome.label(), status.rouletteWindowRemainingMs() - elapsed));
@@ -112,19 +103,19 @@ public final class StatusHud {
 	private static Row ultimateRow(PlayerStatusPayload status, ClassDefinition def, long elapsed) {
 		List<Chip> chips = new ArrayList<>();
 		if (def.hasAbility(ClassRegistry.REND_ABILITY)) {
-			chips.add(lane(REND, status.rendRemainingMs(), elapsed));
+			chips.add(lane(AbilityRoster.REND.name(), status.rendRemainingMs(), elapsed));
 			// Countdown-only: the Rend rider exists exactly while its next-hit
 			// snapshot is unspent, so it vanishes on the settle instead of counting on.
 			if (status.rendBonusPending() && status.rendWindowRemainingMs() > elapsed) {
 				chips.add(rider("", status.rendWindowRemainingMs() - elapsed));
 			}
 		} else if (def.hasAbility(ClassRegistry.AEQUILIBRIUM_ABILITY)) {
-			chips.add(lane(AEQUILIBRIUM, status.oathRemainingMs(), elapsed));
+			chips.add(lane(AbilityRoster.AEQUILIBRIUM.name(), status.oathRemainingMs(), elapsed));
 			if (status.aequilibriumWindowRemainingMs() > elapsed) {
 				chips.add(rider("", status.aequilibriumWindowRemainingMs() - elapsed));
 			}
 		} else if (def.hasAbility(ClassRegistry.ALL_IN_ABILITY)) {
-			chips.add(lane(ALL_IN, status.allInRemainingMs(), elapsed));
+			chips.add(lane(AbilityRoster.ALL_IN.name(), status.allInRemainingMs(), elapsed));
 			if (status.allInWindowRemainingMs() > elapsed) {
 				chips.add(rider("", status.allInWindowRemainingMs() - elapsed));
 			}

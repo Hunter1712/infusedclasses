@@ -37,11 +37,11 @@ class RushAbilityTest {
 
 		assertTrue(result.fired());
 		assertEquals("Rush!", result.announcement().text());
-		assertEquals(Cooldowns.RUSH_MS, runtime.rushRemaining(0));
-		assertEquals(0, runtime.rendRemaining(0));
-		assertTrue(runtime.hasRushBonusPending(0));
-		assertTrue(runtime.hasRushBonusPending(4_999));
-		assertFalse(runtime.hasRushBonusPending(5_000));
+		assertEquals(Cooldowns.RUSH_MS, runtime.state(0).rushRemaining());
+		assertEquals(0, runtime.state(0).rendRemaining());
+		assertTrue(runtime.state(0).rushBonusPending());
+		assertTrue(runtime.state(4_999).rushBonusPending());
+		assertFalse(runtime.state(5_000).rushBonusPending());
 	}
 
 	@Test
@@ -53,9 +53,9 @@ class RushAbilityTest {
 		assertFalse(second.fired());
 		assertEquals(15_000, second.remainingMs());
 		assertNull(second.announcement());
-		assertEquals(15_000, runtime.rushRemaining(11_000));
-		assertEquals(0, runtime.rendRemaining(11_000));
-		assertFalse(runtime.hasRushBonusPending(11_000));
+		assertEquals(15_000, runtime.state(11_000).rushRemaining());
+		assertEquals(0, runtime.state(11_000).rendRemaining());
+		assertFalse(runtime.state(11_000).rushBonusPending());
 	}
 
 	@Test
@@ -65,8 +65,8 @@ class RushAbilityTest {
 
 		assertFalse(result.fired());
 		assertNull(result.announcement());
-		assertEquals(0, runtime.rushRemaining(0));
-		assertFalse(runtime.hasRushBonusPending(0));
+		assertEquals(0, runtime.state(0).rushRemaining());
+		assertFalse(runtime.state(0).rushBonusPending());
 	}
 
 	@Test
@@ -107,9 +107,9 @@ class RushAbilityTest {
 		runtime.tryUseRend(0, 5);
 		runtime.resetCooldowns();
 
-		assertEquals(0, runtime.rushRemaining(0));
-		assertEquals(0, runtime.rendRemaining(0));
-		assertFalse(runtime.hasRushBonusPending(0));
+		assertEquals(0, runtime.state(0).rushRemaining());
+		assertEquals(0, runtime.state(0).rendRemaining());
+		assertFalse(runtime.state(0).rushBonusPending());
 		assertFalse(runtime.consumeRushBonus(0));
 	}
 }

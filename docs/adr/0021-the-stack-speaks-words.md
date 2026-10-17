@@ -1,6 +1,6 @@
 # ADR-0021: The stack speaks words
 
-Status: accepted
+Status: accepted (the change-point carry, point 7, is superseded by ADR-0022)
 
 ## Context
 

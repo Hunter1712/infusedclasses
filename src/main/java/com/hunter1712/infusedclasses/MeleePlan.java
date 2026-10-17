@@ -15,11 +15,11 @@ public final class MeleePlan {
 	}
 
 	/** Outgoing mult sharing one Impetus peek: the plan peeks once, the spend decision and the mult read the same answer. */
-	private static double dealWithImpetus(ClassDefinition atkDef, PlayerRuntime runtime, boolean impetus, long now) {
-		if (atkDef == null || runtime == null || !atkDef.hasAbility(ClassRegistry.ROTATE_ABILITY)) {
+	private static double dealWithImpetus(ClassDefinition atkDef, PlayerRuntime.State state, boolean impetus) {
+		if (atkDef == null || state == null || !atkDef.hasAbility(ClassRegistry.ROTATE_ABILITY)) {
 			return 1.0;
 		}
-		double base = RotateAbility.dealMult(runtime.stance());
+		double base = RotateAbility.dealMult(state.stance());
 		double flip = impetus ? RotateAbility.SWITCH_DEAL_MULT : 1.0;
 		return base * flip;
 	}
@@ -29,9 +29,9 @@ public final class MeleePlan {
 		if (victimDef == null || !victimDef.hasAbility(ClassRegistry.ROTATE_ABILITY)) {
 			return 1.0;
 		}
-		PlayerRuntime r = runtime.get();
-		double base = RotateAbility.takeMult(r.stance());
-		double flip = r.isTestudoBuffLive(now) ? RotateAbility.SWITCH_TAKE_MULT : 1.0;
+		PlayerRuntime.State state = runtime.get().state(now);
+		double base = RotateAbility.takeMult(state.stance());
+		double flip = state.flipTarget() == RotateAbility.Stance.SCUTUM ? RotateAbility.SWITCH_TAKE_MULT : 1.0;
 		return base * flip;
 	}
 
@@ -59,16 +59,17 @@ public final class MeleePlan {
 	static HitPlan planHit(ClassDefinition atkDef, PlayerRuntime atkRuntime, ClassDefinition victimDef,
 			Supplier<PlayerRuntime> victimRuntime, float charge, long now, float roll) {
 		boolean bump = BonusCurve.isFullSwing(charge);
-		boolean rushBonus = bump && atkRuntime != null && atkRuntime.hasRushBonusPending(now);
-		int rendStacks = atkRuntime == null ? 0 : atkRuntime.peekRendBonusStacks(now);
+		PlayerRuntime.State state = atkRuntime == null ? null : atkRuntime.state(now);
+		boolean rushBonus = bump && state != null && state.rushBonusPending();
+		int rendStacks = state == null ? 0 : state.rendBonusStacks();
 		float rendHp = rendStacks > 0 ? BonusCurve.bonusFor(RendAbility.bonusFor(rendStacks), charge) : 0;
 		boolean impetus = atkDef != null && atkDef.hasAbility(ClassRegistry.ROTATE_ABILITY)
-				&& atkRuntime != null && atkRuntime.hasImpetusPending(now);
-		double deal = dealWithImpetus(atkDef, atkRuntime, impetus, now) * RouletteAbility.dealMult(atkRuntime, now);
+				&& state != null && state.impetusPending();
+		double deal = dealWithImpetus(atkDef, state, impetus) * RouletteAbility.dealMult(state);
 		double take = victimDef == null || victimRuntime == null ? 1.0 : takeFor(victimDef, victimRuntime, now);
 		CritRule rule = atkDef == null ? CritRule.universal() : atkDef.critRule();
-		boolean allIn = atkRuntime != null && atkRuntime.isAllInLive(now);
-		CritRoll.Result dice = CritRoll.roll(rule, atkRuntime == null ? 0 : atkRuntime.streak(), charge, roll, allIn);
+		boolean allIn = state != null && state.allInWindowRemaining() > 0;
+		CritRoll.Result dice = CritRoll.roll(rule, state == null ? 0 : state.streak(), charge, roll, allIn);
 		return new HitPlan(bump, charge, rushBonus, rendStacks, rendHp, impetus, deal, take,
 				deal * take * dice.mult(), dice);
 	}

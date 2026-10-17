@@ -84,8 +84,8 @@ class RouletteAbilityTest {
 		assertEquals(RouletteAbility.Outcome.HASTE, result.band());
 		assertNotNull(result.outcome().announcement());
 		assertTrue(result.outcome().announcement().text().startsWith("Haste"));
-		assertEquals(Cooldowns.ROULETTE_MS, runtime.rouletteRemaining(0));
-		assertEquals(RouletteAbility.Outcome.HASTE, runtime.rouletteOutcome(0));
+		assertEquals(Cooldowns.ROULETTE_MS, runtime.state(0).rouletteRemaining());
+		assertEquals(RouletteAbility.Outcome.HASTE, runtime.state(0).rouletteOutcome());
 		assertEquals(10, RouletteAbility.WINDOW_TICKS / 20);
 	}
 
@@ -94,10 +94,10 @@ class RouletteAbilityTest {
 		PlayerRuntime runtime = new PlayerRuntime();
 		RouletteAbility.fire(gambler(), runtime, 0, 0.1F); // Edge
 
-		assertEquals(RouletteAbility.Outcome.EDGE, runtime.rouletteOutcome(9_999));
-		assertNull(runtime.rouletteOutcome(10_000));
+		assertEquals(RouletteAbility.Outcome.EDGE, runtime.state(9_999).rouletteOutcome());
+		assertNull(runtime.state(10_000).rouletteOutcome());
 		// The lane is the wheel's own clock: still counting down when the window dies.
-		assertEquals(Cooldowns.ROULETTE_MS - 10_000, runtime.rouletteRemaining(10_000));
+		assertEquals(Cooldowns.ROULETTE_MS - 10_000, runtime.state(10_000).rouletteRemaining());
 	}
 
 	@Test
@@ -110,8 +110,8 @@ class RouletteAbilityTest {
 		assertFalse(result.outcome().fired());
 		assertNull(result.band());
 		assertNull(result.outcome().announcement());
-		assertEquals(0, runtime.rouletteRemaining(0));
-		assertNull(runtime.rouletteOutcome(0));
+		assertEquals(0, runtime.state(0).rouletteRemaining());
+		assertNull(runtime.state(0).rouletteOutcome());
 	}
 
 	@Test
@@ -125,7 +125,7 @@ class RouletteAbilityTest {
 		assertEquals(Cooldowns.ROULETTE_MS - 1, second.outcome().remainingMs());
 		assertNull(second.band());
 		// Nothing was re-stamped: the first spin's outcome still stands.
-		assertEquals(RouletteAbility.Outcome.EDGE, runtime.rouletteOutcome(1_001));
+		assertEquals(RouletteAbility.Outcome.EDGE, runtime.state(1_001).rouletteOutcome());
 		// And the wheel fires again exactly when its 25s lane runs out.
 		assertTrue(RouletteAbility.fire(gambler(), runtime, 26_000, 1.0F).outcome().fired());
 	}
@@ -137,7 +137,7 @@ class RouletteAbilityTest {
 		RouletteAbility.fire(gambler(), runtime, 0, 0.5F);
 		RouletteAbility.fire(null, runtime, 0, 0.5F);
 
-		assertEquals(0, runtime.streak());
+		assertEquals(0, runtime.state(0).streak());
 	}
 
 	@Test

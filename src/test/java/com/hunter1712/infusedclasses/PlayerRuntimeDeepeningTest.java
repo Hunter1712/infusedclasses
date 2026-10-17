@@ -11,7 +11,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-/** Per-passive decay and switch cleanup: the C2 deepening. */
+/** Per-passive decay, switch cleanup and the one-state read: the C2 deepening. */
 class PlayerRuntimeDeepeningTest {
 	private static ConditionalPassive momentum() {
 		return ClassRegistry.byId(ClassRegistry.JUGGERNAUT).passives().get(0);
@@ -75,42 +75,67 @@ class PlayerRuntimeDeepeningTest {
 	}
 
 	@Test
+	void freshStateIsTheEmptyRead() {
+		PlayerRuntime.State state = new PlayerRuntime().state(0);
+
+		assertEquals(0, state.rushRemaining());
+		assertEquals(0, state.rendRemaining());
+		assertEquals(0, state.rotateRemaining());
+		assertEquals(0, state.oathRemaining());
+		assertEquals(0, state.rouletteRemaining());
+		assertEquals(0, state.allInRemaining());
+		assertEquals(0, state.rushWindowRemaining());
+		assertFalse(state.rushBonusPending());
+		assertEquals(0, state.rendWindowRemaining());
+		assertEquals(0, state.rendBonusStacks());
+		assertEquals(0, state.flipWindowRemaining());
+		assertNull(state.flipTarget());
+		assertFalse(state.impetusPending());
+		assertEquals(0, state.rouletteWindowRemaining());
+		assertNull(state.rouletteOutcome());
+		assertEquals(0, state.aequilibriumWindowRemaining());
+		assertEquals(0, state.allInWindowRemaining());
+		assertEquals(RotateAbility.Stance.SCUTUM, state.stance());
+		assertEquals(0, state.streak());
+	}
+
+	@Test
 	void cooldownVerbsArmWithoutExposingMutation() {
 		PlayerRuntime runtime = new PlayerRuntime();
-		assertEquals(0, runtime.rendRemaining(0));
+		assertEquals(0, runtime.state(0).rendRemaining());
 		assertTrue(runtime.tryUseRend(0, 5));
-		assertEquals(Cooldowns.REND_MS, runtime.rendRemaining(0));
+		assertEquals(Cooldowns.REND_MS, runtime.state(0).rendRemaining());
 		runtime.resetCooldowns();
-		assertEquals(0, runtime.rendRemaining(0));
+		assertEquals(0, runtime.state(0).rendRemaining());
 	}
 
 	@Test
 	void streakBumpsResetsAndWipesWithTheClass() {
 		PlayerRuntime runtime = new PlayerRuntime();
-		assertEquals(0, runtime.streak());
+		assertEquals(0, runtime.state(0).streak());
 
 		runtime.bumpStreak();
 		runtime.bumpStreak();
-		assertEquals(2, runtime.streak());
+		assertEquals(2, runtime.state(0).streak());
 
 		runtime.resetStreak();
-		assertEquals(0, runtime.streak());
+		assertEquals(0, runtime.state(0).streak());
 
 		runtime.bumpStreak();
 		runtime.resetCooldowns();
-		assertEquals(0, runtime.streak());
+		assertEquals(0, runtime.state(0).streak());
 	}
 
 	@Test
 	void rouletteWindowRoundTripsItsPayloadAndExpires() {
 		PlayerRuntime runtime = new PlayerRuntime();
-		assertNull(runtime.rouletteOutcome(0));
+		assertNull(runtime.state(0).rouletteOutcome());
 
 		assertTrue(runtime.tryUseRoulette(1_000, RouletteAbility.Outcome.JACKPOT));
 
-		assertEquals(RouletteAbility.Outcome.JACKPOT, runtime.rouletteOutcome(1_000));
-		assertEquals(RouletteAbility.Outcome.JACKPOT, runtime.rouletteOutcome(10_999));
-		assertNull(runtime.rouletteOutcome(11_000));
+		assertEquals(RouletteAbility.Outcome.JACKPOT, runtime.state(1_000).rouletteOutcome());
+		assertEquals(RouletteAbility.Outcome.JACKPOT, runtime.state(10_999).rouletteOutcome());
+		assertNull(runtime.state(11_000).rouletteOutcome());
 	}
 
 	@Test
@@ -124,40 +149,40 @@ class PlayerRuntimeDeepeningTest {
 		assertTrue(runtime.tryUseRoulette(base, RouletteAbility.Outcome.EDGE));
 		assertTrue(runtime.tryUseAllIn(base));
 
-		assertEquals(5_000, runtime.rushWindowRemaining(base));
-		assertEquals(1, runtime.rushWindowRemaining(base + 4_999));
-		assertEquals(0, runtime.rushWindowRemaining(base + 5_000));
+		assertEquals(5_000, runtime.state(base).rushWindowRemaining());
+		assertEquals(1, runtime.state(base + 4_999).rushWindowRemaining());
+		assertEquals(0, runtime.state(base + 5_000).rushWindowRemaining());
 
-		assertEquals(6_000, runtime.rendWindowRemaining(base));
-		assertEquals(1, runtime.rendWindowRemaining(base + 5_999));
-		assertEquals(0, runtime.rendWindowRemaining(base + 6_000));
+		assertEquals(6_000, runtime.state(base).rendWindowRemaining());
+		assertEquals(1, runtime.state(base + 5_999).rendWindowRemaining());
+		assertEquals(0, runtime.state(base + 6_000).rendWindowRemaining());
 
-		assertEquals(5_000, runtime.flipWindowRemaining(base));
-		assertEquals(RotateAbility.Stance.GLADIUS, runtime.flipTarget(base));
-		assertEquals(1, runtime.flipWindowRemaining(base + 4_999));
-		assertEquals(0, runtime.flipWindowRemaining(base + 5_000));
-		assertNull(runtime.flipTarget(base + 5_000));
+		assertEquals(5_000, runtime.state(base).flipWindowRemaining());
+		assertEquals(RotateAbility.Stance.GLADIUS, runtime.state(base).flipTarget());
+		assertEquals(1, runtime.state(base + 4_999).flipWindowRemaining());
+		assertEquals(0, runtime.state(base + 5_000).flipWindowRemaining());
+		assertNull(runtime.state(base + 5_000).flipTarget());
 
-		assertEquals(6_000, runtime.aequilibriumWindowRemaining(base));
-		assertEquals(1, runtime.aequilibriumWindowRemaining(base + 5_999));
-		assertEquals(0, runtime.aequilibriumWindowRemaining(base + 6_000));
+		assertEquals(6_000, runtime.state(base).aequilibriumWindowRemaining());
+		assertEquals(1, runtime.state(base + 5_999).aequilibriumWindowRemaining());
+		assertEquals(0, runtime.state(base + 6_000).aequilibriumWindowRemaining());
 
-		assertEquals(10_000, runtime.rouletteWindowRemaining(base));
-		assertEquals(1, runtime.rouletteWindowRemaining(base + 9_999));
-		assertEquals(0, runtime.rouletteWindowRemaining(base + 10_000));
+		assertEquals(10_000, runtime.state(base).rouletteWindowRemaining());
+		assertEquals(1, runtime.state(base + 9_999).rouletteWindowRemaining());
+		assertEquals(0, runtime.state(base + 10_000).rouletteWindowRemaining());
 
-		assertEquals(15_000, runtime.allInWindowRemaining(base));
-		assertEquals(1, runtime.allInWindowRemaining(base + 14_999));
-		assertEquals(0, runtime.allInWindowRemaining(base + 15_000));
+		assertEquals(15_000, runtime.state(base).allInWindowRemaining());
+		assertEquals(1, runtime.state(base + 14_999).allInWindowRemaining());
+		assertEquals(0, runtime.state(base + 15_000).allInWindowRemaining());
 
 		PlayerRuntime dead = new PlayerRuntime();
-		assertEquals(0, dead.rushWindowRemaining(0));
-		assertEquals(0, dead.rendWindowRemaining(0));
-		assertEquals(0, dead.flipWindowRemaining(0));
-		assertEquals(0, dead.aequilibriumWindowRemaining(0));
-		assertEquals(0, dead.rouletteWindowRemaining(0));
-		assertEquals(0, dead.allInWindowRemaining(0));
-		assertNull(dead.flipTarget(0));
+		assertEquals(0, dead.state(0).rushWindowRemaining());
+		assertEquals(0, dead.state(0).rendWindowRemaining());
+		assertEquals(0, dead.state(0).flipWindowRemaining());
+		assertEquals(0, dead.state(0).aequilibriumWindowRemaining());
+		assertEquals(0, dead.state(0).rouletteWindowRemaining());
+		assertEquals(0, dead.state(0).allInWindowRemaining());
+		assertNull(dead.state(0).flipTarget());
 	}
 
 	@Test
@@ -170,11 +195,11 @@ class PlayerRuntimeDeepeningTest {
 
 		runtime.resetCooldowns();
 
-		assertEquals(0, runtime.rushWindowRemaining(0));
-		assertEquals(0, runtime.rendWindowRemaining(0));
-		assertEquals(0, runtime.flipWindowRemaining(0));
-		assertEquals(0, runtime.aequilibriumWindowRemaining(0));
-		assertNull(runtime.flipTarget(0));
+		assertEquals(0, runtime.state(0).rushWindowRemaining());
+		assertEquals(0, runtime.state(0).rendWindowRemaining());
+		assertEquals(0, runtime.state(0).flipWindowRemaining());
+		assertEquals(0, runtime.state(0).aequilibriumWindowRemaining());
+		assertNull(runtime.state(0).flipTarget());
 	}
 
 	@Test
@@ -182,13 +207,13 @@ class PlayerRuntimeDeepeningTest {
 		PlayerRuntime runtime = new PlayerRuntime();
 
 		assertTrue(runtime.tryUseAllIn(0));
-		assertTrue(runtime.isAllInLive(14_999));
-		assertFalse(runtime.isAllInLive(15_000));
+		assertTrue(runtime.state(14_999).allInWindowRemaining() > 0);
+		assertFalse(runtime.state(15_000).allInWindowRemaining() > 0);
 
 		runtime.resetCooldowns();
 
-		assertFalse(runtime.isAllInLive(0));
-		assertEquals(0, runtime.allInRemaining(0));
+		assertFalse(runtime.state(0).allInWindowRemaining() > 0);
+		assertEquals(0, runtime.state(0).allInRemaining());
 	}
 
 	@Test
@@ -198,7 +223,7 @@ class PlayerRuntimeDeepeningTest {
 
 		runtime.resetCooldowns();
 
-		assertNull(runtime.rouletteOutcome(0));
-		assertEquals(0, runtime.rouletteRemaining(0));
+		assertNull(runtime.state(0).rouletteOutcome());
+		assertEquals(0, runtime.state(0).rouletteRemaining());
 	}
 }

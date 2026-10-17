@@ -12,9 +12,9 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * The {@code /class info} lines: pure, composed from the definition, the runtime and the
- * passed now. Pins the per-class lanes at ready/cooling boundaries plus the Legionary's
- * stance line, so the copy cannot drift from the lane reads.
+ * The {@code /class info} lines: pure, composed from the definition and one runtime state
+ * read. Pins the per-class lanes at ready/cooling boundaries plus the Legionary's stance
+ * line, so the copy cannot drift from the lane reads.
  */
 class ClassInfoTest {
 	private static ClassDefinition juggernaut() {
@@ -30,7 +30,7 @@ class ClassInfoTest {
 	}
 
 	private static List<String> texts(ClassDefinition def, PlayerRuntime runtime, long now) {
-		return ClassInfo.lines(def, runtime, now).stream().map(ChatLine::text).toList();
+		return ClassInfo.lines(def, runtime.state(now)).stream().map(ChatLine::text).toList();
 	}
 
 	@Test
@@ -92,7 +92,7 @@ class ClassInfoTest {
 
 	@Test
 	void noClassYieldsOneGrayLine() {
-		List<ChatLine> lines = ClassInfo.lines(null, new PlayerRuntime(), 0);
+		List<ChatLine> lines = ClassInfo.lines(null, null);
 
 		assertEquals(List.of("No class chosen"), lines.stream().map(ChatLine::text).toList());
 		assertEquals(ChatFormatting.GRAY, lines.get(0).style());
@@ -100,7 +100,7 @@ class ClassInfoTest {
 
 	@Test
 	void theClassLineIsGrayAndFirst() {
-		List<ChatLine> lines = ClassInfo.lines(juggernaut(), new PlayerRuntime(), 0);
+		List<ChatLine> lines = ClassInfo.lines(juggernaut(), new PlayerRuntime().state(0));
 
 		assertEquals("Class: Juggernaut", lines.get(0).text());
 		assertEquals(ChatFormatting.GRAY, lines.get(0).style());
@@ -145,5 +145,18 @@ class ClassInfoTest {
 				CritRule.universal());
 
 		assertEquals(List.of("Class: Test", "Rend: ready"), texts(rendOnly, new PlayerRuntime(), 0));
+	}
+
+	@Test
+	void anUnknownActiveIsLeftOut() {
+		ClassDefinition mystery = new ClassDefinition(
+				Identifier.fromNamespaceAndPath("infusedclasses", "test"), "Test",
+				List.of(), List.of(), 0, "",
+				List.of(new ClassDefinition.ActiveAbility(
+						Identifier.fromNamespaceAndPath("infusedclasses", "mystery"), "Mystery", "test copy")),
+				List.of(),
+				CritRule.universal());
+
+		assertEquals(List.of("Class: Test"), texts(mystery, new PlayerRuntime(), 0));
 	}
 }

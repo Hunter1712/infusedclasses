@@ -75,7 +75,11 @@ public final class ClassCommands {
 	private static int info(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
 		ServerPlayer player = ctx.getSource().getPlayerOrException();
 		ClassDefinition def = PlayerClassAccess.of(player).currentDefinition();
-		for (ChatLine line : ClassInfo.lines(def, InfusedClasses.runtime(player), System.currentTimeMillis())) {
+		// Classless reads no transient state (ADR-0005): the lines decision needs a
+		// runtime state only when there is a class to draw lines for.
+		PlayerRuntime.State state = def == null
+				? null : InfusedClasses.runtime(player).state(System.currentTimeMillis());
+		for (ChatLine line : ClassInfo.lines(def, state)) {
 			AbilityApplier.announce(player, line, false);
 		}
 		return 1;

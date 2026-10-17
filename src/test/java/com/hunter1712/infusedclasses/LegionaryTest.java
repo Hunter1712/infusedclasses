@@ -56,20 +56,20 @@ class LegionaryTest {
 	@Test
 	void rotateFiresInAnyStanceAndFlips() {
 		PlayerRuntime runtime = new PlayerRuntime();
-		assertEquals(RotateAbility.Stance.SCUTUM, runtime.stance());
+		assertEquals(RotateAbility.Stance.SCUTUM, runtime.state(0).stance());
 
 		RotateAbility.Result first = RotateAbility.fire(legionary(), runtime, 0);
 
 		assertTrue(first.outcome().fired());
-		assertEquals(RotateAbility.Stance.GLADIUS, runtime.stance());
+		assertEquals(RotateAbility.Stance.GLADIUS, runtime.state(0).stance());
 		assertEquals(RotateAbility.Stance.GLADIUS, first.stance());
 		assertEquals("Gladius!", first.outcome().announcement().text());
-		assertEquals(Cooldowns.ROTATE_MS, runtime.rotateRemaining(0));
+		assertEquals(Cooldowns.ROTATE_MS, runtime.state(0).rotateRemaining());
 		// The arm is joint: the lane and the flip window are stamped together.
-		assertEquals(RotateAbility.SWITCH_DEAL_MS, runtime.flipWindowRemaining(0));
-		assertTrue(runtime.hasImpetusPending(0));
+		assertEquals(RotateAbility.SWITCH_DEAL_MS, runtime.state(0).flipWindowRemaining());
+		assertTrue(runtime.state(0).impetusPending());
 		// The rotate lane is its own: oath stays ready.
-		assertEquals(0, runtime.oathRemaining(0));
+		assertEquals(0, runtime.state(0).oathRemaining());
 	}
 
 	@Test
@@ -80,19 +80,19 @@ class LegionaryTest {
 
 		assertFalse(second.outcome().fired());
 		assertNull(second.stance());
-		assertEquals(RotateAbility.Stance.GLADIUS, runtime.stance());
+		assertEquals(RotateAbility.Stance.GLADIUS, runtime.state(1_000).stance());
 		// The reject left the flip record alone: it still reads the first flip.
-		assertEquals(RotateAbility.Stance.GLADIUS, runtime.flipTarget(1_000));
-		assertEquals(RotateAbility.SWITCH_DEAL_MS - 1_000, runtime.flipWindowRemaining(1_000));
+		assertEquals(RotateAbility.Stance.GLADIUS, runtime.state(1_000).flipTarget());
+		assertEquals(RotateAbility.SWITCH_DEAL_MS - 1_000, runtime.state(1_000).flipWindowRemaining());
 
 		PlayerRuntime wrong = new PlayerRuntime();
 		RotateAbility.Result rejected = RotateAbility.fire(null, wrong, 0);
 
 		assertFalse(rejected.outcome().fired());
 		assertNull(rejected.outcome().announcement());
-		assertEquals(0, wrong.rotateRemaining(0));
-		assertEquals(RotateAbility.Stance.SCUTUM, wrong.stance());
-		assertNull(wrong.flipTarget(0));
+		assertEquals(0, wrong.state(0).rotateRemaining());
+		assertEquals(RotateAbility.Stance.SCUTUM, wrong.state(0).stance());
+		assertNull(wrong.state(0).flipTarget());
 	}
 
 	@Test
@@ -112,11 +112,11 @@ class LegionaryTest {
 		PlayerRuntime runtime = new PlayerRuntime();
 		RotateAbility.fire(legionary(), runtime, 0);
 
-		assertTrue(runtime.hasImpetusPending(0));
-		assertTrue(runtime.hasImpetusPending(RotateAbility.SWITCH_DEAL_MS - 1));
-		assertFalse(runtime.hasImpetusPending(RotateAbility.SWITCH_DEAL_MS));
+		assertTrue(runtime.state(0).impetusPending());
+		assertTrue(runtime.state(RotateAbility.SWITCH_DEAL_MS - 1).impetusPending());
+		assertFalse(runtime.state(RotateAbility.SWITCH_DEAL_MS).impetusPending());
 		assertTrue(runtime.consumeImpetusBonus(0));
-		assertFalse(runtime.hasImpetusPending(0));
+		assertFalse(runtime.state(0).impetusPending());
 		assertFalse(runtime.consumeImpetusBonus(0));
 	}
 
@@ -124,24 +124,24 @@ class LegionaryTest {
 	void flipToScutumArmsTestudoCatchAndExpires() {
 		PlayerRuntime runtime = new PlayerRuntime();
 		// No flip yet: no catch, even in the default stance.
-		assertFalse(runtime.isTestudoBuffLive(0));
+		assertNull(runtime.state(0).flipTarget());
 		runtime.flipStance(0, RotateAbility.Stance.SCUTUM);
 
-		assertTrue(runtime.isTestudoBuffLive(0));
-		assertTrue(runtime.isTestudoBuffLive(RotateAbility.SWITCH_TAKE_MS - 1));
-		assertFalse(runtime.isTestudoBuffLive(RotateAbility.SWITCH_TAKE_MS));
+		assertEquals(RotateAbility.Stance.SCUTUM, runtime.state(0).flipTarget());
+		assertEquals(RotateAbility.Stance.SCUTUM, runtime.state(RotateAbility.SWITCH_TAKE_MS - 1).flipTarget());
+		assertNull(runtime.state(RotateAbility.SWITCH_TAKE_MS).flipTarget());
 	}
 
 	@Test
 	void flippingAwayDropsTheImpetusBuff() {
 		PlayerRuntime runtime = new PlayerRuntime();
 		runtime.flipStance(0, RotateAbility.Stance.GLADIUS);
-		assertTrue(runtime.hasImpetusPending(0));
+		assertTrue(runtime.state(0).impetusPending());
 
 		runtime.flipStance(1_000, RotateAbility.Stance.SCUTUM);
 
-		assertFalse(runtime.hasImpetusPending(1_000));
-		assertTrue(runtime.isTestudoBuffLive(1_000));
+		assertFalse(runtime.state(1_000).impetusPending());
+		assertEquals(RotateAbility.Stance.SCUTUM, runtime.state(1_000).flipTarget());
 	}
 
 	@Test
@@ -151,8 +151,8 @@ class LegionaryTest {
 
 		assertTrue(first.fired());
 		assertEquals("Aequilibrium!", first.announcement().text());
-		assertEquals(Cooldowns.OATH_MS, scutum.oathRemaining(0));
-		assertTrue(scutum.isAequilibriumLive(0));
+		assertEquals(Cooldowns.OATH_MS, scutum.state(0).oathRemaining());
+		assertTrue(scutum.state(0).aequilibriumWindowRemaining() > 0);
 
 		PlayerRuntime gladius = new PlayerRuntime();
 		gladius.flipStance(0, RotateAbility.Stance.GLADIUS);
@@ -168,9 +168,9 @@ class LegionaryTest {
 		PlayerRuntime runtime = new PlayerRuntime();
 		AequilibriumAbility.fire(legionary(), runtime, 0);
 
-		assertTrue(runtime.isAequilibriumLive(0));
-		assertTrue(runtime.isAequilibriumLive(5_999));
-		assertFalse(runtime.isAequilibriumLive(6_000));
+		assertTrue(runtime.state(0).aequilibriumWindowRemaining() > 0);
+		assertTrue(runtime.state(5_999).aequilibriumWindowRemaining() > 0);
+		assertFalse(runtime.state(6_000).aequilibriumWindowRemaining() > 0);
 	}
 
 	@Test
@@ -179,8 +179,8 @@ class LegionaryTest {
 
 		assertFalse(AequilibriumAbility.fire(ClassRegistry.byId(ClassRegistry.JUGGERNAUT), runtime, 0).fired());
 		assertFalse(AequilibriumAbility.fire(null, runtime, 0).fired());
-		assertEquals(0, runtime.oathRemaining(0));
-		assertFalse(runtime.isAequilibriumLive(0));
+		assertEquals(0, runtime.state(0).oathRemaining());
+		assertFalse(runtime.state(0).aequilibriumWindowRemaining() > 0);
 	}
 
 	@Test
@@ -191,12 +191,12 @@ class LegionaryTest {
 		RotateAbility.fire(legionary(), runtime, 10_000);
 		runtime.resetCooldowns();
 
-		assertEquals(0, runtime.oathRemaining(0));
-		assertEquals(0, runtime.rotateRemaining(0));
-		assertFalse(runtime.hasImpetusPending(0));
-		assertFalse(runtime.isTestudoBuffLive(0));
-		assertFalse(runtime.isAequilibriumLive(0));
-		assertEquals(RotateAbility.Stance.SCUTUM, runtime.stance());
+		assertEquals(0, runtime.state(0).oathRemaining());
+		assertEquals(0, runtime.state(0).rotateRemaining());
+		assertFalse(runtime.state(0).impetusPending());
+		assertNull(runtime.state(0).flipTarget());
+		assertFalse(runtime.state(0).aequilibriumWindowRemaining() > 0);
+		assertEquals(RotateAbility.Stance.SCUTUM, runtime.state(0).stance());
 	}
 
 	@Test

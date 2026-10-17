@@ -13,6 +13,10 @@ import java.util.Set;
  * and ability windows. Stacks, the cap, the grace period and the decay rate are the passive's
  * own facts, read off the definition it is handed, which is also what a stack is keyed by:
  * a passive is addressed by what it is, not by its name.
+ *
+ * <p>Reads cross one seam: {@link #state} answers the whole transient read at a {@code now},
+ * so the status paths (the snapshot builder, {@code /class info}, the melee plan) take one
+ * shape and one clock. Everything below it mutates.
  */
 public final class PlayerRuntime {
 	// ponytail: cooldowns reset on relog, persist to NBT if the reset becomes an exploit.
@@ -55,9 +59,57 @@ public final class PlayerRuntime {
 	// nothing else. Transient like every earned count.
 	private int streak = 0;
 
-	/** Current Legionary stance, SCUTUM until the first Rotate. */
-	public RotateAbility.Stance stance() {
-		return stance;
+	/**
+	 * The whole transient read at {@code now}: the one shape every status path crosses
+	 * this seam with, so lane and window reads cannot re-state their semantics per
+	 * caller. {@code flipTarget} is the live flip window's landing, null when no flip
+	 * window is live; {@code rendBonusStacks} is the unspent Rend stamp, 0 when nothing
+	 * is owed; {@code stance} is Scutum until the first Rotate.
+	 */
+	public record State(
+			long rushRemaining,
+			long rendRemaining,
+			long rotateRemaining,
+			long oathRemaining,
+			long rouletteRemaining,
+			long allInRemaining,
+			long rushWindowRemaining,
+			boolean rushBonusPending,
+			long rendWindowRemaining,
+			int rendBonusStacks,
+			long flipWindowRemaining,
+			RotateAbility.Stance flipTarget,
+			boolean impetusPending,
+			long rouletteWindowRemaining,
+			RouletteAbility.Outcome rouletteOutcome,
+			long aequilibriumWindowRemaining,
+			long allInWindowRemaining,
+			RotateAbility.Stance stance,
+			int streak) {
+	}
+
+	/** One clock, one shape: every fact the status paths read, taken at the same {@code now}. */
+	public State state(long now) {
+		return new State(
+				cooldowns.rushRemaining(now),
+				cooldowns.rendRemaining(now),
+				cooldowns.rotateRemaining(now),
+				cooldowns.oathRemaining(now),
+				cooldowns.rouletteRemaining(now),
+				cooldowns.allInRemaining(now),
+				rushWindow.remainingMs(now),
+				rushWindow.hasPending(now),
+				rendWindow.remainingMs(now),
+				rendWindow.peekPayload(now),
+				flipWindow.remainingMs(now),
+				flipWindow.isLive(now) ? flippedTo : null,
+				flippedTo == RotateAbility.Stance.GLADIUS && flipWindow.hasPending(now),
+				rouletteWindow.remainingMs(now),
+				rouletteWindow.isLive(now) ? rouletteOutcome : null,
+				aequilibriumWindow.remainingMs(now),
+				allInWindow.remainingMs(now),
+				stance,
+				streak);
 	}
 
 	/** Flips the stance and stamps the flip record: the joint rotate arm lands here, tests stamp states. */
@@ -81,14 +133,6 @@ public final class PlayerRuntime {
 		return true;
 	}
 
-	public long rotateRemaining(long now) {
-		return cooldowns.rotateRemaining(now);
-	}
-
-	public long oathRemaining(long now) {
-		return cooldowns.oathRemaining(now);
-	}
-
 	/** Arms the Roulette lane and stamps the outcome window together: fired spins only. */
 	public boolean tryUseRoulette(long now, RouletteAbility.Outcome outcome) {
 		if (!cooldowns.useRoulette(now)) {
@@ -97,20 +141,6 @@ public final class PlayerRuntime {
 		rouletteWindow.arm(now, RouletteAbility.WINDOW_TICKS * 50L);
 		rouletteOutcome = outcome;
 		return true;
-	}
-
-	public long rouletteRemaining(long now) {
-		return cooldowns.rouletteRemaining(now);
-	}
-
-	/** The live spin's outcome, null when no outcome window is live. Persistent: peeked, never consumed. */
-	public RouletteAbility.Outcome rouletteOutcome(long now) {
-		return rouletteWindow.isLive(now) ? rouletteOutcome : null;
-	}
-
-	/** Millis left of the live Roulette outcome window, 0 when none is live. */
-	public long rouletteWindowRemaining(long now) {
-		return rouletteWindow.remainingMs(now);
 	}
 
 	/** Arms the All In lane and stamps its window together: fired presses only. */
@@ -122,35 +152,6 @@ public final class PlayerRuntime {
 		return true;
 	}
 
-	public long allInRemaining(long now) {
-		return cooldowns.allInRemaining(now);
-	}
-
-	/** Whether a fired All In window is still live. Persistent: peeked while live, never consumed. */
-	public boolean isAllInLive(long now) {
-		return allInWindow.isLive(now);
-	}
-
-	/** Millis left of the live All In window, 0 when none is live. */
-	public long allInWindowRemaining(long now) {
-		return allInWindow.remainingMs(now);
-	}
-
-	/** The Gambler's current Streak: the crit chance the dice have loaded. */
-	public int streak() {
-		return streak;
-	}
-
-	/** One non-crit full hit loads the pocket: called by the hit settle with the plan's movement. */
-	public void bumpStreak() {
-		streak++;
-	}
-
-	/** A landed crit spends the pocket: called by the hit settle with the plan's movement. */
-	public void resetStreak() {
-		streak = 0;
-	}
-
 	/** Arms the shared oath lane and stamps the Aequilibrium window together. */
 	public boolean tryUseAequilibrium(long now) {
 		if (!cooldowns.useOath(now)) {
@@ -160,60 +161,6 @@ public final class PlayerRuntime {
 		return true;
 	}
 
-	/** Whether a fired Aequilibrium window is still live. Persistent: peeked while live, never consumed. Expiry is silent. */
-	public boolean isAequilibriumLive(long now) {
-		return aequilibriumWindow.isLive(now);
-	}
-
-	/** Millis left of the live Aequilibrium window, 0 when none is live. */
-	public long aequilibriumWindowRemaining(long now) {
-		return aequilibriumWindow.remainingMs(now);
-	}
-
-	/**
-	 * Peeks the Impetus flip buff without consuming: what the melee plan decides on.
-	 * Armed by flipping to Gladius, live 5s, one-shot through the pending flag.
-	 */
-	public boolean hasImpetusPending(long now) {
-		return flippedTo == RotateAbility.Stance.GLADIUS
-				&& flipWindow.hasPending(now);
-	}
-
-	/**
-	 * Consumes the Impetus flip buff exactly once: true when a pending buff was waiting,
-	 * false when nothing was owed. An unswung flip simply stops being live.
-	 */
-	public boolean consumeImpetusBonus(long now) {
-		return flippedTo == RotateAbility.Stance.GLADIUS
-				&& flipWindow.consume(now);
-	}
-
-	/**
-	 * Whether the Testudo flip catch is still live: flipped to Scutum inside 1.5s.
-	 * Timed, never consumed: every hit inside the catch is discounted. Expiry is silent.
-	 */
-	public boolean isTestudoBuffLive(long now) {
-		return flippedTo == RotateAbility.Stance.SCUTUM
-				&& flipWindow.isLive(now);
-	}
-
-	/** Millis left of the live flip window (Impetus or Testudo), 0 when none is live. */
-	public long flipWindowRemaining(long now) {
-		return flipWindow.remainingMs(now);
-	}
-
-	/** The live flip window's landing, the flip record's own read; null when no flip window is live. */
-	public RotateAbility.Stance flipTarget(long now) {
-		return flipWindow.isLive(now) ? flippedTo : null;
-	}
-
-	// Lane reads: mechanical forwards over the hidden Cooldowns, so ability decisions
-	// never touch the lane map. No coordination lives here, only remaining-time answers.
-	/** Cooldown verbs: arming runs through here; the lanes stay the module's implementation. */
-	public long rushRemaining(long now) {
-		return cooldowns.rushRemaining(now);
-	}
-
 	/** Arms the Rush lane and stamps the engage window together: fired presses only. */
 	public boolean tryUseRush(long now) {
 		if (!cooldowns.useRush(now)) {
@@ -221,33 +168,6 @@ public final class PlayerRuntime {
 		}
 		rushWindow.arm(now, RushAbility.WINDOW_TICKS * 50L);
 		return true;
-	}
-
-	/**
-	 * Consumes the Rush next-hit bonus exactly once: true when a pending bonus was waiting,
-	 * false when nothing was owed. A stale window with no bonus left grants nothing.
-	 */
-	public boolean consumeRushBonus(long now) {
-		return rushWindow.consume(now);
-	}
-
-	/** Peeks the Rush bonus without consuming: what the melee plan decides on. */
-	public boolean hasRushBonusPending(long now) {
-		return rushWindow.hasPending(now);
-	}
-
-	/** Whether a fired Rush window is still live: the speed rides it, spent bonus or not. */
-	public boolean isRushLive(long now) {
-		return rushWindow.isLive(now);
-	}
-
-	/** Millis left of the live Rush window, 0 when none is live. */
-	public long rushWindowRemaining(long now) {
-		return rushWindow.remainingMs(now);
-	}
-
-	public long rendRemaining(long now) {
-		return cooldowns.rendRemaining(now);
 	}
 
 	/**
@@ -263,19 +183,21 @@ public final class PlayerRuntime {
 		return true;
 	}
 
-	/** Peeks the bonus stamp without consuming: what the melee plan decides on. 0 when nothing is owed (a fired window always stamps at least one stack). */
-	public int peekRendBonusStacks(long now) {
-		return rendWindow.peekPayload(now);
+	/**
+	 * Consumes the Impetus flip buff exactly once: true when a pending buff was waiting,
+	 * false when nothing was owed. An unswung flip simply stops being live.
+	 */
+	public boolean consumeImpetusBonus(long now) {
+		return flippedTo == RotateAbility.Stance.GLADIUS
+				&& flipWindow.consume(now);
 	}
 
-	/** Whether a fired Rend window still owes its bonus, whatever its size. */
-	public boolean hasRendBonusPending(long now) {
-		return rendWindow.hasPending(now);
-	}
-
-	/** Millis left of the live Rend window, 0 when none is live. */
-	public long rendWindowRemaining(long now) {
-		return rendWindow.remainingMs(now);
+	/**
+	 * Consumes the Rush next-hit bonus exactly once: true when a pending bonus was waiting,
+	 * false when nothing was owed. A stale window with no bonus left grants nothing.
+	 */
+	public boolean consumeRushBonus(long now) {
+		return rushWindow.consume(now);
 	}
 
 	/**
@@ -285,6 +207,16 @@ public final class PlayerRuntime {
 	 */
 	public int consumeRendBonus(long now) {
 		return rendWindow.consumePayload(now);
+	}
+
+	/** One non-crit full hit loads the pocket: called by the hit settle with the plan's movement. */
+	public void bumpStreak() {
+		streak++;
+	}
+
+	/** A landed crit spends the pocket: called by the hit settle with the plan's movement. */
+	public void resetStreak() {
+		streak = 0;
 	}
 
 	/** Reset for class switch: a new class starts empty. The adapter calls this, not ability callers. */

@@ -12,8 +12,9 @@ import java.util.ArrayList;
  * Adapter for {@link RushAbility}: the single place an engage reaches the player.
  * Cleanses harmful effects, announces on the action bar
  * and plays {@link RushAbility#CAST_SOUND} — on a fired outcome only. Rejects (wrong
- * class, cooldown) say their line and touch nothing. The speed stat rides the tick
- * while the window is live; the Momentum bonus lands later, on the next qualifying melee hit.
+ * class, cooldown) say their line and touch nothing. The speed stat rides the passive
+ * applier's window-family reconcile; the Momentum bonus lands later, on the next
+ * qualifying melee hit.
  */
 public final class RushApplier {
 	private RushApplier() {
@@ -25,19 +26,6 @@ public final class RushApplier {
 			cleanse(player);
 		}
 		AbilityApplier.announceAndCast(player, result.announcement(), fired, RushAbility.CAST_SOUND, true);
-	}
-
-	/**
-	 * Speed tick: the window's pace sits on the player while live, comes off after.
-	 * Non-Juggernauts never arm the window, so they only ever meet the remove path.
-	 */
-	static void tick(ServerPlayer player, PlayerRuntime runtime, long now) {
-		PassiveEffect.Modifier speed = RushAbility.SPEED;
-		if (runtime.isRushLive(now)) {
-			AttributeWriter.write(player, speed);
-		} else {
-			AttributeWriter.remove(player, speed.attribute(), speed.modifierId());
-		}
 	}
 
 	/**

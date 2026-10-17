@@ -60,7 +60,7 @@ public final class RushAbility {
 	 * and now the trigger just checked, so it cannot fail.
 	 */
 	public static AbilityOutcome fire(ClassDefinition def, PlayerRuntime runtime, long now) {
-		AbilityOutcome result = trigger(def, runtime.rushRemaining(now));
+		AbilityOutcome result = trigger(def, runtime.state(now).rushRemaining());
 		if (result.fired()) {
 			runtime.tryUseRush(now);
 		}

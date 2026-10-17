@@ -82,8 +82,8 @@ final class ServerEvents {
 				}
 				PlayerRuntime runtime = InfusedClasses.runtime(player);
 				PassiveApplier.apply(player, def, runtime, now);
-				// Post-decay emission: a tick that moved stacks tells the client; a quiet
-				// tick rebuilds and compares for free.
+				// The one steady-state emission point: a tick that moved a lane, a window
+				// or a stack tells the client; a quiet tick rebuilds and compares for free.
 				StatusSync.maybeSend(player, now);
 			}
 		});
@@ -111,6 +111,11 @@ final class ServerEvents {
 					long now = System.currentTimeMillis();
 					PlayerClasses classes = PlayerClassAccess.of(player);
 					ClassDefinition def = classes.currentDefinition();
+					// A classless press can only reject, silently, so it costs no state
+					// (ADR-0005): the lookup below runs for a classed player only.
+					if (def == null) {
+						return;
+					}
 					PlayerRuntime runtime = InfusedClasses.runtime(player);
 					// Reused signature bind: the wheel for Gamblers, the rotate intent for Legionaries,
 					// Rush for everyone else, so binds survive the class.
@@ -132,9 +137,6 @@ final class ServerEvents {
 							RushApplier.apply(player, result);
 						}
 					}
-					// Post-press emission: a fire, a fizzle or a rejected press rebuilds
-					// and compares; only one that moved state costs a packet.
-					StatusSync.maybeSend(player, now);
 				}));
 
 		ServerPlayNetworking.registerGlobalReceiver(RendPayload.TYPE, (payload, context) -> context.server()
@@ -143,6 +145,11 @@ final class ServerEvents {
 					long now = System.currentTimeMillis();
 					PlayerClasses classes = PlayerClassAccess.of(player);
 					ClassDefinition def = classes.currentDefinition();
+					// A classless press can only reject, silently, so it costs no state
+					// (ADR-0005): the lookup below runs for a classed player only.
+					if (def == null) {
+						return;
+					}
 					PlayerRuntime runtime = InfusedClasses.runtime(player);
 					// Reused ultimate bind: All In for Gamblers, the oath ultimate for Legionaries,
 					// Rend for everyone else.
@@ -168,9 +175,6 @@ final class ServerEvents {
 							}
 						}
 					}
-					// Post-press emission: the ultimate's fire, window and consume all
-					// land in this branch, so the stack learns them here.
-					StatusSync.maybeSend(player, now);
 				}));
 	}
 
@@ -190,7 +194,9 @@ final class ServerEvents {
 	private static void settleAttackerHit(ServerPlayer attacker, net.minecraft.world.entity.Entity entity,
 			float baseDamageTaken, long now) {
 		ClassDefinition atkDef = PlayerClassAccess.of(attacker).currentDefinition();
-		PlayerRuntime atkRuntime = InfusedClasses.runtime(attacker);
+		// Classless hits settle the universal dice and cost no transient state (ADR-0005):
+		// the plan and the settle both read a null runtime as "no abilities to move".
+		PlayerRuntime atkRuntime = atkDef == null ? null : InfusedClasses.runtime(attacker);
 		// Captured at swing time, not read here: vanilla zeroes the attack-strength
 		// ticker in onAttack() before the hit lands, so a read from this hook is always
 		// zero and every full-swing gate below it was dead until the capture landed.
@@ -219,8 +225,5 @@ final class ServerEvents {
 		// take, a crit x1.25: see HitPlan.combined.
 		DamageSettle.settleTake(entity, baseDamageTaken, landed.combined(),
 				() -> attacker.damageSources().playerAttack(attacker));
-		// Post-settle emission: the hit may have bumped stacks, moved the dice, spent a
-		// one-shot or reset Streak; a hit that moved nothing sends nothing.
-		StatusSync.maybeSend(attacker, now);
 	}
 }

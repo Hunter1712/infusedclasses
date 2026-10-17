@@ -69,7 +69,7 @@ class RendAbilityTest {
 
 		assertTrue(result.outcome().fired());
 		assertTrue(result.consume());
-		assertEquals(Cooldowns.REND_MS, runtime.rendRemaining(0));
+		assertEquals(Cooldowns.REND_MS, runtime.state(0).rendRemaining());
 		assertEquals(120, RendAbility.WINDOW_TICKS);
 	}
 
@@ -78,9 +78,9 @@ class RendAbilityTest {
 		PlayerRuntime runtime = withStacks(10, 0);
 		RendAbility.fire(juggernautDef(), runtime, 0);
 
-		assertEquals(10, runtime.peekRendBonusStacks(0));
-		assertEquals(10, runtime.peekRendBonusStacks(5_999));
-		assertEquals(0, runtime.peekRendBonusStacks(6_000));
+		assertEquals(10, runtime.state(0).rendBonusStacks());
+		assertEquals(10, runtime.state(5_999).rendBonusStacks());
+		assertEquals(0, runtime.state(6_000).rendBonusStacks());
 		assertEquals(10, runtime.consumeRendBonus(0));
 		assertEquals(0, runtime.consumeRendBonus(0));
 	}
@@ -90,10 +90,10 @@ class RendAbilityTest {
 		PlayerRuntime runtime = withStacks(10, 0);
 		RendAbility.fire(juggernautDef(), runtime, 0);
 
-		assertEquals(0, runtime.peekRendBonusStacks(6_001));
+		assertEquals(0, runtime.state(6_001).rendBonusStacks());
 		assertEquals(0, runtime.consumeRendBonus(6_001));
 		// The lane stays armed: the whiff cost time, and the stacks are already spent.
-		assertEquals(Cooldowns.REND_MS - 6_001, runtime.rendRemaining(6_001));
+		assertEquals(Cooldowns.REND_MS - 6_001, runtime.state(6_001).rendRemaining());
 	}
 
 	@Test
@@ -104,8 +104,8 @@ class RendAbilityTest {
 		assertFalse(result.outcome().fired());
 		assertEquals("No Momentum", result.outcome().announcement().text());
 		assertFalse(result.consume());
-		assertEquals(0, runtime.rendRemaining(0));
-		assertEquals(0, runtime.peekRendBonusStacks(0));
+		assertEquals(0, runtime.state(0).rendRemaining());
+		assertEquals(0, runtime.state(0).rendBonusStacks());
 	}
 
 	@Test
@@ -115,21 +115,21 @@ class RendAbilityTest {
 
 		assertFalse(result.outcome().fired());
 		assertNull(result.outcome().announcement());
-		assertEquals(0, runtime.rendRemaining(0));
-		assertEquals(0, runtime.peekRendBonusStacks(0));
+		assertEquals(0, runtime.state(0).rendRemaining());
+		assertEquals(0, runtime.state(0).rendBonusStacks());
 	}
 
 	@Test
 	void cooldownIndependentAndNeverRearmedByRejects() {
 		PlayerRuntime runtime = withStacks(5, 0);
-		assertEquals(0, runtime.rendRemaining(0));
+		assertEquals(0, runtime.state(0).rendRemaining());
 
 		RendAbility.fire(juggernautDef(), runtime, 1_000);
 		RendAbility.Result second = RendAbility.fire(juggernautDef(), runtime, 16_000);
 
 		assertFalse(second.outcome().fired());
 		assertEquals(45_000, second.outcome().remainingMs());
-		assertEquals(45_000, runtime.rendRemaining(16_000));
+		assertEquals(45_000, runtime.state(16_000).rendRemaining());
 	}
 
 	@Test
@@ -138,8 +138,8 @@ class RendAbilityTest {
 		RendAbility.fire(juggernautDef(), runtime, 0);
 		runtime.resetCooldowns();
 
-		assertEquals(0, runtime.rendRemaining(0));
-		assertEquals(0, runtime.peekRendBonusStacks(0));
+		assertEquals(0, runtime.state(0).rendRemaining());
+		assertEquals(0, runtime.state(0).rendBonusStacks());
 		assertEquals(0, runtime.consumeRendBonus(0));
 	}
 
@@ -156,6 +156,6 @@ class RendAbilityTest {
 		assertTrue(PassiveApplier.dropStacks(runtime, juggernautDef().passiveForTrigger(ConditionalPassive.ON_HIT_DEALT)));
 		assertEquals(0, runtime.stacks(juggernautDef().passives().get(0)));
 		assertFalse(PassiveApplier.dropStacks(runtime, juggernautDef().passiveForTrigger(ConditionalPassive.ON_HIT_DEALT)));
-		assertEquals(4, runtime.peekRendBonusStacks(0));
+		assertEquals(4, runtime.state(0).rendBonusStacks());
 	}
 }

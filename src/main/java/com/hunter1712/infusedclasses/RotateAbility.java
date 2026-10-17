@@ -175,7 +175,8 @@ public final class RotateAbility {
 	 * the trigger just checked, so it cannot fail.
 	 */
 	public static Result fire(ClassDefinition def, PlayerRuntime runtime, long now) {
-		Result result = trigger(def, runtime.rotateRemaining(now), runtime.stance());
+		PlayerRuntime.State state = runtime.state(now);
+		Result result = trigger(def, state.rotateRemaining(), state.stance());
 		if (result.outcome().fired()) {
 			runtime.tryUseRotate(now, result.stance());
 		}

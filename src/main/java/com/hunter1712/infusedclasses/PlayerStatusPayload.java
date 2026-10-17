@@ -5,18 +5,23 @@ import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.Identifier;
 
+import java.util.List;
+import java.util.Objects;
+import java.util.function.Function;
+
 /**
  * One player's whole status stack as a single value: the snapshot decision and the wire
- * payload in one. Built only from the transient runtime plus a {@code now}, so it can be
- * asserted without a player; the S2C codec carries it to the client verbatim.
+ * payload in one. Built from one runtime state read at a {@code now} — or from no state at
+ * all for a classless player — so it can be asserted without a player; the S2C codec
+ * carries it to the client verbatim.
  *
- * <p>{@link #movedSince} is the emission guard: it compares lane and window <em>armed
- * flags</em> (not raw remainders, which decay every rebuild) plus every discrete field —
- * class, load flags, stacks, stance, flip target, Streak, outcome, and the Momentum
- * grace stamp, an event the client cannot derive: a hit at the stack cap re-stamps the
- * clock without moving the count, so the stamp moving is the move. A quiet second reads
- * as no move; a fire, a spend, a stack move, a switch, a respawn and a join all read as
- * moves.
+ * <p>{@link #movedSince} is the emission guard: it compares through the {@link #FIELDS}
+ * table — lane and window <em>armed flags</em> (not raw remainders, which decay every
+ * rebuild) plus every discrete field — class, load flags, stacks, stance, flip target,
+ * Streak, outcome, and the Momentum grace stamp, an event the client cannot derive: a
+ * hit at the stack cap re-stamps the clock without moving the count, so the stamp moving
+ * is the move. A quiet second reads as no move; a fire, a spend, a stack move, a switch,
+ * a respawn and a join all read as moves.
  *
  * <p>The empty class id is a state, not an absence: a classless join sends one so the
  * client hides the stack by fact. A class id the registry does not know still travels
@@ -59,104 +64,147 @@ public record PlayerStatusPayload(
 	public static final StreamCodec<FriendlyByteBuf, PlayerStatusPayload> STREAM_CODEC =
 			StreamCodec.of(PlayerStatusPayload::encode, PlayerStatusPayload::decode);
 
+	/** A fresh runtime's truth: what "no state" reads as. One shared value; nothing mutates it. */
+	private static final PlayerRuntime.State NO_STATE = new PlayerRuntime().state(0L);
+
+	/** How a field's change reads: decaying remainders compare armed-or-not, discrete facts by equality. */
+	private enum Move {
+		ARMED,
+		EXACT,
+		IGNORED
+	}
+
+	/** One snapshot field: how it leaves a payload, and whether a move in it wakes the client. */
+	private record Field<T>(Function<PlayerStatusPayload, T> get, Move move) {
+	}
+
 	/**
-	 * The snapshot at {@code now}: every field is a direct runtime read, the two derived
-	 * ones documented on the record. A missing class reads as the empty class id with
-	 * every lane and window untouched.
+	 * The field table, in record and wire order: every component once. {@code encode} and
+	 * {@code movedSince} walk it; {@code decode} reads in this same order by hand (records
+	 * have no table-driven construction) and ProtocolTest's populated round trip pins the
+	 * two orders to each other. The Momentum grace <em>remainder</em> is the one ignored
+	 * field: it derives from the stamp, which is compared.
+	 */
+	private static final List<Field<?>> FIELDS = List.of(
+			new Field<>(PlayerStatusPayload::classId, Move.EXACT),
+			new Field<>(PlayerStatusPayload::rushRemainingMs, Move.ARMED),
+			new Field<>(PlayerStatusPayload::rendRemainingMs, Move.ARMED),
+			new Field<>(PlayerStatusPayload::rotateRemainingMs, Move.ARMED),
+			new Field<>(PlayerStatusPayload::oathRemainingMs, Move.ARMED),
+			new Field<>(PlayerStatusPayload::rouletteRemainingMs, Move.ARMED),
+			new Field<>(PlayerStatusPayload::allInRemainingMs, Move.ARMED),
+			new Field<>(PlayerStatusPayload::rushWindowRemainingMs, Move.ARMED),
+			new Field<>(PlayerStatusPayload::rushBonusPending, Move.EXACT),
+			new Field<>(PlayerStatusPayload::rendWindowRemainingMs, Move.ARMED),
+			new Field<>(PlayerStatusPayload::rendBonusPending, Move.EXACT),
+			new Field<>(PlayerStatusPayload::flipWindowRemainingMs, Move.ARMED),
+			new Field<>(PlayerStatusPayload::flipTarget, Move.EXACT),
+			new Field<>(PlayerStatusPayload::impetusPending, Move.EXACT),
+			new Field<>(PlayerStatusPayload::rouletteWindowRemainingMs, Move.ARMED),
+			new Field<>(PlayerStatusPayload::rouletteOutcome, Move.EXACT),
+			new Field<>(PlayerStatusPayload::aequilibriumWindowRemainingMs, Move.ARMED),
+			new Field<>(PlayerStatusPayload::allInWindowRemainingMs, Move.ARMED),
+			new Field<>(PlayerStatusPayload::momentumStacks, Move.EXACT),
+			new Field<>(PlayerStatusPayload::momentumGraceRemainingMs, Move.IGNORED),
+			new Field<>(PlayerStatusPayload::momentumGraceStampMs, Move.EXACT),
+			new Field<>(PlayerStatusPayload::stance, Move.EXACT),
+			new Field<>(PlayerStatusPayload::streak, Move.EXACT));
+
+	/**
+	 * The snapshot at {@code now}: one runtime state read behind every lane and window
+	 * field, the two derived ones documented on the record. The {@code runtime} is null
+	 * only for a classless player, whose reads all come from {@link #NO_STATE}. A missing
+	 * class reads as the empty class id with every lane and window untouched.
 	 */
 	public static PlayerStatusPayload of(Identifier classId, PlayerRuntime runtime, long now) {
 		ClassDefinition def = ClassRegistry.byId(classId);
 		ConditionalPassive momentum = def == null ? null : def.passiveForTrigger(ConditionalPassive.ON_HIT_DEALT);
+		PlayerRuntime.State state = runtime == null ? NO_STATE : runtime.state(now);
 		return new PlayerStatusPayload(
 				classId == null ? "" : classId.toString(),
-				runtime.rushRemaining(now),
-				runtime.rendRemaining(now),
-				runtime.rotateRemaining(now),
-				runtime.oathRemaining(now),
-				runtime.rouletteRemaining(now),
-				runtime.allInRemaining(now),
-				runtime.rushWindowRemaining(now),
-				runtime.hasRushBonusPending(now),
-				runtime.rendWindowRemaining(now),
-				runtime.hasRendBonusPending(now),
-				runtime.flipWindowRemaining(now),
-				runtime.flipTarget(now),
-				runtime.hasImpetusPending(now),
-				runtime.rouletteWindowRemaining(now),
-				runtime.rouletteOutcome(now),
-				runtime.aequilibriumWindowRemaining(now),
-				runtime.allInWindowRemaining(now),
+				state.rushRemaining(),
+				state.rendRemaining(),
+				state.rotateRemaining(),
+				state.oathRemaining(),
+				state.rouletteRemaining(),
+				state.allInRemaining(),
+				state.rushWindowRemaining(),
+				state.rushBonusPending(),
+				state.rendWindowRemaining(),
+				// A fired Rend window always stamps at least one stack (a zero-stack press
+				// fizzles before the arm), so the unspent stamp is the pending flag.
+				state.rendBonusStacks() > 0,
+				state.flipWindowRemaining(),
+				state.flipTarget(),
+				state.impetusPending(),
+				state.rouletteWindowRemaining(),
+				state.rouletteOutcome(),
+				state.aequilibriumWindowRemaining(),
+				state.allInWindowRemaining(),
 				momentum == null ? 0 : runtime.stacks(momentum),
 				momentum == null ? 0 : runtime.graceRemaining(momentum, now),
 				momentum == null ? 0 : runtime.graceStamp(momentum),
-				runtime.stance(),
-				runtime.streak());
+				state.stance(),
+				state.streak());
+	}
+
+	/** The classless snapshot: empty class id, every lane and window untouched, no state read. */
+	public static PlayerStatusPayload classless() {
+		return of(null, null, 0L);
 	}
 
 	/**
-	 * Whether anything a client cannot derive moved since the given snapshot: class,
-	 * lane/window armed flags, load flags, stacks, stance, flip target, Streak, outcome.
-	 * Raw remainders decay with time and are never compared; a rebuild after a quiet
-	 * second is no move. A null previous snapshot is always a move (nothing was sent).
+	 * Whether anything a client cannot derive moved since the given snapshot, walked
+	 * through the field table: class, lane/window armed flags, load flags, stacks, stance,
+	 * flip target, Streak, outcome, and the Momentum grace stamp. Raw remainders decay
+	 * with time and are never compared; a rebuild after a quiet second is no move. A null
+	 * previous snapshot is always a move (nothing was sent).
 	 */
 	public boolean movedSince(PlayerStatusPayload prev) {
 		if (prev == null) {
 			return true;
 		}
-		return !classId.equals(prev.classId)
-				|| armed(rushRemainingMs) != armed(prev.rushRemainingMs)
-				|| armed(rendRemainingMs) != armed(prev.rendRemainingMs)
-				|| armed(rotateRemainingMs) != armed(prev.rotateRemainingMs)
-				|| armed(oathRemainingMs) != armed(prev.oathRemainingMs)
-				|| armed(rouletteRemainingMs) != armed(prev.rouletteRemainingMs)
-				|| armed(allInRemainingMs) != armed(prev.allInRemainingMs)
-				|| armed(rushWindowRemainingMs) != armed(prev.rushWindowRemainingMs)
-				|| rushBonusPending != prev.rushBonusPending
-				|| armed(rendWindowRemainingMs) != armed(prev.rendWindowRemainingMs)
-				|| rendBonusPending != prev.rendBonusPending
-				|| armed(flipWindowRemainingMs) != armed(prev.flipWindowRemainingMs)
-				|| flipTarget != prev.flipTarget
-				|| impetusPending != prev.impetusPending
-				|| armed(rouletteWindowRemainingMs) != armed(prev.rouletteWindowRemainingMs)
-				|| rouletteOutcome != prev.rouletteOutcome
-				|| armed(aequilibriumWindowRemainingMs) != armed(prev.aequilibriumWindowRemainingMs)
-				|| armed(allInWindowRemainingMs) != armed(prev.allInWindowRemainingMs)
-				|| momentumStacks != prev.momentumStacks
-				|| momentumGraceStampMs != prev.momentumGraceStampMs
-				|| stance != prev.stance
-				|| streak != prev.streak;
+		for (Field<?> field : FIELDS) {
+			Object now = field.get().apply(this);
+			Object was = field.get().apply(prev);
+			boolean moved = switch (field.move()) {
+				case ARMED -> armed((Long) now) != armed((Long) was);
+				case EXACT -> !Objects.equals(now, was);
+				case IGNORED -> false;
+			};
+			if (moved) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	private static boolean armed(long remainingMs) {
 		return remainingMs > 0;
 	}
 
+	/** Encodes in table order; the nullable enums travel as an empty name, decoded back to null. */
 	private static void encode(FriendlyByteBuf buf, PlayerStatusPayload p) {
-		buf.writeUtf(p.classId());
-		buf.writeLong(p.rushRemainingMs());
-		buf.writeLong(p.rendRemainingMs());
-		buf.writeLong(p.rotateRemainingMs());
-		buf.writeLong(p.oathRemainingMs());
-		buf.writeLong(p.rouletteRemainingMs());
-		buf.writeLong(p.allInRemainingMs());
-		buf.writeLong(p.rushWindowRemainingMs());
-		buf.writeBoolean(p.rushBonusPending());
-		buf.writeLong(p.rendWindowRemainingMs());
-		buf.writeBoolean(p.rendBonusPending());
-		buf.writeLong(p.flipWindowRemainingMs());
-		writeStance(buf, p.flipTarget());
-		buf.writeBoolean(p.impetusPending());
-		buf.writeLong(p.rouletteWindowRemainingMs());
-		writeOutcome(buf, p.rouletteOutcome());
-		buf.writeLong(p.aequilibriumWindowRemainingMs());
-		buf.writeLong(p.allInWindowRemainingMs());
-		buf.writeInt(p.momentumStacks());
-		buf.writeLong(p.momentumGraceRemainingMs());
-		buf.writeLong(p.momentumGraceStampMs());
-		writeStance(buf, p.stance());
-		buf.writeInt(p.streak());
+		for (Field<?> field : FIELDS) {
+			writeValue(buf, field.get().apply(p));
+		}
 	}
 
+	/** One field value by its type: the codec's only type map, so the table owns the order. */
+	private static void writeValue(FriendlyByteBuf buf, Object value) {
+		switch (value) {
+			case null -> buf.writeUtf("");
+			case String s -> buf.writeUtf(s);
+			case Long l -> buf.writeLong(l);
+			case Boolean b -> buf.writeBoolean(b);
+			case Integer i -> buf.writeInt(i);
+			case RotateAbility.Stance s -> writeStance(buf, s);
+			case RouletteAbility.Outcome o -> writeOutcome(buf, o);
+			default -> throw new IllegalStateException("Unencodable snapshot field: " + value);
+		}
+	}
+
+	/** Reads in the table's order by hand; the populated round trip in ProtocolTest pins the order. */
 	private static PlayerStatusPayload decode(FriendlyByteBuf buf) {
 		return new PlayerStatusPayload(
 				buf.readUtf(),

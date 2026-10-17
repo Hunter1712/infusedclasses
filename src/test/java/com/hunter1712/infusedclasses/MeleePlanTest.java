@@ -58,7 +58,7 @@ class MeleePlanTest {
 		assertFalse(plan.bump());
 		MeleePlan.Landed landed = MeleePlan.resolve(legionary(), gladius, null, null, 0.5F, 0, 0.5F);
 		assertEquals(0.0F, landed.rendHp());
-		assertFalse(gladius.hasImpetusPending(0));
+		assertFalse(gladius.state(0).impetusPending());
 		assertEquals(1.0, dealOf(legionary(), gladius, 0), 1e-9);
 	}
 
@@ -191,7 +191,18 @@ class MeleePlanTest {
 		MeleePlan.Landed landed = MeleePlan.resolve(null, runtime, null, null, 1.0F, 0, 0.05F);
 		assertEquals(0.0F, landed.rendHp());
 		assertEquals(CritRoll.Verdict.CRIT, landed.verdict());
-		assertEquals(0, runtime.streak());
+		assertEquals(0, runtime.state(0).streak());
+	}
+
+	@Test
+	void aNullAttackerRuntimeSettlesLikeAClasslessOne() {
+		// The C5 shape: classless hits never materialise a runtime, so the plan and the
+		// settle both read null as "no abilities to move" and still roll the universal dice.
+		MeleePlan.Landed landed = MeleePlan.resolve(null, null, null, null, 1.0F, 0, 0.05F);
+
+		assertEquals(0.0F, landed.rendHp());
+		assertEquals(CritRoll.Verdict.CRIT, landed.verdict());
+		assertEquals(1.25, landed.combined(), 1e-9);
 	}
 
 	@Test
@@ -200,16 +211,16 @@ class MeleePlanTest {
 
 		MeleePlan.resolve(gambler(), runtime, null, null, 1.0F, 0, 0.5F);
 		MeleePlan.resolve(gambler(), runtime, null, null, 1.0F, 0, 0.5F);
-		assertEquals(2, runtime.streak());
+		assertEquals(2, runtime.state(0).streak());
 
 		MeleePlan.resolve(gambler(), runtime, null, null, 1.0F, 0, 0.1F);
-		assertEquals(0, runtime.streak());
+		assertEquals(0, runtime.state(0).streak());
 
 		// Betrayal counts as a non-crit: the bad roll still loads the pocket.
 		MeleePlan.Landed betrayal = MeleePlan.resolve(gambler(), runtime, null, null, 1.0F, 0, 0.01F);
 		assertEquals(CritRoll.Verdict.BETRAYAL, betrayal.verdict());
 		assertEquals(0.5, betrayal.combined(), 1e-9);
-		assertEquals(1, runtime.streak());
+		assertEquals(1, runtime.state(0).streak());
 	}
 
 	@Test
@@ -252,8 +263,8 @@ class MeleePlanTest {
 		assertTrue(landed.rendHp() > 0);
 		// Settle owns the bump too: full swing earns one (+1), Rush credits +5, Rend snapshot spent, not refunded.
 		assertEquals(11, runtime.stacks(momentum));
-		assertFalse(runtime.hasRushBonusPending(0));
-		assertEquals(0, runtime.peekRendBonusStacks(0));
+		assertFalse(runtime.state(0).rushBonusPending());
+		assertEquals(0, runtime.state(0).rendBonusStacks());
 	}
 
 	@Test
@@ -265,8 +276,8 @@ class MeleePlanTest {
 		assertEquals(0.0F, landed.rendHp());
 
 		assertEquals(0, runtime.stacks(juggernaut().passives().get(0)));
-		assertFalse(runtime.hasRushBonusPending(0));
-		assertEquals(0, runtime.peekRendBonusStacks(0));
+		assertFalse(runtime.state(0).rushBonusPending());
+		assertEquals(0, runtime.state(0).rendBonusStacks());
 	}
 
 	@Test
@@ -278,7 +289,7 @@ class MeleePlanTest {
 		runtime.flipStance(0, RotateAbility.Stance.GLADIUS);
 
 		assertFalse(plan.impetusPending());
-		assertTrue(runtime.hasImpetusPending(0));
+		assertTrue(runtime.state(0).impetusPending());
 	}
 
 	@Test

@@ -1,10 +1,12 @@
 package com.hunter1712.infusedclasses;
 
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Function;
 
 /** Adapter for {@link PassiveEffect}: makes the player's attributes agree with the decision. */
 public final class PassiveApplier {
@@ -12,13 +14,30 @@ public final class PassiveApplier {
 	}
 
 	/**
+	 * One window-aura family: the marker ability that owns it, every modifier it can
+	 * write, and the pure decision of what its live windows want. The reconcile walks
+	 * the family once, so the write and remove sides cannot drift, and a class without
+	 * the marker sweeps whatever the family could have written.
+	 */
+	private record WindowFamily(
+			Identifier marker,
+			List<PassiveEffect.Modifier> all,
+			Function<PlayerRuntime.State, List<PassiveEffect.Modifier>> wanted) {
+	}
+
+	private static final List<WindowFamily> FAMILIES = List.of(
+			new WindowFamily(ClassRegistry.ROTATE_ABILITY, stanceModifiers(), PassiveApplier::stanceWanted),
+			new WindowFamily(ClassRegistry.ROULETTE_ABILITY, RouletteAbility.allStatModifiers(), PassiveApplier::rouletteWanted),
+			new WindowFamily(ClassRegistry.RUSH_ABILITY, List.of(RushAbility.SPEED), PassiveApplier::rushWanted));
+
+	/**
 	 * One tick for one player: the single reconcile home. Decay, then conditionals, then
-	 * the HP-scaled pair, then the stance aura, then the wheel's window aura, then the
-	 * Rush window's speed, in that order; the switch cleanup mirrors
-	 * it in {@link #onClassChanged}. Stance and the Rush speed ride here (not in the entry tick) so the tick
-	 * order and the write-only-on-change discipline are decided once. Idempotent: an
-	 * attribute is only written when what is applied differs from what should be,
-	 * so the modifier is created once and left alone while the stacks hold still.
+	 * the HP-scaled pair, then the window-aura families (the stance and its Aequilibrium
+	 * window, the wheel's live spin, the Rush window's speed), in that order; the switch
+	 * cleanup mirrors it in {@link #onClassChanged}. The tick order and the
+	 * write-only-on-change discipline are decided once. Idempotent: an attribute is only
+	 * written when what is applied differs from what should be, so the modifier is
+	 * created once and left alone while the stacks hold still.
 	 */
 	public static void apply(ServerPlayer player, ClassDefinition def, PlayerRuntime runtime, long now) {
 		if (def == null) {
@@ -34,9 +53,50 @@ public final class PassiveApplier {
 		for (HpScaledPassive hp : def.hpPassives()) {
 			settlePlan(player, PassiveEffect.planForBucket(hp, bucket));
 		}
-		applyStance(player, def, runtime, now);
-		applyRoulette(player, runtime, now);
-		RushApplier.tick(player, runtime, now);
+		reconcileWindows(player, def, runtime.state(now));
+	}
+
+	/** One reconcile pass over every family: a held marker writes what its state wants, an absent one wants nothing. */
+	private static void reconcileWindows(ServerPlayer player, ClassDefinition def, PlayerRuntime.State state) {
+		for (WindowFamily family : FAMILIES) {
+			List<PassiveEffect.Modifier> wanted = def.hasAbility(family.marker())
+					? family.wanted().apply(state) : List.of();
+			for (PassiveEffect.Modifier modifier : family.all()) {
+				if (wanted.contains(modifier)) {
+					AttributeWriter.write(player, modifier);
+				} else {
+					AttributeWriter.remove(player, modifier.attribute(), modifier.modifierId());
+				}
+			}
+		}
+	}
+
+	/** The stance family's wanted set: the current stance's aura, plus Aequilibrium's while its window is live. */
+	static List<PassiveEffect.Modifier> stanceWanted(PlayerRuntime.State state) {
+		List<PassiveEffect.Modifier> wanted = new ArrayList<>(RotateAbility.auraFor(state.stance()));
+		if (state.aequilibriumWindowRemaining() > 0) {
+			wanted.addAll(AequilibriumAbility.windowModifiers());
+		}
+		return wanted;
+	}
+
+	/** The wheel family's wanted set: the live spin's stat aura, empty when no spin is live. */
+	static List<PassiveEffect.Modifier> rouletteWanted(PlayerRuntime.State state) {
+		RouletteAbility.Outcome outcome = state.rouletteOutcome();
+		return outcome == null ? List.of() : RouletteAbility.statAuraFor(outcome);
+	}
+
+	/** The Rush family's wanted set: the speed stat while the engage window is live. */
+	static List<PassiveEffect.Modifier> rushWanted(PlayerRuntime.State state) {
+		return state.rushWindowRemaining() > 0 ? List.of(RushAbility.SPEED) : List.of();
+	}
+
+	/** The stance family's full set: both stances' auras plus the window pair, so write and remove cannot drift. */
+	private static List<PassiveEffect.Modifier> stanceModifiers() {
+		List<PassiveEffect.Modifier> all = new ArrayList<>(RotateAbility.auraFor(RotateAbility.Stance.GLADIUS));
+		all.addAll(RotateAbility.auraFor(RotateAbility.Stance.SCUTUM));
+		all.addAll(AequilibriumAbility.windowModifiers());
+		return all;
 	}
 
 	/**
@@ -50,73 +110,6 @@ public final class PassiveApplier {
 			case PassiveEffect.Plan.Skip() -> {
 			}
 		}
-	}
-
-	/**
-	 * Legionary stance auras: only the current stance's modifiers sit on the player,
-	 * the other stance's come off. Non-Legionaries skip entirely. Both sides iterate
-	 * the stance's single aura list, so write and remove cannot drift.
-	 */
-	private static void applyStance(ServerPlayer player, ClassDefinition def, PlayerRuntime runtime, long now) {
-		if (!def.hasAbility(ClassRegistry.ROTATE_ABILITY)) {
-			return;
-		}
-		for (PassiveEffect.Modifier wanted : RotateAbility.auraFor(runtime.stance())) {
-			AttributeWriter.write(player, wanted);
-		}
-		for (PassiveEffect.Modifier stale : RotateAbility.auraFor(RotateAbility.flipped(runtime.stance()))) {
-			AttributeWriter.remove(player, stale.attribute(), stale.modifierId());
-		}
-		if (runtime.isAequilibriumLive(now)) {
-			for (PassiveEffect.Modifier wanted : AequilibriumAbility.windowModifiers()) {
-				AttributeWriter.write(player, wanted);
-			}
-		} else {
-			for (PassiveEffect.Modifier stale : AequilibriumAbility.windowModifiers()) {
-				AttributeWriter.remove(player, stale.attribute(), stale.modifierId());
-			}
-		}
-	}
-
-	/**
-	 * Roulette window auras: Ward and Haste sit on the player only while their spin is
-	 * live, and the write/remove sides iterate the same stat list, so they cannot drift.
-	 * A spin that is over reads as no window: everything comes off. Non-Gamblers never
-	 * arm the window, so they only ever meet the remove path.
-	 */
-	private static void applyRoulette(ServerPlayer player, PlayerRuntime runtime, long now) {
-		RouletteAbility.Outcome live = runtime.rouletteOutcome(now);
-		List<PassiveEffect.Modifier> wanted =
-				live == null ? List.of() : RouletteAbility.statAuraFor(live);
-		for (PassiveEffect.Modifier stat : RouletteAbility.allStatModifiers()) {
-			if (wanted.contains(stat)) {
-				AttributeWriter.write(player, stat);
-			} else {
-				AttributeWriter.remove(player, stat.attribute(), stat.modifierId());
-			}
-		}
-	}
-
-	/** Every stance/window modifier in one place: leaving Legionary takes them all off. */
-	private static void removeStanceModifiers(ServerPlayer player) {
-		for (PassiveEffect.Modifier stale : allModifiers()) {
-			AttributeWriter.remove(player, stale.attribute(), stale.modifierId());
-		}
-	}
-
-	/** Every wheel stat in one place: leaving the Gambler takes them all off. */
-	private static void removeRouletteModifiers(ServerPlayer player) {
-		for (PassiveEffect.Modifier stale : RouletteAbility.allStatModifiers()) {
-			AttributeWriter.remove(player, stale.attribute(), stale.modifierId());
-		}
-	}
-
-	/** The full set both sides draw from, so write and remove cannot drift apart. */
-	private static List<PassiveEffect.Modifier> allModifiers() {
-		List<PassiveEffect.Modifier> all = new ArrayList<>(RotateAbility.auraFor(RotateAbility.Stance.GLADIUS));
-		all.addAll(RotateAbility.auraFor(RotateAbility.Stance.SCUTUM));
-		all.addAll(AequilibriumAbility.windowModifiers());
-		return all;
 	}
 
 	/**
@@ -151,16 +144,16 @@ public final class PassiveApplier {
 					AttributeWriter.remove(player, hp.attribute(), hp.modifierId());
 				}
 			}
-			// Stance auras are transient like Vigor: leaving the class takes them off.
-			// The Legionary marker lives with the stance reconcile below, not with the passives.
-			if (oldDef.hasAbility(ClassRegistry.ROTATE_ABILITY)
-					&& (newDef == null || !newDef.hasAbility(ClassRegistry.ROTATE_ABILITY))) {
-				removeStanceModifiers(player);
-			}
-			// Wheel stats are transient too: leaving the Gambler takes the live spin's auras off.
-			if (oldDef.hasAbility(ClassRegistry.ROULETTE_ABILITY)
-					&& (newDef == null || !newDef.hasAbility(ClassRegistry.ROULETTE_ABILITY))) {
-				removeRouletteModifiers(player);
+			// Window auras are transient like Vigor: leaving their marker takes them off
+			// now; the tick's family sweep does not run for a classless player, so the
+			// switch stays the one immediate cleanup.
+			for (WindowFamily family : FAMILIES) {
+				if (oldDef.hasAbility(family.marker())
+						&& (newDef == null || !newDef.hasAbility(family.marker()))) {
+					for (PassiveEffect.Modifier modifier : family.all()) {
+						AttributeWriter.remove(player, modifier.attribute(), modifier.modifierId());
+					}
+				}
 			}
 			runtime.clear(oldDef);
 		}

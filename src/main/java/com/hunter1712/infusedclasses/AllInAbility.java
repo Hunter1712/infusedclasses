@@ -47,7 +47,7 @@ public final class AllInAbility {
 	 * so it cannot fail.
 	 */
 	public static AbilityOutcome fire(ClassDefinition def, PlayerRuntime runtime, long now) {
-		AbilityOutcome result = trigger(def, runtime.allInRemaining(now));
+		AbilityOutcome result = trigger(def, runtime.state(now).allInRemaining());
 		if (result.fired()) {
 			runtime.tryUseAllIn(now);
 		}

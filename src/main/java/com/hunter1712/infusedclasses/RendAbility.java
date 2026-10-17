@@ -85,7 +85,7 @@ public final class RendAbility {
 	public static Result fire(ClassDefinition def, PlayerRuntime runtime, long now) {
 		ConditionalPassive spent = def == null ? null : def.passiveForTrigger(ConditionalPassive.ON_HIT_DEALT);
 		int stacks = spent == null ? 0 : runtime.stacks(spent);
-		Result result = trigger(def, runtime.rendRemaining(now), stacks);
+		Result result = trigger(def, runtime.state(now).rendRemaining(), stacks);
 		if (result.outcome().fired()) {
 			runtime.tryUseRend(now, stacks);
 		}

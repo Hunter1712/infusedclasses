@@ -72,7 +72,7 @@ public final class AequilibriumAbility {
 	 * checked, so it cannot fail.
 	 */
 	public static AbilityOutcome fire(ClassDefinition def, PlayerRuntime runtime, long now) {
-		AbilityOutcome result = trigger(def, runtime.oathRemaining(now));
+		AbilityOutcome result = trigger(def, runtime.state(now).oathRemaining());
 		if (result.fired()) {
 			runtime.tryUseAequilibrium(now);
 		}

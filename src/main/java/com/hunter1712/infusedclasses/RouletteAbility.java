@@ -154,7 +154,7 @@ public final class RouletteAbility {
 	 * just checked, so it cannot fail. Free: no HP is spent, checked or touched anywhere.
 	 */
 	public static Result fire(ClassDefinition def, PlayerRuntime runtime, long now, float roll) {
-		Result result = trigger(def, runtime.rouletteRemaining(now), roll);
+		Result result = trigger(def, runtime.state(now).rouletteRemaining(), roll);
 		if (result.outcome().fired()) {
 			runtime.tryUseRoulette(now, result.band());
 		}
@@ -162,11 +162,11 @@ public final class RouletteAbility {
 	}
 
 	/** Melee dealt mult of the live spin, 1.0 when no outcome window is live. Read by the melee plan. */
-	public static double dealMult(PlayerRuntime runtime, long now) {
-		if (runtime == null) {
+	public static double dealMult(PlayerRuntime.State state) {
+		if (state == null) {
 			return 1.0;
 		}
-		Outcome outcome = runtime.rouletteOutcome(now);
+		Outcome outcome = state.rouletteOutcome();
 		return outcome == null ? 1.0 : outcome.dealMult();
 	}
 }

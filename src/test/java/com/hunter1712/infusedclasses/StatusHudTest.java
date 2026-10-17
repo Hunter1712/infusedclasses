@@ -15,6 +15,9 @@ class StatusHudTest {
 	private static final String JUGGERNAUT = "infusedclasses:juggernaut";
 	private static final String LEGIONARY = "infusedclasses:legionary";
 	private static final String GAMBLER = "infusedclasses:gambler";
+	/** The Momentum word comes from the passive the row reads, not a HUD copy. */
+	private static final String MOMENTUM =
+			ClassRegistry.byId(ClassRegistry.JUGGERNAUT).passiveForTrigger(ConditionalPassive.ON_HIT_DEALT).name();
 
 	/** A mutable snapshot template: tests set the few fields under test, then build. */
 	private static final class Snap {
@@ -87,8 +90,8 @@ class StatusHudTest {
 	@Test
 	void readyJuggernautShowsTwoDimWordLanes() {
 		assertEquals(List.of(
-				new StatusHud.Row(List.of(ready(StatusHud.RUSH))),
-				new StatusHud.Row(List.of(ready(StatusHud.REND)))),
+				new StatusHud.Row(List.of(ready(AbilityRoster.RUSH.name()))),
+				new StatusHud.Row(List.of(ready(AbilityRoster.REND.name())))),
 				rows(new Snap().build(), 0));
 	}
 
@@ -101,7 +104,7 @@ class StatusHudTest {
 			snap.rush = remaining[i];
 			assertEquals(text[i], chip(snap.build(), 0, 0).value(), "rush " + remaining[i] + "ms");
 			assertTrue(chip(snap.build(), 0, 0).lit());
-			assertEquals(StatusHud.RUSH, chip(snap.build(), 0, 0).label());
+			assertEquals(AbilityRoster.RUSH.name(), chip(snap.build(), 0, 0).label());
 		}
 	}
 
@@ -113,8 +116,8 @@ class StatusHudTest {
 
 		assertEquals("5s", rows(status, 15_000).get(0).chips().get(0).value());
 		assertEquals("1s", rows(status, 19_001).get(0).chips().get(0).value());
-		assertEquals(ready(StatusHud.RUSH), rows(status, 20_000).get(0).chips().get(0));
-		assertEquals(ready(StatusHud.RUSH), rows(status, 25_000).get(0).chips().get(0));
+		assertEquals(ready(AbilityRoster.RUSH.name()), rows(status, 20_000).get(0).chips().get(0));
+		assertEquals(ready(AbilityRoster.RUSH.name()), rows(status, 25_000).get(0).chips().get(0));
 	}
 
 	@Test
@@ -198,8 +201,8 @@ class StatusHudTest {
 		snap.stacks = 12;
 		snap.grace = 4_200;
 
-		assertEquals(new StatusHud.Chip(StatusHud.MOMENTUM, "12 \u00b7 5s", true, false), chip(snap.build(), 2, 0));
-		assertEquals(new StatusHud.Chip(StatusHud.MOMENTUM, "12 \u00b7 4s", true, false),
+		assertEquals(new StatusHud.Chip(MOMENTUM, "12 \u00b7 5s", true, false), chip(snap.build(), 2, 0));
+		assertEquals(new StatusHud.Chip(MOMENTUM, "12 \u00b7 4s", true, false),
 				rows(snap.build(), 1_000).get(2).chips().get(0));
 
 		snap.stacks = 0;
@@ -215,8 +218,8 @@ class StatusHudTest {
 		PlayerStatusPayload status = snap.build();
 
 		// The grace spent out while the snapshot still carries stacks: bare stacks, no `0s`.
-		assertEquals(new StatusHud.Chip(StatusHud.MOMENTUM, "12", true, false), rows(status, 4_200).get(2).chips().get(0));
-		assertEquals(new StatusHud.Chip(StatusHud.MOMENTUM, "12", true, false), rows(status, 9_000).get(2).chips().get(0));
+		assertEquals(new StatusHud.Chip(MOMENTUM, "12", true, false), rows(status, 4_200).get(2).chips().get(0));
+		assertEquals(new StatusHud.Chip(MOMENTUM, "12", true, false), rows(status, 9_000).get(2).chips().get(0));
 	}
 
 	@Test
@@ -225,7 +228,7 @@ class StatusHudTest {
 		snap.classId = GAMBLER;
 		snap.streak = 3;
 
-		assertEquals(new StatusHud.Chip(StatusHud.STREAK, "3", true, false), chip(snap.build(), 2, 0));
+		assertEquals(new StatusHud.Chip(CritRule.STREAK, "3", true, false), chip(snap.build(), 2, 0));
 
 		snap.streak = 0;
 		assertEquals(2, rows(snap.build(), 0).size());
@@ -236,11 +239,11 @@ class StatusHudTest {
 		Snap gladius = new Snap();
 		gladius.classId = LEGIONARY;
 		gladius.stance = RotateAbility.Stance.GLADIUS;
-		assertEquals(new StatusHud.Chip(StatusHud.GLADIUS, "", true, false), chip(gladius.build(), 0, 0));
+		assertEquals(new StatusHud.Chip(RotateAbility.Stance.GLADIUS.displayName(), "", true, false), chip(gladius.build(), 0, 0));
 
 		Snap scutum = new Snap();
 		scutum.classId = LEGIONARY;
-		assertEquals(new StatusHud.Chip(StatusHud.SCUTUM, "", true, false), chip(scutum.build(), 0, 0));
+		assertEquals(new StatusHud.Chip(RotateAbility.Stance.SCUTUM.displayName(), "", true, false), chip(scutum.build(), 0, 0));
 		// Stance row, signature row, ultimate row: no state rows for a Legionary.
 		assertEquals(3, rows(scutum.build(), 0).size());
 	}
