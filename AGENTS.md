@@ -17,7 +17,7 @@ Five-role vocabulary: `needs-triage`, `needs-info`, `ready-for-agent`, `ready-fo
 ## Pre-flight
 
 Before touching source: `git status` for uncommitted work, read `.scratch/` for active specs, `grep` for callers before changing a public method.
-After any edit in `src/main/java`, expect `gradle compileJava` or `gradle test` before calling it done.
+After any edit in `src/main/java`, expect `./gradlew compileJava` or `./gradlew test` before calling it done.
 
 ## Architecture review trigger
 
@@ -25,14 +25,13 @@ Flag for `/improve-codebase-architecture` when any `src/main/java/**/*.java` fil
 
 ## Build
 
-Use system `gradle`, not `./gradlew` (wrapper stalls in agent shell). PowerShell-safe commands only.
+Use `./gradlew` (wrapper, Gradle 9.7.1; first run downloads the distribution). Commands run over bash.
 
-Client-visible changes ship with `gradle deployClient`: it rebuilds, copies the jar to the live instance `mods/` folder (override with `-PmcModsDir=<path>` or `MC_MODS_DIR`), and fails if the jar is missing. Never declare a client change done on `compileJava` alone — it never refreshes the jar. Reopen the picker in-game with `/class select <player>` instead of fresh worlds.
+Client-visible changes ship with `./gradlew deployClient`: it rebuilds, copies the jar to the live instance `mods/` folder (default: the Linux PrismLauncher `1.21.11` instance; override with `-PmcModsDir=<path>` or `MC_MODS_DIR`), and fails if the jar is missing. Never declare a client change done on `compileJava` alone — it never refreshes the jar. Reopen the picker in-game with `/class select <player>` instead of fresh worlds.
 
-## Shell notes (Windows)
+## Shell notes (Linux)
 
-`Select-Object -First N` (no `-FirstLines`). No `python3` assume — inspect jars with .NET (`System.IO.Compression.ZipFile`) or Gradle.
-PowerShell-safe tail/head: `Select-Object -First N` / `Select-Object -Last N`; use `2>$null` instead of `/dev/null`, never bare `| tail` or `| head`.
-Edit files with the edit tool; never rewrite file contents through the shell (redirection, `Set-Content`, `Out-File`).
-Resolve Fabric/vanilla signatures with `javap`: the merged jar lives under `~/.gradle/caches/fabric-loom/minecraftMaven` (glob `minecraft-merged-1.21.11-*.jar`, the hash rots), and `javap.exe` under `C:\Program Files\Java\<jdk>\bin` (`JAVA_HOME` is empty here — resolve it, quote the spaces).
+Bash — plain `head`, `tail`, `grep` for output; inspect jars with `unzip -l` or `jar tf`; `python3` is available.
+Edit files with the edit tool; never rewrite file contents through the shell (redirection, `tee`, `sed -i`).
+Resolve Fabric/vanilla signatures with `javap`: the merged jar lives under `~/.gradle/caches/fabric-loom/minecraftMaven` (glob `minecraft-merged-1.21.11-*.jar`, the hash rots). The JDK lives in `~/.local/share/jdks/jdk-25.0.4.1`, with `java`/`javac`/`jar`/`javap` symlinked into `/usr/local/bin`.
 Target is Minecraft 1.21.11: prefer `Button` widgets over `Screen` input/tooltip overrides — the 1.21 input and tooltip signatures drifted and Buttons compile first try.
