@@ -76,7 +76,7 @@ public record PlayerStatusPayload(
 				runtime.rushWindowRemaining(now),
 				runtime.hasRushBonusPending(now),
 				runtime.rendWindowRemaining(now),
-				runtime.peekRendEmpowerStacks(now) >= 0,
+				runtime.hasRendBonusPending(now),
 				runtime.flipWindowRemaining(now),
 				runtime.flipWindowRemaining(now) > 0 ? runtime.stance() : null,
 				runtime.hasImpetusPending(now),

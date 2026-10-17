@@ -617,11 +617,16 @@ client-side (ADR-0014).
 _Avoid_: status packet, status cache, HUD state
 
 **Class command** (`ClassCommands`):
-The gamemaster-only `/class` wiring. `/class set <player> <class>` suggests registered ids
+The `/class` tree. Bare `/class` and `/class info` are open to everyone and read for the
+invoking player: the class display line, one line per carried lane with its `%.1fs`
+remaining, the Legionary's stance, and `No class chosen` when classless, composed by the
+pure `ClassInfo.lines` decision. `/class set <player> <class>` suggests registered ids
 (playable only), parses
 one word and validates in the choice module (`Unknown or locked class` on failure); an accepted
-switch clears what the old class earned like the picker path does; `/class select
-<player>` is testing-only and reopens the picker on the player's current page for GUI iteration.
+switch clears what the old class earned like the picker path does; `/class pick` (gamemaster-
+gated per player) reopens the invoking player's picker on their current page with no chat
+output, and `/class select <player>` is testing-only, gamemaster-gated, reopening the picker
+on the target's current page for GUI iteration.
 _Avoid_: admin command, cheat
 
 ## Decisions

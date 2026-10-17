@@ -259,6 +259,11 @@ public final class PlayerRuntime {
 		return rendWindow.peekPayload(now);
 	}
 
+	/** Whether a fired Rend window still owes its empower bonus, whatever its size. */
+	public boolean hasRendBonusPending(long now) {
+		return rendWindow.hasPending(now);
+	}
+
 	/** Millis left of the live Rend empower window, 0 when none is live. */
 	public long rendWindowRemaining(long now) {
 		return rendWindow.remainingMs(now);

@@ -81,4 +81,15 @@ class HudConfigTest {
 		assertEquals(new HudConfig(false, Corner.BOTTOM_LEFT),
 				HudConfig.parse(new HudConfig(false, Corner.BOTTOM_LEFT).toJson()));
 	}
+
+	@Test
+	void everyKindOfDefaultingIsAFallbackForTheFileAdapter() {
+		// Wholly-defaulted shapes: empty, garbage, unknown corner.
+		assertTrue(HudConfig.parseDetail("").fellBack());
+		assertTrue(HudConfig.parseDetail("garbage").fellBack());
+		assertTrue(HudConfig.parseDetail("{\"hud\":{\"enabled\":true,\"corner\":\"above\"}}").fellBack());
+		// A single wrong-typed field defaults alone; a clean file never defaults.
+		assertTrue(HudConfig.parseDetail("{\"hud\":{\"enabled\":\"on\",\"corner\":\"bottom_left\"}}").fellBack());
+		assertFalse(HudConfig.parseDetail("{\"hud\":{\"enabled\":false,\"corner\":\"bottom_left\"}}").fellBack());
+	}
 }

@@ -47,33 +47,52 @@ public record HudConfig(boolean enabled, Corner corner) {
 		return new HudConfig(true, Corner.BOTTOM_RIGHT);
 	}
 
+	/** One parse's details: the config it lands on, and whether any file content defaulted. */
+	record Parsed(HudConfig config, boolean fellBack) {
+	}
+
 	/**
 	 * Parses the config file's text. Empty, garbage and non-object roots yield the defaults;
 	 * inside {@code hud} each field falls back alone when missing or wrongly typed; unknown
 	 * keys and unknown corner values are ignored. Never throws.
 	 */
 	public static HudConfig parse(String json) {
+		return parseDetail(json).config();
+	}
+
+	/** {@link #parse} plus whether anything defaulted: the file adapter's one log line reads it. */
+	static Parsed parseDetail(String json) {
 		HudConfig defaults = defaults();
 		if (json == null || json.isBlank()) {
-			return defaults;
+			return new Parsed(defaults, true);
 		}
 		JsonElement root;
 		try {
 			root = JsonParser.parseString(json);
 		} catch (RuntimeException e) {
-			return defaults;
+			return new Parsed(defaults, true);
 		}
 		if (!root.isJsonObject()) {
-			return defaults;
+			return new Parsed(defaults, true);
 		}
 		JsonElement hud = root.getAsJsonObject().get("hud");
 		if (hud == null || !hud.isJsonObject()) {
-			return defaults;
+			return new Parsed(defaults, true);
 		}
 		JsonObject hudObject = hud.getAsJsonObject();
-		return new HudConfig(
-				booleanOr(hudObject, "enabled", defaults.enabled()),
-				cornerOr(hudObject, "corner", defaults.corner()));
+		boolean enabled = booleanOr(hudObject, "enabled", defaults.enabled());
+		Corner corner = cornerOr(hudObject, "corner", defaults.corner());
+		boolean fellBack = !booleanApplied(hudObject, "enabled") || !cornerApplied(hudObject, "corner");
+		return new Parsed(new HudConfig(enabled, corner), fellBack);
+	}
+
+	private static boolean booleanApplied(JsonObject object, String key) {
+		return object.get(key) instanceof JsonPrimitive primitive && primitive.isBoolean();
+	}
+
+	private static boolean cornerApplied(JsonObject object, String key) {
+		return object.get(key) instanceof JsonPrimitive primitive && primitive.isString()
+				&& Corner.fromFileValue(primitive.getAsString()) != null;
 	}
 
 	private static boolean booleanOr(JsonObject object, String key, boolean fallback) {

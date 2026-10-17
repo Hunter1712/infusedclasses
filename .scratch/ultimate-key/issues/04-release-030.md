@@ -9,10 +9,11 @@ Spec: `.scratch/ultimate-key/spec.md`
 **Status:** ready-for-agent
 
 - [x] `gradle test` and `gradle build` green; the built jar carries `0.3.0`.
-- [ ] `gradle.properties` and README updated; the live `mods/` jar refreshed via `gradle deployClient`.
+- [x] `gradle.properties` and README updated; the live `mods/` jar refreshed via `gradle deployClient`.
 - [x] CHANGELOG `0.3.0` section dated, covering Added/Changed/Fixed per the spec.
 - [ ] Every checklist above done in one sitting.
 
 ## Comments
 
 Landed: `mod_version=0.3.0`, README jar example, dated `0.3.0` CHANGELOG section (Added/Changed across all four specs). `gradle build` green; the jar carries 0.3.0. The live-jar deploy and the one-sitting end-to-end pass inherit the open manual checks from status-hud 04, player-tools 01-04 and roulette 02 (deployClient runs last so the live jar carries the full reviewed wave, not an interim one).
+Review round done: review fixes landed (glossary `Class command` entry, Rend-pending flag read, config log-once), then `gradle deployClient` shipped the reviewed jar; the superseded `infusedclasses-0.2.0.jar` was removed from the live `mods/` folder so only 0.3.0 loads. Open: the one-sitting in-game pass over every manual checklist (Controls, strip, lights, config, info/pick, spins, emission).

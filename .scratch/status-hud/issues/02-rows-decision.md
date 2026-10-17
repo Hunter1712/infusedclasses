@@ -22,7 +22,7 @@ countdown chips (no badge exists for them in the fixed vocabulary); the stride `
 countdown and drops at the spend while the rider counts on. The outcome chip draws initials derived
 from the outcome's own label; **Vigor joins Zero in drawing no chip** — its heal lands at fire and
 nothing rides its window, and the spec's initial list (E/W/H/J/B) omits it — noted here in case a
-reviewer expects V. `RotateAbility.Stance` gained `label()` so the stance row and the `Gladius!`/`Scutum!`
+reviewer expects V. `RotateAbility.Stance` gained `displayName()` so the stance row and the `Gladius!`/`Scutum!`
 chat lines share one copy. MOM's label comes from the passive definition's name and STR's from
 `CritRule.STREAK`; countdowns are `%.1fs` Locale.ROOT, clamped at zero. `ChatLine.cooldown` switched to
 `%.1fs` (the parallel lane's identical change should merge cleanly) and `RushAbilityTest`'s pin now reads

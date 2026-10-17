@@ -20,5 +20,6 @@ Implemented on `wt-player-tools`.
 - Landed: pure `client/HudConfig` (record `enabled`, `Corner` BOTTOM_RIGHT/BOTTOM_LEFT, string-in `parse` with per-field fallback, `toJson()` canonical text, `defaults()`), thin `client/HudConfigFile` (resolves `config/infusedclasses.json` from `FabricLoader`'s config dir, writes defaults when the file is missing, one warn on unreadable disk, never throws), and one load at client startup in `client/InfusedClassesClient.onInitializeClient` with `hudConfig()` exposed for the status HUD element.
 - `HudConfigTest` (8 tests) pins every parse-tests box, including `toJson()` → `parse` round-trip.
 - Deviation: invalid-but-readable content falls back silently per field; the single log line covers the unreadable-disk path only.
+- Review resolution (0.3.0 wave review): the spec's "log once" now covers invalid-but-parseable content too — `HudConfig.parseDetail` returns whether anything defaulted, and `HudConfigFile` logs one line per load when it did. The per-field-fallback-only-silently deviation is closed.
 - Manual in-game pass pending: first-run file creation and the `corner`-edit-moving-the-strip check (the latter needs status-hud 04); no `gradle deployClient` in this lane.
 - Full `gradle test`: 201 tests, 0 failures, 25 classes.
