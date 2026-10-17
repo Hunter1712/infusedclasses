@@ -23,7 +23,7 @@ No Forge/Quilt support. No 1.20.x backports in 0.x. A 26.x port comes later as a
 | Side | Required | Why |
 |------|----------|-----|
 | Server | **Yes** | Class choice validation, ability gating and arming, hit planning and settling, stance auras — all server-side and server-authoritative |
-| Client | **Yes** (supported configuration) | Picker screen, keybind intents (`R` Rush/Rotate, `G` Rend/Oath), pick confirm handling |
+| Client | **Yes** (supported configuration) | Picker screen, keybind intents (`R` Signature, `V` Ultimate), pick confirm handling |
 
 The client only sends intents (`select_class`, `rush`, `rend`); the server validates class and cooldown and applies everything. The server's `open_class_screen` signal carries the current class so reopening lands on its page, and the `class_confirmed` reply is the only thing that closes the picker.
 

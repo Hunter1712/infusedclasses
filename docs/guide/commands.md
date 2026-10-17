@@ -48,4 +48,4 @@ Gamemaster only — the per-player "has cheats". Reopens your own picker on your
 
 - First join with no class choice opens the picker automatically.
 - Rejoining with a saved choice loads silently — no GUI.
-- `R` arrives as rotate intent for Legionaries and Rush for everyone else; `G` arrives as oath intent for Legionaries and Rend for everyone else (bind morph). Binds survive the class.
+- `R` arrives as the rotate intent for Legionaries, the roulette intent for Gamblers and Rush for everyone else; `V` arrives as the oath intent for Legionaries, All In for Gamblers and Rend for everyone else (bind morph). Binds survive the class.

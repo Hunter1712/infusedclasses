@@ -4,7 +4,7 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.resources.Identifier;
 
 /**
- * Rend decisions: the Juggernaut's Momentum spender on {@code G}. Pure gate-and-arm shape:
+ * Rend decisions: the Juggernaut's Momentum spender on {@code V}. Pure gate-and-arm shape:
  * empowers the next melee hit landed inside the window for {@code stacks * HP_PER_STACK}
  * bonus damage, and consumes every Momentum stack up front, on its own 60s
  * lane. Zero stacks fizzles with a {@code No Momentum} line and arms nothing; an empowered
@@ -52,7 +52,7 @@ public final class RendAbility {
 	public static String desc() {
 		String bonus = "+" + ConditionalPassive.amount(HP_PER_STACK) + " per Momentum";
 		return "Next hit in " + (WINDOW_TICKS / 20) + "s: " + bonus
-				+ ", spends stacks (G, " + (Cooldowns.REND_MS / 1000) + "s).";
+				+ ", spends stacks (V, " + (Cooldowns.REND_MS / 1000) + "s).";
 	}
 
 	/** Empower damage for a stack count: half a heart per stack. Nothing at zero or below. */

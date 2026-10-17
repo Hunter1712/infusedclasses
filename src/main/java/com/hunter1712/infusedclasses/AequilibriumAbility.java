@@ -6,7 +6,7 @@ import net.minecraft.resources.Identifier;
 import java.util.List;
 
 /**
- * Aequilibrium decisions: the Legionary's clean ultimate on {@code G}. Pure gate-and-arm
+ * Aequilibrium decisions: the Legionary's clean ultimate on {@code V}. Pure gate-and-arm
  * shape on the reused shared oath lane: fires in either stance, firing arms the lane and
  * stamps a 6s window. Edge plus plate ride the stance applier while live; the stance stays
  * underneath, so both layers count. No deal/take mults, no knockback immunity, no downsides.
@@ -48,7 +48,7 @@ public final class AequilibriumAbility {
 	public static String desc() {
 		return "Any stance: +" + ConditionalPassive.amount(EDGE_BONUS)
 				+ " damage, +" + ConditionalPassive.amount(PLATE_BONUS)
-				+ " armor, " + (WINDOW_TICKS / 20) + "s (G, "
+				+ " armor, " + (WINDOW_TICKS / 20) + "s (V, "
 				+ (Cooldowns.OATH_MS / 1000) + "s oath). No downside.";
 	}
 

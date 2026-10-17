@@ -191,7 +191,7 @@ nothing and stay silent. The single play path lives here so appliers never dupli
 _Avoid_: cast time, wind-up
 
 **Rend** (`RendAbility`):
-The Juggernaut's Momentum spender on `G`: empowers the next melee hit landed within 6s
+The Juggernaut's Momentum spender on `V`: empowers the next melee hit landed within 6s
 (`WINDOW_TICKS`) for `0.5 HP per stack` bonus damage (10 HP at the full 20), and consumes
 every Momentum stack plus the armor they granted up front, on its own 60s lane. An
 unswung window simply expires with the stacks already spent. Zero stacks fizzles with a
@@ -234,7 +234,7 @@ The Legionary's stance toggle on `R`: flips `Gladius`/`Scutum` any time off its
 at once; leaving removes it at once. Flipping to `Gladius` arms the Impetus
 next-hit buff, flipping to `Scutum` opens the Testudo catch. Firing announces the new stance (`Gladius!`
 red / `Scutum!` gray) with no cast word; rejects arm nothing. The `R` bind is
-the Juggernaut's Rush bind reused, so binds survive the class.
+the Signature bind, shared by every class, so binds survive the class.
 Decided in the trigger/fire gate-and-arm shape.
 _Avoid_: swap stance, transform
 
@@ -252,7 +252,7 @@ inside the catch is discounted. No lane, no window to arm.
 _Avoid_: block, turtle
 
 **Aequilibrium** (`AequilibriumAbility`):
-The Legionary's clean oath ultimate on `G`: +1.0 attack damage
+The Legionary's clean oath ultimate on `V`: +1.0 attack damage
 (`infusedclasses:aequilibrium_edge`) + +3.0 armor
 (`infusedclasses:aequilibrium_plate`) for 6s (`WINDOW_TICKS`), in either stance,
 on the shared 50s oath lane (`OATH_MS`, `useOath` / `oathRemaining`). No
@@ -279,7 +279,7 @@ melee plan.
 _Avoid_: wheel button, gamble skill
 
 **All In** (`AllInAbility`):
-The Gambler's ultimate on `G`, 75s lane: crits deal ×2.0 instead of ×1.5 for
+The Gambler's ultimate on `V`, 75s lane: crits deal ×2.0 instead of ×1.5 for
 15s. The dice rules never bend: betrayal, Streak resets and every band stay as
 they are.
 _Avoid_: double damage, ultimate form
@@ -348,11 +348,11 @@ takes them all off through `onClassChanged`, which also owns the Legionary marke
 _Avoid_: stance system, aura updater
 
 **Bind morph** (`BindMorph`):
-The decision of what a reused bind means for a class: `R` arrives as the
-rotate intent for Legionaries, the roulette intent for Gamblers, and Rush for
-everyone else; `G` arrives as the
+The decision of what a slot bind means for a class: the signature slot (`R`)
+arrives as the rotate intent for Legionaries, the roulette intent for Gamblers,
+and Rush for everyone else; the ultimate slot (`V`) arrives as the
 oath ultimate for Legionaries in any stance, All In for Gamblers, and Rend for
-everyone else. The stance morph is gone with the oath pair: one `G`, one ultimate.
+everyone else. One ultimate per class.
 The intent receivers wire, this decides.
 _Avoid_: key routing, bind table
 
@@ -553,20 +553,25 @@ clears what the old class earned and resets the cooldown, so no stale modifier s
 _Avoid_: select packet
 
 **Rush intent** (`RushPayload`):
-The client's `infusedclasses:rush` intent: "I pressed the Rush key", sent while
-the `R` key (`key.infusedclasses.rush`) is consumed each client tick. The server
-validates class and cooldown; rejected presses leave the lane, the window and the
-bonus untouched.
-For a Legionary the same `R` bind arrives as the rotate intent and for a Gambler as
+The client's `infusedclasses:rush` intent, the signature slot's: "I pressed the
+signature key", sent while the `R` key (`key.infusedclasses.signature`) is
+consumed each client tick. The payload class and channel keep their old `rush`
+names on purpose — the wire is not the player surface, so the protocol and the
+player vocabulary diverge by design. The server validates class and cooldown;
+rejected presses leave the lane, the window and the bonus untouched.
+For a Legionary the same bind arrives as the rotate intent and for a Gambler as
 the Roulette spin, so binds survive the class.
 _Avoid_: shout packet, key packet
 
 **Rend intent** (`RendPayload`):
-The client's `infusedclasses:rend` intent: "I pressed the Rend key", sent while
-the `G` key (`key.infusedclasses.rend`) is consumed each client tick. The server
-validates class, stacks and cooldown; rejected presses leave the cooldown untouched,
-and the empower lands on the next melee hit inside the window.
-For a Legionary the same `G` bind arrives as the oath intent (Aequilibrium in any stance) and for a
+The client's `infusedclasses:rend` intent, the ultimate slot's: "I pressed the
+ultimate key", sent while the `V` key (`key.infusedclasses.ultimate`) is
+consumed each client tick. The payload class and channel keep their old `rend`
+names on purpose — the wire is not the player surface, so the protocol and the
+player vocabulary diverge by design. The server validates class, stacks and
+cooldown; rejected presses leave the cooldown untouched, and the empower lands
+on the next melee hit inside the window.
+For a Legionary the same bind arrives as the oath intent (Aequilibrium in any stance) and for a
 Gambler as All In, so binds survive the class.
 _Avoid_: heal packet, key packet
 

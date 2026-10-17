@@ -4,7 +4,7 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.resources.Identifier;
 
 /**
- * All In decisions: the Gambler's ultimate on {@code G}. Pure gate-and-arm shape on its
+ * All In decisions: the Gambler's ultimate on {@code V}. Pure gate-and-arm shape on its
  * own 75s lane: fires only for Gamblers, arming the lane and a 15s window together.
  * While the window is live the crit multiplier reads {@link #CRIT_MULT} instead of the
  * rule's own; betrayal, Streak resets and every band stay exactly as they are.
@@ -24,7 +24,7 @@ public final class AllInAbility {
 	/** Picker copy, generated from the numbers so it cannot drift from behaviour. */
 	public static String desc() {
 		return "Crits x" + ConditionalPassive.amount(CRIT_MULT) + " for " + (WINDOW_TICKS / 20)
-				+ "s (G, " + (Cooldowns.ALL_IN_MS / 1000) + "s). Dice rules unchanged.";
+				+ "s (V, " + (Cooldowns.ALL_IN_MS / 1000) + "s). Dice rules unchanged.";
 	}
 
 	/**

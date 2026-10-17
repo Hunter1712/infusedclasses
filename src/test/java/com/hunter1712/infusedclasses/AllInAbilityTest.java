@@ -72,6 +72,6 @@ class AllInAbilityTest {
 
 	@Test
 	void descIsGeneratedFromTheNumbers() {
-		assertEquals("Crits x2 for 15s (G, 75s). Dice rules unchanged.", AllInAbility.desc());
+		assertEquals("Crits x2 for 15s (V, 75s). Dice rules unchanged.", AllInAbility.desc());
 	}
 }

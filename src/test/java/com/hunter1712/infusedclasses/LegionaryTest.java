@@ -45,7 +45,7 @@ class LegionaryTest {
 		assertTrue(copy.contains("take x" + RotateAbility.SWITCH_TAKE_MULT));
 		assertTrue(copy.contains("+" + ConditionalPassive.amount(AequilibriumAbility.EDGE_BONUS) + " damage"));
 		assertTrue(copy.contains("+" + ConditionalPassive.amount(AequilibriumAbility.PLATE_BONUS) + " armor"));
-		assertTrue(copy.contains("(G, " + (Cooldowns.OATH_MS / 1000) + "s oath)"));
+		assertTrue(copy.contains("(V, " + (Cooldowns.OATH_MS / 1000) + "s oath)"));
 		assertTrue(copy.contains("No downside"));
 		assertFalse(copy.contains("knockback"));
 		assertFalse(copy.contains("Announces"));

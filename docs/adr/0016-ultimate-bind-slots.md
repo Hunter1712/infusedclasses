@@ -4,9 +4,9 @@ Status: accepted
 
 ## Context
 
-The two binds are inherited from the Juggernaut's kit and named for it:
-`key.infusedclasses.rush` (`R`, labeled "Rush") and `key.infusedclasses.rend`
-(`G`, labeled "Rend") — while per class they mean Rush/Rotate/Roulette and
+The two binds are inherited from the Juggernaut's kit and named for it: the old
+`rush` and `rend` key ids (`R`, labeled "Rush", and `G`, labeled "Rend") —
+while per class they mean Rush/Rotate/Roulette and
 Rend/Aequilibrium/All In. Since ADR-0010 gave the Legionary `G` as one clean
 ultimate, the ultimate is its own concept (the bind morph's own line: "one `G`,
 one ultimate per class"), and the status HUD (ADR-0014) names the two slots
@@ -29,9 +29,9 @@ Signature and Ultimate, and the UI letters are slot names only.
    Aequilibrium and All In. Remap drift is an accepted wart, Controls being the
    truth for keys; the HUD's `SIG`/`ULT` badges are slot names and never read a
    KeyMapping.
-4. **Old ids retire**: `key.infusedclasses.rush`/`key.infusedclasses.rend`
-   leave the lang file, so every player starts from the new defaults once — an
-   accepted one-time controls reset under the 0.x contract.
+4. **Old ids retire**: the `rush`/`rend` ids leave the lang file, so every
+   player starts from the new defaults once — an accepted one-time controls
+   reset under the 0.x contract.
 5. **No protocol churn**: `RushPayload`/`RendPayload` keep their names and
    channels; comments re-home them as the signature/ultimate slot's intents.
 

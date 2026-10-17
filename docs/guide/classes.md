@@ -1,6 +1,6 @@
 # Classes
 
-Two playable classes. The picker shows one focused card per page with the full kit printed on the card — nothing hides behind hover. A new class definition adds its own page with no layout change.
+Three playable classes. The picker shows one focused card per page with the full kit printed on the card — nothing hides behind hover. A new class definition adds its own page with no layout change.
 
 ## Juggernaut — Frontline bruiser
 
@@ -9,7 +9,7 @@ Rush engage plus Rend execute. No max-health bonus (vanilla 20 HP): Vigor reward
 **Actives**
 
 - **Rush** (`R`): cleanses every active harmful effect, quickens stride (+0.02 move speed) for 5s, and arms a one-shot bonus so the next full-swing melee hit inside the window earns +5 Momentum. Own 25s lane. Fires with zero stacks at full HP — engaging topped-off is the normal case, not a reject. Rejected presses leave the lane, window and bonus untouched. Cast fanfare: wind-burst whoosh.
-- **Rend** (`G`): empowers the next melee hit landed within 6s for 0.5 HP per Momentum stack bonus damage (10 HP at the full 20), and consumes every Momentum stack plus the armor they granted up front. Own 60s lane. Zero stacks fizzles with a `No Momentum` line and arms nothing. An unswung window expires with the stacks already spent. Cast fanfare: anvil-land smash.
+- **Rend** (`V`): empowers the next melee hit landed within 6s for 0.5 HP per Momentum stack bonus damage (10 HP at the full 20), and consumes every Momentum stack plus the armor they granted up front. Own 60s lane. Zero stacks fizzles with a `No Momentum` line and arms nothing. An unswung window expires with the stacks already spent. Cast fanfare: anvil-land smash.
 
 **Passives**
 
@@ -27,10 +27,24 @@ Stance trader with flip buffs and one oath ultimate. Carries no conditional pass
 
 **Actives**
 
-- **Rotate** (`R`): flips Gladius/Scutum any time off its 8s lock. Flipping to Gladius arms the Impetus next-hit buff; flipping to Scutum opens the Testudo catch. Announces the new stance, no cast word. Rejects arm nothing. The `R` bind is the Juggernaut's Rush bind reused, so binds survive the class.
+- **Rotate** (`R`): flips Gladius/Scutum any time off its 8s lock. Flipping to Gladius arms the Impetus next-hit buff; flipping to Scutum opens the Testudo catch. Announces the new stance, no cast word. Rejects arm nothing. The `R` bind is the Signature bind, shared by every class, so binds survive the class.
 - **Impetus** (Gladius-flip buff): the next melee hit after flipping to Gladius deals x1.10, at any charge, one-shot, expiring 5s after the flip. Flipping away drops it with the stance that earned it. No lane.
 - **Testudo** (Scutum-flip buff): melee taken pays x0.85 for 1.5s from the flip. Timed, never consumed: every hit inside the catch is discounted. No lane.
-- **Aequilibrium** (`G`, oath ultimate): +1.0 attack damage + +3.0 armor for 6s, in either stance, on the shared 50s oath lane. No deal/take mults, no downsides: the stance stays underneath and both layers count. Announces `Aequilibrium!` gold; rejects arm nothing. The `G` bind is the Juggernaut's Rend bind reused.
+- **Aequilibrium** (`V`, oath ultimate): +1.0 attack damage + +3.0 armor for 6s, in either stance, on the shared 50s oath lane. No deal/take mults, no downsides: the stance stays underneath and both layers count. Announces `Aequilibrium!` gold; rejects arm nothing. The `V` bind is the Ultimate bind, shared by every class.
+
+## Gambler — Double or nothing
+
+Wheel-and-dice class: Roulette spins stat bands and All In loads the crits, and the crit rule doubles as its passives. Carries no conditional passives and no HP-scaled pair: Streak is a transient counter, not stacks.
+
+**Actives**
+
+- **Roulette** (`R`): one spin rolls six bands — Edge x1.25 damage (25%), Ward +2 armor (25%), Haste +0.02 speed (25%), Jackpot all three stats (10%), Bust x0.75 melee (10%), Zero (5%) — the stat effects last 10s, and nothing touches HP. Own 25s lane. Fired spins announce their band, no cast word; rejects arm nothing. Zero is a dead band: fired, announced, and worth nothing. The `R` bind is the Signature bind, shared by every class. Cast fanfare: note-block pling.
+- **All In** (`V`): crits deal x2.0 instead of x1.5 for 15s — the window lifts the crit multiplier and bends nothing else: betrayal keeps its band, and a crit still resets Streak. Own 75s lane. Announces `All In!` gold; rejects arm nothing. The `V` bind is the Ultimate bind, shared by every class. Cast fanfare: beacon swell.
+
+**Passives** (the crit rule on the card)
+
+- **Crooked Dice**: full-charge landed hits crit 20% at x1.5 and betray 5% at x0.5. The crit band locks at 95% from streak 5; betrayal stays 5% forever.
+- **Streak**: a non-crit full hit loads +15 percentage points of crit (a betrayal counts); any crit resets it to the 20% base. Transient like every earned count: wiped by class switch, respawn and relog.
 
 ## Shared melee rules
 
