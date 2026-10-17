@@ -54,20 +54,21 @@ public final class RushAbility {
 			return AbilityOutcome.rejected();
 		}
 		if (rushRemaining > 0) {
-			return AbilityOutcome.onCooldown(NAME, rushRemaining);
+			return AbilityOutcome.onCooldown(rushRemaining);
 		}
 		return AbilityOutcome.fired(new ChatLine(NAME + "!", ChatFormatting.YELLOW));
 	}
 
 	/**
-	 * Gate and arm together: the production path. A fired press arms the transient runtime's
-	 * Rush lane and stamps the window plus the next-hit bonus; rejected presses leave all
-	 * three untouched. An arm that somehow fails reports on-cooldown instead of a fire it
-	 * did not earn.
+	 * Arms the transient runtime's Rush lane and stamps the window plus the next-hit bonus
+	 * on a fired press; rejected presses leave them untouched. The arm reads the same lane
+	 * and now the trigger just checked, so it cannot fail.
 	 */
 	public static AbilityOutcome fire(ClassDefinition def, PlayerRuntime runtime, long now) {
 		AbilityOutcome result = trigger(def, runtime.rushRemaining(now));
-		return AbilityGate.gate(result, result.fired(), () -> runtime.tryUseRush(now),
-				() -> runtime.rushRemaining(now), remaining -> AbilityOutcome.onCooldown(NAME, remaining));
+		if (result.fired()) {
+			runtime.tryUseRush(now);
+		}
+		return result;
 	}
 }

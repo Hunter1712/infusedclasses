@@ -61,18 +61,21 @@ public final class AequilibriumAbility {
 			return AbilityOutcome.rejected();
 		}
 		if (oathRemaining > 0) {
-			return AbilityOutcome.onCooldown(NAME, oathRemaining);
+			return AbilityOutcome.onCooldown(oathRemaining);
 		}
 		return AbilityOutcome.fired(new ChatLine(NAME + "!", ChatFormatting.GOLD));
 	}
 
 	/**
-	 * Gate and arm together: the production path. A fired press arms the shared
-	 * oath lane and stamps the window together; rejected presses leave both untouched.
+	 * Arms the shared oath lane and stamps the window together on a fired press; rejected
+	 * presses leave both untouched. The arm reads the same lane and now the trigger just
+	 * checked, so it cannot fail.
 	 */
 	public static AbilityOutcome fire(ClassDefinition def, PlayerRuntime runtime, long now) {
 		AbilityOutcome result = trigger(def, runtime.oathRemaining(now));
-		return AbilityGate.gate(result, result.fired(), () -> runtime.tryUseAequilibrium(now),
-				() -> runtime.oathRemaining(now), remaining -> AbilityOutcome.onCooldown(NAME, remaining));
+		if (result.fired()) {
+			runtime.tryUseAequilibrium(now);
+		}
+		return result;
 	}
 }

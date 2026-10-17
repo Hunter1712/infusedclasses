@@ -36,18 +36,21 @@ public final class AllInAbility {
 			return AbilityOutcome.rejected();
 		}
 		if (allInRemaining > 0) {
-			return AbilityOutcome.onCooldown(NAME, allInRemaining);
+			return AbilityOutcome.onCooldown(allInRemaining);
 		}
 		return AbilityOutcome.fired(new ChatLine(NAME + "!", ChatFormatting.GOLD));
 	}
 
 	/**
-	 * Gate and arm together: the production path. A fired press arms the lane and stamps
-	 * the window together; rejected presses leave both untouched.
+	 * Arms the lane and a 15s window together on a fired press; rejected presses leave
+	 * both untouched. The arm reads the same lane and now the trigger just checked,
+	 * so it cannot fail.
 	 */
 	public static AbilityOutcome fire(ClassDefinition def, PlayerRuntime runtime, long now) {
 		AbilityOutcome result = trigger(def, runtime.allInRemaining(now));
-		return AbilityGate.gate(result, result.fired(), () -> runtime.tryUseAllIn(now),
-				() -> runtime.allInRemaining(now), remaining -> AbilityOutcome.onCooldown(NAME, remaining));
+		if (result.fired()) {
+			runtime.tryUseAllIn(now);
+		}
+		return result;
 	}
 }

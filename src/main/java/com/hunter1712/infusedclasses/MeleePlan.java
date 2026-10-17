@@ -14,11 +14,6 @@ public final class MeleePlan {
 	private MeleePlan() {
 	}
 
-	/** Whether this swing earns conditional-passive stacks: full swings only, spam earns zero. */
-	public static boolean shouldBump(float charge) {
-		return BonusCurve.isFullSwing(charge);
-	}
-
 	/** Outgoing mult sharing one Impetus peek: the plan peeks once, the spend decision and the mult read the same answer. */
 	private static double dealWithImpetus(ClassDefinition atkDef, PlayerRuntime runtime, boolean impetus, long now) {
 		if (atkDef == null || runtime == null || !atkDef.hasAbility(ClassRegistry.ROTATE_ABILITY)) {
@@ -38,15 +33,6 @@ public final class MeleePlan {
 		double base = RotateAbility.takeMult(r.stance());
 		double flip = r.isTestudoBuffLive(now) ? RotateAbility.SWITCH_TAKE_MULT : 1.0;
 		return base * flip;
-	}
-
-	/** Whether the attacker's Impetus flip buff is owed on this hit: any charge, spent once by the settle. False for anyone else. */
-	public static boolean impetusPendingFor(ClassDefinition atkDef, PlayerRuntime runtime, long now) {
-		if (atkDef == null || !atkDef.hasAbility(ClassRegistry.ROTATE_ABILITY)
-				|| runtime == null || !runtime.hasImpetusPending(now)) {
-			return false;
-		}
-		return true;
 	}
 
 	/**
@@ -72,11 +58,12 @@ public final class MeleePlan {
 	 */
 	static HitPlan planHit(ClassDefinition atkDef, PlayerRuntime atkRuntime, ClassDefinition victimDef,
 			Supplier<PlayerRuntime> victimRuntime, float charge, long now, float roll) {
-		boolean bump = shouldBump(charge);
+		boolean bump = BonusCurve.isFullSwing(charge);
 		boolean rushBonus = bump && atkRuntime != null && atkRuntime.hasRushBonusPending(now);
 		int rendStacks = atkRuntime == null ? -1 : atkRuntime.peekRendEmpowerStacks(now);
 		float rendHp = rendStacks > 0 ? BonusCurve.bonusFor(RendAbility.empowerFor(rendStacks), charge) : 0;
-		boolean impetus = impetusPendingFor(atkDef, atkRuntime, now);
+		boolean impetus = atkDef != null && atkDef.hasAbility(ClassRegistry.ROTATE_ABILITY)
+				&& atkRuntime != null && atkRuntime.hasImpetusPending(now);
 		double deal = dealWithImpetus(atkDef, atkRuntime, impetus, now) * RouletteAbility.dealMult(atkRuntime, now);
 		double take = victimDef == null || victimRuntime == null ? 1.0 : takeFor(victimDef, victimRuntime, now);
 		CritRule rule = atkDef == null ? CritRule.universal() : atkDef.critRule();

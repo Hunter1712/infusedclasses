@@ -5,11 +5,11 @@ import net.minecraft.ChatFormatting;
 /**
  * A chat line a decision returns for the server entry to send verbatim: the text, and the chat
  * style it shows in. A null style is a decision too: the line goes out unstyled and inherits
- * whatever the client shows by default, which is what the cooldown lines have always done.
+ * whatever the client shows by default, which is what the {@code /class info} lane lines do.
  * Shared by every ability decision and class-choice outcome so none reaches into another's nested type.
  */
 public record ChatLine(String text, ChatFormatting style) {
-	/** Cooldown line: unstyled by decision, one-decimal rounding, the same `%.1fs` the strip draws. One shape for every ability. */
+	/** Cooldown line: unstyled by decision, one-decimal rounding {@code %.1fs}. The /class info lane shape. */
 	public static ChatLine cooldown(String abilityName, long remainingMs) {
 		return new ChatLine(
 				abilityName + ": " + String.format(java.util.Locale.ROOT, "%.1fs", remainingMs / 1000.0), null);

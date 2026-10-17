@@ -52,7 +52,7 @@ class RushAbilityTest {
 
 		assertFalse(second.fired());
 		assertEquals(15_000, second.remainingMs());
-		assertEquals("Rush: 15.0s", second.announcement().text());
+		assertNull(second.announcement());
 		assertEquals(15_000, runtime.rushRemaining(11_000));
 		assertEquals(0, runtime.rendRemaining(11_000));
 		assertFalse(runtime.hasRushBonusPending(11_000));

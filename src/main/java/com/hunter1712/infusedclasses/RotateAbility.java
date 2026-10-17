@@ -90,7 +90,7 @@ public final class RotateAbility {
 		}
 
 		public static Result onCooldown(long remainingMs) {
-			return new Result(AbilityOutcome.onCooldown(NAME, remainingMs), null);
+			return new Result(AbilityOutcome.onCooldown(remainingMs), null);
 		}
 	}
 
@@ -170,20 +170,16 @@ public final class RotateAbility {
 	}
 
 	/**
-	 * Gate and arm together: the production path. A fired press arms the transient
-	 * runtime's rotate lane and flips the stance inside the same arm, so the flip
-	 * cannot run on a failed arm or be forgotten by a caller; rejected presses leave
-	 * both untouched. An arm that somehow fails reports on-cooldown instead of a
-	 * fire it did not earn.
+	 * Arms the transient runtime's rotate lane and flips the stance together on a fired
+	 * press; rejected presses leave both untouched. The arm reads the same lane and now
+	 * the trigger just checked, so it cannot fail.
 	 */
 	public static Result fire(ClassDefinition def, PlayerRuntime runtime, long now) {
 		Result result = trigger(def, runtime.rotateRemaining(now), runtime.stance());
-		return AbilityGate.gate(result, result.outcome().fired(), () -> {
-			if (!runtime.tryUseRotate(now)) {
-				return false;
-			}
+		if (result.outcome().fired()) {
+			runtime.tryUseRotate(now);
 			runtime.flipStance(now, result.stance());
-			return true;
-		}, () -> runtime.rotateRemaining(now), Result::onCooldown);
+		}
+		return result;
 	}
 }

@@ -1,14 +1,12 @@
 # Status HUD
 
-The strip of badge chips showing your class's live state while you play — lanes, windows, stacks and stance — so nothing needs counting in your head. It draws what the server last told it about your class and ticks the countdowns itself; it never changes how anything plays, and it never spreads beyond the two config knobs below.
+The strip of plain text showing your class's live state while you play — lanes, windows, stacks and stance — so nothing needs counting in your head. It draws what the server last told it about your class and ticks the countdowns itself; it never changes how anything plays, and it never spreads beyond the config knobs below.
 
 ## Where it sits
 
-One vertical strip anchored to a screen corner — bottom right by default, since chat owns the left. It grows up from the corner with its labels on the inner side, mirrored per corner: at `bottom_right` the text reads to the left of the chips, at `bottom_left` it reads to the right. Both corners clear chat and the hotbar.
+A small stack of plain text zoned into the screen itself, the way the Hud Texts screenshots show bare text sitting in flush zones — flush 2 gui from the screen's left edge by default, right edge if you flip `hud.corner` to `right`, with the whole stack vertically centered on the screen. One line per lane row, top-down with your signature up top; a left-zone strip left-aligns every line on one shared edge, a right-zone strip right-aligns them on its shared edge. It grows into the open screen, so no roster can ever clip it. No boxes, no icons, no textures, no animations, never a whole word: a cooling lane reads `SIG 25s` or `ULT 71s` bright; a ready lane reads its bare badge, dim; windows, stacks and riders ride their lane's line (`ALL 13s`, `MOM 2 4s`, a rider's bare `9.8s`).
 
-The badge boxes are vanilla-slot style: a uniform box, one height (20), letters and numbers only — no icons, no textures, no animations. A lit chip is what is counting now; a dim chip with no number is a lane ready to fire.
-
-Move it or turn it off in the client config, [Configuration](configuration.md): `hud.enabled` stops the drawing and nothing else; `hud.corner` is `bottom_right` or `bottom_left`. The file is read once at startup, so edit and restart the game to apply.
+Move it, size it or turn it off in the client config, [Configuration](configuration.md): `hud.enabled` stops the drawing and nothing else; `hud.corner` is `left` or `right` (older files' `bottom_left`/`bottom_right` still parse — they carry their side); `hud.scale` multiplies the whole stack (0.5 to 6.0, read whole numbers — it is bitmap text, so fractional sizes draw unevenly on some scales). The file is read once at startup, so edit and restart the game to apply.
 
 ## The roster
 
@@ -22,7 +20,7 @@ Badges name slots and states, never keys: **SIG** and **ULT** pack the signature
 | `IMP` | Legionary | the Impetus window, 5s from your flip to Gladius | while the next-hit bonus is unspent; the first landed hit removes it, expiry does too |
 | `TES` | Legionary | the Testudo window, 1.5s from your flip to Scutum | while the timed catch is live; expiry removes it |
 | `AEQ` | Legionary | the Aequilibrium window, 6s | while the oath buff is live |
-| `MOM` | Juggernaut | your Momentum stack count plus the 5s grace countdown, `2 4.0s`-style | while you hold at least one stack |
+| `MOM` | Juggernaut | your Momentum stack count plus the 5s grace countdown, `2 4s`-style | while you hold at least one stack |
 | stride rider | Juggernaut | the 5s Rush stride window | while the window lives; a `+` marks the next-hit bonus as unspent, and it drops to a plain countdown the moment a full swing spends it — the chip keeps counting to expiry |
 | empower rider | Juggernaut | the 6s Rend empower window | while Rend's next-hit snapshot is unspent; the landed empowered hit removes it |
 | `E` `W` `H` `J` `B` | Gambler | the Roulette outcome — Edge, Ward, Haste, Jackpot, Bust — plus its 10s countdown | from the spin until the window ends; each band's own initial stands for it |
@@ -33,7 +31,7 @@ Two absences are deliberate: a **Zero** spin shows no chip at all (the dead band
 
 ## Numbers
 
-Every countdown is one decimal — `24.0s`, `1.5s`, `0.0s` — and clamps at zero rather than reading negative. The ability chat lines use the same `%.1f` precision, so the strip and the chat line agree on what half a second is.
+Countdowns show whole seconds at ten and above — `25s` — and one decimal below — `4.8s` — and clamp at zero rather than reading negative. The band switch sits at 9.950s, so the display steps `10s` → `9.9s` without ever flashing a rounded `10.0s`. Chat keeps the one-decimal `%.1fs` shape in `/class info`'s lane table, and a press on cooldown says nothing on the action bar: the chip is the countdown (ADR-0017). The voice of the strip and the voice of chat stay in their own places — the fire line tells you the ability happened, the bare line tells you when it comes back.
 
 ## When it hides
 

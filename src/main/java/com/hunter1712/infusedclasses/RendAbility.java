@@ -37,7 +37,7 @@ public final class RendAbility {
 
 		public static Result onCooldown(long remainingMs) {
 			// Unstyled on purpose: this line has never carried a colour of its own.
-			return new Result(AbilityOutcome.onCooldown(NAME, remainingMs), false);
+			return new Result(AbilityOutcome.onCooldown(remainingMs), false);
 		}
 
 		public static Result noMomentum() {
@@ -78,16 +78,17 @@ public final class RendAbility {
 	}
 
 	/**
-	 * Gate and arm together: the production path. Resolves the spent stacks from the runtime
-	 * itself, decides with {@link #trigger}, and arms the transient runtime's Rend lane plus
-	 * the empower snapshot when it fires. Rejected presses leave the lane untouched. An arm
-	 * that somehow fails reports on-cooldown instead of a fire it did not earn.
+	 * Arms the lane and the empower snapshot together on a fired press; rejected presses
+	 * leave the lane untouched. The arm reads the same lane and now the trigger just
+	 * checked, so it cannot fail.
 	 */
 	public static Result fire(ClassDefinition def, PlayerRuntime runtime, long now) {
 		ConditionalPassive spent = def == null ? null : def.passiveForTrigger(ConditionalPassive.ON_HIT_DEALT);
 		int stacks = spent == null ? 0 : runtime.stacks(spent);
 		Result result = trigger(def, runtime.rendRemaining(now), stacks);
-		return AbilityGate.gate(result, result.outcome().fired(), () -> runtime.tryUseRend(now, stacks),
-				() -> runtime.rendRemaining(now), Result::onCooldown);
+		if (result.outcome().fired()) {
+			runtime.tryUseRend(now, stacks);
+		}
+		return result;
 	}
 }

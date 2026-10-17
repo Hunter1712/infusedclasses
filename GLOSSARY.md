@@ -68,13 +68,14 @@ this owns only the fallback.
 _Avoid_: fire helper, trigger wrapper
 
 **Chat line** (`ChatLine`):
-The text and the chat style a decision returns for the server entry to send verbatim,
-including the remaining-seconds message for a press on cooldown. Rend's fire line is
-`Rend!` in red, Rush's is `Rush!` in yellow; a cooldown line is `Rend: %.1fs` with no style of its own,
-rounded to one decimal like the strip (`%.1f`, ADR-0014). Its wording, rounding and locale are decided with the ability (or class-choice outcome),
+The text and the chat style a decision returns for the server entry to send verbatim.
+Rend's fire line is `Rend!` in red, Rush's is `Rush!` in yellow. Fire lines and fizzles
+speak only what happened: a press on cooldown says nothing — the Status HUD lane already
+counts that number live (ADR-0017) — so `ChatLine.cooldown` (`%.1fs`, one decimal) is
+left as the `/class info` lane shape. Its wording, rounding and locale are decided with the ability (or class-choice outcome),
 not formatted by whoever sends it. Class-choice lines use the same seam: `unknownOrLocked()` (red, action bar)
 for a rejected pick, and `classPicked(displayName)` (gray, chat) for an accepted switch.
-_Avoid_: message, notification
+_Avoid_: message, notification, cooldown echo
 
 **Picker copy** (`ConditionalPassive.fullDesc`):
 The decision of what a conditional passive's picker copy says, generated from its own numbers so it
@@ -545,20 +546,29 @@ wrap inside the card and scroll above the pinned select.
 _Avoid_: card widget, draw helper
 
 **Status HUD** (`StatusHud`, `client/StatusHudElement`):
-The strip on screen for a class's live state: one vertical strip of vanilla-slot-style badge
-boxes anchored to a screen corner (bottom right by default, chat owns the left), labels on
-the inner side mirrored per corner, growing up from the corner, no backdrop, letters and
-numbers only — no icons, no textures, no animations. `rows(status, elapsed)` is the pure
+The strip on screen for a class's live state: a stack of bare text zoned into the
+screen — one line per row, no box, no icon, no texture, no dot — flush 2 gui from
+the screen's chosen edge (left by default), the block vertically centered on the
+screen, top-down with the signature row leading. A line is its facts only: a
+cooling lane `SIG 25s`, a ready lane its dim bare badge, windows and stacks riding
+their lane's line (`ALL 13s`, `MOM 2 4s`, a rider's bare `9.8s`), never a whole word — names stay
+in fire lines and `/class info`. `rows(status, elapsed)` is the pure
 half: given the last snapshot and the millis since it arrived, it returns the whole strip as
 rows — the roster per class (badges `SIG`/`ULT`, `MOM`, `STR`, `GLA`/`SCU`, `IMP`/`TES`,
 `AEQ`, `ALL`, and the Roulette outcome initials, never Zero), riders riding
 their lane chips, the `+` marker only where the chip outlives its load, ready lanes dim with
-no number, live chips lit, `%.1fs` countdowns clamped at zero — and the element draws
-exactly those rows. Hiding is the adapter's, never the decision's: no class, F1, any open
-screen; `hud.enabled=false` stops the drawing and nothing else, `hud.corner` moves it.
+no number, live chips lit, whole-second countdowns at ten and above and one decimal below,
+clamped at zero — and the element draws
+exactly those rows, one line each (ADR-0018: the strip goes bare in a screen zone —
+it supersedes ADR-0014's side-label boxes, ADR-0017's pills and 0018's own
+hotbar sweep in look, keeps every decision's content).
+Hiding is the adapter's, never the decision's: no class, F1, any open
+screen; `hud.enabled=false` stops the drawing and nothing else, `hud.corner` chooses the
+screen zone (`left`/`right` — the retired hotbar spellings carry their side), `hud.scale` sizes the stack.
+A zone line grows into the open screen, so no roster can clip it.
 Badges are slot and state names, never keys: the strip never reads a KeyMapping, so a
 remapped bind cannot make it lie (ADR-0014).
-_Avoid_: cooldown bar, effect strip, buff icons
+_Avoid_: cooldown bar, effect strip, buff icons, pills, side labels
 
 ### Protocol and commands
 
@@ -660,4 +670,13 @@ from the join. `0014` reinstates the HUD as the slot strip (`.scratch/passive-hu
 closed with the effect-row approach): the rows decision stays pure
 (`StatusHud.rows`), one client element at its own `infusedclasses:status` id draws it,
 the server snapshots at change points into one payload guarded by `movedSince`, and
-chat joins the strip's one-decimal countdowns.
+chat joins the strip's one-decimal countdowns. `0017` retunes the strip to
+self-contained pills whose words left with their labels, and lets a press on
+cooldown fall silent — one clock, on screen, not two. `0018` settles the
+argument by cutting the boxes entire. 0018 passed through two looks: first a
+bare sweep line along the hotbar's side, and when the hotbar margin clipped a
+full roster in-game, the sweep gave way to a flush screen zone — one line per
+row, flush 2 gui from the screen's edge, vertically centered — with
+`hud.scale` owning the size and the old hotbar spellings carrying their side
+in the config. `0017`'s silence
+and compressed numbers carry into the stack.

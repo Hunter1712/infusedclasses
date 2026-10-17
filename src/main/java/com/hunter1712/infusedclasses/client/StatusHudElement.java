@@ -10,47 +10,51 @@ import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.resources.Identifier;
 
+import org.joml.Matrix3x2fStack;
+
+import java.util.ArrayList;
 import java.util.List;
 
 /**
  * The strip on screen: the adapter that draws {@link StatusHud#rows} verbatim. The decision
- * returns the whole strip as rows; this lays it out and hides it. One vertical strip of
- * uniform badge boxes in vanilla-slot style — sized once for the three-character badges,
- * height 20 — with the text label on the inner side, mirrored per corner, the strip growing
- * up from its bottom corner and the first row anchored on the corner, so a row appearing or
- * dropping never moves the rows under it. Letters and numbers only: no icons, no textures,
- * no animations, and no backdrop behind the chips — the drawn box is an outline only.
+ * returns the whole strip as rows; this lays it out and hides it. The strip is bare text in
+ * a screen zone — the language the Hud Texts screenshots made visible: one line per row,
+ * flush a breath from the screen's chosen edge, the stack vertically centered on the screen.
+ * The signature row leads, top-down. No dot, no box, no icon, no texture, no fill — not one
+ * rectangle exists between the rows decision and the screen, and words never enter: names
+ * live in the fire lines and {@code code /class info}. The left zone (the default) left-aligns
+ * every line on a shared flush edge; the right zone mirrors it, right-aligning every line on
+ * the same flush edge — a line's facts read in either case: a ready lane draws its bare badge
+ * dim, a cooling or live chip its bright badge and number, a rider its bare number beside its
+ * lane.
+ *
+ * <p>Growing is always into the open screen — a left-zone line reaches rightward, a
+ * right-zone line leftward — so no roster can clip and nothing is ever dropped to fit. The
+ * config's {@code hud.scale} sizes the stack around the same flush edges; every coordinate is
+ * scaled gui units beside vanilla geometry, so every gui scale and every {@code hud.scale}
+ * lands the same frame.
  *
  * <p>Drawing stops when the config disables it, any screen is open, the HUD is hidden (F1),
  * no snapshot exists, or the snapshot's class id is empty (classless); each of those lives
  * here, in the adapter, because hiding is never the decision's. Countdowns interpolate from
- * the snapshot's receipt time ({@link StatusStore#elapsed}), and a chip's dim/lit is the
- * live flag the decision already carried: ready lanes draw dim, live chips draw lit.
+ * the snapshot's receipt time ({@link StatusStore#elapsed}), and lit is the live flag the
+ * decision already carried: ready lanes draw dim, live chips draw lit.
  */
 public final class StatusHudElement implements HudElement {
 	/** This element's own id in the fabric HUD registry. */
 	static final Identifier ID = Identifier.fromNamespaceAndPath(ClassPackets.MOD_ID, "status");
 
-	/** The uniform badge box: height 20 like a vanilla slot, width fit once for the badges. */
-	private static final int BOX_H = 20;
-	private static final int BADGE_PAD = 4;
-	private static final int ROW_GAP = 2;
+	/** The zone pad between the strip and its screen edge: the breath Hud Texts uses. */
+	private static final int EDGE_PAD = 2;
+	/** The gap separating a row's chips: wide enough to read as one lane's facts. */
 	private static final int CHIP_GAP = 4;
-	/** The text label sits beside its box, this far off it. */
-	private static final int TEXT_PAD = 2;
-	private static final int MARGIN = 5;
+	private static final int LINE_H = 9;
+	/** The gap between a zone stack's lines. */
+	private static final int LINE_GAP = 2;
 
-	/** Shadowed text over anything: lit border and text are legible, dim border and text recede. */
-	private static final int LIT_BORDER = 0xFF8B8B8B;
+	/** Lit chip is what counts now; dim recedes. Shadowed text over anything, no backdrop needed. */
 	private static final int LIT_TEXT = 0xFFFFFFFF;
-	private static final int LIT_LABEL = 0xFFD4D4D4;
-	private static final int DIM_BORDER = 0xFF565656;
-	private static final int DIM_TEXT = 0xFF8C8C8C;
-
-	/** The badge vocabulary the uniform box is sized for; slot and state names, never keys. */
-	private static final String[] BADGES = {
-			StatusHud.SIG, StatusHud.ULT, StatusHud.MOM, StatusHud.STR,
-			StatusHud.GLA, StatusHud.SCU, StatusHud.IMP, StatusHud.TES, StatusHud.AEQ, StatusHud.ALL };
+	private static final int DIM_TEXT = 0xFFA6A6A6;
 
 	@Override
 	public void render(GuiGraphics graphics, DeltaTracker tickCounter) {
@@ -67,83 +71,69 @@ public final class StatusHudElement implements HudElement {
 			return;
 		}
 		draw(graphics, minecraft.font, StatusHud.rows(status, StatusStore.elapsed(System.currentTimeMillis())),
-				config.corner());
+				config.corner(), config.scale());
 	}
 
-	/** The whole strip: one row of chips per decision row, stacked upward from the corner. */
-	private void draw(GuiGraphics graphics, Font font, List<StatusHud.Row> rows, HudConfig.Corner corner) {
-		int y = graphics.guiHeight() - MARGIN - BOX_H;
-		int boxW = boxWidth(font);
-		boolean left = corner == HudConfig.Corner.BOTTOM_LEFT;
-		for (StatusHud.Row row : rows) {
-			if (row.chips().isEmpty()) {
-				continue;
-			}
-			drawRow(graphics, font, row, y, boxW, left);
-			y -= BOX_H + ROW_GAP;
+	/** One zone line's readable content: a token and whether it draws bright or dim. */
+	private record Token(String text, boolean lit) {
+		/** The token's width; trailing chip gaps ride the caller, so the record stays pure. */
+		int width(Font font) {
+			return font.width(text);
+		}
+
+		/** The token on its line: shadowed text at its entry edge, and where the next token starts. */
+		int draw(GuiGraphics graphics, Font font, int x, int y) {
+			graphics.drawString(font, text, x, y, lit ? LIT_TEXT : DIM_TEXT);
+			return x + width(font);
 		}
 	}
 
-	/** One row of chips, drawn from the anchored corner inward: the lane or stance first, riders after. */
-	private void drawRow(GuiGraphics graphics, Font font, StatusHud.Row row, int y, int boxW, boolean left) {
-		int cursor = left ? MARGIN : graphics.guiWidth() - MARGIN;
+	/** The whole strip: one line per row, stacked in the chosen zone's flush edge, screen-centered. */
+	private void draw(GuiGraphics graphics, Font font, List<StatusHud.Row> rows, HudConfig.Corner corner, float scale) {
+		boolean right = corner == HudConfig.Corner.RIGHT;
+		int screen = graphics.guiHeight();
+		int lineStep = LINE_H + LINE_GAP;
+		int blockHeight = rows.size() * LINE_H + (rows.size() - 1) * LINE_GAP;
+		int topY = Math.max(0, (screen - Math.round(blockHeight * scale)) / 2);
+		Matrix3x2fStack pose = graphics.pose();
+		pose.pushMatrix();
+		pose.translate(right ? graphics.guiWidth() - EDGE_PAD : EDGE_PAD, topY);
+		pose.scale(scale, scale);
+		for (int i = 0; i < rows.size(); i++) {
+			int y = i * lineStep;
+			List<Token> tokens = tokens(rows.get(i));
+			int x = 0;
+			if (right) {
+				// the right zone shares one flush edge on the other side: every line right-aligns to it
+				for (int j = 0; j < tokens.size(); j++) {
+					x -= tokens.get(j).width(font) + (j < tokens.size() - 1 ? CHIP_GAP : 0);
+				}
+			}
+			for (int j = 0; j < tokens.size(); j++) {
+				x = tokens.get(j).draw(graphics, font, x, y) + (j < tokens.size() - 1 ? CHIP_GAP : 0);
+			}
+		}
+		pose.popMatrix();
+	}
+
+	/** A row's tokens in reading order: every chip's facts as one bare token. */
+	private static List<Token> tokens(StatusHud.Row row) {
+		List<Token> tokens = new ArrayList<>();
 		for (StatusHud.Chip chip : row.chips()) {
-			cursor = drawChip(graphics, font, chip, cursor, y, boxW, left);
-		}
-	}
-
-	/**
-	 * One chip at {@code cursor} — its box's corner-side edge — and back where the next chip
-	 * starts. A badge-bearing chip draws the outline box with its badge centered and its text on
-	 * the inner side; a chip with an empty badge is a bare countdown text riding the row, no box.
-	 */
-	private int drawChip(GuiGraphics graphics, Font font, StatusHud.Chip chip, int cursor, int y, int boxW, boolean left) {
-		int textY = y + (BOX_H - font.lineHeight) / 2;
-		if (chip.badge().isEmpty()) {
-			String text = chipText(chip);
-			if (text.isEmpty()) {
-				return cursor;
+			String text = chipToken(chip);
+			if (!text.isEmpty()) {
+				tokens.add(new Token(text, chip.lit()));
 			}
-			int x = left ? cursor + TEXT_PAD : cursor - TEXT_PAD - font.width(text);
-			graphics.drawString(font, text, x, textY, textColor(chip));
-			return left ? x + font.width(text) + CHIP_GAP : x - CHIP_GAP;
 		}
-		int boxX = left ? cursor : cursor - boxW;
-		graphics.renderOutline(boxX, y, boxX + boxW, y + BOX_H, chip.lit() ? LIT_BORDER : DIM_BORDER);
-		graphics.drawString(font, chip.badge(), boxX + (boxW - font.width(chip.badge())) / 2, textY, textColor(chip));
-		String text = chipText(chip);
-		if (!text.isEmpty()) {
-			int x = left ? boxX + boxW + TEXT_PAD : boxX - TEXT_PAD - font.width(text);
-			graphics.drawString(font, text, x, textY, labelColor(chip));
-			return left ? x + font.width(text) + CHIP_GAP : x - CHIP_GAP;
-		}
-		return left ? boxX + boxW + CHIP_GAP : boxX - CHIP_GAP;
+		return tokens;
 	}
 
-	/** What prints beside the badge box: the label, its value, or both; bare riders print their value. */
-	private static String chipText(StatusHud.Chip chip) {
-		boolean hasLabel = !chip.label().isEmpty();
-		boolean hasValue = !chip.value().isEmpty();
-		if (!hasLabel) {
+	/** What one chip prints: its badge, its value, or badge plus value — a chip's token in the strip's language. */
+	private static String chipToken(StatusHud.Chip chip) {
+		boolean hasBadge = !chip.badge().isEmpty();
+		if (!hasBadge) {
 			return chip.value();
 		}
-		return hasValue ? chip.label() + " " + chip.value() : chip.label();
-	}
-
-	private static int textColor(StatusHud.Chip chip) {
-		return chip.lit() ? LIT_TEXT : DIM_TEXT;
-	}
-
-	private static int labelColor(StatusHud.Chip chip) {
-		return chip.lit() ? LIT_LABEL : DIM_TEXT;
-	}
-
-	/** The uniform box width, sized once for the widest badge; the height is the vanilla-slot 20. */
-	private static int boxWidth(Font font) {
-		int width = 0;
-		for (String badge : BADGES) {
-			width = Math.max(width, font.width(badge));
-		}
-		return width + BADGE_PAD * 2;
+		return chip.value().isEmpty() ? chip.badge() : chip.badge() + " " + chip.value();
 	}
 }

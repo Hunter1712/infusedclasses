@@ -17,9 +17,10 @@ import java.util.Locale;
  * chip as extra chips on the same row. Badges are slot and state names, never keys:
  * {@code SIG}/{@code ULT}, {@code MOM}, {@code STR}, {@code GLA}/{@code SCU},
  * {@code IMP}/{@code TES}, {@code AEQ}, {@code ALL}, plus the Roulette outcome initials.
- * A ready lane draws dim with no number; every live chip draws lit. Labels come from
- * the class definition and the ability constants, so copy cannot drift. A classless or
- * unknown class id renders no rows at all.
+ * A ready lane draws dim with no number; every live chip draws lit. Words never enter
+ * the strip — ability, passive, outcome and stance names stay in the fire lines and
+ * {@code /class info} — so a chip speaks in its badge and its number alone. A classless
+ * or unknown class id renders no rows at all.
  */
 public final class StatusHud {
 	public static final String SIG = "SIG";
@@ -33,8 +34,8 @@ public final class StatusHud {
 	public static final String AEQ = "AEQ";
 	public static final String ALL = "ALL";
 
-	/** One chip: its badge box, its text label, its value text, and lit versus dim. */
-	public record Chip(String badge, String label, String value, boolean lit) {
+	/** One chip: its badge, the number it counts (or empty for a ready lane), and lit versus dim. */
+	public record Chip(String badge, String value, boolean lit) {
 	}
 
 	/** One row: the chips that draw together on one line, a lane chip followed by its riders. */
@@ -56,77 +57,72 @@ public final class StatusHud {
 		List<Row> rows = new ArrayList<>();
 		if (def.hasAbility(ClassRegistry.ROTATE_ABILITY)) {
 			rows.add(new Row(List.of(new Chip(
-					status.stance() == RotateAbility.Stance.GLADIUS ? GLA : SCU,
-					status.stance().displayName(), "", true))));
+					status.stance() == RotateAbility.Stance.GLADIUS ? GLA : SCU, "", true))));
 		}
 		rows.add(signatureRow(status, def, elapsed));
 		rows.add(ultimateRow(status, def, elapsed));
 		ConditionalPassive momentum = def.passiveForTrigger(ConditionalPassive.ON_HIT_DEALT);
 		if (momentum != null && status.momentumStacks() > 0) {
-			rows.add(new Row(List.of(new Chip(MOM, momentum.name(),
+			rows.add(new Row(List.of(new Chip(MOM,
 					status.momentumStacks() + " " + countdown(status.momentumGraceRemainingMs() - elapsed), true))));
 		}
 		if (def.critRule().hasDice() && status.streak() > 0) {
-			rows.add(new Row(List.of(new Chip(STR, CritRule.STREAK, Integer.toString(status.streak()), true))));
+			rows.add(new Row(List.of(new Chip(STR, Integer.toString(status.streak()), true))));
 		}
 		return List.copyOf(rows);
 	}
 
-	/** The signature lane plus its riders: stride for Rush, the flip buffs for Rotate, the outcome for Roulette. */
+	/** The signature lane plus its riders: the stride for Rush, the flip buffs for Rotate, the outcome for Roulette. */
 	private static Row signatureRow(PlayerStatusPayload status, ClassDefinition def, long elapsed) {
 		List<Chip> chips = new ArrayList<>();
 		if (def.hasAbility(ClassRegistry.RUSH_ABILITY)) {
-			chips.add(lane(SIG, RushAbility.NAME, status.rushRemainingMs(), elapsed));
+			chips.add(lane(SIG, status.rushRemainingMs(), elapsed));
 			// The stride rider outlives the load: it keeps counting after the settle
 			// spends the bonus, and the `+` is what drops. The window expiring drops it.
 			if (status.rushWindowRemainingMs() > elapsed) {
-				chips.add(new Chip("", "", (status.rushBonusPending() ? "+" : "")
+				chips.add(new Chip("", (status.rushBonusPending() ? "+" : "")
 						+ countdown(status.rushWindowRemainingMs() - elapsed), true));
 			}
 		} else if (def.hasAbility(ClassRegistry.ROTATE_ABILITY)) {
-			chips.add(lane(SIG, RotateAbility.NAME, status.rotateRemainingMs(), elapsed));
+			chips.add(lane(SIG, status.rotateRemainingMs(), elapsed));
 			// Impetus is one-shot (pending only), so its rider vanishes on the spend;
 			// Testudo is the timed catch, live for its window in scutum.
 			if (status.impetusPending() && status.flipWindowRemainingMs() > elapsed) {
-				chips.add(new Chip(IMP, RotateAbility.IMPETUS_NAME,
-						countdown(status.flipWindowRemainingMs() - elapsed), true));
+				chips.add(new Chip(IMP, countdown(status.flipWindowRemainingMs() - elapsed), true));
 			}
 			if (status.flipTarget() == RotateAbility.Stance.SCUTUM && status.flipWindowRemainingMs() > elapsed) {
-				chips.add(new Chip(TES, RotateAbility.TESTUDO_NAME,
-						countdown(status.flipWindowRemainingMs() - elapsed), true));
+				chips.add(new Chip(TES, countdown(status.flipWindowRemainingMs() - elapsed), true));
 			}
 		} else if (def.hasAbility(ClassRegistry.ROULETTE_ABILITY)) {
-			chips.add(lane(SIG, RouletteAbility.NAME, status.rouletteRemainingMs(), elapsed));
+			chips.add(lane(SIG, status.rouletteRemainingMs(), elapsed));
 			RouletteAbility.Outcome outcome = status.rouletteOutcome();
 			if (showsOutcome(outcome) && status.rouletteWindowRemainingMs() > elapsed) {
-				chips.add(new Chip(outcome.label().substring(0, 1), outcome.label(),
+				chips.add(new Chip(outcome.label().substring(0, 1),
 						countdown(status.rouletteWindowRemainingMs() - elapsed), true));
 			}
 		}
 		return new Row(List.copyOf(chips));
 	}
 
-	/** The ultimate lane plus its rider: empower for Rend, AEQ for the oath, ALL for All In. */
+	/** The ultimate lane plus its rider: the bare empower count for Rend, the oath chip for AEQ, ALL for All In. */
 	private static Row ultimateRow(PlayerStatusPayload status, ClassDefinition def, long elapsed) {
 		List<Chip> chips = new ArrayList<>();
 		if (def.hasAbility(ClassRegistry.REND_ABILITY)) {
-			chips.add(lane(ULT, RendAbility.NAME, status.rendRemainingMs(), elapsed));
+			chips.add(lane(ULT, status.rendRemainingMs(), elapsed));
 			// Countdown-only: the empower rider exists exactly while its next-hit
 			// snapshot is unspent, so it vanishes on the settle instead of counting on.
 			if (status.rendBonusPending() && status.rendWindowRemainingMs() > elapsed) {
-				chips.add(new Chip("", "", countdown(status.rendWindowRemainingMs() - elapsed), true));
+				chips.add(new Chip("", countdown(status.rendWindowRemainingMs() - elapsed), true));
 			}
 		} else if (def.hasAbility(ClassRegistry.AEQUILIBRIUM_ABILITY)) {
-			chips.add(lane(ULT, AequilibriumAbility.NAME, status.oathRemainingMs(), elapsed));
+			chips.add(lane(ULT, status.oathRemainingMs(), elapsed));
 			if (status.aequilibriumWindowRemainingMs() > elapsed) {
-				chips.add(new Chip(AEQ, AequilibriumAbility.NAME,
-						countdown(status.aequilibriumWindowRemainingMs() - elapsed), true));
+				chips.add(new Chip(AEQ, countdown(status.aequilibriumWindowRemainingMs() - elapsed), true));
 			}
 		} else if (def.hasAbility(ClassRegistry.ALL_IN_ABILITY)) {
-			chips.add(lane(ULT, AllInAbility.NAME, status.allInRemainingMs(), elapsed));
+			chips.add(lane(ULT, status.allInRemainingMs(), elapsed));
 			if (status.allInWindowRemainingMs() > elapsed) {
-				chips.add(new Chip(ALL, AllInAbility.NAME,
-						countdown(status.allInWindowRemainingMs() - elapsed), true));
+				chips.add(new Chip(ALL, countdown(status.allInWindowRemainingMs() - elapsed), true));
 			}
 		}
 		return new Row(List.copyOf(chips));
@@ -141,15 +137,22 @@ public final class StatusHud {
 	}
 
 	/** A lane chip: lit with its countdown while cooling, dim with no number the moment it is ready. */
-	private static Chip lane(String badge, String label, long remainingMs, long elapsedMs) {
-		if (remainingMs > elapsedMs) {
-			return new Chip(badge, label, countdown(remainingMs - elapsedMs), true);
-		}
-		return new Chip(badge, label, "", false);
+	private static Chip lane(String badge, long remainingMs, long elapsedMs) {
+		return remainingMs > elapsedMs
+				? new Chip(badge, countdown(remainingMs - elapsedMs), true)
+				: new Chip(badge, "", false);
 	}
 
-	/** One-decimal countdown, clamped at zero; the same `%.1fs` the chat lines use. */
+	/**
+	 * Countdown text for the strip: whole seconds while the nearest integer is ten or
+	 * more, one decimal under, clamped at zero. The whole-second band starts at 9_950
+	 * so the tenths branch never rounds up to a flashing {@code 10.0s}; chat keeps the
+	 * one-decimal shape everywhere ({@code ChatLine.cooldown}).
+	 */
 	private static String countdown(long remainingMs) {
-		return String.format(Locale.ROOT, "%.1fs", Math.max(0L, remainingMs) / 1000.0);
+		long remaining = Math.max(0L, remainingMs);
+		return remaining >= 9_950L
+				? String.format(Locale.ROOT, "%ds", (remaining + 500) / 1000)
+				: String.format(Locale.ROOT, "%.1fs", remaining / 1000.0);
 	}
 }

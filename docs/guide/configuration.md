@@ -9,7 +9,7 @@ It is read once when the client starts, so edit the file and restart the game to
 | Field | Type | Default | Values | What it does |
 |-------|------|---------|--------|--------------|
 | `hud.enabled` | boolean | `true` | `true` / `false` | `false` stops the status HUD drawing, and nothing else |
-| `hud.corner` | string | `bottom_right` | `bottom_right`, `bottom_left` | the screen corner the status HUD anchors to |
+| `hud.corner` | string | `left` | `left`, `right` | the screen zone the status HUD stacks into: flush to that screen edge, vertically centered (`left` default; `right` mirrors it) |
 
 On first run the file is written with both defaults:
 
@@ -17,7 +17,7 @@ On first run the file is written with both defaults:
 {
   "hud": {
     "enabled": true,
-    "corner": "bottom_right"
+    "corner": "left"
   }
 }
 ```

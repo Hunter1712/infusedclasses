@@ -35,13 +35,6 @@ class MeleePlanTest {
 	}
 
 	@Test
-	void fullSwingsBumpSpamDoesNot() {
-		assertTrue(MeleePlan.shouldBump(1.0F));
-		assertFalse(MeleePlan.shouldBump(0.5F));
-		assertFalse(MeleePlan.shouldBump(0.0F));
-	}
-
-	@Test
 	void dealMultIsStanceForLegionariesOneForEveryoneElse() {
 		PlayerRuntime scutum = inStance(RotateAbility.Stance.SCUTUM);
 		PlayerRuntime gladius = inStance(RotateAbility.Stance.GLADIUS);

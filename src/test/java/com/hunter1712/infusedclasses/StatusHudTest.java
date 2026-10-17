@@ -66,12 +66,10 @@ class StatusHudTest {
 		assertEquals(2, rows.size());
 		StatusHud.Chip sig = row(rows, StatusHud.SIG).chips().get(0);
 		assertEquals("SIG", sig.badge());
-		assertEquals("Rush", sig.label());
 		assertEquals("", sig.value());
 		assertFalse(sig.lit());
 		StatusHud.Chip ult = row(rows, StatusHud.ULT).chips().get(0);
 		assertEquals("ULT", ult.badge());
-		assertEquals("Rend", ult.label());
 		assertEquals("", ult.value());
 		assertFalse(ult.lit());
 	}
@@ -83,11 +81,11 @@ class StatusHudTest {
 		PlayerStatusPayload fired = status(ClassRegistry.JUGGERNAUT, runtime, NOW);
 
 		StatusHud.Chip fresh = row(StatusHud.rows(fired, 0), StatusHud.SIG).chips().get(0);
-		assertEquals("25.0s", fresh.value());
+		assertEquals("25s", fresh.value());
 		assertTrue(fresh.lit());
 
 		StatusHud.Chip later = row(StatusHud.rows(fired, 1_000), StatusHud.SIG).chips().get(0);
-		assertEquals("24.0s", later.value());
+		assertEquals("24s", later.value());
 		assertTrue(later.lit());
 
 		StatusHud.Chip ready = row(StatusHud.rows(fired, 25_000), StatusHud.SIG).chips().get(0);
@@ -105,7 +103,6 @@ class StatusHudTest {
 		assertEquals(2, sig.chips().size());
 		StatusHud.Chip loadedRider = rider(sig);
 		assertEquals("", loadedRider.badge());
-		assertEquals("", loadedRider.label());
 		assertEquals("+5.0s", loadedRider.value());
 		assertTrue(loadedRider.lit());
 
@@ -143,7 +140,6 @@ class StatusHudTest {
 		StatusHud.Row sig = row(StatusHud.rows(gladius, 0), StatusHud.SIG);
 		StatusHud.Chip impetus = rider(sig);
 		assertEquals("IMP", impetus.badge());
-		assertEquals(RotateAbility.IMPETUS_NAME, impetus.label());
 		assertEquals("5.0s", impetus.value());
 
 		runtime.consumeImpetusBonus(NOW);
@@ -157,7 +153,6 @@ class StatusHudTest {
 		StatusHud.Row row = row(StatusHud.rows(scutum, 0), StatusHud.SIG);
 		StatusHud.Chip testudo = rider(row);
 		assertEquals("TES", testudo.badge());
-		assertEquals(RotateAbility.TESTUDO_NAME, testudo.label());
 		assertEquals("1.5s", testudo.value());
 
 		assertEquals(1, row(StatusHud.rows(scutum, 1_500), StatusHud.SIG).chips().size());
@@ -172,7 +167,6 @@ class StatusHudTest {
 		StatusHud.Row ult = row(StatusHud.rows(payload, 0), StatusHud.ULT);
 		StatusHud.Chip aeq = rider(ult);
 		assertEquals("AEQ", aeq.badge());
-		assertEquals("Aequilibrium", aeq.label());
 		assertEquals("6.0s", aeq.value());
 
 		assertEquals(1, row(StatusHud.rows(payload, 6_000), StatusHud.ULT).chips().size());
@@ -186,8 +180,7 @@ class StatusHudTest {
 
 		StatusHud.Chip all = rider(row(StatusHud.rows(payload, 0), StatusHud.ULT));
 		assertEquals("ALL", all.badge());
-		assertEquals("All In", all.label());
-		assertEquals("15.0s", all.value());
+		assertEquals("15s", all.value());
 	}
 
 	@Test
@@ -206,8 +199,7 @@ class StatusHudTest {
 
 		StatusHud.Chip chip = rider(row(StatusHud.rows(payload, 0), StatusHud.SIG));
 		assertEquals(initial, chip.badge());
-		assertEquals(outcome.label(), chip.label());
-		assertEquals("10.0s", chip.value());
+		assertEquals("10s", chip.value());
 
 		assertEquals(1, row(StatusHud.rows(payload, 10_000), StatusHud.SIG).chips().size());
 	}
@@ -230,7 +222,6 @@ class StatusHudTest {
 
 		StatusHud.Chip mom = row(StatusHud.rows(payload, 0), StatusHud.MOM).chips().get(0);
 		assertEquals("MOM", mom.badge());
-		assertEquals("Momentum", mom.label());
 		assertEquals("2 5.0s", mom.value());
 		assertTrue(mom.lit());
 
@@ -253,7 +244,6 @@ class StatusHudTest {
 
 		StatusHud.Chip str = row(StatusHud.rows(one, 0), StatusHud.STR).chips().get(0);
 		assertEquals("STR", str.badge());
-		assertEquals("Streak", str.label());
 		assertEquals("1", str.value());
 	}
 
@@ -265,7 +255,6 @@ class StatusHudTest {
 		List<StatusHud.Row> before = StatusHud.rows(scutum, 0);
 		StatusHud.Chip scutumChip = before.get(0).chips().get(0);
 		assertEquals("SCU", scutumChip.badge());
-		assertEquals("Scutum", scutumChip.label());
 
 		RotateAbility.fire(legionary(), runtime, NOW);
 		PlayerStatusPayload gladius = status(ClassRegistry.LEGIONARY, runtime, NOW);
@@ -273,7 +262,6 @@ class StatusHudTest {
 		List<StatusHud.Row> after = StatusHud.rows(gladius, 0);
 		StatusHud.Chip gladiusChip = after.get(0).chips().get(0);
 		assertEquals("GLA", gladiusChip.badge());
-		assertEquals("Gladius", gladiusChip.label());
 	}
 
 	@Test
@@ -311,9 +299,11 @@ class StatusHudTest {
 		gambler.tryUseRoulette(NOW, RouletteAbility.Outcome.EDGE);
 		PlayerStatusPayload spin = status(ClassRegistry.GAMBLER, gambler, NOW);
 
-		assertEquals("10.0s", rider(row(StatusHud.rows(spin, 0), StatusHud.SIG)).value());
-		// 9_999 ms left rounds to the same text as 10_000: one decimal, not truncation.
-		assertEquals("10.0s", rider(row(StatusHud.rows(spin, 1), StatusHud.SIG)).value());
+		assertEquals("10s", rider(row(StatusHud.rows(spin, 0), StatusHud.SIG)).value());
+		// The whole-second band starts at 9_950: nothing ever rounds up to a
+		// flashing "10.0s", the display goes 10s -> 10s -> 9.9s instead.
+		assertEquals("10s", rider(row(StatusHud.rows(spin, 1), StatusHud.SIG)).value());
+		assertEquals("9.9s", rider(row(StatusHud.rows(spin, 51), StatusHud.SIG)).value());
 
 		PlayerRuntime juggernaut = new PlayerRuntime();
 		juggernaut.onTrigger(juggernaut(), ConditionalPassive.ON_HIT_DEALT, NOW, 1.0F);

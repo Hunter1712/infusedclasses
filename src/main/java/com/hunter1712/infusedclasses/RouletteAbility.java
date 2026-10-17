@@ -86,7 +86,7 @@ public final class RouletteAbility {
 		}
 
 		public static Result onCooldown(long remainingMs) {
-			return new Result(AbilityOutcome.onCooldown(NAME, remainingMs), null);
+			return new Result(AbilityOutcome.onCooldown(remainingMs), null);
 		}
 	}
 
@@ -149,15 +149,16 @@ public final class RouletteAbility {
 	}
 
 	/**
-	 * Gate and arm together: the production path. A fired spin arms the lane and stamps
-	 * the outcome window together; rejected presses leave both untouched. Free: no HP is
-	 * spent, checked or touched anywhere.
+	 * Arms the lane and stamps the outcome window together on a fired press; rejected
+	 * presses leave both untouched. The arm reads the same lane and now the trigger
+	 * just checked, so it cannot fail. Free: no HP is spent, checked or touched anywhere.
 	 */
 	public static Result fire(ClassDefinition def, PlayerRuntime runtime, long now, float roll) {
 		Result result = trigger(def, runtime.rouletteRemaining(now), roll);
-		return AbilityGate.gate(result, result.outcome().fired(),
-				() -> runtime.tryUseRoulette(now, result.band()),
-				() -> runtime.rouletteRemaining(now), Result::onCooldown);
+		if (result.outcome().fired()) {
+			runtime.tryUseRoulette(now, result.band());
+		}
+		return result;
 	}
 
 	/** Melee dealt mult of the live spin, 1.0 when no outcome window is live. Read by the melee plan. */
