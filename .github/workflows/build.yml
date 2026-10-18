@@ -15,8 +15,6 @@ jobs:
           distribution: temurin
           java-version: 25
       - uses: gradle/actions/setup-gradle@v6
-        with:
-          gradle-version: 9.7.1
       - name: license-agreement
         run: |
           grep -q "All Rights Reserved" LICENSE
@@ -25,4 +23,6 @@ jobs:
           if grep -rnw "MIT" LICENSE README.md src/main/resources/fabric.mod.json; then
             echo "license-agreement: stale MIT reference in license metadata"; exit 1
           fi
-      - run: gradle build --info
+      # ./gradlew: the wrapper is the single source of the Gradle version.
+      - run: ./gradlew build --info
+      - run: tools/mixin-targets.sh
