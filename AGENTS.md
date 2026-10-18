@@ -27,7 +27,7 @@ Flag for `/improve-codebase-architecture` when any `src/main/java/**/*.java` fil
 
 Use `./gradlew` (wrapper, Gradle 9.7.1; first run downloads the distribution). Commands run over bash.
 
-Client-visible changes ship with `./gradlew deployClient`: it rebuilds, copies the jar to the live instance `mods/` folder (default: the Linux PrismLauncher `1.21.11` instance; override with `-PmcModsDir=<path>` or `MC_MODS_DIR`), and fails if the jar is missing. Never declare a client change done on `compileJava` alone — it never refreshes the jar. Reopen the picker in-game with `/class select <player>` instead of fresh worlds.
+Client-visible changes ship with `./gradlew deployClient`: it rebuilds, copies the jar to the live instance `mods/` folder (default: the ElyPrismLauncher `1.21.11` instance; override with `-PmcModsDir=<path>` or `MC_MODS_DIR`), and fails if the jar is missing. Never declare a client change done on `compileJava` alone — it never refreshes the jar. Reopen the picker in-game with `/class select <player>` instead of fresh worlds.
 
 ## Shell notes (Linux)
 

@@ -45,7 +45,7 @@ test {
 // live instance mods folder, and fails loudly if the jar is missing afterwards.
 // Override the target with -PmcModsDir=<path> or the MC_MODS_DIR env var.
 def mcModsDir = findProperty('mcModsDir') ?: System.getenv('MC_MODS_DIR') ?:
-		"${System.getProperty('user.home')}/.local/share/PrismLauncher/instances/1.21.11/.minecraft/mods"
+		"${System.getProperty('user.home')}/.local/share/ElyPrismLauncher/instances/1.21.11/minecraft/mods"
 
 tasks.register('deployClient', Copy) {
 	group = 'infusedclasses'
