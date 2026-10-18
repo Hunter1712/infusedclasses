@@ -3,6 +3,14 @@
 Judgement calls the reviewer enforces. Mechanical checks live in CI
 (`.github/workflows/build.yml` runs `gradle build`, which includes `test`).
 
+## Reviewing a round
+
+Rounds are reviewed uncommitted: the target is the whole working tree — `git diff
+HEAD` plus untracked files — against the round's spec, `.scratch/<slug>/spec.md`
+with its tickets. The standards set is this file, `AGENTS.md` (build, pre-flight,
+triggers), `GLOSSARY.md`, and the ADRs the change touches; the `/code-review`
+skill runs the two axes.
+
 ## Docs move with behavior
 
 A change that alters player-visible behavior, module responsibilities, or domain

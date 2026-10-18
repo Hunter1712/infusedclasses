@@ -12,7 +12,11 @@ Five-role vocabulary: `needs-triage`, `needs-info`, `ready-for-agent`, `ready-fo
 
 ### Domain docs
 
-`GLOSSARY.md` at the repo root, and decisions in `docs/adr/`. Use their vocabulary in issues, proposals, hypotheses and test names. More are created lazily via `/domain-modeling` when terms or decisions actually get resolved.
+`GLOSSARY.md` at the repo root, and decisions in `docs/adr/` (index: `docs/adr/README.md`). Use their vocabulary in issues, proposals, hypotheses and test names. More are created lazily via `/domain-modeling` when terms or decisions actually get resolved.
+
+### Review standards
+
+`CODING_STANDARDS.md` holds the judgement calls a reviewer enforces, plus the round-review convention. Reviewers read it with `GLOSSARY.md` and the ADRs a change touches.
 
 ## Pre-flight
 
@@ -21,13 +25,13 @@ After any edit in `src/main/java`, expect `./gradlew compileJava` or `./gradlew 
 
 ## Architecture review trigger
 
-Flag for `/improve-codebase-architecture` when any `src/main/java/**/*.java` file grows past ~150 lines or gains >2 public methods with the same noun; also when a decision and the code that applies it end up in the same place — a name literal compared to find a passive in the server entry, or the screen reading what a card line says in order to draw it. Decisions stay pure and adapters apply them; a decision that needs a game object has the seam in the wrong place. See ADR-0001.
+Flag for `/improve-codebase-architecture` when any `src/main/java/**/*.java` file grows past ~150 lines or gains >2 public methods with the same noun; run `tools/arch-flags.sh` before calling a round done to see the round's changed files already over the line; also when a decision and the code that applies it end up in the same place — a name literal compared to find a passive in the server entry, or the screen reading what a card line says in order to draw it. Decisions stay pure and adapters apply them; a decision that needs a game object has the seam in the wrong place. See ADR-0001.
 
 ## Build
 
 Use `./gradlew` (wrapper, Gradle 9.7.1; first run downloads the distribution). Commands run over bash.
 
-Client-visible changes ship with `./gradlew deployClient`: it rebuilds, copies the jar to the live instance `mods/` folder (default: the ElyPrismLauncher `1.21.11` instance; override with `-PmcModsDir=<path>` or `MC_MODS_DIR`), and fails if the jar is missing. Never declare a client change done on `compileJava` alone — it never refreshes the jar. Reopen the picker in-game with `/class select <player>` instead of fresh worlds.
+Client-visible changes ship with `./gradlew deployClient`: it rebuilds, copies the jar to the live instance `mods/` folder (default: the ElyPrismLauncher `1.21.11` instance; override with `-PmcModsDir=<path>` or `MC_MODS_DIR`), and fails if the jar is missing. Never declare a client change done on `compileJava` alone — it never refreshes the jar. Reopen the picker in-game with `/class select <player>` instead of fresh worlds, then read that instance's `logs/latest.log` — grep it for `infusedclasses` or exceptions before trusting a client-visible change.
 
 ## Shell notes (Linux)
 

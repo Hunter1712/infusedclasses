@@ -1,0 +1,36 @@
+# ADR index
+
+One line per decision: what it settles, and whether a later ADR revised it. Read
+the entries that touch the area you are about to change — `/code-review` and
+`/improve-codebase-architecture` both start from this list. Unmarked entries are
+accepted; each file is the full record.
+
+Add the line in the same change that creates the ADR, and update the marker when
+a later decision revises or supersedes a point.
+
+- [0001 — Decide purely, apply in an adapter](0001-decide-purely-apply-in-an-adapter.md) — decisions take data and return a description of an outcome; adapters apply it.
+- [0002 — Transient per-player state is owned by the server entry](0002-transient-state-lifetime.md) — the class choice module stays live-free; the entry's runtime owns the transient half.
+- [0003 — Class lookup stays a direct registry call until a second source of classes exists](0003-defer-class-lookup-seam.md) — no lookup interface; a deliberate deferral, reversed by its own trigger.
+- [0004 — Juggernaut inversion (high-HP rewards) and root-to-sound swap](0004-juggernaut-inversion.md) — Fury→Vigor (current HP), Bulwark→Momentum (hit-dealt); heals help instead of cooling.
+- [0005 — Hit gating, stack storage, and trigger-scan seams](0005-hit-gating-stack-seams.md) — the entry never compares ability ids to gate rewards; gating stays in the pure modules.
+- [0006 — Legionary stances plus the universal charged curve and stack gate](0006-legionary-stances-quad-curve.md) — bonus damage is `bonus x charge x charge`; base weapon damage is never touched.
+- [0007 — Melee plan, damage settle, bind morph, and adapter splits](0007-melee-plan-settle-morph-splits.md) — `MeleePlan` decides a hit's earn and settle, `DamageSettle` applies; reopens 0005's bind-morph carve-out.
+- [0008 — Close the six architecture-review seams](0008-review-seam-closures.md) — the second review's six seams close: cooldown lanes stay the runtime's implementation, Rend lands through the shared announce path.
+- [0009 — Oath dispatch stays in the server entry](0009-oath-dispatch-stays-in-entry.md) — the three-way switch stays; `BindMorph` decides what a reused bind means and the entry maps it. *(point 3 superseded by 0026)*
+- [0010 — Pay the flip, not the camp (switch buffs + Aequilibrium)](0010-switch-buffs-aequilibrium.md) — stances nerfed at half tax; `Impetus`/`Testudo` move to flip buffs off one flip record.
+- [0011 — Fold the stance adapter and the flip holders home](0011-fold-stance-and-flip-holders.md) — stance application becomes private to `PassiveApplier`; reopens 0007.3 for the stance case only.
+- [0012 — The mod owns crits and chance enters decisions as data](0012-mod-owns-crits.md) — vanilla crits retired for players; chance arrives as data.
+- [0013 — Deepen the review's remaining seams](0013-deepen-review-seams.md) — actives carry their ability ids; one ability-outcome envelope. *(point 2 superseded by 0024)*
+- [0014 — The status HUD returns as the slot strip](0014-status-hud-slot-strip.md) — one vertical strip of slot-style chips. *(superseded by 0017, then 0019)*
+- [0015 — Re-cut the wheel with no healing](0015-wheel-recut-no-heal.md) — the heal path is deleted, not disabled; six bands, odds re-cut.
+- [0016 — The ultimate's own bind — Signature R, Ultimate V](0016-ultimate-bind-slots.md) — two binds by slot; the morph keeps its matrix, changes its vocabulary.
+- [0017 — The strip reads as pills and the action bar stops echoing the clock](0017-strip-pills-own-the-clock.md) — self-contained pills drawn from the roster. *(superseded by 0018; its silence-on-cooldown and compressed numbers carry on)*
+- [0018 — The strip goes bare — a stack in a screen zone](0018-strip-goes-bare.md) — bare text rows, no fill, no outline, no sprite. *(superseded by 0019)*
+- [0019 — The strip leaves the build](0019-strip-leaves-the-build.md) — the status HUD chain is scrapped pending a later implementation. *(superseded by 0020, then 0021)*
+- [0020 — The ability HUD returns as the left-centre icon stack](0020-ability-hud-returns.md) — an icon row per chip family, anchored left-centre. *(superseded by 0021)*
+- [0021 — The stack speaks words](0021-the-stack-speaks-words.md) — every chip draws its name in Title Case, never keys, then its number. *(point 7's change-point carry superseded by 0022)*
+- [0022 — One steady-state emission point](0022-one-steady-state-emission-point.md) — the server tick's rebuild-and-compare carries every emission; post-branch sends die.
+- [0023 — The roster row carries the stack's view](0023-roster-carries-the-stack-view.md) — a row carries its lane read plus rider rules. *(point 1's `View` and point 2's ultimate-bind sentence revised by 0025 and 0026)*
+- [0024 — One silent reject](0024-one-silent-reject.md) — a rejected press says nothing, grants nothing, arms nothing (`AbilityOutcome.rejected()`).
+- [0025 — The lane is the key](0025-the-lane-is-the-key.md) — `Lane` owns the cooldown lengths; cooldowns, windows, payload and roster share one lane-keyed vocabulary.
+- [0026 — The ultimate is not lent](0026-the-ultimate-is-not-lent.md) — each target names the ability it fires; one walk of the class's own actives.
