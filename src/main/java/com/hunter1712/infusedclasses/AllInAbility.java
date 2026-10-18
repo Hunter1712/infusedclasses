@@ -36,7 +36,7 @@ public final class AllInAbility {
 			return AbilityOutcome.rejected();
 		}
 		if (allInRemaining > 0) {
-			return AbilityOutcome.onCooldown(allInRemaining);
+			return AbilityOutcome.rejected();
 		}
 		return AbilityOutcome.fired(new ChatLine(NAME + "!", ChatFormatting.GOLD));
 	}

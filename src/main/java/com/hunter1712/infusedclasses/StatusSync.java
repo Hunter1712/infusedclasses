@@ -22,9 +22,9 @@ public final class StatusSync {
 	private StatusSync() {
 	}
 
-	/** Rebuilds the snapshot and sends it only when anything discrete moved since the last send. */
-	public static void maybeSend(ServerPlayer player, long now) {
-		PlayerStatusPayload snapshot = snapshot(player, now);
+	/** Rebuilds the snapshot from the already-resolved class and sends it only when anything discrete moved since the last send. */
+	public static void maybeSend(ServerPlayer player, ClassDefinition def, PlayerRuntime runtime, long now) {
+		PlayerStatusPayload snapshot = snapshot(def, runtime, now);
 		PlayerStatusPayload prev = lastSent.get(player.getUUID());
 		if (!snapshot.movedSince(prev)) {
 			return;
@@ -35,7 +35,9 @@ public final class StatusSync {
 
 	/** Join and respawn: one snapshot unconditionally, so the client starts from a known state. */
 	public static void sendNow(ServerPlayer player, long now) {
-		PlayerStatusPayload snapshot = snapshot(player, now);
+		ClassDefinition def = PlayerClassAccess.of(player).currentDefinition();
+		// A classless player materialises no runtime: the empty shape is the truth.
+		PlayerStatusPayload snapshot = snapshot(def, def == null ? null : InfusedClasses.runtime(player), now);
 		lastSent.put(player.getUUID(), snapshot);
 		ServerPlayNetworking.send(player, snapshot);
 	}
@@ -45,11 +47,8 @@ public final class StatusSync {
 		lastSent.remove(id);
 	}
 
-	/** The snapshot at now: a classed player reads its runtime; a classless one is the empty shape, no state at all. */
-	private static PlayerStatusPayload snapshot(ServerPlayer player, long now) {
-		ClassDefinition def = PlayerClassAccess.of(player).currentDefinition();
-		return def == null
-				? PlayerStatusPayload.classless()
-				: PlayerStatusPayload.of(def.id(), InfusedClasses.runtime(player), now);
+	/** The snapshot rule in one place: a classless player is the empty shape, no runtime read. */
+	private static PlayerStatusPayload snapshot(ClassDefinition def, PlayerRuntime runtime, long now) {
+		return def == null ? PlayerStatusPayload.classless() : PlayerStatusPayload.of(def, runtime, now);
 	}
 }

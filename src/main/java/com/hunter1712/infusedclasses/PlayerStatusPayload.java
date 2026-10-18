@@ -8,6 +8,7 @@ import net.minecraft.resources.Identifier;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.Function;
+import java.util.function.ToLongFunction;
 
 /**
  * One player's whole status stack as a single value: the snapshot decision and the wire
@@ -24,9 +25,10 @@ import java.util.function.Function;
  * a respawn and a join all read as moves.
  *
  * <p>The empty class id is a state, not an absence: a classless join sends one so the
- * client hides the stack by fact. A class id the registry does not know still travels
- * verbatim; only a missing choice reads as empty. {@code flipTarget} is the live flip
- * window's landing, the flip record's own read, null when no flip window is live.
+ * client hides the stack by fact. The id is always the resolved definition's own — the
+ * registry lookup happens once, before the snapshot, so an unknown stored id has already
+ * collapsed to no class. {@code flipTarget} is the live flip window's landing, the flip
+ * record's own read, null when no flip window is live.
  */
 public record PlayerStatusPayload(
 		String classId,
@@ -67,15 +69,60 @@ public record PlayerStatusPayload(
 	/** A fresh runtime's truth: what "no state" reads as. One shared value; nothing mutates it. */
 	private static final PlayerRuntime.State NO_STATE = new PlayerRuntime().state(0L);
 
-	/** How a field's change reads: decaying remainders compare armed-or-not, discrete facts by equality. */
-	private enum Move {
-		ARMED,
-		EXACT,
-		IGNORED
+	/**
+	 * One snapshot field: its value, whether a change in it is movement worth a packet,
+	 * and how it leaves one. The kind is a type, never a flag: a row's compare rule and
+	 * its value always come from the same declaration.
+	 */
+	private interface Field {
+		/** The field's value on a payload. */
+		Object value(PlayerStatusPayload payload);
+
+		boolean moved(PlayerStatusPayload self, PlayerStatusPayload prev);
+
+		/** Writes the field's value; the table's shared encode path. */
+		default void write(FriendlyByteBuf buf, PlayerStatusPayload payload) {
+			writeValue(buf, value(payload));
+		}
 	}
 
-	/** One snapshot field: how it leaves a payload, and whether a move in it wakes the client. */
-	private record Field<T>(Function<PlayerStatusPayload, T> get, Move move) {
+	/** A decaying remainder: compared armed-or-not at one clock, never by the raw number. */
+	private record ArmedField(ToLongFunction<PlayerStatusPayload> get) implements Field {
+		@Override
+		public Object value(PlayerStatusPayload payload) {
+			return get.applyAsLong(payload);
+		}
+
+		@Override
+		public boolean moved(PlayerStatusPayload self, PlayerStatusPayload prev) {
+			return armed(get.applyAsLong(self)) != armed(get.applyAsLong(prev));
+		}
+	}
+
+	/** A discrete fact: compared by equality. */
+	private record ExactField<T>(Function<PlayerStatusPayload, T> get) implements Field {
+		@Override
+		public Object value(PlayerStatusPayload payload) {
+			return get.apply(payload);
+		}
+
+		@Override
+		public boolean moved(PlayerStatusPayload self, PlayerStatusPayload prev) {
+			return !Objects.equals(get.apply(self), get.apply(prev));
+		}
+	}
+
+	/** Derived from another field: written, never compared — the stamp is compared, its remainder is not. */
+	private record IgnoredField<T>(Function<PlayerStatusPayload, T> get) implements Field {
+		@Override
+		public Object value(PlayerStatusPayload payload) {
+			return get.apply(payload);
+		}
+
+		@Override
+		public boolean moved(PlayerStatusPayload self, PlayerStatusPayload prev) {
+			return false;
+		}
 	}
 
 	/**
@@ -85,43 +132,43 @@ public record PlayerStatusPayload(
 	 * two orders to each other. The Momentum grace <em>remainder</em> is the one ignored
 	 * field: it derives from the stamp, which is compared.
 	 */
-	private static final List<Field<?>> FIELDS = List.of(
-			new Field<>(PlayerStatusPayload::classId, Move.EXACT),
-			new Field<>(PlayerStatusPayload::rushRemainingMs, Move.ARMED),
-			new Field<>(PlayerStatusPayload::rendRemainingMs, Move.ARMED),
-			new Field<>(PlayerStatusPayload::rotateRemainingMs, Move.ARMED),
-			new Field<>(PlayerStatusPayload::oathRemainingMs, Move.ARMED),
-			new Field<>(PlayerStatusPayload::rouletteRemainingMs, Move.ARMED),
-			new Field<>(PlayerStatusPayload::allInRemainingMs, Move.ARMED),
-			new Field<>(PlayerStatusPayload::rushWindowRemainingMs, Move.ARMED),
-			new Field<>(PlayerStatusPayload::rushBonusPending, Move.EXACT),
-			new Field<>(PlayerStatusPayload::rendWindowRemainingMs, Move.ARMED),
-			new Field<>(PlayerStatusPayload::rendBonusPending, Move.EXACT),
-			new Field<>(PlayerStatusPayload::flipWindowRemainingMs, Move.ARMED),
-			new Field<>(PlayerStatusPayload::flipTarget, Move.EXACT),
-			new Field<>(PlayerStatusPayload::impetusPending, Move.EXACT),
-			new Field<>(PlayerStatusPayload::rouletteWindowRemainingMs, Move.ARMED),
-			new Field<>(PlayerStatusPayload::rouletteOutcome, Move.EXACT),
-			new Field<>(PlayerStatusPayload::aequilibriumWindowRemainingMs, Move.ARMED),
-			new Field<>(PlayerStatusPayload::allInWindowRemainingMs, Move.ARMED),
-			new Field<>(PlayerStatusPayload::momentumStacks, Move.EXACT),
-			new Field<>(PlayerStatusPayload::momentumGraceRemainingMs, Move.IGNORED),
-			new Field<>(PlayerStatusPayload::momentumGraceStampMs, Move.EXACT),
-			new Field<>(PlayerStatusPayload::stance, Move.EXACT),
-			new Field<>(PlayerStatusPayload::streak, Move.EXACT));
+	private static final List<Field> FIELDS = List.of(
+			new ExactField<>(PlayerStatusPayload::classId),
+			new ArmedField(PlayerStatusPayload::rushRemainingMs),
+			new ArmedField(PlayerStatusPayload::rendRemainingMs),
+			new ArmedField(PlayerStatusPayload::rotateRemainingMs),
+			new ArmedField(PlayerStatusPayload::oathRemainingMs),
+			new ArmedField(PlayerStatusPayload::rouletteRemainingMs),
+			new ArmedField(PlayerStatusPayload::allInRemainingMs),
+			new ArmedField(PlayerStatusPayload::rushWindowRemainingMs),
+			new ExactField<>(PlayerStatusPayload::rushBonusPending),
+			new ArmedField(PlayerStatusPayload::rendWindowRemainingMs),
+			new ExactField<>(PlayerStatusPayload::rendBonusPending),
+			new ArmedField(PlayerStatusPayload::flipWindowRemainingMs),
+			new ExactField<>(PlayerStatusPayload::flipTarget),
+			new ExactField<>(PlayerStatusPayload::impetusPending),
+			new ArmedField(PlayerStatusPayload::rouletteWindowRemainingMs),
+			new ExactField<>(PlayerStatusPayload::rouletteOutcome),
+			new ArmedField(PlayerStatusPayload::aequilibriumWindowRemainingMs),
+			new ArmedField(PlayerStatusPayload::allInWindowRemainingMs),
+			new ExactField<>(PlayerStatusPayload::momentumStacks),
+			new IgnoredField<>(PlayerStatusPayload::momentumGraceRemainingMs),
+			new ExactField<>(PlayerStatusPayload::momentumGraceStampMs),
+			new ExactField<>(PlayerStatusPayload::stance),
+			new ExactField<>(PlayerStatusPayload::streak));
 
 	/**
 	 * The snapshot at {@code now}: one runtime state read behind every lane and window
-	 * field, the two derived ones documented on the record. The {@code runtime} is null
-	 * only for a classless player, whose reads all come from {@link #NO_STATE}. A missing
-	 * class reads as the empty class id with every lane and window untouched.
+	 * field, the two derived ones documented on the record. The definition arrives
+	 * already resolved — this never touches the registry — and is null only for a
+	 * classless player, whose reads all come from {@link #NO_STATE} and whose class id
+	 * reads empty.
 	 */
-	public static PlayerStatusPayload of(Identifier classId, PlayerRuntime runtime, long now) {
-		ClassDefinition def = ClassRegistry.byId(classId);
+	public static PlayerStatusPayload of(ClassDefinition def, PlayerRuntime runtime, long now) {
 		ConditionalPassive momentum = def == null ? null : def.passiveForTrigger(ConditionalPassive.ON_HIT_DEALT);
 		PlayerRuntime.State state = runtime == null ? NO_STATE : runtime.state(now);
 		return new PlayerStatusPayload(
-				classId == null ? "" : classId.toString(),
+				def == null ? "" : def.id().toString(),
 				state.rushRemaining(),
 				state.rendRemaining(),
 				state.rotateRemaining(),
@@ -164,15 +211,8 @@ public record PlayerStatusPayload(
 		if (prev == null) {
 			return true;
 		}
-		for (Field<?> field : FIELDS) {
-			Object now = field.get().apply(this);
-			Object was = field.get().apply(prev);
-			boolean moved = switch (field.move()) {
-				case ARMED -> armed((Long) now) != armed((Long) was);
-				case EXACT -> !Objects.equals(now, was);
-				case IGNORED -> false;
-			};
-			if (moved) {
+		for (Field field : FIELDS) {
+			if (field.moved(this, prev)) {
 				return true;
 			}
 		}
@@ -185,8 +225,8 @@ public record PlayerStatusPayload(
 
 	/** Encodes in table order; the nullable enums travel as an empty name, decoded back to null. */
 	private static void encode(FriendlyByteBuf buf, PlayerStatusPayload p) {
-		for (Field<?> field : FIELDS) {
-			writeValue(buf, field.get().apply(p));
+		for (Field field : FIELDS) {
+			field.write(buf, p);
 		}
 	}
 

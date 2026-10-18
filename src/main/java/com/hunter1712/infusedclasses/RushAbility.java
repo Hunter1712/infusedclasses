@@ -49,7 +49,7 @@ public final class RushAbility {
 			return AbilityOutcome.rejected();
 		}
 		if (rushRemaining > 0) {
-			return AbilityOutcome.onCooldown(rushRemaining);
+			return AbilityOutcome.rejected();
 		}
 		return AbilityOutcome.fired(new ChatLine(NAME + "!", ChatFormatting.YELLOW));
 	}

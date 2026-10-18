@@ -81,12 +81,8 @@ public final class RouletteAbility {
 			return new Result(AbilityOutcome.fired(new ChatLine(band.label() + "!", null)), band);
 		}
 
-		public static Result wrongClass() {
+		public static Result rejected() {
 			return new Result(AbilityOutcome.rejected(), null);
-		}
-
-		public static Result onCooldown(long remainingMs) {
-			return new Result(AbilityOutcome.onCooldown(remainingMs), null);
 		}
 	}
 
@@ -140,10 +136,10 @@ public final class RouletteAbility {
 	 */
 	public static Result trigger(ClassDefinition def, long rouletteRemaining, float roll) {
 		if (def == null || !def.hasAbility(ClassRegistry.ROULETTE_ABILITY)) {
-			return Result.wrongClass();
+			return Result.rejected();
 		}
 		if (rouletteRemaining > 0) {
-			return Result.onCooldown(rouletteRemaining);
+			return Result.rejected();
 		}
 		return Result.fired(outcomeFor(roll));
 	}

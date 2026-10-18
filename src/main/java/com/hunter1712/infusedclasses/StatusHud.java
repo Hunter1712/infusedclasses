@@ -16,11 +16,12 @@ import java.util.Locale;
  * and never keys — a remapped key cannot make the stack lie, and a name reads without a
  * legend. The words are the owners' own: the {@link AbilityRoster} carries the ability
  * names, the stance its display name, the passive and the crit rule their own. Row order
- * is fixed: the anchored stance (Legionary), the signature row, the
- * ultimate row, then the state rows (Momentum, Streak). Windows ride beside their lane
- * chip as dotted bare numbers — one window per lane, so the number needs no word; the
- * Roulette outcome rider is the one rider that keeps its word, because which band spun
- * is the information. A classless or unknown class id renders no rows at all.
+ * is fixed: the anchored stance (Legionary), the signature row, the ultimate row, then
+ * the state rows (Momentum, Streak). Each lane line is its roster row's: the word, the
+ * countdown, and whatever riders the row's rules draw beside them — usually a dotted bare
+ * window number, since one window per lane needs no word; the Roulette band rider is the
+ * one rider that keeps its word, because which band spun is the information. A classless
+ * or unknown class id renders no rows at all.
  *
  * <p>Countdowns are whole seconds, rounded up, so a live chip never reads zero; a ready
  * lane draws dim with no number and the missing number is what marks it ready.
@@ -55,8 +56,8 @@ public final class StatusHud {
 					? RotateAbility.Stance.SCUTUM : status.stance();
 			rows.add(new Row(List.of(new Chip(stance.displayName(), "", true, false))));
 		}
-		rows.add(signatureRow(status, def, elapsed));
-		rows.add(ultimateRow(status, def, elapsed));
+		rows.add(laneRow(status, signatureLane(def), elapsed));
+		rows.add(laneRow(status, ultimateLane(def), elapsed));
 		ConditionalPassive momentum = def.passiveForTrigger(ConditionalPassive.ON_HIT_DEALT);
 		if (momentum != null && status.momentumStacks() > 0) {
 			rows.add(new Row(List.of(new Chip(momentum.name(), momentumValue(status, elapsed), true, false))));
@@ -69,66 +70,44 @@ public final class StatusHud {
 		return List.copyOf(rows);
 	}
 
-	/** The signature lane plus its riders: the Rush window for Rush, the flip buffs for Rotate, the band for Roulette. */
-	private static Row signatureRow(PlayerStatusPayload status, ClassDefinition def, long elapsed) {
-		List<Chip> chips = new ArrayList<>();
-		if (def.hasAbility(ClassRegistry.RUSH_ABILITY)) {
-			chips.add(lane(AbilityRoster.RUSH.name(), status.rushRemainingMs(), elapsed));
-			// The Rush window's rider counts while the window lives, spent or not: the
-			// loaded bonus draws nothing of its own, the number is the whole story.
-			if (status.rushWindowRemainingMs() > elapsed) {
-				chips.add(rider("", status.rushWindowRemainingMs() - elapsed));
-			}
-		} else if (def.hasAbility(ClassRegistry.ROTATE_ABILITY)) {
-			chips.add(lane(AbilityRoster.ROTATE.name(), status.rotateRemainingMs(), elapsed));
-			// Impetus is one-shot (pending only), so its rider vanishes on the spend;
-			// Testudo is the timed catch, live for its window in scutum.
-			if (status.impetusPending() && status.flipWindowRemainingMs() > elapsed) {
-				chips.add(rider("", status.flipWindowRemainingMs() - elapsed));
-			}
-			if (status.flipTarget() == RotateAbility.Stance.SCUTUM && status.flipWindowRemainingMs() > elapsed) {
-				chips.add(rider("", status.flipWindowRemainingMs() - elapsed));
-			}
-		} else if (def.hasAbility(ClassRegistry.ROULETTE_ABILITY)) {
-			chips.add(lane(AbilityRoster.ROULETTE.name(), status.rouletteRemainingMs(), elapsed));
-			RouletteAbility.Outcome outcome = status.rouletteOutcome();
-			if (showsOutcome(outcome) && status.rouletteWindowRemainingMs() > elapsed) {
-				chips.add(rider(outcome.label(), status.rouletteWindowRemainingMs() - elapsed));
-			}
-		}
-		return new Row(List.copyOf(chips));
+	/** The class-shape pick: which roster row the signature slot draws, null when the class carries none. */
+	private static AbilityRoster.Row signatureLane(ClassDefinition def) {
+		return firstCarried(def, AbilityRoster.RUSH, AbilityRoster.ROTATE, AbilityRoster.ROULETTE);
 	}
 
-	/** The ultimate lane plus its rider: the bare Rend bonus count, the oath for AEQ, the window for All In. */
-	private static Row ultimateRow(PlayerStatusPayload status, ClassDefinition def, long elapsed) {
-		List<Chip> chips = new ArrayList<>();
-		if (def.hasAbility(ClassRegistry.REND_ABILITY)) {
-			chips.add(lane(AbilityRoster.REND.name(), status.rendRemainingMs(), elapsed));
-			// Countdown-only: the Rend rider exists exactly while its next-hit
-			// snapshot is unspent, so it vanishes on the settle instead of counting on.
-			if (status.rendBonusPending() && status.rendWindowRemainingMs() > elapsed) {
-				chips.add(rider("", status.rendWindowRemainingMs() - elapsed));
-			}
-		} else if (def.hasAbility(ClassRegistry.AEQUILIBRIUM_ABILITY)) {
-			chips.add(lane(AbilityRoster.AEQUILIBRIUM.name(), status.oathRemainingMs(), elapsed));
-			if (status.aequilibriumWindowRemainingMs() > elapsed) {
-				chips.add(rider("", status.aequilibriumWindowRemainingMs() - elapsed));
-			}
-		} else if (def.hasAbility(ClassRegistry.ALL_IN_ABILITY)) {
-			chips.add(lane(AbilityRoster.ALL_IN.name(), status.allInRemainingMs(), elapsed));
-			if (status.allInWindowRemainingMs() > elapsed) {
-				chips.add(rider("", status.allInWindowRemainingMs() - elapsed));
+	/** The class-shape pick: which roster row the ultimate slot draws, null when the class carries none. */
+	private static AbilityRoster.Row ultimateLane(ClassDefinition def) {
+		return firstCarried(def, AbilityRoster.REND, AbilityRoster.AEQUILIBRIUM, AbilityRoster.ALL_IN);
+	}
+
+	/** The first of these rows whose ability the class carries, null when it carries none of them. */
+	private static AbilityRoster.Row firstCarried(ClassDefinition def, AbilityRoster.Row... rows) {
+		for (AbilityRoster.Row row : rows) {
+			if (def.hasAbility(row.ability())) {
+				return row;
 			}
 		}
-		return new Row(List.copyOf(chips));
+		return null;
 	}
 
 	/**
-	 * Whether an outcome draws its rider. Zero is the dead band, so it draws nothing;
-	 * every other band grants something while its window lives.
+	 * One lane line, drawn from the row itself: the word and its countdown, then every
+	 * rider the row's rules say draws — each with its own window countdown, bare unless
+	 * the rule carries a word.
 	 */
-	private static boolean showsOutcome(RouletteAbility.Outcome outcome) {
-		return outcome != null && outcome != RouletteAbility.Outcome.ZERO;
+	private static Row laneRow(PlayerStatusPayload status, AbilityRoster.Row row, long elapsed) {
+		if (row == null) {
+			return new Row(List.of());
+		}
+		List<Chip> chips = new ArrayList<>();
+		chips.add(lane(row.name(), row.view().laneRemaining().applyAsLong(status), elapsed));
+		for (AbilityRoster.Rider rider : row.view().riders()) {
+			long remaining = rider.remaining().applyAsLong(status);
+			if (rider.wanted().test(status) && remaining > elapsed) {
+				chips.add(rider(rider.label().apply(status), remaining - elapsed));
+			}
+		}
+		return new Row(List.copyOf(chips));
 	}
 
 	/**

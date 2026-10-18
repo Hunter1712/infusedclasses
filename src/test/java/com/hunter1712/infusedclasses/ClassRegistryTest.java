@@ -83,14 +83,6 @@ class ClassRegistryTest {
 	}
 
 	@Test
-	void hitTakenCopyStillReadsAsAHit() {
-		ConditionalPassive guard = new ConditionalPassive("Guard", ConditionalPassive.ON_HIT_TAKEN, 20,
-				ClassRegistry.ARMOR, Identifier.fromNamespaceAndPath("infusedclasses", "guard_armor"), 0.5, 5);
-
-		assertEquals("Take a hit: +0.5 armor (max 20). 5s no hit: lose all.", guard.fullDesc());
-	}
-
-	@Test
 	void playerClassIdRoundTripsThroughString() {
 		PlayerClasses classes = new PlayerClasses();
 

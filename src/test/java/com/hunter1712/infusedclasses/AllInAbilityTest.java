@@ -53,7 +53,7 @@ class AllInAbilityTest {
 		AbilityOutcome second = AllInAbility.fire(gambler(), runtime, 40_000);
 
 		assertFalse(second.fired());
-		assertEquals(Cooldowns.ALL_IN_MS - 39_000, second.remainingMs());
+		assertNull(second.announcement());
 		// The first window is long gone; the reject did not restamp it.
 		assertFalse(runtime.state(40_000).allInWindowRemaining() > 0);
 	}

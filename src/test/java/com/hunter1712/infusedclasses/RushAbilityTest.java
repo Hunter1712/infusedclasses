@@ -45,13 +45,12 @@ class RushAbilityTest {
 	}
 
 	@Test
-	void onCooldownReportsRemainingAndArmsNothing() {
+	void aPressWhileOnCooldownIsSilentAndArmsNothing() {
 		PlayerRuntime runtime = new PlayerRuntime();
 		RushAbility.fire(juggernaut(), runtime, 1_000);
 		AbilityOutcome second = RushAbility.fire(juggernaut(), runtime, 11_000);
 
 		assertFalse(second.fired());
-		assertEquals(15_000, second.remainingMs());
 		assertNull(second.announcement());
 		assertEquals(15_000, runtime.state(11_000).rushRemaining());
 		assertEquals(0, runtime.state(11_000).rendRemaining());

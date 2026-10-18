@@ -61,7 +61,7 @@ public final class AequilibriumAbility {
 			return AbilityOutcome.rejected();
 		}
 		if (oathRemaining > 0) {
-			return AbilityOutcome.onCooldown(oathRemaining);
+			return AbilityOutcome.rejected();
 		}
 		return AbilityOutcome.fired(new ChatLine(NAME + "!", ChatFormatting.GOLD));
 	}

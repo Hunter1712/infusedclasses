@@ -84,7 +84,7 @@ final class ServerEvents {
 				PassiveApplier.apply(player, def, runtime, now);
 				// The one steady-state emission point: a tick that moved a lane, a window
 				// or a stack tells the client; a quiet tick rebuilds and compares for free.
-				StatusSync.maybeSend(player, now);
+				StatusSync.maybeSend(player, def, runtime, now);
 			}
 		});
 	}

@@ -122,7 +122,7 @@ class RouletteAbilityTest {
 		RouletteAbility.Result second = RouletteAbility.fire(gambler(), runtime, 1_001, 0.5F);
 
 		assertFalse(second.outcome().fired());
-		assertEquals(Cooldowns.ROULETTE_MS - 1, second.outcome().remainingMs());
+		assertNull(second.outcome().announcement());
 		assertNull(second.band());
 		// Nothing was re-stamped: the first spin's outcome still stands.
 		assertEquals(RouletteAbility.Outcome.EDGE, runtime.state(1_001).rouletteOutcome());

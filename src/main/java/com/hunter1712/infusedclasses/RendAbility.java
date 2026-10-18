@@ -31,13 +31,8 @@ public final class RendAbility {
 			return new Result(AbilityOutcome.fired(new ChatLine(NAME + "!", ChatFormatting.RED)), true);
 		}
 
-		public static Result wrongClass() {
+		public static Result rejected() {
 			return new Result(AbilityOutcome.rejected(), false);
-		}
-
-		public static Result onCooldown(long remainingMs) {
-			// Unstyled on purpose: this line has never carried a colour of its own.
-			return new Result(AbilityOutcome.onCooldown(remainingMs), false);
 		}
 
 		public static Result noMomentum() {
@@ -66,13 +61,13 @@ public final class RendAbility {
 	/** Decides firing for Juggernauts off cooldown holding stacks. Zero stacks fizzles before the cooldown is even read. Pure and read-only: only {@link #fire} arms the cooldown. */
 	public static Result trigger(ClassDefinition def, long rendRemaining, int stacks) {
 		if (def == null || !def.hasAbility(ClassRegistry.REND_ABILITY)) {
-			return Result.wrongClass();
+			return Result.rejected();
 		}
 		if (stacks <= 0) {
 			return Result.noMomentum();
 		}
 		if (rendRemaining > 0) {
-			return Result.onCooldown(rendRemaining);
+			return Result.rejected();
 		}
 		return Result.fired();
 	}

@@ -85,12 +85,8 @@ public final class RotateAbility {
 			return new Result(AbilityOutcome.fired(new ChatLine(stance.displayName() + "!", style)), stance);
 		}
 
-		public static Result wrongClass() {
+		public static Result rejected() {
 			return new Result(AbilityOutcome.rejected(), null);
-		}
-
-		public static Result onCooldown(long remainingMs) {
-			return new Result(AbilityOutcome.onCooldown(remainingMs), null);
 		}
 	}
 
@@ -161,10 +157,10 @@ public final class RotateAbility {
 	/** Decides flipping for Legionaries off the rotate lock. Never fizzles on stance. Pure and read-only: only {@link #fire} arms the lane and flips. */
 	public static Result trigger(ClassDefinition def, long rotateRemaining, Stance current) {
 		if (def == null || !def.hasAbility(ClassRegistry.ROTATE_ABILITY)) {
-			return Result.wrongClass();
+			return Result.rejected();
 		}
 		if (rotateRemaining > 0) {
-			return Result.onCooldown(rotateRemaining);
+			return Result.rejected();
 		}
 		return Result.fired(flipped(current));
 	}

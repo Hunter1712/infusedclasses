@@ -128,7 +128,7 @@ class RendAbilityTest {
 		RendAbility.Result second = RendAbility.fire(juggernautDef(), runtime, 16_000);
 
 		assertFalse(second.outcome().fired());
-		assertEquals(45_000, second.outcome().remainingMs());
+		assertNull(second.outcome().announcement());
 		assertEquals(45_000, runtime.state(16_000).rendRemaining());
 	}
 

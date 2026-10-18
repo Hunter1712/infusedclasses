@@ -1,6 +1,6 @@
 # ADR-0013: Deepen the review's remaining seams
 
-Status: accepted
+Status: accepted (point 2's cooldown remainder and its `onCooldown` factory are superseded by ADR-0024)
 
 ## Context
 
@@ -53,8 +53,9 @@ a fallback.
   change.
 - The registry cannot drift a gated id from its card row; `hasAbility` reads the
   one list.
-- Call sites ask one `fired()` question; the cooldown remainder stays a field, so
-  tests still pin the clock line without a player.
+- Call sites ask one `fired()` question; a wrong class and a cooling lane return
+  the same silent reject — the cooldown remainder folded away with ADR-0024, and
+  tests pin the lane's clock from the runtime instead.
 - Switch entries cannot sequence differently; callers keep only their own extra.
 - Window reads cannot re-state a duration, and a flip's window follows its landing
   stance.

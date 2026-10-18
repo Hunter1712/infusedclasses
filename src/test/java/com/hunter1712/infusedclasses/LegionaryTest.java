@@ -158,9 +158,10 @@ class LegionaryTest {
 		gladius.flipStance(0, RotateAbility.Stance.GLADIUS);
 		assertTrue(AequilibriumAbility.fire(legionary(), gladius, 0).fired());
 
-		AbilityOutcome onCooldown = AequilibriumAbility.fire(legionary(), scutum, 1_000);
-		assertFalse(onCooldown.fired());
-		assertEquals(Cooldowns.OATH_MS - 1_000, onCooldown.remainingMs());
+		AbilityOutcome rejected = AequilibriumAbility.fire(legionary(), scutum, 1_000);
+		assertFalse(rejected.fired());
+		assertNull(rejected.announcement());
+		assertEquals(Cooldowns.OATH_MS - 1_000, scutum.state(1_000).oathRemaining());
 	}
 
 	@Test

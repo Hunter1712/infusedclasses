@@ -24,9 +24,7 @@ public record ConditionalPassive(
 		double perStack,
 		int graceSeconds
 ) {
-	/** A hit-taken trigger: any passive on this trigger earns a stack per hit taken. One constant, so a rename cannot go silently inert. */
-	public static final String ON_HIT_TAKEN = "on_hit_taken";
-	/** The trigger the Juggernaut feeds by landing a hit. Same guarantee as the hit-taken one. */
+	/** The trigger the Juggernaut feeds by landing a hit. One constant, so a rename cannot go silently inert. */
 	public static final String ON_HIT_DEALT = "on_hit_dealt";
 	/** Short picker copy. Generated from the numbers so it cannot drift from behaviour. */
 	public String fullDesc() {
@@ -46,7 +44,6 @@ public record ConditionalPassive(
 
 	private TriggerPhrasing phrasing() {
 		return switch (trigger) {
-			case ON_HIT_TAKEN -> new TriggerPhrasing("Take a hit", "no hit");
 			case ON_HIT_DEALT -> new TriggerPhrasing("Land a hit", "no hit");
 			default -> new TriggerPhrasing("Trigger", "no trigger");
 		};

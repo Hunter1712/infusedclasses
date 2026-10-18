@@ -48,10 +48,10 @@ the announce.
 _Avoid_: aura group, modifier set, buff family
 
 **Ability outcome** (`AbilityOutcome`):
-The shared envelope every ability decision returns: whether the press fired, the
-announcement that goes with it, and the machine-readable remainder when a lane was on
-cooldown. `fired`, `rejected` (silent), `fizzled` (says its line, no cast) and
-`onCooldown` are the four factories. An ability with a payload wraps the envelope in its
+The shared envelope every ability decision returns: whether the press fired and the
+announcement that goes with it. `fired`, `rejected` (silent — a wrong class and a lane
+still cooling down are the same shape) and `fizzled` (says its line, no cast) are the
+three factories. An ability with a payload wraps the envelope in its
 own `Result` record instead of widening it: Rotate's landed stance, Roulette's band,
 Rend's consume flag. The Rend window's amount is not part of any of them: the fire stamps the
 stack count on the runtime, and hit time recomputes the amount from it.
@@ -62,8 +62,9 @@ _Avoid_: applied outcome, ability result (both name the wrapper), buff
 **Ability applier** (`AbilityApplier`):
 The shared adapter seams every ability outcome and class-choice outcome passes through: the announcement
 on the action bar (abilities, rotate) or chat (class-choice), plus the cast fanfare (`playCast`) for fired abilities. Effect and sound ids resolve
-at their single use sites — Rush's speed stat in its own adapter, the cast sound in the
-fanfare itself — never behind shared lookups with one caller each. A result with nothing to grant and nothing
+at their single use sites — the Rush window's speed modifier in its own module
+(`RushAbility.SPEED`), the cast sound in the fanfare itself — never behind shared
+lookups with one caller each. A result with nothing to grant and nothing
 to say — a wrong-class, on-cooldown or no-stacks press — lands nothing.
 A fired-or-fizzle press lands through `announceAndCast` alone — Rotate with no
 sound (it carries no cast sound, so it announces without fanfare); only Rush keeps its own
@@ -74,19 +75,23 @@ _Avoid_: ability system, effect handler
 **Ability roster** (`AbilityRoster`):
 The one table of the abilities the mod fires: a row per ability carrying the id that gates it,
 its Title Case word (the ability module's own `NAME`), the lane read over the runtime state,
+the stack's view of it — the payload lane read plus the rider rules that draw beside the lane —
 and the slot binds it answers. `/class info` draws a lane line per row the class carries, the
-HUD's rows decision takes its ability words from the rows, and `BindMorph` resolves what a
-reused slot means by walking the class's actives through the rows (the first row that answers
-wins), so a word, a lane read or a bind cannot drift between the consumers. The ultimate keys
-on the `ROTATE` row (ADR-0009): the Aequilibrium row carries a word and a lane read, no bind.
-A new ability adds a row; a test pins that every registered active id has one.
+HUD's rows decision draws each lane line, word and countdown and riders included, from the row
+(the class-shape pick of which row is the signature or the ultimate stays in the rows
+decision), and `BindMorph` resolves what a reused slot means by walking the class's actives
+through the rows (the first row that answers wins), so a word, a lane read, a rider rule or a
+bind cannot drift between the consumers. The ultimate keys on the `ROTATE` row (ADR-0009): the
+Aequilibrium row carries a word and a lane read, no bind. A new ability adds a row; a test
+pins that every registered active id has one.
 _Avoid_: ability list, lane table, ability registry
 
-**Gate-and-arm** (`AbilityGate`):
-The one rule every ability firing shares: a rejected trigger passes through untouched,
-a fired trigger arms its lane, and an arm that somehow fails reports on-cooldown instead
-of a fire it did not earn. Abilities keep their own numbers, chat lines and windows;
-this owns only the fallback.
+**Gate-and-arm**:
+The shape every ability firing shares, per module: `trigger` gates read-only, `fire`
+gates and arms the transient runtime's lane together, so no caller can fire without
+arming and a rejected press leaves the lane untouched. The arm reads the same lane and
+`now` the trigger just checked, so it cannot fail. Abilities keep their own numbers,
+chat lines and windows.
 _Avoid_: fire helper, trigger wrapper
 
 **Chat line** (`ChatLine`):
@@ -105,9 +110,8 @@ cannot drift from behaviour. Every detail line shows name plus short copy
 (`Land a hit: +0.4 armor (max 20). 5s no hit: lose all.`).
 Copy stays short on purpose: every active desc holds at most 200 chars, pinned by
 test, so full kits fit the focused card with little scroll.
-The two triggers the mod emits are described as events ("Land a hit"
-for `on_hit_dealt`, "Take a hit" for `on_hit_taken`);
-any other trigger reads as the bare `Trigger`. Whole numbers read
+The one trigger the mod emits is described as the event it is ("Land a hit"
+for `on_hit_dealt`); any other trigger reads as the bare `Trigger`. Whole numbers read
 as `1`, not `1.0`.
 _Avoid_: description, lore text
 
@@ -190,7 +194,7 @@ for class switch and respawn. The lanes ride one map behind a private lane enum,
 so a fifth lane adds a value rather than a field; callers and tests cross the
 per-lane verbs, never the map. The Rush window rides on the transient runtime next to
 the lanes: a fired Rush stamps the press time plus a one-shot next-hit bonus,
-`hasRushBonusPending` reads it against the 5s window, and switch and respawn clear it with
+`rushBonusPending` on the state reads it against the 5s window, and switch and respawn clear it with
 everything else. Rush and Rend windows are one-shot (the melee plan peeks them,
 its resolve spends them, each bonus landing at most once); Testudo and Aequilibrium
 windows are timed (peeked while live, never consumed).
@@ -604,8 +608,9 @@ _Avoid_: window chip, badge
 **Status snapshot** (`PlayerStatusPayload`):
 The S2C `infusedclasses:player_status` snapshot and wire payload in one: the class id, every
 lane and window remainder, the load flags, Momentum stacks plus grace and the grace stamp, the
-stance, the flip target, Streak and the Roulette outcome. Built only from the transient
-runtime plus a `now`, so it can be asserted without a player. `movedSince` is the emission
+stance, the flip target, Streak and the Roulette outcome. Built from the resolved class
+definition and the transient runtime at a `now`, so it can be asserted without a player — the
+builder never touches the registry, and a missing class is the empty shape. `movedSince` is the emission
 guard: discrete fields only — including the grace stamp, which moves on every re-stamp, so a
 hit at the stack cap still reaches the client — never the raw remainders that decay every
 rebuild. An empty class id is a state, not an absence — a classless join sends one so the
@@ -613,11 +618,12 @@ client hides the stack by fact.
 _Avoid_: state packet, sync payload
 
 **Status sync** (`StatusSync`):
-The emission adapter: one last-sent snapshot per player UUID. `maybeSend` runs at every change
-point — intent receivers after their branch, the melee settle, the server tick after the
-decay pass, an accepted class switch — and sends only when `movedSince` says something moved,
-so a rejected press, a spam swing or a quiet tick costs no packets. `sendNow` forces one
-snapshot on join and respawn (classless included); `forget` drops the entry on logout.
+The emission adapter: one last-sent snapshot per player UUID. `maybeSend` runs in the server
+tick, the one steady-state change point (ADR-0022) — the tick hands it the class and runtime
+it already resolved — and sends only when `movedSince` says something moved, so a rejected
+press, a spam swing or a quiet tick costs no packets and everything else reaches the client
+on the next tick. `sendNow` forces one snapshot on join and respawn (classless included, no
+runtime materialised); `forget` drops the entry on logout.
 _Avoid_: broadcaster, syncer
 
 **Status store** (`StatusStore`):
@@ -742,3 +748,8 @@ emission point: the post-branch sends (both intent receivers, the hit settle, th
 switch) call `maybeSend` no more — a press, a spend, a decay or a switch reaches the client on
 the next tick, at most 50 ms — while join and respawn keep their forced sends and a quiet tick
 still sends nothing.
+`0023` puts the stack's view on the roster: a row carries the payload lane read and its
+rider rules, so the HUD's rows decision keeps only the class-shape pick and a new
+ability adds a row instead of another branch. `0024` folds the cooldown reject into the
+one silent shape: `AbilityOutcome` loses its machine-readable remainder and its
+`onCooldown` factory, and the per-ability `Result` rows keep one `rejected()`.
