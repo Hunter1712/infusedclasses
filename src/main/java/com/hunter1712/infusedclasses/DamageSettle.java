@@ -40,24 +40,26 @@ public final class DamageSettle {
 	/**
 	 * Settles a stance mult on a just-hit entity: over 1.0 lands extra hurt through
 	 * the guarded path (dead targets deal nothing); under 1.0 heals back
-	 * the discount, so the net hit reads as base times mult. Exactly 1.0 touches
-	 * nothing. The single home for stance settle: the entry maps, this applies.
-	 * The source arrives as a supplier so it is only resolved by this adapter, never
-	 * by the entry, whichever side dealt the hit.
+	 * the discount, so the net hit reads as landed times mult. Exactly 1.0 touches
+	 * nothing. The base it scales is what the hit landed after shield and modifier
+	 * reductions, so a blocked hit settles nothing. The single home for stance
+	 * settle: the entry maps, this applies. The source arrives as a supplier so it
+	 * is only resolved by this adapter, never by the entry, whichever side dealt the
+	 * hit.
 	 */
-	public static void settleTake(Entity target, float baseDamageTaken, double mult,
+	public static void settleTake(Entity target, float landedDamage, double mult,
 			Supplier<DamageSource> source) {
 		if (target == null || source == null) {
 			return;
 		}
-		settleWithSource(target, baseDamageTaken, mult, source.get());
+		settleWithSource(target, landedDamage, mult, source.get());
 	}
 
-	private static void settleWithSource(Entity target, float baseDamageTaken, double mult, DamageSource source) {
+	private static void settleWithSource(Entity target, float landedDamage, double mult, DamageSource source) {
 		if (target == null || !target.isAlive() || source == null) {
 			return;
 		}
-		float extra = settleMath(baseDamageTaken, mult);
+		float extra = settleMath(landedDamage, mult);
 		if (extra == 0) {
 			return;
 		}
@@ -70,13 +72,14 @@ public final class DamageSettle {
 
 	/**
 	 * Pure settle math: the extra hurt over 1.0, the healed-back discount under it, nothing at
-	 * exactly 1.0. Decided here so the curve is pinned without a player; adapters apply it.
+	 * exactly 1.0, computed from the landed amount. Decided here so the curve is pinned without
+	 * a player; adapters apply it.
 	 */
-	static float settleMath(float baseDamageTaken, double mult) {
+	static float settleMath(float landedDamage, double mult) {
 		if (mult == 1.0) {
 			return 0;
 		}
-		return (float) (baseDamageTaken * (mult - 1.0));
+		return (float) (landedDamage * (mult - 1.0));
 	}
 
 	/**

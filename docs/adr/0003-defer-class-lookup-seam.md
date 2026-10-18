@@ -42,7 +42,7 @@ What does **not** fire the trigger, as of today:
 - Tests constructing `ClassDefinition`/`ConditionalPassive` directly and handing them to decisions
   (`PassiveEffect`, `PlayerRuntime`, `ClassPresentation`). Those supply data to a decision; they do
   not supply classes to a lookup, and no caller under test looks classes up through them.
-- `/class set <player> <class>` taking a plain string with id suggestions. It selects among
+- `/class set <player> <class>` taking an id with registered-id suggestions. It selects among
   registered ids and validates through `PlayerClasses`; it does not add or provide a class.
 
 ## Consequences

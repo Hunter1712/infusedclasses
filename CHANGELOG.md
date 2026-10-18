@@ -12,8 +12,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - The Momentum grace clock is visible while you keep hitting: a hit at the stack cap re-stamps the grace without moving the count, and the snapshot now carries the grace stamp so that re-stamp reaches the client (it used to run the displayed grace down to `0s` and leave it there mid-combat). The Momentum row also never prints `0s`: a stale snapshot draws bare stacks instead.
+- A hit fully eaten by a raised shield earns nothing and spends nothing: the melee plan takes what the hit actually landed and short-circuits at zero, so blocked swings no longer grant Momentum stacks, Streak movement or Rush's bonus, and no longer consume Impetus or the Rend window. A partially blocked hit still earns, and the stance and crit mults now scale what landed after shield and modifier reductions instead of the pre-shield base.
+- Spear thrusts and mace smashes gate on their own swing: the swing charge gains a second capture at the head of the stab route, because both weapon families damage there and only the spear reaches `onAttack` (after the damage). Momentum, Rush credit, Rend and the dice now read the weapon you are actually swinging, not the last ordinary swing — a held spear thrust at full charge earns like a sword, and poke spam earns nothing.
+- `/class set <player> <class>` accepts the ids the suggestions offer: the argument is vanilla's identifier argument, so `infusedclasses:juggernaut` parses and sets the class, while an unregistered or locked id still answers `Unknown or locked class` and changes nothing.
 
 ### Changed
+- `/class set <player> <class>` takes a namespaced id in practice: like every vanilla command argument, a bare name resolves to the `minecraft` namespace, so type the full id (tab-complete writes it). The commands page says so; the install pages use `./gradlew` and the jar name a build actually produces, and the FAQ points at the chat line the rejected player sees instead of a log that never gets one.
 - Vocabulary sweep (ADR-0021): `stride` and `empower` leave the code — the Rush speed stat is `SPEED_BONUS` at `infusedclasses:rush_speed`, the Rend bonus math is `RendAbility.bonusFor`, the runtime reads are `peekRendBonusStacks`/`consumeRendBonus`, and comments, test names and the prototype speak the Rush window and the Rend window. Rush's picker card now reads `Cleanses harmful effects and quickens you for 5s` (was `quickens stride`).
 
 ### Removed

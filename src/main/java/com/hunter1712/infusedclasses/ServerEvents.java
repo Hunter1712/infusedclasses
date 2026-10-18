@@ -49,14 +49,16 @@ final class ServerEvents {
 			long now = System.currentTimeMillis();
 			// Melee hook, three jobs: stacks, bonuses, stance mults. The plan decides,
 			// adapters apply; this only routes. Settled hurts re-enter this hook
-			// on the same thread, guarded so they grant nothing twice.
+			// on the same thread, guarded so they grant nothing twice. `damageTaken`
+			// is what the hit took after shield and modifier reductions; a hit that
+			// took none earns nothing, so the branches settle from that value only.
 			if (DamageSettle.isResolving()) {
 				return;
 			}
 			// Attacker and victim melee settle below in field order; this only routes.
 			if (source.getEntity() instanceof ServerPlayer attacker && source.getDirectEntity() == attacker
 					&& attacker != entity) {
-				settleAttackerHit(attacker, entity, baseDamageTaken, now);
+				settleAttackerHit(attacker, entity, damageTaken, now);
 			} else if (entity instanceof ServerPlayer victim
 					&& source.getEntity() instanceof net.minecraft.world.entity.LivingEntity mobAttacker
 					&& !(mobAttacker instanceof ServerPlayer)
@@ -66,7 +68,7 @@ final class ServerEvents {
 				// takeFor is 1.0 for non-Legionaries, and the settle is a no-op at 1.0.
 				double take = MeleePlan.takeFor(PlayerClassAccess.of(victim).currentDefinition(),
 						() -> InfusedClasses.runtime(victim), now);
-				DamageSettle.settleTake(victim, baseDamageTaken, take,
+				DamageSettle.settleTake(victim, damageTaken, take,
 						() -> mobAttacker.damageSources().mobAttack(mobAttacker));
 			}
 		});
@@ -81,10 +83,13 @@ final class ServerEvents {
 					continue;
 				}
 				PlayerRuntime runtime = InfusedClasses.runtime(player);
-				PassiveApplier.apply(player, def, runtime, now);
+				// One transient read for the tick: the applier reconciles from it and the
+				// snapshot is rebuilt from it, so a tick reads state once per player.
+				PlayerRuntime.State state = runtime.state(now);
+				PassiveApplier.apply(player, def, runtime, state, now);
 				// The one steady-state emission point: a tick that moved a lane, a window
 				// or a stack tells the client; a quiet tick rebuilds and compares for free.
-				StatusSync.maybeSend(player, def, runtime, now);
+				StatusSync.maybeSend(player, def, runtime, state, now);
 			}
 		});
 	}
@@ -182,14 +187,15 @@ final class ServerEvents {
 	 * verdict's cue, the Rend bonus, the stance/dice settle. The sequence lives behind
 	 * the seam so the hook cannot reorder or half-apply it. A direct melee hit builds
 	 * stacks for any class carrying an on-hit-dealt passive — full swings only, spam
-	 * earns zero — and a full swing inside a live Rush window with its bonus still
-	 * pending lands the engage bonus too. Classless players settle the universal crit
-	 * and nothing else: the entry draws one roll per landed full-charge hit for every
-	 * player, classless included, and sweeps draw per swept target. Self-damage
-	 * excluded by the attacker check, projectiles and spells by the direct check.
+	 * earns zero, and a hit that took no damage earns and spends nothing — and a full
+	 * swing inside a live Rush window with its bonus still pending lands the engage
+	 * bonus too. Classless players settle the universal crit and nothing else: the
+	 * entry draws one roll per landed full-charge hit for every player, classless
+	 * included, and sweeps draw per swept target. Self-damage excluded by the attacker
+	 * check, projectiles and spells by the direct check.
 	 */
 	private static void settleAttackerHit(ServerPlayer attacker, net.minecraft.world.entity.Entity entity,
-			float baseDamageTaken, long now) {
+			float landedDamage, long now) {
 		ClassDefinition atkDef = PlayerClassAccess.of(attacker).currentDefinition();
 		// Classless hits settle the universal dice and cost no transient state (ADR-0005):
 		// the plan and the settle both read a null runtime as "no abilities to move".
@@ -207,7 +213,7 @@ final class ServerEvents {
 				? () -> InfusedClasses.runtime(v2) : null;
 		// The plan resolves the whole hit: it decides in field order and settles the
 		// runtime movements in the same order, returning exactly what this entry lands.
-		MeleePlan.Landed landed = MeleePlan.resolve(atkDef, atkRuntime, victimDef, victimRt, charge, now, roll);
+		MeleePlan.Landed landed = MeleePlan.resolve(atkDef, atkRuntime, victimDef, victimRt, charge, landedDamage, now, roll);
 		// Spam grants zero stacks; the pending bonus waits for a full swing.
 		// Empty bonuses settle as no-ops in the adapter, so no pre-checks here.
 		// The verdict's cue lands once per hit, classless included: a crit replays the
@@ -218,9 +224,10 @@ final class ServerEvents {
 		// what the resolve already settled, never recomputed.
 		DamageSettle.dealBonus(attacker, entity, landed.rendHp());
 		// Stance and dice mults: attacker deal times victim take times the dice mult,
-		// settled at once. Gladius + Impetus reads x1.1 deal, Scutum + Testudo x0.85
-		// take, a crit x1.25: see HitPlan.combined.
-		DamageSettle.settleTake(entity, baseDamageTaken, landed.combined(),
+		// settled at once from what the hit landed. Gladius + Impetus reads x1.1 deal,
+		// Scutum + Testudo x0.85 take, a crit x1.25: see HitPlan.combined. A hit that
+		// took no damage lands 0 x mult, which is nothing.
+		DamageSettle.settleTake(entity, landedDamage, landed.combined(),
 				() -> attacker.damageSources().playerAttack(attacker));
 	}
 }

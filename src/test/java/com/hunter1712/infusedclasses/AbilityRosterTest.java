@@ -96,7 +96,7 @@ class AbilityRosterTest {
 		runtime.arm(Lane.ALL_IN, 0, AllInAbility.WINDOW_TICKS * 50L);
 		long now = 1_000;
 		PlayerRuntime.State state = runtime.state(now);
-		PlayerStatusPayload status = PlayerStatusPayload.of(juggernaut(), runtime, now);
+		PlayerStatusPayload status = PlayerStatusPayload.of(juggernaut(), runtime, state, now);
 
 		for (AbilityRoster.Row row : AbilityRoster.all()) {
 			long fromPayload = row.laneRemaining(status);
@@ -189,6 +189,6 @@ class AbilityRosterTest {
 
 	/** The snapshot a server would send for this runtime; the class does not matter to what rows read. */
 	private static PlayerStatusPayload snapshot(PlayerRuntime runtime) {
-		return PlayerStatusPayload.of(juggernaut(), runtime, 0);
+		return PlayerStatusPayload.of(juggernaut(), runtime, runtime.state(0), 0);
 	}
 }

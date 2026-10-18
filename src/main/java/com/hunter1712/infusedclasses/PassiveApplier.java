@@ -36,11 +36,14 @@ public final class PassiveApplier {
 	 * the HP-scaled pair, then the window-aura families (the stance and its Aequilibrium
 	 * window, the wheel's live spin, the Rush window's speed), in that order; the switch's
 	 * cleanup takes off what {@link #cleanupFor} decides is stale. The tick order and the
-	 * write-only-on-change discipline are decided once. Idempotent: an attribute is only
-	 * written when what is applied differs from what should be, so the modifier is
-	 * created once and left alone while the stacks hold still.
+	 * write-only-on-change discipline are decided once. The caller owns the tick's one
+	 * state read and passes it: decay touches no window or lane, so the read is the same
+	 * before or after it. Idempotent: an attribute is only written when what is applied
+	 * differs from what should be, so the modifier is created once and left alone while
+	 * the stacks hold still.
 	 */
-	public static void apply(ServerPlayer player, ClassDefinition def, PlayerRuntime runtime, long now) {
+	public static void apply(ServerPlayer player, ClassDefinition def, PlayerRuntime runtime,
+			PlayerRuntime.State state, long now) {
 		if (def == null) {
 			return;
 		}
@@ -54,7 +57,7 @@ public final class PassiveApplier {
 		for (HpScaledPassive hp : def.hpPassives()) {
 			settlePlan(player, PassiveEffect.planForBucket(hp, bucket));
 		}
-		reconcileWindows(player, def, runtime.state(now));
+		reconcileWindows(player, def, state);
 	}
 
 	/** One reconcile pass over every family: a held marker writes what its state wants, an absent one wants nothing. */

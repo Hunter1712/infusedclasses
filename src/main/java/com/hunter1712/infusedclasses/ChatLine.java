@@ -15,7 +15,7 @@ public record ChatLine(String text, ChatFormatting style) {
 				abilityName + ": " + String.format(java.util.Locale.ROOT, "%.1fs", remainingMs / 1000.0), null);
 	}
 
-	/** Unknown or locked class rejection: red, action-bar. */
+	/** Unknown or locked class rejection: red, chat. */
 	public static ChatLine unknownOrLocked() {
 		return new ChatLine(InfusedClasses.UNKNOWN_OR_LOCKED, ChatFormatting.RED);
 	}

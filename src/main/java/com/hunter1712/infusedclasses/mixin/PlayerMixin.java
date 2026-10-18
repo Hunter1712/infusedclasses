@@ -4,6 +4,7 @@ import com.hunter1712.infusedclasses.PlayerClassAccess;
 import com.hunter1712.infusedclasses.PlayerClasses;
 import com.hunter1712.infusedclasses.SwingChargeAccess;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.level.storage.ValueOutput;
@@ -21,10 +22,10 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
  * retirement: {@code canCriticalAttack} is the single 1.21.11 gate for the
  * falling-swing x1.5, the crit sound and the crit particles, and this returns false
  * for every player. The swing charge: vanilla zeroes the attack-strength ticker at
- * the top of {@code onAttack}, before the hit lands, so the damage hook would always
- * read zero; this records the value just above that reset. The mixin holds zero
- * policy; the mod's crits live in {@code CritRoll} and settle through the melee hook.
- * Mobs are untouched.
+ * the top of {@code onAttack}, before a normal swing's hit lands, and the stab route
+ * (spear thrusts, mace smashes) damages inside {@code stabAttack} instead, so this
+ * records the ticker above both entry points. The mixin holds zero policy; the mod's
+ * crits live in {@code CritRoll} and settle through the melee hook. Mobs are untouched.
  */
 @Mixin(Player.class)
 public abstract class PlayerMixin implements PlayerClassAccess, SwingChargeAccess {
@@ -62,6 +63,18 @@ public abstract class PlayerMixin implements PlayerClassAccess, SwingChargeAcces
 
 	@Inject(method = "onAttack", at = @At("HEAD"))
 	private void infusedclasses$captureSwingCharge(CallbackInfo ci) {
+		infusedclasses$swingCharge = this.getAttackStrengthScale(0.0F);
+	}
+
+	/**
+	 * The stab route's capture: spear thrusts and mace smashes land through {@code stabAttack}
+	 * before the thrust's own {@code onAttack} call (spears) or without one at all (mace
+	 * smashes), so the hook would read the previous action's charge. Captured at the stab's
+	 * head — the ticker the stab is about to use — both routes read their own swing.
+	 */
+	@Inject(method = "stabAttack", at = @At("HEAD"))
+	private void infusedclasses$captureStabCharge(EquipmentSlot slot, Entity target, float damage,
+			boolean flag1, boolean flag2, boolean flag3, CallbackInfoReturnable<Boolean> cir) {
 		infusedclasses$swingCharge = this.getAttackStrengthScale(0.0F);
 	}
 

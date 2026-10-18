@@ -1,6 +1,5 @@
 package com.hunter1712.infusedclasses;
 
-import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
@@ -8,6 +7,7 @@ import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.commands.arguments.EntityArgument;
+import net.minecraft.commands.arguments.IdentifierArgument;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
@@ -25,7 +25,8 @@ public final class ClassCommands {
 	}
 
 	public static void register() {
-		// ponytail: plain string arg, not a custom ArgumentType. Suggests ids, parses one line.
+		// The class argument is vanilla's id argument: tab suggestions and what parses
+		// are the same namespaced ids, so every suggestion can be typed back verbatim.
 		CommandRegistrationCallback.EVENT.register((dispatcher, registry, env) ->
 				dispatcher.register(Commands.literal("class")
 						// Open to everyone: the root asks about the invoking player, like /class info.
@@ -35,22 +36,16 @@ public final class ClassCommands {
 						.then(Commands.literal("set")
 								.requires(GAMEMASTER)
 								.then(Commands.argument("player", EntityArgument.player())
-										.then(Commands.argument("class", StringArgumentType.word())
+										.then(Commands.argument("class", IdentifierArgument.id())
 												.suggests((ctx, b) -> {
 													for (ClassDefinition d : ClassRegistry.all()) {
 														b.suggest(d.id().toString());
 													}
 													return b.buildFuture();
 												})
-												.executes(ctx -> {
-													Identifier id = Identifier.tryParse(StringArgumentType.getString(ctx, "class"));
-													if (id == null) {
-														ctx.getSource().sendFailure(Component.literal(InfusedClasses.UNKNOWN_OR_LOCKED));
-														return 0;
-													}
-													return setClass(ctx.getSource(),
-															EntityArgument.getPlayer(ctx, "player"), id);
-												}))))
+												.executes(ctx -> setClass(ctx.getSource(),
+														EntityArgument.getPlayer(ctx, "player"),
+														IdentifierArgument.getId(ctx, "class"))))))
 						// testing-only: reopens the picker for GUI iteration. Picking is still server-validated.
 						.then(Commands.literal("select")
 								.requires(GAMEMASTER)

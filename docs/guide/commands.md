@@ -17,7 +17,8 @@ Console gets vanilla's usual player-required failure. There is no `/class info <
 
 Gamemaster only. Sets the player's class choice. Suggests registered playable ids only (no unknown ids offered).
 
-- One word, validated: unknown or missing ids yield `Unknown or locked class` and leave the previous choice untouched.
+- One id, validated: an id that matches no playable class — or is locked — yields `Unknown or locked class` and leaves the previous choice untouched. Text that is not a valid id fails at parse time with the vanilla argument error.
+- Type the full id (tab-complete writes it): a bare name resolves to the vanilla `minecraft:` namespace, so `juggernaut` means `minecraft:juggernaut` and is rejected.
 - Accepted: writes the choice, clears old-class earnings, resets cooldowns.
 
 ## `/class select <player>`

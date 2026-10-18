@@ -15,7 +15,7 @@ No Forge/Quilt support. No 1.20.x backports in 0.x. A 26.x port comes later as a
 ## Steps
 
 1. Install Fabric Loader for 1.21.11 plus Fabric API.
-2. Build or fetch the jar: `gradle build` produces `build/libs/infusedclasses-0.2.0.jar`. At listing time jars carry the game version (`infusedclasses-<mod>+1.21.11.jar`) — the `+1.21.11` suffix must match your game exactly.
+2. Build or fetch the jar: `./gradlew build` produces `build/libs/infusedclasses-<version>.jar` (currently `infusedclasses-0.3.0.jar`). At listing time jars carry the game version (`infusedclasses-<mod>+1.21.11.jar`) — the `+1.21.11` suffix must match your game exactly.
 3. Drop the same jar into `mods/` on both sides:
    - Singleplayer: `.minecraft/mods/`
    - Server: the server's `mods/` folder

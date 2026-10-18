@@ -11,9 +11,9 @@ import java.util.Objects;
 
 /**
  * One player's whole status stack as a single value: the snapshot decision and the wire
- * payload in one. Built from one runtime state read at a {@code now} — or from no state at
- * all for a classless player — so it can be asserted without a player; the S2C codec
- * carries it to the client verbatim.
+ * payload in one. Built from the caller's one runtime state read at a {@code now} — or from
+ * no state at all for a classless player — so it can be asserted without a player; the S2C
+ * codec carries it to the client verbatim.
  *
  * <p>Per-lane state is one {@link LaneRead} per lane, so the shape is the class id, the lane
  * map and the handful of facts that are not per-lane. {@code of}, the codec and
@@ -62,30 +62,31 @@ public record PlayerStatusPayload(
 	}
 
 	/**
-	 * The snapshot at {@code now}: one runtime state read behind every lane read, the
-	 * non-lane facts taken off the same read. The definition arrives already resolved —
-	 * this never touches the registry — and is null only for a classless player, whose
-	 * reads all come from {@link #NO_STATE} and whose class id reads empty. The lane map is
-	 * copied, so the payload never shares the map it was built from.
+	 * The snapshot at {@code now}: the caller's one runtime state read behind every lane
+	 * read, the non-lane facts taken off the same read. The definition arrives already
+	 * resolved — this never touches the registry — and is null only for a classless player,
+	 * whose reads all come from {@link #NO_STATE} (a null state is that same empty shape)
+	 * and whose class id reads empty. Every classed caller passes the state read it took.
+	 * The lane map is copied, so the payload never shares the map it was built from.
 	 */
-	public static PlayerStatusPayload of(ClassDefinition def, PlayerRuntime runtime, long now) {
+	public static PlayerStatusPayload of(ClassDefinition def, PlayerRuntime runtime, PlayerRuntime.State state, long now) {
 		ConditionalPassive momentum = def == null ? null : def.passiveForTrigger(Trigger.ON_HIT_DEALT);
-		PlayerRuntime.State state = runtime == null ? NO_STATE : runtime.state(now);
+		PlayerRuntime.State read = state == null ? NO_STATE : state;
 		return new PlayerStatusPayload(
 				def == null ? "" : def.id().toString(),
-				Map.copyOf(state.lanes()),
-				state.flipTarget(),
-				state.rouletteOutcome(),
+				Map.copyOf(read.lanes()),
+				read.flipTarget(),
+				read.rouletteOutcome(),
 				momentum == null ? 0 : runtime.stacks(momentum),
 				momentum == null ? 0 : runtime.graceRemaining(momentum, now),
 				momentum == null ? 0 : runtime.graceStamp(momentum),
-				state.stance(),
-				state.streak());
+				read.stance(),
+				read.streak());
 	}
 
 	/** The classless snapshot: empty class id, every lane and window untouched, no state read. */
 	public static PlayerStatusPayload classless() {
-		return of(null, null, 0L);
+		return of(null, null, null, 0L);
 	}
 
 	/**

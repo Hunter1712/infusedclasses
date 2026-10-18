@@ -24,6 +24,11 @@ class PlayerStatusTest {
 		return ClassRegistry.byId(ClassRegistry.GAMBLER);
 	}
 
+	/** The server's shape: one state read at {@code now}, then the payload built from it. */
+	private static PlayerStatusPayload snapshot(ClassDefinition def, PlayerRuntime runtime, long now) {
+		return PlayerStatusPayload.of(def, runtime, runtime == null ? null : runtime.state(now), now);
+	}
+
 	@Test
 	void builderReadsLanesWindowsAndLoadFlags() {
 		PlayerRuntime runtime = new PlayerRuntime();
@@ -31,7 +36,7 @@ class PlayerStatusTest {
 		assertTrue(runtime.arm(Lane.RUSH, now, RushAbility.WINDOW_TICKS * 50L));
 		assertTrue(runtime.arm(Lane.REND, now, RendAbility.WINDOW_TICKS * 50L, 7));
 
-		PlayerStatusPayload payload = PlayerStatusPayload.of(juggernaut(), runtime, now);
+		PlayerStatusPayload payload = snapshot(juggernaut(), runtime, now);
 
 		assertEquals("infusedclasses:juggernaut", payload.classId());
 		assertEquals(Lane.RUSH.cooldownMs(), payload.lane(Lane.RUSH).remainingMs());
@@ -58,14 +63,14 @@ class PlayerStatusTest {
 			runtime.onTrigger(juggernaut(), Trigger.ON_HIT_DEALT, now, 1.0F);
 		}
 
-		PlayerStatusPayload payload = PlayerStatusPayload.of(juggernaut(), runtime, now);
+		PlayerStatusPayload payload = snapshot(juggernaut(), runtime, now);
 
 		assertEquals(3, payload.momentumStacks());
 		assertEquals(5_000, payload.momentumGraceRemainingMs());
 		assertEquals(now, payload.momentumGraceStampMs());
 
 		// A second later the stacks hold and only the grace remainder moved.
-		PlayerStatusPayload later = PlayerStatusPayload.of(juggernaut(), runtime, now + 1_000);
+		PlayerStatusPayload later = snapshot(juggernaut(), runtime, now + 1_000);
 		assertEquals(3, later.momentumStacks());
 		assertEquals(4_000, later.momentumGraceRemainingMs());
 		assertEquals(now, later.momentumGraceStampMs());
@@ -77,12 +82,12 @@ class PlayerStatusTest {
 		for (int i = 0; i < 20; i++) {
 			runtime.onTrigger(juggernaut(), Trigger.ON_HIT_DEALT, 0, 1.0F);
 		}
-		PlayerStatusPayload capped = PlayerStatusPayload.of(juggernaut(), runtime, 0);
+		PlayerStatusPayload capped = snapshot(juggernaut(), runtime, 0);
 		assertEquals(20, capped.momentumStacks());
 
 		// A hit at the cap moves neither count nor any armed flag: only the grace stamp.
 		runtime.onTrigger(juggernaut(), Trigger.ON_HIT_DEALT, 4_000, 1.0F);
-		PlayerStatusPayload restamped = PlayerStatusPayload.of(juggernaut(), runtime, 4_000);
+		PlayerStatusPayload restamped = snapshot(juggernaut(), runtime, 4_000);
 
 		assertEquals(20, restamped.momentumStacks());
 		assertEquals(5_000, restamped.momentumGraceRemainingMs());
@@ -97,7 +102,7 @@ class PlayerStatusTest {
 		runtime.rotate(now, RotateAbility.Stance.GLADIUS);
 		assertTrue(runtime.arm(Lane.OATH, now, AequilibriumAbility.WINDOW_TICKS * 50L));
 
-		PlayerStatusPayload payload = PlayerStatusPayload.of(legionary(), runtime, now);
+		PlayerStatusPayload payload = snapshot(legionary(), runtime, now);
 
 		assertEquals(RotateAbility.Stance.GLADIUS, payload.stance());
 		assertEquals(5_000, payload.lane(Lane.ROTATE).windowRemainingMs());
@@ -115,7 +120,7 @@ class PlayerStatusTest {
 		assertTrue(runtime.arm(Lane.ALL_IN, now, AllInAbility.WINDOW_TICKS * 50L));
 		runtime.bumpStreak();
 
-		PlayerStatusPayload payload = PlayerStatusPayload.of(gambler(), runtime, now);
+		PlayerStatusPayload payload = snapshot(gambler(), runtime, now);
 
 		assertEquals(RouletteAbility.Outcome.JACKPOT, payload.rouletteOutcome());
 		assertEquals(10_000, payload.lane(Lane.ROULETTE).windowRemainingMs());
@@ -129,13 +134,13 @@ class PlayerStatusTest {
 	void missingChoiceReadsAsTheEmptyShape() {
 		PlayerRuntime runtime = new PlayerRuntime();
 
-		PlayerStatusPayload classless = PlayerStatusPayload.of(null, runtime, 0);
+		PlayerStatusPayload classless = snapshot(null, runtime, 0);
 		assertEquals("", classless.classId());
 		assertEquals(0, classless.momentumStacks());
 		assertEquals(0, classless.momentumGraceRemainingMs());
 		// The classless factory is the same shape, and reads no state at all.
 		assertEquals(PlayerStatusPayload.classless(), classless);
-		assertEquals(PlayerStatusPayload.classless(), PlayerStatusPayload.of(null, null, 0));
+		assertEquals(PlayerStatusPayload.classless(), snapshot(null, null, 0));
 	}
 
 	@Test
@@ -143,64 +148,64 @@ class PlayerStatusTest {
 		PlayerRuntime runtime = new PlayerRuntime();
 		assertTrue(runtime.arm(Lane.RUSH, 1_000, RushAbility.WINDOW_TICKS * 50L));
 
-		PlayerStatusPayload atFire = PlayerStatusPayload.of(juggernaut(), runtime, 1_000);
-		PlayerStatusPayload oneSecondLater = PlayerStatusPayload.of(juggernaut(), runtime, 2_000);
+		PlayerStatusPayload atFire = snapshot(juggernaut(), runtime, 1_000);
+		PlayerStatusPayload oneSecondLater = snapshot(juggernaut(), runtime, 2_000);
 
 		assertFalse(oneSecondLater.movedSince(atFire));
 
 		PlayerRuntime idle = new PlayerRuntime();
-		PlayerStatusPayload ready = PlayerStatusPayload.of(juggernaut(), idle, 1_000);
-		assertFalse(PlayerStatusPayload.of(juggernaut(), idle, 9_000).movedSince(ready));
+		PlayerStatusPayload ready = snapshot(juggernaut(), idle, 1_000);
+		assertFalse(snapshot(juggernaut(), idle, 9_000).movedSince(ready));
 	}
 
 	@Test
 	void movedSinceCatchesEveryDiscreteMove() {
 		PlayerRuntime runtime = new PlayerRuntime();
-		PlayerStatusPayload ready = PlayerStatusPayload.of(juggernaut(), runtime, 0);
+		PlayerStatusPayload ready = snapshot(juggernaut(), runtime, 0);
 
 		assertTrue(ready.movedSince(null));
 
 		// Lane armed.
 		assertTrue(runtime.arm(Lane.RUSH, 0, RushAbility.WINDOW_TICKS * 50L));
-		PlayerStatusPayload rushed = PlayerStatusPayload.of(juggernaut(), runtime, 0);
+		PlayerStatusPayload rushed = snapshot(juggernaut(), runtime, 0);
 		assertTrue(rushed.movedSince(ready));
 
 		// Bonus spent while the lane still runs: a load-flag move.
 		assertTrue(runtime.consumeBonus(Lane.RUSH, 0));
-		PlayerStatusPayload spent = PlayerStatusPayload.of(juggernaut(), runtime, 0);
+		PlayerStatusPayload spent = snapshot(juggernaut(), runtime, 0);
 		assertTrue(spent.movedSince(rushed));
 
 		// Window expired while the lane still runs: an armed-flag move.
-		PlayerStatusPayload windowGone = PlayerStatusPayload.of(juggernaut(), runtime, 5_000);
+		PlayerStatusPayload windowGone = snapshot(juggernaut(), runtime, 5_000);
 		assertTrue(windowGone.movedSince(spent));
 
 		// Momentum stack moved.
 		PlayerRuntime stacking = new PlayerRuntime();
-		PlayerStatusPayload noStacks = PlayerStatusPayload.of(juggernaut(), stacking, 0);
+		PlayerStatusPayload noStacks = snapshot(juggernaut(), stacking, 0);
 		stacking.onTrigger(juggernaut(), Trigger.ON_HIT_DEALT, 0, 1.0F);
-		assertTrue(PlayerStatusPayload.of(juggernaut(), stacking, 0).movedSince(noStacks));
+		assertTrue(snapshot(juggernaut(), stacking, 0).movedSince(noStacks));
 
 		// Stance flip and Impetus load.
 		PlayerRuntime flipping = new PlayerRuntime();
-		PlayerStatusPayload scutum = PlayerStatusPayload.of(legionary(), flipping, 0);
+		PlayerStatusPayload scutum = snapshot(legionary(), flipping, 0);
 		flipping.rotate(0, RotateAbility.Stance.GLADIUS);
-		PlayerStatusPayload gladius = PlayerStatusPayload.of(legionary(), flipping, 0);
+		PlayerStatusPayload gladius = snapshot(legionary(), flipping, 0);
 		assertTrue(gladius.movedSince(scutum));
-		assertTrue(gladius.movedSince(PlayerStatusPayload.of(legionary(), flipping, 5_000)));
+		assertTrue(gladius.movedSince(snapshot(legionary(), flipping, 5_000)));
 
 		// Outcome set, Streak moved, class switched.
 		PlayerRuntime spinning = new PlayerRuntime();
-		PlayerStatusPayload beforeSpin = PlayerStatusPayload.of(gambler(), spinning, 0);
+		PlayerStatusPayload beforeSpin = snapshot(gambler(), spinning, 0);
 		assertTrue(spinning.roulette(0, RouletteAbility.Outcome.WARD));
-		assertTrue(PlayerStatusPayload.of(gambler(), spinning, 0).movedSince(beforeSpin));
+		assertTrue(snapshot(gambler(), spinning, 0).movedSince(beforeSpin));
 		spinning.bumpStreak();
-		assertTrue(PlayerStatusPayload.of(gambler(), spinning, 0).movedSince(beforeSpin));
+		assertTrue(snapshot(gambler(), spinning, 0).movedSince(beforeSpin));
 
-		assertTrue(PlayerStatusPayload.of(gambler(), spinning, 0).movedSince(ready));
+		assertTrue(snapshot(gambler(), spinning, 0).movedSince(ready));
 
 		// All In armed.
 		assertTrue(spinning.arm(Lane.ALL_IN, 0, AllInAbility.WINDOW_TICKS * 50L));
-		assertTrue(PlayerStatusPayload.of(gambler(), spinning, 0).movedSince(beforeSpin));
+		assertTrue(snapshot(gambler(), spinning, 0).movedSince(beforeSpin));
 	}
 
 	@Test

@@ -3,11 +3,11 @@ package com.hunter1712.infusedclasses;
 import java.util.function.Supplier;
 
 /**
- * Melee plan decisions: what one melee hit earns and settles, decided from definitions
- * and transient state. The decision half peeks; {@link #resolve} then settles the
- * runtime movements and hands the entry exactly what to land. The server entry maps,
- * adapters apply; this owns every ability-id check the hook needs, so the entry never
- * compares ability ids to gate rewards. The victim runtime arrives lazily: a
+ * Melee plan decisions: what one melee hit earns and settles, decided from definitions,
+ * transient state and what the hit landed. The decision half peeks; {@link #resolve} then
+ * settles the runtime movements and hands the entry exactly what to land. The server
+ * entry maps, adapters apply; this owns every ability-id check the hook needs, so the
+ * entry never compares ability ids to gate rewards. The victim runtime arrives lazily: a
  * non-Legionary victim costs no transient state, as before.
  */
 public final class MeleePlan {
@@ -40,10 +40,16 @@ public final class MeleePlan {
 	 * Rend spend, Impetus spend, then the stance, wheel and dice mults. Resolving applies
 	 * the first four and the dice movement in the same order and returns the stamped Rend bonus
 	 * to land; the combined mult (deal x take x dice) settles after. One-shot flags are peeked
-	 * here and consumed there, at the same {@code now}.
+	 * here and consumed there, at the same {@code now}. A hit that took no damage (a raised
+	 * shield ate it) earns nothing: it reads no state, materialises no victim runtime and draws
+	 * no verdict, so nothing of it can settle.
 	 */
 	public record HitPlan(boolean bump, float charge, boolean rushBonus, int rendStacks, float rendHp, boolean impetusPending,
 			double deal, double take, double combined, CritRoll.Result dice) {
+		/** The plan of a hit that earned nothing: no peek, no verdict, neutral mults against the zero landed. */
+		static HitPlan none(float charge) {
+			return new HitPlan(false, charge, false, 0, 0, false, 1.0, 1.0, 1.0, CritRoll.Result.NONE);
+		}
 	}
 
 	/** What one settled hit lands: the stamped Rend bonus, the verdict to cue, the combined mult to settle. */
@@ -51,13 +57,18 @@ public final class MeleePlan {
 	}
 
 	/**
-	 * Full hit decision from definitions and transient state, the caller's roll included.
-	 * The pure half: peeks only, settles nothing. Victim parts are 1.0 without a victim;
+	 * Full hit decision from definitions, transient state and what the hit landed, the
+	 * caller's roll included. The pure half: peeks only, settles nothing. A landed amount
+	 * of zero — a fully blocked hit — returns the empty plan before any read that costs
+	 * state, so a shield neither earns nor spends. Victim parts are 1.0 without a victim;
 	 * a missing class reads the universal crit rule. Full swings roll for every class,
 	 * classless included.
 	 */
 	static HitPlan planHit(ClassDefinition atkDef, PlayerRuntime atkRuntime, ClassDefinition victimDef,
-			Supplier<PlayerRuntime> victimRuntime, float charge, long now, float roll) {
+			Supplier<PlayerRuntime> victimRuntime, float charge, float landedDamage, long now, float roll) {
+		if (landedDamage <= 0) {
+			return HitPlan.none(charge);
+		}
 		boolean bump = BonusCurve.isFullSwing(charge);
 		PlayerRuntime.State state = atkRuntime == null ? null : atkRuntime.state(now);
 		boolean rushBonus = bump && state != null && state.lane(Lane.RUSH).windowPending();
@@ -80,11 +91,12 @@ public final class MeleePlan {
 	 * the Rush credit, the Impetus spend, then the Rend snapshot spend — all at the same
 	 * {@code now} the plan peeked them. Returns what the entry lands: the stamped Rend
 	 * bonus, the crit verdict to cue, and the combined mult. The one seam between the
-	 * plan and the entry, so nothing lands a hit that was not resolved.
+	 * plan and the entry, so nothing lands a hit that was not resolved. A hit that took
+	 * no damage resolves the empty plan and moves nothing.
 	 */
 	public static Landed resolve(ClassDefinition atkDef, PlayerRuntime atkRuntime, ClassDefinition victimDef,
-			Supplier<PlayerRuntime> victimRuntime, float charge, long now, float roll) {
-		HitPlan plan = planHit(atkDef, atkRuntime, victimDef, victimRuntime, charge, now, roll);
+			Supplier<PlayerRuntime> victimRuntime, float charge, float landedDamage, long now, float roll) {
+		HitPlan plan = planHit(atkDef, atkRuntime, victimDef, victimRuntime, charge, landedDamage, now, roll);
 		return new Landed(settle(atkRuntime, atkDef, plan, now), plan.dice().verdict(), plan.combined());
 	}
 

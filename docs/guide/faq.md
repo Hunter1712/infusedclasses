@@ -17,7 +17,7 @@ Saves load fine — new players pick on next join. But 0.x jars may break worlds
 ## Picker
 
 **The picker never opened.**
-It opens once, on first join with no saved class choice. Rejoining with a choice loads silently. Admins can reopen it with `/class select <player>`. A rejected pick stays open until the server confirms — check the log for `Unknown or locked class`.
+It opens once, on first join with no saved class choice. Rejoining with a choice loads silently. Admins can reopen it with `/class select <player>`. A rejected pick stays open until the server confirms — the player sees a red `Unknown or locked class` line in chat.
 
 **My choice didn't stick / wrong class after update.**
 Alpha jars may invalidate choices. Reselect in the picker or ask an admin for `/class set <player> <class>`.

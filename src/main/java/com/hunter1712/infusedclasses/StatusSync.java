@@ -22,9 +22,10 @@ public final class StatusSync {
 	private StatusSync() {
 	}
 
-	/** Rebuilds the snapshot from the already-resolved class and sends it only when anything discrete moved since the last send. */
-	public static void maybeSend(ServerPlayer player, ClassDefinition def, PlayerRuntime runtime, long now) {
-		PlayerStatusPayload snapshot = snapshot(def, runtime, now);
+	/** Rebuilds the snapshot from the already-resolved class and the tick's one state read, and sends it only when anything discrete moved since the last send. */
+	public static void maybeSend(ServerPlayer player, ClassDefinition def, PlayerRuntime runtime,
+			PlayerRuntime.State state, long now) {
+		PlayerStatusPayload snapshot = snapshot(def, runtime, state, now);
 		PlayerStatusPayload prev = lastSent.get(player.getUUID());
 		if (!snapshot.movedSince(prev)) {
 			return;
@@ -37,7 +38,8 @@ public final class StatusSync {
 	public static void sendNow(ServerPlayer player, long now) {
 		ClassDefinition def = PlayerClassAccess.of(player).currentDefinition();
 		// A classless player materialises no runtime: the empty shape is the truth.
-		PlayerStatusPayload snapshot = snapshot(def, def == null ? null : InfusedClasses.runtime(player), now);
+		PlayerRuntime runtime = def == null ? null : InfusedClasses.runtime(player);
+		PlayerStatusPayload snapshot = snapshot(def, runtime, runtime == null ? null : runtime.state(now), now);
 		lastSent.put(player.getUUID(), snapshot);
 		ServerPlayNetworking.send(player, snapshot);
 	}
@@ -48,7 +50,8 @@ public final class StatusSync {
 	}
 
 	/** The snapshot rule in one place: a classless player is the empty shape, no runtime read. */
-	private static PlayerStatusPayload snapshot(ClassDefinition def, PlayerRuntime runtime, long now) {
-		return def == null ? PlayerStatusPayload.classless() : PlayerStatusPayload.of(def, runtime, now);
+	private static PlayerStatusPayload snapshot(ClassDefinition def, PlayerRuntime runtime,
+			PlayerRuntime.State state, long now) {
+		return def == null ? PlayerStatusPayload.classless() : PlayerStatusPayload.of(def, runtime, state, now);
 	}
 }

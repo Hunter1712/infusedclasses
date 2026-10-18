@@ -33,6 +33,10 @@ Use `./gradlew` (wrapper, Gradle 9.7.1; first run downloads the distribution). C
 
 Client-visible changes ship with `./gradlew deployClient`: it rebuilds, copies the jar to the live instance `mods/` folder (default: the ElyPrismLauncher `1.21.11` instance; override with `-PmcModsDir=<path>` or `MC_MODS_DIR`), and fails if the jar is missing. Never declare a client change done on `compileJava` alone — it never refreshes the jar. Reopen the picker in-game with `/class select <player>` instead of fresh worlds, then read that instance's `logs/latest.log` — grep it for `infusedclasses` or exceptions before trusting a client-visible change.
 
+Two vanilla contracts the mixins bend break silently — the build stays green either way — so a round that touches melee is not done until both are seen in game: a full-charge spear thrust earns like a sword (Momentum bump, crit roll, Rush credit), and a hit fully eaten by a raised shield earns nothing while Rush, Impetus and Rend stay pending. When in doubt about the vanilla shape, `javap` the merged jar before trusting the capture.
+
+The `DamageSettle` guarded hurt needs the same hand check: a bonus smaller than the hit itself (a x1.25 crit on a wood sword, a Rend spend) lands only when the `lastHurt` memory is cleared around it, so a round that touches the settle must see the target's health drop by hit plus bonus, with one sound, hurt flash and knockback, and later hits still comparing against the combined total.
+
 ## Shell notes (Linux)
 
 Bash — plain `head`, `tail`, `grep` for output; inspect jars with `unzip -l` or `jar tf`; `python3` is available.

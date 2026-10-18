@@ -105,7 +105,7 @@ Rend's fire line is `Rend!` in red, Rush's is `Rush!` in yellow. Fire lines and 
 speak only what happened: a press on cooldown says nothing, so `ChatLine.cooldown`
 (`%.1fs`, one decimal) stays the `/class info` lane shape (ADR-0017, whose silence
 carried at ADR-0019). Its wording, rounding and locale are decided with the ability (or class-choice outcome),
-not formatted by whoever sends it. Class-choice lines use the same seam: `unknownOrLocked()` (red, action bar)
+not formatted by whoever sends it. Class-choice lines use the same seam: `unknownOrLocked()` (red, chat)
 for a rejected pick, and `classPicked(displayName)` (gray, chat) for an accepted switch.
 _Avoid_: message, notification, cooldown echo
 
@@ -314,11 +314,12 @@ they are.
 _Avoid_: double damage, ultimate form
 
 **Swing charge** (`SwingChargeAccess`):
-The charge vanilla read for the swing being settled, captured one line before
-vanilla zeroes the attack-strength ticker in `onAttack`. The damage hook runs
-after that reset, so a read from there is always 0 and every full-swing gate
-(dice roll, stack bump, Rush credit, the Rend curve) would read zero; the capture
-is the hook's only source for it.
+The charge vanilla read for the swing being settled, captured at the one place
+each melee damage route passes: just above the attack-strength ticker reset in
+`onAttack` for normal swings, and at the head of `stabAttack` for spear thrusts
+and mace smashes, which damage inside the stab and reach `onAttack` after the
+damage (spears) or never (mace). The damage hook runs after all of these, so the
+capture is the hook's only source for it.
 _Avoid_: attack cooldown, swing timer
 
 **Bonus curve** (`BonusCurve`):
@@ -330,8 +331,10 @@ site in the attacker branch; every melee class shares it, no per-class copies.
 _Avoid_: damage falloff, charge multiplier
 
 **Melee plan** (`MeleePlan`):
-The decision of what one melee hit earns and settles, taken from definitions and
-transient state: whether the swing earns stacks (full swings only, spam earns zero),
+The decision of what one melee hit earns and settles, taken from definitions,
+transient state and what the hit landed: whether the swing earns stacks (full
+swings only, spam earns zero; a hit that took no damage earns nothing and reads
+no state at all),
 the stance deal and take mults (1.0 for anyone else), the wheel's live deal mult and
 the Impetus flip buff (pending only, spent once, any charge). `planHit` is the pure half:
 it decides the whole hit in field order — bump, Rush credit, Rend spend, Impetus spend,
@@ -344,17 +347,21 @@ mult) so the hook cannot reorder or half-apply it; Gladius plus Impetus reads
 x1.1 deal, Scutum plus Testudo x0.85 take, a crit x1.25 deal, named once in the plan rather than emerging in the
 entry. The server entry maps, adapters
 apply; the victim runtime arrives lazily, so a non-Legionary victim costs no transient
-state. Owns every ability-id check the hook needs, so the entry never compares
+state — a blocked hit materialises none at all, gated by the landed amount it is handed.
+Owns every ability-id check the hook needs, so the entry never compares
 ability ids to gate rewards.
 _Avoid_: damage handler, hook logic
 
 **Damage settle** (`DamageSettle`):
 The single guarded hurt for the whole mod plus the stance-mult settle every melee
 branch funnels through. Over 1.0 lands extra hurt (dead targets deal nothing); under
-1.0 heals back the discount, so the net hit reads as base times mult; exactly 1.0
-touches nothing. Rend and Impetus bonuses land here too. Vanilla drops any same-tick
+1.0 heals back the discount, so the net hit reads as landed times mult; exactly 1.0
+touches nothing. The base it scales is what the hit landed after shield and modifier
+reductions, so a blocked hit settles nothing. Rend and Impetus bonuses land here too.
+Vanilla drops any same-tick
 follow-up that does not beat `lastHurt`, so the extra goes in with that memory
-cleared and leaves it at base plus bonus: the step lands silently with armor, death
+cleared and leaves the memory at the hit plus the bonus: the step lands silently
+with armor, death
 protection and kill credit intact, and later hits still compare against the
 combined swing.
 _Avoid_: damage handler, hurt helper
@@ -622,7 +629,8 @@ _Avoid_: window chip, badge
 The S2C `infusedclasses:player_status` snapshot and wire payload in one: the class id, a
 `LaneRead` per lane, Momentum stacks plus grace and the grace stamp, the stance, the flip
 target, Streak and the Roulette outcome. Built from the resolved class
-definition and the transient runtime at a `now`, so it can be asserted without a player — the
+definition, the tick's one transient state read taken at a `now`, and the runtime the
+stack facts come from, so it can be asserted without a player — the
 builder never touches the registry, and a missing class is the empty shape. Its codec and its
 `movedSince` loop the lanes, so the wire order cannot drift from the read and a seventh window
 adds no field. `movedSince` is the emission
@@ -635,8 +643,9 @@ _Avoid_: state packet, sync payload
 
 **Status sync** (`StatusSync`):
 The emission adapter: one last-sent snapshot per player UUID. `maybeSend` runs in the server
-tick, the one steady-state change point (ADR-0022) — the tick hands it the class and runtime
-it already resolved — and sends only when `movedSince` says something moved, so a rejected
+tick, the one steady-state change point (ADR-0022) — the tick hands it the class, the runtime
+and the one state read it already resolved — and sends only when `movedSince` says something
+moved, so a rejected
 press, a spam swing or a quiet tick costs no packets and everything else reaches the client
 on the next tick. `sendNow` forces one snapshot on join and respawn (classless included, no
 runtime materialised); `forget` drops the entry on logout.
@@ -695,8 +704,8 @@ The `/class` tree. Bare `/class` and `/class info` are open to everyone and read
 invoking player: the class display line, one line per carried lane with its `%.1fs`
 remaining, the Legionary's stance, and `No class chosen` when classless, composed by the
 pure `ClassInfo.lines` decision. `/class set <player> <class>` suggests registered ids
-(playable only), parses
-one word and validates in the choice module (`Unknown or locked class` on failure); an accepted
+(playable only), parses a namespaced id through the vanilla identifier argument, and
+validates in the choice module (`Unknown or locked class` on failure); an accepted
 switch clears what the old class earned like the picker path does; `/class pick` (gamemaster-
 gated per player) reopens the invoking player's picker on their current page with no chat
 output, and `/class select <player>` is testing-only, gamemaster-gated, reopening the picker
