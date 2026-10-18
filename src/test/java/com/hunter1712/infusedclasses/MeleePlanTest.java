@@ -25,7 +25,7 @@ class MeleePlanTest {
 
 	private static PlayerRuntime inStance(RotateAbility.Stance stance) {
 		PlayerRuntime runtime = new PlayerRuntime();
-		runtime.flipStance(0, stance);
+		runtime.rotate(0, stance);
 		return runtime;
 	}
 
@@ -228,7 +228,7 @@ class MeleePlanTest {
 		PlayerRuntime runtime = new PlayerRuntime();
 		ConditionalPassive momentum = juggernaut().passives().get(0);
 		for (int i = 0; i < 5; i++) {
-			runtime.onTrigger(juggernaut(), ConditionalPassive.ON_HIT_DEALT, 0, 1.0F);
+			runtime.onTrigger(juggernaut(), Trigger.ON_HIT_DEALT, 0, 1.0F);
 		}
 		RendAbility.fire(juggernaut(), runtime, 0);
 
@@ -250,7 +250,7 @@ class MeleePlanTest {
 		PlayerRuntime runtime = new PlayerRuntime();
 		ConditionalPassive momentum = juggernaut().passives().get(0);
 		for (int i = 0; i < 5; i++) {
-			runtime.onTrigger(juggernaut(), ConditionalPassive.ON_HIT_DEALT, 0, 1.0F);
+			runtime.onTrigger(juggernaut(), Trigger.ON_HIT_DEALT, 0, 1.0F);
 		}
 		RushAbility.fire(juggernaut(), runtime, 0);
 		RendAbility.fire(juggernaut(), runtime, 0);
@@ -263,7 +263,7 @@ class MeleePlanTest {
 		assertTrue(landed.rendHp() > 0);
 		// Settle owns the bump too: full swing earns one (+1), Rush credits +5, Rend snapshot spent, not refunded.
 		assertEquals(11, runtime.stacks(momentum));
-		assertFalse(runtime.state(0).rushBonusPending());
+		assertFalse(runtime.state(0).lane(Lane.RUSH).windowPending());
 		assertEquals(0, runtime.state(0).rendBonusStacks());
 	}
 
@@ -276,7 +276,7 @@ class MeleePlanTest {
 		assertEquals(0.0F, landed.rendHp());
 
 		assertEquals(0, runtime.stacks(juggernaut().passives().get(0)));
-		assertFalse(runtime.state(0).rushBonusPending());
+		assertFalse(runtime.state(0).lane(Lane.RUSH).windowPending());
 		assertEquals(0, runtime.state(0).rendBonusStacks());
 	}
 
@@ -286,7 +286,7 @@ class MeleePlanTest {
 		MeleePlan.HitPlan plan = MeleePlan.planHit(legionary(), runtime, null, null, 1.0F, 0, 0.5F);
 		// The hit resolves before the flip lands: it saw nothing, so it spends nothing.
 		MeleePlan.resolve(legionary(), runtime, null, null, 1.0F, 0, 0.5F);
-		runtime.flipStance(0, RotateAbility.Stance.GLADIUS);
+		runtime.rotate(0, RotateAbility.Stance.GLADIUS);
 
 		assertFalse(plan.impetusPending());
 		assertTrue(runtime.state(0).impetusPending());

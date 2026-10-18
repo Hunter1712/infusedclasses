@@ -1,6 +1,6 @@
 # ADR-0023: The roster row carries the stack's view
 
-Status: accepted
+Status: accepted (point 1's `View` and point 2's ultimate-bind sentence are revised by ADR-0025 and ADR-0026)
 
 ## Context
 

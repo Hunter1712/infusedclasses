@@ -60,7 +60,7 @@ public final class MeleePlan {
 			Supplier<PlayerRuntime> victimRuntime, float charge, long now, float roll) {
 		boolean bump = BonusCurve.isFullSwing(charge);
 		PlayerRuntime.State state = atkRuntime == null ? null : atkRuntime.state(now);
-		boolean rushBonus = bump && state != null && state.rushBonusPending();
+		boolean rushBonus = bump && state != null && state.lane(Lane.RUSH).windowPending();
 		int rendStacks = state == null ? 0 : state.rendBonusStacks();
 		float rendHp = rendStacks > 0 ? BonusCurve.bonusFor(RendAbility.bonusFor(rendStacks), charge) : 0;
 		boolean impetus = atkDef != null && atkDef.hasAbility(ClassRegistry.ROTATE_ABILITY)
@@ -68,7 +68,7 @@ public final class MeleePlan {
 		double deal = dealWithImpetus(atkDef, state, impetus) * RouletteAbility.dealMult(state);
 		double take = victimDef == null || victimRuntime == null ? 1.0 : takeFor(victimDef, victimRuntime, now);
 		CritRule rule = atkDef == null ? CritRule.universal() : atkDef.critRule();
-		boolean allIn = state != null && state.allInWindowRemaining() > 0;
+		boolean allIn = state != null && state.lane(Lane.ALL_IN).windowRemainingMs() > 0;
 		CritRoll.Result dice = CritRoll.roll(rule, state == null ? 0 : state.streak(), charge, roll, allIn);
 		return new HitPlan(bump, charge, rushBonus, rendStacks, rendHp, impetus, deal, take,
 				deal * take * dice.mult(), dice);
@@ -96,7 +96,7 @@ public final class MeleePlan {
 		if (plan.bump()) {
 			// Replays the plan's gated charge through the shared gate, so the settle
 			// cannot bump what the plan did not earn.
-			runtime.onTrigger(def, ConditionalPassive.ON_HIT_DEALT, now, plan.charge());
+			runtime.onTrigger(def, Trigger.ON_HIT_DEALT, now, plan.charge());
 		}
 		switch (plan.dice().movement()) {
 			case BUMP -> runtime.bumpStreak();
@@ -108,9 +108,9 @@ public final class MeleePlan {
 			grantRushBonus(runtime, def, now);
 		}
 		if (plan.impetusPending()) {
-			runtime.consumeImpetusBonus(now);
+			runtime.consumeBonus(Lane.ROTATE, now);
 		}
-		if (plan.rendStacks() > 0 && runtime.consumeRendBonus(now) > 0) {
+		if (plan.rendStacks() > 0 && runtime.consumePayload(Lane.REND, now) > 0) {
 			return plan.rendHp();
 		}
 		return 0;
@@ -122,8 +122,8 @@ public final class MeleePlan {
 	 * a missing priced passive or an unowed bonus does nothing.
 	 */
 	private static void grantRushBonus(PlayerRuntime runtime, ClassDefinition def, long now) {
-		ConditionalPassive momentum = def == null ? null : def.passiveForTrigger(ConditionalPassive.ON_HIT_DEALT);
-		if (momentum == null || !runtime.consumeRushBonus(now)) {
+		ConditionalPassive momentum = def == null ? null : def.passiveForTrigger(Trigger.ON_HIT_DEALT);
+		if (momentum == null || !runtime.consumeBonus(Lane.RUSH, now)) {
 			return;
 		}
 		runtime.bumpPassive(momentum, RushAbility.BONUS_STACKS, now);

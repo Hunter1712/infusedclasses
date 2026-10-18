@@ -27,7 +27,7 @@ public final class RushAbility {
 	public static String desc() {
 		return "Cleanses harmful effects and quickens you for " + (WINDOW_TICKS / 20)
 				+ "s. Next full-swing hit: +" + BONUS_STACKS + " Momentum (R, "
-				+ (Cooldowns.RUSH_MS / 1000) + "s).";
+				+ (Lane.RUSH.cooldownMs() / 1000) + "s).";
 	}
 
 	/**
@@ -60,9 +60,9 @@ public final class RushAbility {
 	 * and now the trigger just checked, so it cannot fail.
 	 */
 	public static AbilityOutcome fire(ClassDefinition def, PlayerRuntime runtime, long now) {
-		AbilityOutcome result = trigger(def, runtime.state(now).rushRemaining());
+		AbilityOutcome result = trigger(def, runtime.state(now).laneRemaining(Lane.RUSH));
 		if (result.fired()) {
-			runtime.tryUseRush(now);
+			runtime.arm(Lane.RUSH, now, WINDOW_TICKS * 50L);
 		}
 		return result;
 	}

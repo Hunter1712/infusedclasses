@@ -37,11 +37,11 @@ class RushAbilityTest {
 
 		assertTrue(result.fired());
 		assertEquals("Rush!", result.announcement().text());
-		assertEquals(Cooldowns.RUSH_MS, runtime.state(0).rushRemaining());
-		assertEquals(0, runtime.state(0).rendRemaining());
-		assertTrue(runtime.state(0).rushBonusPending());
-		assertTrue(runtime.state(4_999).rushBonusPending());
-		assertFalse(runtime.state(5_000).rushBonusPending());
+		assertEquals(Lane.RUSH.cooldownMs(), runtime.state(0).laneRemaining(Lane.RUSH));
+		assertEquals(0, runtime.state(0).laneRemaining(Lane.REND));
+		assertTrue(runtime.state(0).lane(Lane.RUSH).windowPending());
+		assertTrue(runtime.state(4_999).lane(Lane.RUSH).windowPending());
+		assertFalse(runtime.state(5_000).lane(Lane.RUSH).windowPending());
 	}
 
 	@Test
@@ -52,9 +52,9 @@ class RushAbilityTest {
 
 		assertFalse(second.fired());
 		assertNull(second.announcement());
-		assertEquals(15_000, runtime.state(11_000).rushRemaining());
-		assertEquals(0, runtime.state(11_000).rendRemaining());
-		assertFalse(runtime.state(11_000).rushBonusPending());
+		assertEquals(15_000, runtime.state(11_000).laneRemaining(Lane.RUSH));
+		assertEquals(0, runtime.state(11_000).laneRemaining(Lane.REND));
+		assertFalse(runtime.state(11_000).lane(Lane.RUSH).windowPending());
 	}
 
 	@Test
@@ -64,8 +64,8 @@ class RushAbilityTest {
 
 		assertFalse(result.fired());
 		assertNull(result.announcement());
-		assertEquals(0, runtime.state(0).rushRemaining());
-		assertFalse(runtime.state(0).rushBonusPending());
+		assertEquals(0, runtime.state(0).laneRemaining(Lane.RUSH));
+		assertFalse(runtime.state(0).lane(Lane.RUSH).windowPending());
 	}
 
 	@Test
@@ -73,9 +73,9 @@ class RushAbilityTest {
 		PlayerRuntime runtime = new PlayerRuntime();
 		RushAbility.fire(juggernaut(), runtime, 0);
 
-		assertTrue(runtime.consumeRushBonus(0));
-		assertFalse(runtime.consumeRushBonus(0));
-		assertFalse(runtime.consumeRushBonus(5_000));
+		assertTrue(runtime.consumeBonus(Lane.RUSH, 0));
+		assertFalse(runtime.consumeBonus(Lane.RUSH, 0));
+		assertFalse(runtime.consumeBonus(Lane.RUSH, 5_000));
 	}
 
 	@Test
@@ -103,12 +103,12 @@ class RushAbilityTest {
 	void resetReadiesBothLanesAndClearsTheWindow() {
 		PlayerRuntime runtime = new PlayerRuntime();
 		RushAbility.fire(juggernaut(), runtime, 0);
-		runtime.tryUseRend(0, 5);
-		runtime.resetCooldowns();
+		runtime.arm(Lane.REND, 0, RendAbility.WINDOW_TICKS * 50L, 5);
+		runtime.resetAll();
 
-		assertEquals(0, runtime.state(0).rushRemaining());
-		assertEquals(0, runtime.state(0).rendRemaining());
-		assertFalse(runtime.state(0).rushBonusPending());
-		assertFalse(runtime.consumeRushBonus(0));
+		assertEquals(0, runtime.state(0).laneRemaining(Lane.RUSH));
+		assertEquals(0, runtime.state(0).laneRemaining(Lane.REND));
+		assertFalse(runtime.state(0).lane(Lane.RUSH).windowPending());
+		assertFalse(runtime.consumeBonus(Lane.RUSH, 0));
 	}
 }

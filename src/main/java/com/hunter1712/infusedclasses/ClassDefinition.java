@@ -29,7 +29,7 @@ public record ClassDefinition(
 	 * passives: decisions and adapters resolve through here, never by list position, so
 	 * reordering passives cannot silently spend or credit the wrong one.
 	 */
-	public ConditionalPassive passiveForTrigger(String trigger) {
+	public ConditionalPassive passiveForTrigger(Trigger trigger) {
 		for (ConditionalPassive passive : passives()) {
 			if (passive.trigger().equals(trigger)) {
 				return passive;

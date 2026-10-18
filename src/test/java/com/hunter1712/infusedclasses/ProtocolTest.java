@@ -6,6 +6,7 @@ import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.Identifier;
 import org.junit.jupiter.api.Test;
 
+import java.util.EnumMap;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -49,13 +50,18 @@ class ProtocolTest {
 
 	@Test
 	void playerStatusCodecRoundTripsPopulatedAndNulls() {
-		// Every field carries a distinct value per type, so a field-table/decode order
-		// drift cannot hide behind equal neighbours.
+		// Every number is distinct, so a lane order or window order drift inside the read
+		// cannot hide behind equal neighbours.
+		EnumMap<Lane, LaneRead> lanes = new EnumMap<>(Lane.class);
+		lanes.put(Lane.RUSH, new LaneRead(1_000, 2_000, true));
+		lanes.put(Lane.REND, new LaneRead(3_000, 4_000, false));
+		lanes.put(Lane.ROTATE, new LaneRead(5_000, 6_000, true));
+		lanes.put(Lane.OATH, new LaneRead(7_000, 8_000, false));
+		lanes.put(Lane.ROULETTE, new LaneRead(9_000, 10_000, true));
+		lanes.put(Lane.ALL_IN, new LaneRead(11_000, 12_000, false));
 		PlayerStatusPayload populated = new PlayerStatusPayload(
-				"infusedclasses:gambler", 25_000, 60_000, 3_000, 45_000, 12_345, 75_000,
-				4_000, true, 5_000, false, 1_500, RotateAbility.Stance.SCUTUM, true,
-				9_000, RouletteAbility.Outcome.JACKPOT, 6_000, 15_000,
-				7, 3_500, 2_500, RotateAbility.Stance.GLADIUS, 2);
+				"infusedclasses:gambler", lanes, RotateAbility.Stance.SCUTUM,
+				RouletteAbility.Outcome.JACKPOT, 7, 3_500, 2_500, RotateAbility.Stance.GLADIUS, 2);
 		ByteBuf raw = Unpooled.buffer();
 		FriendlyByteBuf buf = new FriendlyByteBuf(raw);
 		try {

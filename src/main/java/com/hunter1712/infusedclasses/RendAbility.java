@@ -47,7 +47,7 @@ public final class RendAbility {
 	public static String desc() {
 		String bonus = "+" + ConditionalPassive.amount(HP_PER_STACK) + " per Momentum";
 		return "Next hit in " + (WINDOW_TICKS / 20) + "s: " + bonus
-				+ ", spends stacks (V, " + (Cooldowns.REND_MS / 1000) + "s).";
+				+ ", spends stacks (V, " + (Lane.REND.cooldownMs() / 1000) + "s).";
 	}
 
 	/** Bonus damage for a stack count: half a heart per stack. Nothing at zero or below. */
@@ -78,11 +78,11 @@ public final class RendAbility {
 	 * checked, so it cannot fail.
 	 */
 	public static Result fire(ClassDefinition def, PlayerRuntime runtime, long now) {
-		ConditionalPassive spent = def == null ? null : def.passiveForTrigger(ConditionalPassive.ON_HIT_DEALT);
+		ConditionalPassive spent = def == null ? null : def.passiveForTrigger(Trigger.ON_HIT_DEALT);
 		int stacks = spent == null ? 0 : runtime.stacks(spent);
-		Result result = trigger(def, runtime.state(now).rendRemaining(), stacks);
+		Result result = trigger(def, runtime.state(now).laneRemaining(Lane.REND), stacks);
 		if (result.outcome().fired()) {
-			runtime.tryUseRend(now, stacks);
+			runtime.arm(Lane.REND, now, WINDOW_TICKS * 50L, stacks);
 		}
 		return result;
 	}

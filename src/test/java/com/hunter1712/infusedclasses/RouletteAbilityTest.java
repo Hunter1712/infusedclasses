@@ -84,7 +84,7 @@ class RouletteAbilityTest {
 		assertEquals(RouletteAbility.Outcome.HASTE, result.band());
 		assertNotNull(result.outcome().announcement());
 		assertTrue(result.outcome().announcement().text().startsWith("Haste"));
-		assertEquals(Cooldowns.ROULETTE_MS, runtime.state(0).rouletteRemaining());
+		assertEquals(Lane.ROULETTE.cooldownMs(), runtime.state(0).laneRemaining(Lane.ROULETTE));
 		assertEquals(RouletteAbility.Outcome.HASTE, runtime.state(0).rouletteOutcome());
 		assertEquals(10, RouletteAbility.WINDOW_TICKS / 20);
 	}
@@ -97,7 +97,7 @@ class RouletteAbilityTest {
 		assertEquals(RouletteAbility.Outcome.EDGE, runtime.state(9_999).rouletteOutcome());
 		assertNull(runtime.state(10_000).rouletteOutcome());
 		// The lane is the wheel's own clock: still counting down when the window dies.
-		assertEquals(Cooldowns.ROULETTE_MS - 10_000, runtime.state(10_000).rouletteRemaining());
+		assertEquals(Lane.ROULETTE.cooldownMs() - 10_000, runtime.state(10_000).laneRemaining(Lane.ROULETTE));
 	}
 
 	@Test
@@ -110,7 +110,7 @@ class RouletteAbilityTest {
 		assertFalse(result.outcome().fired());
 		assertNull(result.band());
 		assertNull(result.outcome().announcement());
-		assertEquals(0, runtime.state(0).rouletteRemaining());
+		assertEquals(0, runtime.state(0).laneRemaining(Lane.ROULETTE));
 		assertNull(runtime.state(0).rouletteOutcome());
 	}
 

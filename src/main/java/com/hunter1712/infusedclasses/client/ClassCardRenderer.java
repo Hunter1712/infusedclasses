@@ -7,6 +7,7 @@ import net.minecraft.util.FormattedCharSequence;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.ToIntFunction;
 
 /**
  * What the focused picker card looks like: frame palette, accent strip, hover
@@ -41,9 +42,11 @@ public final class ClassCardRenderer {
 
 	/**
 	 * Greedy word wrap over the full line, tracking the name/desc split by character
-	 * offset so tone follows meaning, not row number. Names always fit row one.
+	 * offset so tone follows meaning, not row number. Names always fit row one. Widths
+	 * arrive as a function of the string, so the wrap is assertable with a stub measure;
+	 * the screen passes {@code font::width}.
 	 */
-	static List<TextRow> wrapRows(Font font, ClassPresentation.CardLine line, int wrapW) {
+	static List<TextRow> wrapRows(ClassPresentation.CardLine line, int wrapW, ToIntFunction<String> width) {
 		// The join lives in CardLine.text; the boundary is derived there, never searched.
 		String full = line.text();
 		int prefixLength = line.descStart();
@@ -51,7 +54,7 @@ public final class ClassCardRenderer {
 		StringBuilder row = new StringBuilder();
 		for (String word : full.split(" ")) {
 			String add = row.isEmpty() ? word : " " + word;
-			if (!row.isEmpty() && font.width(row.toString() + add) > wrapW) {
+			if (!row.isEmpty() && width.applyAsInt(row.toString() + add) > wrapW) {
 				rows.add(new TextRow(row.toString(),
 						descStartFor(rows.size(), row.length(), prefixLength), line.style()));
 				row = new StringBuilder(word);
@@ -69,11 +72,11 @@ public final class ClassCardRenderer {
 	 * layout those rows imply. The caller clamps its scroll from the result before
 	 * drawing, so no frame draws past a range that frame already knows.
 	 */
-	static Measured measure(Font font, CardLayout.CardRect card, ClassPresentation.CardModel model) {
+	static Measured measure(CardLayout.CardRect card, ClassPresentation.CardModel model, ToIntFunction<String> width) {
 		List<TextRow> rows = new ArrayList<>();
 		int wrapW = CardLayout.innerWidth(card);
 		for (ClassPresentation.CardLine line : model.text().lines()) {
-			rows.addAll(wrapRows(font, line, wrapW));
+			rows.addAll(wrapRows(line, wrapW, width));
 		}
 		return new Measured(List.copyOf(rows), CardLayout.layoutFor(card, rows.size()));
 	}

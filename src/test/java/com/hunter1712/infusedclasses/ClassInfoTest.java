@@ -42,8 +42,8 @@ class ClassInfoTest {
 	@Test
 	void coolingJuggernautPinsOneDecimal() {
 		PlayerRuntime runtime = new PlayerRuntime();
-		runtime.tryUseRush(0);
-		runtime.tryUseRend(0, 0);
+		runtime.arm(Lane.RUSH, 0, RushAbility.WINDOW_TICKS * 50L);
+		runtime.arm(Lane.REND, 0, RendAbility.WINDOW_TICKS * 50L, 0);
 
 		assertEquals(List.of("Class: Juggernaut", "Rush: 18.4s", "Rend: 53.4s"),
 				texts(juggernaut(), runtime, 6_600));
@@ -52,10 +52,10 @@ class ClassInfoTest {
 	@Test
 	void aLaneAtItsExpiryBoundaryReadsReady() {
 		PlayerRuntime runtime = new PlayerRuntime();
-		runtime.tryUseRush(0);
+		runtime.arm(Lane.RUSH, 0, RushAbility.WINDOW_TICKS * 50L);
 
 		assertEquals(List.of("Class: Juggernaut", "Rush: ready", "Rend: ready"),
-				texts(juggernaut(), runtime, Cooldowns.RUSH_MS));
+				texts(juggernaut(), runtime, Lane.RUSH.cooldownMs()));
 	}
 
 	@Test
@@ -67,8 +67,8 @@ class ClassInfoTest {
 	@Test
 	void coolingLegionaryPinsOneDecimalAndTheFlippedStance() {
 		PlayerRuntime runtime = new PlayerRuntime();
-		runtime.tryUseRotate(0, RotateAbility.Stance.GLADIUS);
-		runtime.tryUseAequilibrium(0);
+		runtime.rotate(0, RotateAbility.Stance.GLADIUS);
+		runtime.arm(Lane.OATH, 0, AequilibriumAbility.WINDOW_TICKS * 50L);
 
 		assertEquals(List.of("Class: Legionary", "Rotate: 1.4s", "Aequilibrium: 43.4s", "Stance: Gladius"),
 				texts(legionary(), runtime, 6_600));
@@ -83,8 +83,8 @@ class ClassInfoTest {
 	@Test
 	void coolingGamblerPinsOneDecimal() {
 		PlayerRuntime runtime = new PlayerRuntime();
-		runtime.tryUseRoulette(0, RouletteAbility.Outcome.EDGE);
-		runtime.tryUseAllIn(0);
+		runtime.roulette(0, RouletteAbility.Outcome.EDGE);
+		runtime.arm(Lane.ALL_IN, 0, AllInAbility.WINDOW_TICKS * 50L);
 
 		assertEquals(List.of("Class: Gambler", "Roulette: 18.4s", "All In: 68.4s"),
 				texts(gambler(), runtime, 6_600));

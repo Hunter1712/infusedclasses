@@ -49,7 +49,7 @@ public final class AequilibriumAbility {
 		return "Any stance: +" + ConditionalPassive.amount(EDGE_BONUS)
 				+ " damage, +" + ConditionalPassive.amount(PLATE_BONUS)
 				+ " armor, " + (WINDOW_TICKS / 20) + "s (V, "
-				+ (Cooldowns.OATH_MS / 1000) + "s oath). No downside.";
+				+ (Lane.OATH.cooldownMs() / 1000) + "s oath). No downside.";
 	}
 
 	/**
@@ -72,9 +72,9 @@ public final class AequilibriumAbility {
 	 * checked, so it cannot fail.
 	 */
 	public static AbilityOutcome fire(ClassDefinition def, PlayerRuntime runtime, long now) {
-		AbilityOutcome result = trigger(def, runtime.state(now).oathRemaining());
+		AbilityOutcome result = trigger(def, runtime.state(now).laneRemaining(Lane.OATH));
 		if (result.fired()) {
-			runtime.tryUseAequilibrium(now);
+			runtime.arm(Lane.OATH, now, WINDOW_TICKS * 50L);
 		}
 		return result;
 	}

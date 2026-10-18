@@ -106,76 +106,73 @@ final class ServerEvents {
 				}));
 
 		ServerPlayNetworking.registerGlobalReceiver(RushPayload.TYPE, (payload, context) -> context.server()
-				.execute(() -> {
-					ServerPlayer player = context.player();
-					long now = System.currentTimeMillis();
-					PlayerClasses classes = PlayerClassAccess.of(player);
-					ClassDefinition def = classes.currentDefinition();
-					// A classless press can only reject, silently, so it costs no state
-					// (ADR-0005): the lookup below runs for a classed player only.
-					if (def == null) {
-						return;
-					}
-					PlayerRuntime runtime = InfusedClasses.runtime(player);
-					// Reused signature bind: the wheel for Gamblers, the rotate intent for Legionaries,
-					// Rush for everyone else, so binds survive the class.
-					// Rotate announces without fanfare on purpose: it carries no cast sound.
-					switch (BindMorph.signatureFor(def)) {
-						case ROTATE -> {
-							RotateAbility.Result result = RotateAbility.fire(def, runtime, now);
-							AbilityApplier.announceAndCast(player, result.outcome().announcement(),
-									result.outcome().fired(), null, true);
-						}
-						case ROULETTE -> {
-							RouletteAbility.Result result =
-									RouletteAbility.fire(def, runtime, now, player.getRandom().nextFloat());
-							AbilityApplier.announceAndCast(player, result.outcome().announcement(),
-									result.outcome().fired(), RouletteAbility.CAST_SOUND, true);
-						}
-						case RUSH -> {
-							AbilityOutcome result = RushAbility.fire(def, runtime, now);
-							RushApplier.apply(player, result);
-						}
-					}
-				}));
+				.execute(() -> press(context.player(), ServerEvents::pressSignature)));
 
 		ServerPlayNetworking.registerGlobalReceiver(RendPayload.TYPE, (payload, context) -> context.server()
-				.execute(() -> {
-					ServerPlayer player = context.player();
-					long now = System.currentTimeMillis();
-					PlayerClasses classes = PlayerClassAccess.of(player);
-					ClassDefinition def = classes.currentDefinition();
-					// A classless press can only reject, silently, so it costs no state
-					// (ADR-0005): the lookup below runs for a classed player only.
-					if (def == null) {
-						return;
-					}
-					PlayerRuntime runtime = InfusedClasses.runtime(player);
-					// Reused ultimate bind: All In for Gamblers, the oath ultimate for Legionaries,
-					// Rend for everyone else.
-					switch (BindMorph.ultimateFor(def)) {
-						case AEQUILIBRIUM -> {
-							AbilityOutcome result = AequilibriumAbility.fire(def, runtime, now);
-							AbilityApplier.announceAndCast(player, result.announcement(),
-									result.fired(), AequilibriumAbility.CAST_SOUND, true);
-						}
-						case ALL_IN -> {
-							AbilityOutcome result = AllInAbility.fire(def, runtime, now);
-							AbilityApplier.announceAndCast(player, result.announcement(),
-									result.fired(), AllInAbility.CAST_SOUND, true);
-						}
-						case REND -> {
-							RendAbility.Result result = RendAbility.fire(def, runtime, now);
-							AbilityApplier.announceAndCast(player, result.outcome().announcement(),
-									result.outcome().fired(), RendAbility.CAST_SOUND, true);
-							// The adapter spends only the priced passive; a fizzle spends nothing.
-							// The Rend bonus lands on the next melee hit inside the window.
-							if (result.consume()) {
-								PassiveApplier.consumeSpent(player, runtime, def);
-							}
-						}
-					}
-				}));
+				.execute(() -> press(context.player(), ServerEvents::pressUltimate)));
+	}
+
+	/** One slot press: the class read, the classless bail and the runtime lookup are the one path both binds share. */
+	private static void press(ServerPlayer player, SlotPress slot) {
+		long now = System.currentTimeMillis();
+		ClassDefinition def = PlayerClassAccess.of(player).currentDefinition();
+		// A classless press can only reject, silently, so it costs no state
+		// (ADR-0005): the runtime lookup below runs for a classed player only.
+		if (def == null) {
+			return;
+		}
+		slot.land(player, def, InfusedClasses.runtime(player), now);
+	}
+
+	/** What one slot's press lands once the class is known: the target's ability plus its adapter. */
+	private interface SlotPress {
+		void land(ServerPlayer player, ClassDefinition def, PlayerRuntime runtime, long now);
+	}
+
+	/**
+	 * The signature slot: the reused bind's target fires and its landing runs, one line per
+	 * arm. The arms stay explicit here per ADR-0009: this routes, the abilities decide.
+	 */
+	private static void pressSignature(ServerPlayer player, ClassDefinition def, PlayerRuntime runtime, long now) {
+		// Reused signature bind: the wheel for Gamblers, the rotate intent for Legionaries,
+		// Rush for everyone else, so binds survive the class.
+		switch (BindMorph.signatureFor(def)) {
+			// Rotate announces without fanfare on purpose: it carries no cast sound.
+			case ROTATE -> {
+				RotateAbility.Result result = RotateAbility.fire(def, runtime, now);
+				AbilityApplier.announceAndCast(player, result.outcome().announcement(),
+						result.outcome().fired(), null, true);
+			}
+			case ROULETTE -> {
+				RouletteAbility.Result result =
+						RouletteAbility.fire(def, runtime, now, player.getRandom().nextFloat());
+				AbilityApplier.announceAndCast(player, result.outcome().announcement(),
+						result.outcome().fired(), RouletteAbility.CAST_SOUND, true);
+			}
+			case RUSH -> RushApplier.apply(player, RushAbility.fire(def, runtime, now));
+		}
+	}
+
+	/**
+	 * The ultimate slot: the reused bind's target fires and its landing runs, one line per
+	 * arm, the arms explicit here for the same reason.
+	 */
+	private static void pressUltimate(ServerPlayer player, ClassDefinition def, PlayerRuntime runtime, long now) {
+		// Reused ultimate bind: All In for Gamblers, the oath ultimate for Legionaries,
+		// Rend for everyone else.
+		switch (BindMorph.ultimateFor(def)) {
+			case AEQUILIBRIUM -> {
+				AbilityOutcome result = AequilibriumAbility.fire(def, runtime, now);
+				AbilityApplier.announceAndCast(player, result.announcement(),
+						result.fired(), AequilibriumAbility.CAST_SOUND, true);
+			}
+			case ALL_IN -> {
+				AbilityOutcome result = AllInAbility.fire(def, runtime, now);
+				AbilityApplier.announceAndCast(player, result.announcement(),
+						result.fired(), AllInAbility.CAST_SOUND, true);
+			}
+			case REND -> RendApplier.apply(player, def, runtime, RendAbility.fire(def, runtime, now));
+		}
 	}
 
 	/**

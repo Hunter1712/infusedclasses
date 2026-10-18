@@ -10,6 +10,7 @@ import net.minecraft.world.entity.ai.attributes.Attribute;
  * it directly. The picker copy is generated from these numbers, so it can say what the passive
  * does but never an earning event its trigger does not carry.
  *
+ * @param trigger the event that earns a stack, its own value plus its own copy
  * @param attribute which attribute the stacks add to, as a registry key rather than a live holder
  * @param modifierId identifier the passive's modifier is written under
  * @param perStack what one stack contributes to that attribute
@@ -17,36 +18,18 @@ import net.minecraft.world.entity.ai.attributes.Attribute;
  */
 public record ConditionalPassive(
 		String name,
-		String trigger,
+		Trigger trigger,
 		int maxStacks,
 		ResourceKey<Attribute> attribute,
 		Identifier modifierId,
 		double perStack,
 		int graceSeconds
 ) {
-	/** The trigger the Juggernaut feeds by landing a hit. One constant, so a rename cannot go silently inert. */
-	public static final String ON_HIT_DEALT = "on_hit_dealt";
 	/** Short picker copy. Generated from the numbers so it cannot drift from behaviour. */
 	public String fullDesc() {
-		TriggerPhrasing said = phrasing();
-		return said.earn() + ": +" + amount(perStack)
+		return trigger.earn() + ": +" + amount(perStack)
 				+ " " + word() + " (max " + maxStacks + "). "
-				+ graceSeconds + "s " + said.idle() + ": lose all.";
-	}
-
-	/**
-	 * What a trigger earns and what idleness decays, in one row per trigger: the definition
-	 * carries a trigger id, not prose for it, so the copy only describes an earning event it
-	 * actually knows. A third trigger adds one row, never two chains to keep in sync.
-	 */
-	private record TriggerPhrasing(String earn, String idle) {
-	}
-
-	private TriggerPhrasing phrasing() {
-		return switch (trigger) {
-			case ON_HIT_DEALT -> new TriggerPhrasing("Land a hit", "no hit");
-			default -> new TriggerPhrasing("Trigger", "no trigger");
-		};
+				+ graceSeconds + "s " + trigger.idle() + ": lose all.";
 	}
 
 	private String word() {

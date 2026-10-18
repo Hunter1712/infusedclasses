@@ -1,17 +1,26 @@
 package com.hunter1712.infusedclasses.client;
 
+import com.hunter1712.infusedclasses.Lane;
+import com.hunter1712.infusedclasses.LaneRead;
 import com.hunter1712.infusedclasses.PlayerStatusPayload;
 import com.hunter1712.infusedclasses.RotateAbility;
 import org.junit.jupiter.api.Test;
+
+import java.util.EnumMap;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
 /** The client store: one snapshot, its receipt time, and a clean disconnect. */
 class StatusStoreTest {
+	/** A snapshot with a class id and nothing else: the store only cares that it is one value. */
 	private static PlayerStatusPayload snapshot(String classId) {
-		return new PlayerStatusPayload(classId, 0, 0, 0, 0, 0, 0, 0, false, 0, false, 0, null, false,
-				0, null, 0, 0, 0, 0, 0, RotateAbility.Stance.SCUTUM, 0);
+		EnumMap<Lane, LaneRead> lanes = new EnumMap<>(Lane.class);
+		for (Lane lane : Lane.values()) {
+			lanes.put(lane, new LaneRead(0, 0, false));
+		}
+		return new PlayerStatusPayload(classId, lanes, null, null, 0, 0, 0,
+				RotateAbility.Stance.SCUTUM, 0);
 	}
 
 	@Test

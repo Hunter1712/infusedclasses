@@ -23,7 +23,7 @@ class PlayerRuntimesTest {
 		PlayerRuntimes store = new PlayerRuntimes();
 		UUID id = UUID.randomUUID();
 		PlayerRuntime first = store.runtime(id);
-		first.onTrigger(ClassRegistry.byId(ClassRegistry.JUGGERNAUT), "on_hit_dealt", 0, 1.0F);
+		first.onTrigger(ClassRegistry.byId(ClassRegistry.JUGGERNAUT), Trigger.ON_HIT_DEALT, 0, 1.0F);
 
 		store.remove(id);
 
@@ -37,7 +37,7 @@ class PlayerRuntimesTest {
 		PlayerRuntimes store = new PlayerRuntimes();
 		UUID id = UUID.randomUUID();
 		PlayerRuntime old = store.runtime(id);
-		old.onTrigger(ClassRegistry.byId(ClassRegistry.JUGGERNAUT), "on_hit_dealt", 0, 1.0F);
+		old.onTrigger(ClassRegistry.byId(ClassRegistry.JUGGERNAUT), Trigger.ON_HIT_DEALT, 0, 1.0F);
 
 		store.respawn(id);
 

@@ -17,11 +17,13 @@ import java.util.Locale;
  * legend. The words are the owners' own: the {@link AbilityRoster} carries the ability
  * names, the stance its display name, the passive and the crit rule their own. Row order
  * is fixed: the anchored stance (Legionary), the signature row, the ultimate row, then
- * the state rows (Momentum, Streak). Each lane line is its roster row's: the word, the
- * countdown, and whatever riders the row's rules draw beside them — usually a dotted bare
- * window number, since one window per lane needs no word; the Roulette band rider is the
- * one rider that keeps its word, because which band spun is the information. A classless
- * or unknown class id renders no rows at all.
+ * the state rows (Momentum, Streak). The two slot rows are the class's shape —
+ * {@link BindMorph#shape} — the same value the keys fire from, so the stack cannot draw
+ * one ultimate while the key fires another. Each lane line is its roster row's: the word,
+ * the countdown, and whatever riders the row's rules draw beside them — usually a dotted
+ * bare window number, since one window per lane needs no word; the Roulette band rider is
+ * the one rider that keeps its word, because which band spun is the information. A
+ * classless or unknown class id renders no rows at all.
  *
  * <p>Countdowns are whole seconds, rounded up, so a live chip never reads zero; a ready
  * lane draws dim with no number and the missing number is what marks it ready.
@@ -56,9 +58,11 @@ public final class StatusHud {
 					? RotateAbility.Stance.SCUTUM : status.stance();
 			rows.add(new Row(List.of(new Chip(stance.displayName(), "", true, false))));
 		}
-		rows.add(laneRow(status, signatureLane(def), elapsed));
-		rows.add(laneRow(status, ultimateLane(def), elapsed));
-		ConditionalPassive momentum = def.passiveForTrigger(ConditionalPassive.ON_HIT_DEALT);
+		// The class's shape draws both slot lines: the rows of the very targets the binds fire.
+		BindMorph.Shape shape = BindMorph.shape(def);
+		rows.add(laneRow(status, shape.signatureRow(), elapsed));
+		rows.add(laneRow(status, shape.ultimateRow(), elapsed));
+		ConditionalPassive momentum = def.passiveForTrigger(Trigger.ON_HIT_DEALT);
 		if (momentum != null && status.momentumStacks() > 0) {
 			rows.add(new Row(List.of(new Chip(momentum.name(), momentumValue(status, elapsed), true, false))));
 		}
@@ -68,26 +72,6 @@ public final class StatusHud {
 		// A definition whose abilities map to no lane draws no row rather than a blank one.
 		rows.removeIf(row -> row.chips().isEmpty());
 		return List.copyOf(rows);
-	}
-
-	/** The class-shape pick: which roster row the signature slot draws, null when the class carries none. */
-	private static AbilityRoster.Row signatureLane(ClassDefinition def) {
-		return firstCarried(def, AbilityRoster.RUSH, AbilityRoster.ROTATE, AbilityRoster.ROULETTE);
-	}
-
-	/** The class-shape pick: which roster row the ultimate slot draws, null when the class carries none. */
-	private static AbilityRoster.Row ultimateLane(ClassDefinition def) {
-		return firstCarried(def, AbilityRoster.REND, AbilityRoster.AEQUILIBRIUM, AbilityRoster.ALL_IN);
-	}
-
-	/** The first of these rows whose ability the class carries, null when it carries none of them. */
-	private static AbilityRoster.Row firstCarried(ClassDefinition def, AbilityRoster.Row... rows) {
-		for (AbilityRoster.Row row : rows) {
-			if (def.hasAbility(row.ability())) {
-				return row;
-			}
-		}
-		return null;
 	}
 
 	/**
@@ -100,8 +84,8 @@ public final class StatusHud {
 			return new Row(List.of());
 		}
 		List<Chip> chips = new ArrayList<>();
-		chips.add(lane(row.name(), row.view().laneRemaining().applyAsLong(status), elapsed));
-		for (AbilityRoster.Rider rider : row.view().riders()) {
+		chips.add(lane(row.name(), row.laneRemaining(status), elapsed));
+		for (AbilityRoster.Rider rider : row.riders()) {
 			long remaining = rider.remaining().applyAsLong(status);
 			if (rider.wanted().test(status) && remaining > elapsed) {
 				chips.add(rider(rider.label().apply(status), remaining - elapsed));

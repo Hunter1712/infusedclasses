@@ -139,7 +139,7 @@ public final class RotateAbility {
 				+ ") or Scutum (+" + ConditionalPassive.amount(SCUTUM_ARMOR)
 				+ " armor, +" + ConditionalPassive.amount(SCUTUM_TOUGHNESS)
 				+ " toughness, slower) (R, "
-				+ (Cooldowns.ROTATE_MS / 1000) + "s).";
+				+ (Lane.ROTATE.cooldownMs() / 1000) + "s).";
 	}
 
 	/** Picker copy for the Gladius-flip buff, generated from the numbers so it cannot drift from behaviour. */
@@ -172,9 +172,9 @@ public final class RotateAbility {
 	 */
 	public static Result fire(ClassDefinition def, PlayerRuntime runtime, long now) {
 		PlayerRuntime.State state = runtime.state(now);
-		Result result = trigger(def, state.rotateRemaining(), state.stance());
+		Result result = trigger(def, state.laneRemaining(Lane.ROTATE), state.stance());
 		if (result.outcome().fired()) {
-			runtime.tryUseRotate(now, result.stance());
+			runtime.rotate(now, result.stance());
 		}
 		return result;
 	}

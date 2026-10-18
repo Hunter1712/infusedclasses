@@ -46,12 +46,12 @@ class BonusCurveTest {
 	void spamFeedsZeroStacksFullFeedsOne() {
 		ClassDefinition juggernaut = ClassRegistry.byId(ClassRegistry.JUGGERNAUT);
 		PlayerRuntime spam = new PlayerRuntime();
-		spam.onTrigger(juggernaut, ConditionalPassive.ON_HIT_DEALT, 0, 0.4F);
+		spam.onTrigger(juggernaut, Trigger.ON_HIT_DEALT, 0, 0.4F);
 
 		assertEquals(0, spam.stacks(juggernaut.passives().get(0)));
 
 		PlayerRuntime timed = new PlayerRuntime();
-		timed.onTrigger(juggernaut, ConditionalPassive.ON_HIT_DEALT, 0, 1.0F);
+		timed.onTrigger(juggernaut, Trigger.ON_HIT_DEALT, 0, 1.0F);
 
 		assertEquals(1, timed.stacks(juggernaut.passives().get(0)));
 	}
@@ -60,8 +60,8 @@ class BonusCurveTest {
 	void fullSwingRestampsGrace() {
 		ClassDefinition juggernaut = ClassRegistry.byId(ClassRegistry.JUGGERNAUT);
 		PlayerRuntime runtime = new PlayerRuntime();
-		runtime.onTrigger(juggernaut, ConditionalPassive.ON_HIT_DEALT, 0, 1.0F);
-		runtime.onTrigger(juggernaut, ConditionalPassive.ON_HIT_DEALT, 3_000, 0.5F);
+		runtime.onTrigger(juggernaut, Trigger.ON_HIT_DEALT, 0, 1.0F);
+		runtime.onTrigger(juggernaut, Trigger.ON_HIT_DEALT, 3_000, 0.5F);
 
 		// The spam swing earned nothing and moved no grace: 5s past the full
 		// swing every stack drops at once.

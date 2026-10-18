@@ -105,7 +105,7 @@ class VigorTest {
 		ConditionalPassive momentum = juggernaut().passives().get(0);
 		assertEquals(1, juggernaut().passives().size());
 		assertEquals("Momentum", momentum.name());
-		assertEquals(ConditionalPassive.ON_HIT_DEALT, momentum.trigger());
+		assertEquals(Trigger.ON_HIT_DEALT, momentum.trigger());
 		assertEquals(20, momentum.maxStacks());
 	}
 
@@ -130,13 +130,13 @@ class VigorTest {
 	@Test
 	void rendStillSpendsMomentumOnly() {
 		assertEquals(juggernaut().passives().get(0),
-				juggernaut().passiveForTrigger(ConditionalPassive.ON_HIT_DEALT));
+				juggernaut().passiveForTrigger(Trigger.ON_HIT_DEALT));
 
 		// The pair rides along without entering the stacks pipeline: hits still earn
 		// Momentum alone, so the spender's consume can never touch Vigor.
 		PlayerRuntime runtime = new PlayerRuntime();
-		runtime.onTrigger(juggernaut(), ConditionalPassive.ON_HIT_DEALT, 0, 1.0F);
-		runtime.onTrigger(juggernaut(), ConditionalPassive.ON_HIT_DEALT, 0, 1.0F);
+		runtime.onTrigger(juggernaut(), Trigger.ON_HIT_DEALT, 0, 1.0F);
+		runtime.onTrigger(juggernaut(), Trigger.ON_HIT_DEALT, 0, 1.0F);
 
 		assertEquals(2, runtime.stacks(juggernaut().passives().get(0)));
 	}

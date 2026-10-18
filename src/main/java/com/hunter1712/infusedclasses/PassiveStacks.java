@@ -28,7 +28,7 @@ final class PassiveStacks {
 	 *  Unknown triggers, a missing class and trigger-less classes are inert.
 	 *  Only a full swing ({@code charge == 1.0}) earns stacks; spam earns zero.
 	 *  Callers with no swing (bonus grants, tests) must pass {@code 1.0F} explicitly. */
-	void onTrigger(ClassDefinition def, String trigger, long now, float charge) {
+	void onTrigger(ClassDefinition def, Trigger trigger, long now, float charge) {
 		if (!BonusCurve.isFullSwing(charge)) {
 			return;
 		}

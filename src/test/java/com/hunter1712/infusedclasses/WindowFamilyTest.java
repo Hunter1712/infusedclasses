@@ -19,11 +19,11 @@ class WindowFamilyTest {
 		assertEquals(RotateAbility.auraFor(RotateAbility.Stance.SCUTUM),
 				PassiveApplier.stanceWanted(runtime.state(0)));
 
-		runtime.flipStance(0, RotateAbility.Stance.GLADIUS);
+		runtime.rotate(0, RotateAbility.Stance.GLADIUS);
 		assertEquals(RotateAbility.auraFor(RotateAbility.Stance.GLADIUS),
 				PassiveApplier.stanceWanted(runtime.state(0)));
 
-		runtime.tryUseAequilibrium(0);
+		runtime.arm(Lane.OATH, 0, AequilibriumAbility.WINDOW_TICKS * 50L);
 		List<PassiveEffect.Modifier> expected = new ArrayList<>(RotateAbility.auraFor(RotateAbility.Stance.GLADIUS));
 		expected.addAll(AequilibriumAbility.windowModifiers());
 		assertEquals(expected, PassiveApplier.stanceWanted(runtime.state(0)));
@@ -37,7 +37,7 @@ class WindowFamilyTest {
 		PlayerRuntime runtime = new PlayerRuntime();
 		assertEquals(List.of(), PassiveApplier.rouletteWanted(runtime.state(0)));
 
-		runtime.tryUseRoulette(0, RouletteAbility.Outcome.EDGE);
+		runtime.roulette(0, RouletteAbility.Outcome.EDGE);
 		assertEquals(RouletteAbility.statAuraFor(RouletteAbility.Outcome.EDGE),
 				PassiveApplier.rouletteWanted(runtime.state(0)));
 		assertEquals(List.of(), PassiveApplier.rouletteWanted(runtime.state(10_000)));
@@ -48,7 +48,7 @@ class WindowFamilyTest {
 		PlayerRuntime runtime = new PlayerRuntime();
 		assertEquals(List.of(), PassiveApplier.rushWanted(runtime.state(0)));
 
-		runtime.tryUseRush(0);
+		runtime.arm(Lane.RUSH, 0, RushAbility.WINDOW_TICKS * 50L);
 		assertEquals(List.of(RushAbility.SPEED), PassiveApplier.rushWanted(runtime.state(0)));
 		assertEquals(List.of(RushAbility.SPEED), PassiveApplier.rushWanted(runtime.state(4_999)));
 		assertEquals(List.of(), PassiveApplier.rushWanted(runtime.state(5_000)));

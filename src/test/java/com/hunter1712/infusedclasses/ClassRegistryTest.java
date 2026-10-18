@@ -58,7 +58,7 @@ class ClassRegistryTest {
 		assertEquals(1, passives.size());
 		ConditionalPassive momentum = passives.get(0);
 		assertEquals("Momentum", momentum.name());
-		assertEquals("on_hit_dealt", momentum.trigger());
+		assertEquals(Trigger.ON_HIT_DEALT, momentum.trigger());
 		assertEquals(20, momentum.maxStacks());
 		assertFalse(momentum.fullDesc().isBlank());
 	}
@@ -71,14 +71,14 @@ class ClassRegistryTest {
 	}
 
 	@Test
-	void passiveCopyIsGeneratedFromItsOwnNumbers() {
-		ConditionalPassive swift = new ConditionalPassive("Swift", "on_land", 4,
+	void passiveCopyIsGeneratedFromItsOwnNumbersAndItsTriggersOwnWords() {
+		ConditionalPassive swift = new ConditionalPassive("Swift", new Trigger("on_land", "Land a swing", "no swing"), 4,
 				ResourceKey.create(Registries.ATTRIBUTE, Identifier.withDefaultNamespace("movement_speed")),
 				Identifier.fromNamespaceAndPath("infusedclasses", "swift_speed"),
 				0.5, 3);
 
-		// An on_land passive is not described as a hit.
-		assertEquals("Trigger: +0.5 movement speed (max 4). 3s no trigger: lose all.", swift.fullDesc());
+		// The words ride the trigger: an on_land passive is described by its own, never as a hit.
+		assertEquals("Land a swing: +0.5 movement speed (max 4). 3s no swing: lose all.", swift.fullDesc());
 		assertFalse(swift.fullDesc().contains("hit"));
 	}
 

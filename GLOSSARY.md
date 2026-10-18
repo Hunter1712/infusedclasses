@@ -29,8 +29,10 @@ the applied value differs from the wanted one, following the decision's plan: wr
 modifier, take off what dead stacks earned, or nothing. A tick that moved no stacks cannot have
 changed what should be on the player, so it needs no attribute write. Movement travels per
 passive (`tickDecayMoved`), so a decayed passive never removes one sitting at zero; a class
-switch removes what the old class earned but the new one does not carry (`onClassChanged`),
-drops the old stacks and resets the cooldown. The hit settle now belongs to the melee
+switch removes what the old class earned but the new one does not carry — the pure
+`cleanupFor(oldDef, newDef)` answers every modifier of that list, keyed by id, and
+`onClassChanged` only removes what it answered — then drops the old stacks and resets the
+lanes. The hit settle now belongs to the melee
 plan (see `Melee plan`); the spender half stays here: `consumeSpent` resolves the priced
 passive and drops its stacks, `dropStacks` is its JUnit-reachable core, and the
 attribute removal rides with the player.
@@ -67,22 +69,25 @@ at their single use sites — the Rush window's speed modifier in its own module
 lookups with one caller each. A result with nothing to grant and nothing
 to say — a wrong-class, on-cooldown or no-stacks press — lands nothing.
 A fired-or-fizzle press lands through `announceAndCast` alone — Rotate with no
-sound (it carries no cast sound, so it announces without fanfare); only Rush keeps its own
-adapter — for the cleanse and the speed it grants — routing its fanfare
+sound (it carries no cast sound, so it announces without fanfare); only the two abilities
+whose landing is more than the announce keep their own adapter — Rush (`RushApplier`) for
+the cleanse, Rend (`RendApplier`) for the priced stack spend — routing their fanfare
 through the shared path. Class-choice rejections and accepts route through `announce` with the `actionBar` flag.
 _Avoid_: ability system, effect handler
 
 **Ability roster** (`AbilityRoster`):
-The one table of the abilities the mod fires: a row per ability carrying the id that gates it,
-its Title Case word (the ability module's own `NAME`), the lane read over the runtime state,
-the stack's view of it — the payload lane read plus the rider rules that draw beside the lane —
-and the slot binds it answers. `/class info` draws a lane line per row the class carries, the
-HUD's rows decision draws each lane line, word and countdown and riders included, from the row
-(the class-shape pick of which row is the signature or the ultimate stays in the rows
-decision), and `BindMorph` resolves what a reused slot means by walking the class's actives
-through the rows (the first row that answers wins), so a word, a lane read, a rider rule or a
-bind cannot drift between the consumers. The ultimate keys on the `ROTATE` row (ADR-0009): the
-Aequilibrium row carries a word and a lane read, no bind. A new ability adds a row; a test
+The one table of the abilities the mod fires: a row per ability carrying its `Lane`, the id
+that gates it, its Title Case word (the ability module's own `NAME`) and the rider rules that
+draw beside its lane. Both lane reads derive from the row's lane — the `State` read
+server-side, the payload read client-side (ADR-0023) — so a row cannot draw one lane and count
+down another. `/class info` draws a lane line per row the class carries, the HUD's rows
+decision draws each lane line, word and countdown and riders included, from the row, and
+`BindMorph` resolves what a reused slot means by walking the class's own actives through each
+target's `ability()` (the first that answers wins) and returns the fired target's own row
+(`shape(def)`), so a word, a lane read, a rider rule or a bind cannot drift between the
+consumers. The ultimate is the class's own ultimate ability, never lent from the signature row
+(ADR-0026) — a class carrying neither slot ability draws no slot lines and falls back to Rush
+and Rend. A new ability adds a row; a test
 pins that every registered active id has one.
 _Avoid_: ability list, lane table, ability registry
 
@@ -111,7 +116,8 @@ cannot drift from behaviour. Every detail line shows name plus short copy
 Copy stays short on purpose: every active desc holds at most 200 chars, pinned by
 test, so full kits fit the focused card with little scroll.
 The one trigger the mod emits is described as the event it is ("Land a hit"
-for `on_hit_dealt`); any other trigger reads as the bare `Trigger`. Whole numbers read
+for `on_hit_dealt`); a trigger carries its own picker words (its `earn` and `idle` lines), so
+a further trigger cannot be spelled inert. Whole numbers read
 as `1`, not `1.0`.
 _Avoid_: description, lore text
 
@@ -179,24 +185,19 @@ by what it is rather than by what it is called. Past the grace period every stac
 at once, vanilla-style, and stacks are transient: they do not survive relog or respawn.
 _Avoid_: charge, level, rank
 
-**Cooldown** (`Cooldowns`):
-The wait after an ability fires, tracked per player, also transient. Six lanes:
-Rush's 25s (`RUSH_MS`) and Rend's 60s (`REND_MS`): `useRush` /
-`useRend` fire only when their own lane is ready and report it, `rushRemaining` /
-`rendRemaining` report the milliseconds left, 0 when ready; Rotate's 8s
-(`ROTATE_MS`, `useRotate` / `rotateRemaining`, the only gate on both switch buffs);
-the Legionary shared oath 50s
-(`OATH_MS`, `useOath` / `oathRemaining`, owned solely by Aequilibrium); and the
-Gambler's Roulette 25s (`ROULETTE_MS`, `useRoulette` / `rouletteRemaining`) and
-All In 75s (`ALL_IN_MS`, `useAllIn` / `allInRemaining`) lanes.
-`reset` readies every lane again
-for class switch and respawn. The lanes ride one map behind a private lane enum,
-so a fifth lane adds a value rather than a field; callers and tests cross the
-per-lane verbs, never the map. The Rush window rides on the transient runtime next to
-the lanes: a fired Rush stamps the press time plus a one-shot next-hit bonus,
-`rushBonusPending` on the state reads it against the 5s window, and switch and respawn clear it with
-everything else. Rush and Rend windows are one-shot (the melee plan peeks them,
-its resolve spends them, each bonus landing at most once); Testudo and Aequilibrium
+**Cooldown** (`Lane`, `Cooldowns`):
+The wait after an ability fires, tracked per player, also transient. `Lane` is the one enum
+of the six windows — Rush 25s, Rend 60s, Rotate 8s, the Legionary shared oath 50s, the
+Gambler's Roulette 25s and All In 75s — and each value owns its own length
+(`cooldownMs()`), so a seventh window is one value plus its arm site. `Cooldowns` is the
+lane-keyed `use(lane, now)` / `remaining(lane, now)` / `reset()` triad: `use` fires only when
+that lane is ready and reports it, `remaining` reports the milliseconds left, 0 when ready,
+and `reset` readies every lane again for class switch and respawn. The window rides the same
+lane on the transient runtime: a fired press arms the lane and stamps the window together
+(`PlayerRuntime.arm`; `rotate` and `roulette` arm the two landings that carry more), the
+state reads each lane as one `LaneRead` (cooldown, window remainder, one-shot flag), and
+switch and respawn clear all of it. Rush and Rend windows are one-shot (the melee plan peeks
+them, its resolve spends them, each bonus landing at most once); Testudo and Aequilibrium
 windows are timed (peeked while live, never consumed).
 _Avoid_: timer
 
@@ -255,8 +256,8 @@ The Legionary's plate stance and the default: `armor` +3
 _Avoid_: tank stance, shield form
 
 **Rotate** (`RotateAbility`):
-The Legionary's stance toggle on `R`: flips `Gladius`/`Scutum` any time off its
-8s lock (`ROTATE_MS`), no build-up, no stacks. Picking a stance applies its aura
+The Legionary's stance toggle on `R`: flips `Gladius`/`Scutum` any time off the
+rotate lane's 8s lock (`Lane.ROTATE`), no build-up, no stacks. Picking a stance applies its aura
 at once; leaving removes it at once. Flipping to `Gladius` arms the Impetus
 next-hit buff, flipping to `Scutum` opens the Testudo catch. Firing announces the new stance (`Gladius!`
 red / `Scutum!` gray) with no cast word; rejects arm nothing. The `R` bind is
@@ -268,20 +269,22 @@ _Avoid_: swap stance, transform
 The Legionary's Gladius-flip buff: the next melee hit after flipping to `Gladius`
 deals x1.10 (`SWITCH_DEAL_MULT`), at any charge, one-shot through the
 peek/consume pair, expiring 5s after the flip (`SWITCH_DEAL_MS`).
-Flipping away drops it with the stance that earned it. No lane, no window to arm.
+It rides the rotate lane's window: the flip arms it, and the state reads that lane's one-shot
+only under a Gladius landing, so no second record exists. Flipping to `Scutum` never
+carries it.
 _Avoid_: enrage, burst
 
 **Testudo** (`RotateAbility`):
 The Legionary's Scutum-flip buff: melee taken pays x0.85 (`SWITCH_TAKE_MULT`)
-for 1.5s from the flip (`SWITCH_TAKE_MS`). Timed, never consumed: every hit
-inside the catch is discounted. No lane, no window to arm.
+for 1.5s from the flip (`SWITCH_TAKE_MS`), riding the same rotate lane's window.
+Timed, never consumed: every hit inside the catch is discounted.
 _Avoid_: block, turtle
 
 **Aequilibrium** (`AequilibriumAbility`):
 The Legionary's clean oath ultimate on `V`: +1.0 attack damage
 (`infusedclasses:aequilibrium_edge`) + +3.0 armor
 (`infusedclasses:aequilibrium_plate`) for 6s (`WINDOW_TICKS`), in either stance,
-on the shared 50s oath lane (`OATH_MS`, `useOath` / `oathRemaining`). No
+on the shared 50s oath lane (`Lane.OATH`). No
 deal/take mults, no knockback immunity, no downsides: the stance stays
 underneath and both layers count. Firing announces `Aequilibrium!` gold;
 rejects arm nothing. Decided in the trigger/fire gate-and-arm shape.
@@ -365,12 +368,12 @@ _Avoid_: recursion flag, lock
 **Stance applier** (`PassiveApplier`):
 The adapter that makes the player's attributes agree with the Legionary stance: only
 the current stance's modifiers sit on the player, the other stance's come off, same
-write-only-on-change shape as the Vigor tick. Aequilibrium edge and plate ride the window
-while live. Both sides iterate the stance's single aura list (`RotateAbility.auraFor`,
+write-only-on-change shape as the Vigor tick. Aequilibrium edge and plate ride the oath
+window while live. Both sides iterate the stance's single aura list (`RotateAbility.auraFor`,
 `AequilibriumAbility.windowModifiers`), so write and remove cannot drift. The Roulette
-outcome window's stat auras ride the same tick (`applyRoulette`) and come off when the
-Gambler leaves (`removeRouletteModifiers`). Leaving the class
-takes them all off through `onClassChanged`, which also owns the Legionary marker.
+outcome window's stat auras are the wheel's own family (`rouletteWanted`) on the same tick,
+swept when the class leaves. Leaving the class
+takes them all off through `onClassChanged`, which removes exactly `cleanupFor`'s answer.
 _Avoid_: stance system, aura updater
 
 **Bind morph** (`BindMorph`):
@@ -378,8 +381,12 @@ The decision of what a slot bind means for a class: the signature slot (`R`)
 arrives as the rotate intent for Legionaries, the roulette intent for Gamblers,
 and Rush for everyone else; the ultimate slot (`V`) arrives as the
 oath ultimate for Legionaries in any stance, All In for Gamblers, and Rend for
-everyone else. One ultimate per class.
-The intent receivers wire, this decides.
+everyone else. One ultimate per class, never lent from the signature row (ADR-0026): each
+target names the ability it fires, so one walk of the class's own actives answers both the
+slot and the row that draws it (`shape(def)`): the keys fire from the same walk, and the
+HUD's slot lines read the same rows.
+The intent receivers wire — sharing one `press` prologue (class read, classless bail, runtime
+lookup) — this decides.
 _Avoid_: key routing, bind table
 
 **Stack gate**:
@@ -456,7 +463,8 @@ _Avoid_: player hook, mixin state
 
 **Class switch** (`ClassSwitch`):
 The one adapter path behind both switch entries: validate the pick in the choice module,
-clean what the old class earned (`PassiveApplier.onClassChanged`) and announce the outcome,
+clean what the old class earned (`PassiveApplier.cleanupFor`'s answer, removed by
+`onClassChanged`) and announce the outcome,
 rejection included; it returns the new definition, or null when the pick was rejected.
 Callers keep only their own extra — the picker's confirm packet, the command's return
 code — so the two entries cannot sequence the switch differently.
@@ -472,19 +480,22 @@ storage (counts plus last-trigger timestamps in definition-keyed maps) lives in 
 every passive on the class whose trigger matches (unknown triggers, a missing class and trigger-less
 classes are inert, each bump re-stamps grace), `tickDecayMoved` drops every stack of each
 passive on the class past its own grace, and reports the set that moved. `clear` drops one class's
-stacks; cooldowns go through the lane verbs, armed only by ability `fire` and reset by the adapter
-on switch. Ability windows carry their own duration, stamped at arm time: reads take only the
-clock, and each ability names its window constant once, at its arm site. Callers and tests
+stacks; cooldowns and windows are lane-keyed (`Lane`): the one
+`arm`/`rotate`/`roulette`/`consumeBonus`/`consumePayload` set arms both together, only an
+ability `fire` calls it, and `resetAll` readies every lane for the adapter's switch and
+respawn. Each ability names its window constant once, at its arm site; reads take only the
+clock. Callers and tests
 cross this module's seam; the stacks module is its implementation.
 _Avoid_: player state, live state, runtime (too generic on its own)
 
 **Runtime state** (`PlayerRuntime.State`):
-The whole transient read at one clock: six lane remainders, six window remainders with their
-load flags, the flip target, the unspent Rend stacks, the stance and the Streak, taken in one
-`PlayerRuntime.state(now)` call. It is the one read every status path crosses — the snapshot
-builder, `/class info`, the melee plan, the ability fires and the passive applier — so lane and
-window semantics cannot be re-stated per caller; the per-window read verbs are gone, while
-arms, consumes, movement verbs and the passive-stack verbs stay verbs.
+The whole transient read at one clock: a `LaneRead` per lane (its cooldown, its window
+remainder, its one-shot flag), the flip target, the unspent Rend stacks, the stance and the
+Streak, taken in one `PlayerRuntime.state(now)` call. It is the one read every status path
+crosses — the snapshot builder, `/class info`, the melee plan, the ability fires and the
+passive applier — so lane and window semantics cannot be re-stated per caller; the per-window
+read verbs are gone, while arms, consumes, movement verbs and the passive-stack verbs stay
+verbs.
 _Avoid_: runtime read, state object, snapshot
 
 **Transient runtime store** (`PlayerRuntimes`):
@@ -570,7 +581,9 @@ page always opens at the top.
 Everything the focused card looks like: body, accent strip, border and hover highlight,
 plus the name, tagline, divider and wrapped detail lines. The screen measures the body
 once per frame (`measure` → `Measured(rows, layout)`), clamps the same frame's scroll
-from the result, then draws from it. The first wrapped row
+from the result, then draws from it. The wrap and the measure take the width as a function of
+the string — the screen passes `font::width` — so both are assertable with a stub measure and
+neither reads a `Font`. The first wrapped row
 of a line draws in its own color, continuations draw dimmed so names scan, and the tone
 boundary is the line's own derived `descStart()`. The frame and the body both draw from
 one card model; the screen passes the model,
@@ -606,12 +619,15 @@ spend (the Rend window works that way); a Zero outcome draws no rider at all.
 _Avoid_: window chip, badge
 
 **Status snapshot** (`PlayerStatusPayload`):
-The S2C `infusedclasses:player_status` snapshot and wire payload in one: the class id, every
-lane and window remainder, the load flags, Momentum stacks plus grace and the grace stamp, the
-stance, the flip target, Streak and the Roulette outcome. Built from the resolved class
+The S2C `infusedclasses:player_status` snapshot and wire payload in one: the class id, a
+`LaneRead` per lane, Momentum stacks plus grace and the grace stamp, the stance, the flip
+target, Streak and the Roulette outcome. Built from the resolved class
 definition and the transient runtime at a `now`, so it can be asserted without a player — the
-builder never touches the registry, and a missing class is the empty shape. `movedSince` is the emission
-guard: discrete fields only — including the grace stamp, which moves on every re-stamp, so a
+builder never touches the registry, and a missing class is the empty shape. Its codec and its
+`movedSince` loop the lanes, so the wire order cannot drift from the read and a seventh window
+adds no field. `movedSince` is the emission
+guard: the discrete fields and each lane's read only — including the grace stamp, which moves on
+every re-stamp, so a
 hit at the stack cap still reaches the client — never the raw remainders that decay every
 rebuild. An empty class id is a state, not an absence — a classless join sends one so the
 client hides the stack by fact.
@@ -753,3 +769,10 @@ rider rules, so the HUD's rows decision keeps only the class-shape pick and a ne
 ability adds a row instead of another branch. `0024` folds the cooldown reject into the
 one silent shape: `AbilityOutcome` loses its machine-readable remainder and its
 `onCooldown` factory, and the per-ability `Result` rows keep one `rejected()`.
+`0025` makes the lane the key: `Lane` owns each cooldown length, `Cooldowns` is one
+`use`/`remaining`/`reset` triad, and `PlayerRuntime` and the snapshot each carry one
+`LaneRead` per lane, so a seventh window is one enum value plus its arm site (revising
+`0023`'s `View` and `0021`'s Rend-pair names). `0026` stops lending the ultimate: each bind
+target names the ability it fires, one walk of the class's own actives answers both the slot
+and the row that draws it, so the rows decision's class-shape pick moves into the shape
+(revising `0009`'s shared-marker keying and `0023`'s ultimate-bind sentence).

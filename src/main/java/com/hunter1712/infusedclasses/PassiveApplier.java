@@ -4,6 +4,7 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Function;
@@ -33,8 +34,8 @@ public final class PassiveApplier {
 	/**
 	 * One tick for one player: the single reconcile home. Decay, then conditionals, then
 	 * the HP-scaled pair, then the window-aura families (the stance and its Aequilibrium
-	 * window, the wheel's live spin, the Rush window's speed), in that order; the switch
-	 * cleanup mirrors it in {@link #onClassChanged}. The tick order and the
+	 * window, the wheel's live spin, the Rush window's speed), in that order; the switch's
+	 * cleanup takes off what {@link #cleanupFor} decides is stale. The tick order and the
 	 * write-only-on-change discipline are decided once. Idempotent: an attribute is only
 	 * written when what is applied differs from what should be, so the modifier is
 	 * created once and left alone while the stacks hold still.
@@ -74,7 +75,7 @@ public final class PassiveApplier {
 	/** The stance family's wanted set: the current stance's aura, plus Aequilibrium's while its window is live. */
 	static List<PassiveEffect.Modifier> stanceWanted(PlayerRuntime.State state) {
 		List<PassiveEffect.Modifier> wanted = new ArrayList<>(RotateAbility.auraFor(state.stance()));
-		if (state.aequilibriumWindowRemaining() > 0) {
+		if (state.lane(Lane.OATH).windowRemainingMs() > 0) {
 			wanted.addAll(AequilibriumAbility.windowModifiers());
 		}
 		return wanted;
@@ -88,7 +89,7 @@ public final class PassiveApplier {
 
 	/** The Rush family's wanted set: the speed stat while the engage window is live. */
 	static List<PassiveEffect.Modifier> rushWanted(PlayerRuntime.State state) {
-		return state.rushWindowRemaining() > 0 ? List.of(RushAbility.SPEED) : List.of();
+		return state.lane(Lane.RUSH).windowRemainingMs() > 0 ? List.of(RushAbility.SPEED) : List.of();
 	}
 
 	/** The stance family's full set: both stances' auras plus the window pair, so write and remove cannot drift. */
@@ -119,45 +120,72 @@ public final class PassiveApplier {
 	 */
 	public static boolean consumeSpent(ServerPlayer player, PlayerRuntime runtime, ClassDefinition def) {
 		return def != null
-				&& consumeStacks(player, runtime, def.passiveForTrigger(ConditionalPassive.ON_HIT_DEALT));
+				&& consumeStacks(player, runtime, def.passiveForTrigger(Trigger.ON_HIT_DEALT));
 	}
 
 	/**
 	 * Class switch: the new class's tick never visits the old passives, so their modifiers
-	 * would orphan. Removes what the old class earned but the new one does not carry, drops
-	 * the old stacks, and resets the cooldown: a new class starts empty.
+	 * would orphan. Removes every modifier {@link #cleanupFor} says is stale, drops the old
+	 * stacks, and resets the runtime: a new class starts empty. The rule is a decision, so
+	 * what a switch takes off is assertable without a player.
 	 */
 	public static void onClassChanged(ServerPlayer player, PlayerRuntime runtime,
 			ClassDefinition oldDef, ClassDefinition newDef) {
 		if (oldDef == newDef) {
 			return;
 		}
-		if (oldDef != null) {
-			for (ConditionalPassive passive : oldDef.passives()) {
-				if (newDef == null || !newDef.passives().contains(passive)) {
-					AttributeWriter.remove(player, passive.attribute(), passive.modifierId());
-				}
-			}
-			// Vigor holds no stacks to clear, only the modifiers come off.
-			for (HpScaledPassive hp : oldDef.hpPassives()) {
-				if (newDef == null || !newDef.hpPassives().contains(hp)) {
-					AttributeWriter.remove(player, hp.attribute(), hp.modifierId());
-				}
-			}
-			// Window auras are transient like Vigor: leaving their marker takes them off
-			// now; the tick's family sweep does not run for a classless player, so the
-			// switch stays the one immediate cleanup.
-			for (WindowFamily family : FAMILIES) {
-				if (oldDef.hasAbility(family.marker())
-						&& (newDef == null || !newDef.hasAbility(family.marker()))) {
-					for (PassiveEffect.Modifier modifier : family.all()) {
-						AttributeWriter.remove(player, modifier.attribute(), modifier.modifierId());
-					}
-				}
-			}
-			runtime.clear(oldDef);
+		for (PassiveEffect.Modifier stale : cleanupFor(oldDef, newDef)) {
+			AttributeWriter.remove(player, stale.attribute(), stale.modifierId());
 		}
-		runtime.resetCooldowns();
+		runtime.clear(oldDef);
+		runtime.resetAll();
+	}
+
+	/**
+	 * What a switch must take off: every modifier the old class's kit could write — its
+	 * stack passives, its Vigor pair, and the whole list of every window-aura family it
+	 * marks — minus every modifier id the new class writes. One entry per id, so a kit
+	 * naming an id twice removes it once; keyed by id, so a class that re-earns a modifier
+	 * keeps it and the next tick rewrites its value, and a family both classes mark is left
+	 * to the family's own sweep. Pure: the wiring only removes.
+	 */
+	static List<PassiveEffect.Modifier> cleanupFor(ClassDefinition oldDef, ClassDefinition newDef) {
+		Set<Identifier> stillWritten = new HashSet<>();
+		for (PassiveEffect.Modifier kept : writtenBy(newDef)) {
+			stillWritten.add(kept.modifierId());
+		}
+		Set<Identifier> staleIds = new HashSet<>();
+		List<PassiveEffect.Modifier> stale = new ArrayList<>();
+		for (PassiveEffect.Modifier written : writtenBy(oldDef)) {
+			if (!stillWritten.contains(written.modifierId()) && staleIds.add(written.modifierId())) {
+				stale.add(written);
+			}
+		}
+		return stale;
+	}
+
+	/**
+	 * Every modifier a class's kit can put on the player: its stack passives, its Vigor
+	 * pair, and the whole modifier list of each window family whose marker it holds — the
+	 * same sets the tick can write, read through the same mapping. Empty for no class.
+	 */
+	private static List<PassiveEffect.Modifier> writtenBy(ClassDefinition def) {
+		if (def == null) {
+			return List.of();
+		}
+		List<PassiveEffect.Modifier> all = new ArrayList<>();
+		for (ConditionalPassive passive : def.passives()) {
+			all.add(PassiveEffect.forStacks(passive, 1));
+		}
+		for (HpScaledPassive hp : def.hpPassives()) {
+			all.add(PassiveEffect.forBucket(hp, 1));
+		}
+		for (WindowFamily family : FAMILIES) {
+			if (def.hasAbility(family.marker())) {
+				all.addAll(family.all());
+			}
+		}
+		return all;
 	}
 
 	/**

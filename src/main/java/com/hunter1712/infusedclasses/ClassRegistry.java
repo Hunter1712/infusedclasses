@@ -50,7 +50,7 @@ public final class ClassRegistry {
 				"Juggernaut",
 				List.of(new ConditionalPassive(
 						"Momentum",
-						ConditionalPassive.ON_HIT_DEALT,
+						Trigger.ON_HIT_DEALT,
 						20,
 						ARMOR,
 						Identifier.fromNamespaceAndPath(InfusedClasses.MOD_ID, "momentum_armor"),

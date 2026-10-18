@@ -24,7 +24,7 @@ public final class AllInAbility {
 	/** Picker copy, generated from the numbers so it cannot drift from behaviour. */
 	public static String desc() {
 		return "Crits x" + ConditionalPassive.amount(CRIT_MULT) + " for " + (WINDOW_TICKS / 20)
-				+ "s (V, " + (Cooldowns.ALL_IN_MS / 1000) + "s). Dice rules unchanged.";
+				+ "s (V, " + (Lane.ALL_IN.cooldownMs() / 1000) + "s). Dice rules unchanged.";
 	}
 
 	/**
@@ -47,9 +47,9 @@ public final class AllInAbility {
 	 * so it cannot fail.
 	 */
 	public static AbilityOutcome fire(ClassDefinition def, PlayerRuntime runtime, long now) {
-		AbilityOutcome result = trigger(def, runtime.state(now).allInRemaining());
+		AbilityOutcome result = trigger(def, runtime.state(now).laneRemaining(Lane.ALL_IN));
 		if (result.fired()) {
-			runtime.tryUseAllIn(now);
+			runtime.arm(Lane.ALL_IN, now, WINDOW_TICKS * 50L);
 		}
 		return result;
 	}

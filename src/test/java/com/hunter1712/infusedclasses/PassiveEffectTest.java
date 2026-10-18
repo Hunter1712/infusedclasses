@@ -54,7 +54,7 @@ class PassiveEffectTest {
 				Identifier.withDefaultNamespace("movement_speed"));
 		ConditionalPassive swift = new ConditionalPassive(
 				"Something Else",
-				"on_land",
+				new Trigger("on_land", "Land a swing", "no swing"),
 				4,
 				speed,
 				Identifier.fromNamespaceAndPath("infusedclasses", "swift_speed"),

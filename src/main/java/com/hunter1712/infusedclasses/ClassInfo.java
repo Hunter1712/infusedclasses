@@ -44,7 +44,7 @@ public final class ClassInfo {
 	}
 
 	private static ChatLine laneLine(AbilityRoster.Row row, PlayerRuntime.State state) {
-		long remaining = row.laneRemaining().applyAsLong(state);
+		long remaining = row.laneRemaining(state);
 		return remaining > 0
 				? ChatLine.cooldown(row.name(), remaining)
 				: new ChatLine(row.name() + ": ready", null);

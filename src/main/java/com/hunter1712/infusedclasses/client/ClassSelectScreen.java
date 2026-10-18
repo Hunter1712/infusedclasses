@@ -116,7 +116,7 @@ public class ClassSelectScreen extends Screen {
 				: ClassPresentation.cardFor(def, hovered);
 		// Measure first: the scroll clamps against this frame's own content, so a page
 		// that shrank (or a reset) can never draw one frame past its end.
-		ClassCardRenderer.Measured measured = ClassCardRenderer.measure(font, card, model);
+		ClassCardRenderer.Measured measured = ClassCardRenderer.measure(card, model, font::width);
 		scrollPx = CardLayout.clampScroll(scrollPx, measured.layout().maxScroll());
 		lastMaxScroll = measured.layout().maxScroll();
 		ClassCardRenderer.drawBody(graphics, font, card, model, measured, scrollPx);

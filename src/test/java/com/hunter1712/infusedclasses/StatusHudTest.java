@@ -2,7 +2,11 @@ package com.hunter1712.infusedclasses;
 
 import org.junit.jupiter.api.Test;
 
+import java.util.EnumMap;
+import java.util.EnumSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -17,38 +21,53 @@ class StatusHudTest {
 	private static final String GAMBLER = "infusedclasses:gambler";
 	/** The Momentum word comes from the passive the row reads, not a HUD copy. */
 	private static final String MOMENTUM =
-			ClassRegistry.byId(ClassRegistry.JUGGERNAUT).passiveForTrigger(ConditionalPassive.ON_HIT_DEALT).name();
+			ClassRegistry.byId(ClassRegistry.JUGGERNAUT).passiveForTrigger(Trigger.ON_HIT_DEALT).name();
 
-	/** A mutable snapshot template: tests set the few fields under test, then build. */
+	/**
+	 * A mutable snapshot template: tests set the few reads under test, then build. The
+	 * pending flags mirror the runtime's own read — a lane holds its one-shot while its
+	 * window lives, Rotate's only when the landing was Gladius — so a snapshot this
+	 * builds reads like one the server would send.
+	 */
 	private static final class Snap {
 		String classId = JUGGERNAUT;
-		long rush;
-		long rend;
-		long rotate;
-		long oath;
-		long roulette;
-		long allIn;
-		long rushWindow;
-		boolean rushPending;
-		long rendWindow;
-		boolean rendPending;
-		long flipWindow;
+		final Map<Lane, Long> lanes = new EnumMap<>(Lane.class);
+		final Map<Lane, Long> windows = new EnumMap<>(Lane.class);
+		/** Lanes whose one-shot was spent: the only pending flag a test sets by hand. */
+		final Set<Lane> spent = EnumSet.noneOf(Lane.class);
 		RotateAbility.Stance flipTarget;
-		boolean impetus;
-		long rouletteWindow;
 		RouletteAbility.Outcome outcome;
-		long aeqWindow;
-		long allInWindow;
 		int stacks;
 		long grace;
 		long graceStamp;
 		RotateAbility.Stance stance = RotateAbility.Stance.SCUTUM;
 		int streak;
 
+		Snap lane(Lane lane, long remainingMs) {
+			lanes.put(lane, remainingMs);
+			return this;
+		}
+
+		Snap window(Lane lane, long remainingMs) {
+			windows.put(lane, remainingMs);
+			return this;
+		}
+
+		Snap spend(Lane lane) {
+			spent.add(lane);
+			return this;
+		}
+
 		PlayerStatusPayload build() {
-			return new PlayerStatusPayload(classId, rush, rend, rotate, oath, roulette, allIn,
-					rushWindow, rushPending, rendWindow, rendPending, flipWindow, flipTarget, impetus,
-					rouletteWindow, outcome, aeqWindow, allInWindow, stacks, grace, graceStamp, stance, streak);
+			EnumMap<Lane, LaneRead> reads = new EnumMap<>(Lane.class);
+			for (Lane lane : Lane.values()) {
+				long windowMs = windows.getOrDefault(lane, 0L);
+				boolean pending = windowMs > 0 && !spent.contains(lane)
+						&& (lane != Lane.ROTATE || flipTarget == RotateAbility.Stance.GLADIUS);
+				reads.put(lane, new LaneRead(lanes.getOrDefault(lane, 0L), windowMs, pending));
+			}
+			return new PlayerStatusPayload(classId, reads, flipTarget, outcome,
+					stacks, grace, graceStamp, stance, streak);
 		}
 	}
 
@@ -100,8 +119,7 @@ class StatusHudTest {
 		long[] remaining = {60_000, 59_999, 25_000, 10_000, 9_999, 1_000, 999, 1};
 		String[] text = {"60s", "60s", "25s", "10s", "10s", "1s", "1s", "1s"};
 		for (int i = 0; i < remaining.length; i++) {
-			Snap snap = new Snap();
-			snap.rush = remaining[i];
+			Snap snap = new Snap().lane(Lane.RUSH, remaining[i]);
 			assertEquals(text[i], chip(snap.build(), 0, 0).value(), "rush " + remaining[i] + "ms");
 			assertTrue(chip(snap.build(), 0, 0).lit());
 			assertEquals(AbilityRoster.RUSH.name(), chip(snap.build(), 0, 0).label());
@@ -110,9 +128,7 @@ class StatusHudTest {
 
 	@Test
 	void elapsedCountsDownAndReadyLandsAtItsBoundary() {
-		Snap snap = new Snap();
-		snap.rush = 20_000;
-		PlayerStatusPayload status = snap.build();
+		PlayerStatusPayload status = new Snap().lane(Lane.RUSH, 20_000).build();
 
 		assertEquals("5s", rows(status, 15_000).get(0).chips().get(0).value());
 		assertEquals("1s", rows(status, 19_001).get(0).chips().get(0).value());
@@ -122,13 +138,11 @@ class StatusHudTest {
 
 	@Test
 	void rushWindowRiderIsABareNumberSpentOrNot() {
-		Snap snap = new Snap();
-		snap.rushWindow = 5_000;
-		snap.rushPending = true;
+		Snap snap = new Snap().window(Lane.RUSH, 5_000);
 		assertEquals(rider("", "5s"), chip(snap.build(), 0, 1));
 
 		// The spend drops nothing: the window's countdown is the whole story.
-		snap.rushPending = false;
+		snap.spend(Lane.RUSH);
 		assertEquals(rider("", "5s"), chip(snap.build(), 0, 1));
 
 		// The rider counts with elapsed; the window expiring drops it.
@@ -138,12 +152,10 @@ class StatusHudTest {
 
 	@Test
 	void rendRiderVanishesOnSpend() {
-		Snap snap = new Snap();
-		snap.rendWindow = 6_000;
-		snap.rendPending = true;
+		Snap snap = new Snap().window(Lane.REND, 6_000);
 		assertEquals(rider("", "6s"), chip(snap.build(), 1, 1));
 
-		snap.rendPending = false;
+		snap.spend(Lane.REND);
 		assertEquals(1, row(snap.build(), 1).chips().size());
 	}
 
@@ -151,18 +163,17 @@ class StatusHudTest {
 	void rotateRidersSplitByFlipTarget() {
 		Snap impetus = new Snap();
 		impetus.classId = LEGIONARY;
-		impetus.flipWindow = 5_000;
+		impetus.window(Lane.ROTATE, 5_000);
 		impetus.flipTarget = RotateAbility.Stance.GLADIUS;
-		impetus.impetus = true;
 		assertEquals(rider("", "5s"), chip(impetus.build(), 1, 1));
 
 		// Spent Impetus is gone while the flip window still runs toward gladius.
-		impetus.impetus = false;
+		impetus.spend(Lane.ROTATE);
 		assertEquals(1, row(impetus.build(), 1).chips().size());
 
 		Snap testudo = new Snap();
 		testudo.classId = LEGIONARY;
-		testudo.flipWindow = 1_500;
+		testudo.window(Lane.ROTATE, 1_500);
 		testudo.flipTarget = RotateAbility.Stance.SCUTUM;
 		assertEquals(rider("", "2s"), chip(testudo.build(), 1, 1));
 
@@ -176,7 +187,7 @@ class StatusHudTest {
 	void rouletteOutcomeRiderCarriesTheBandWord() {
 		Snap snap = new Snap();
 		snap.classId = GAMBLER;
-		snap.rouletteWindow = 10_000;
+		snap.window(Lane.ROULETTE, 10_000);
 
 		snap.outcome = RouletteAbility.Outcome.EDGE;
 		assertEquals(rider("Edge", "10s"), chip(snap.build(), 0, 1));
@@ -252,12 +263,27 @@ class StatusHudTest {
 	void ultimateRidersAreBareNumbers() {
 		Snap oath = new Snap();
 		oath.classId = LEGIONARY;
-		oath.aeqWindow = 6_000;
+		oath.window(Lane.OATH, 6_000);
 		assertEquals(rider("", "6s"), chip(oath.build(), 2, 1));
 
 		Snap allIn = new Snap();
 		allIn.classId = GAMBLER;
-		allIn.allInWindow = 15_000;
+		allIn.window(Lane.ALL_IN, 15_000);
 		assertEquals(rider("", "15s"), chip(allIn.build(), 1, 1));
+	}
+
+	@Test
+	void slotRowsDrawTheRowsTheSlotsFire() {
+		// The Gambler's signature line is the wheel's row and its ultimate line All In's —
+		// the same shape the binds fire from, so the stack cannot draw another ability.
+		Snap gambler = new Snap();
+		gambler.classId = GAMBLER;
+		gambler.lane(Lane.ROULETTE, 25_000);
+		gambler.lane(Lane.ALL_IN, 75_000);
+
+		assertEquals(List.of(
+				new StatusHud.Row(List.of(lane(RouletteAbility.NAME, "25s"))),
+				new StatusHud.Row(List.of(lane(AllInAbility.NAME, "75s")))),
+				rows(gambler.build(), 0));
 	}
 }

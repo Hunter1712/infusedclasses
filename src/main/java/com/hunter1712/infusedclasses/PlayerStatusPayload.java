@@ -5,10 +5,9 @@ import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.Identifier;
 
-import java.util.List;
+import java.util.EnumMap;
+import java.util.Map;
 import java.util.Objects;
-import java.util.function.Function;
-import java.util.function.ToLongFunction;
 
 /**
  * One player's whole status stack as a single value: the snapshot decision and the wire
@@ -16,39 +15,27 @@ import java.util.function.ToLongFunction;
  * all for a classless player — so it can be asserted without a player; the S2C codec
  * carries it to the client verbatim.
  *
- * <p>{@link #movedSince} is the emission guard: it compares through the {@link #FIELDS}
- * table — lane and window <em>armed flags</em> (not raw remainders, which decay every
- * rebuild) plus every discrete field — class, load flags, stacks, stance, flip target,
- * Streak, outcome, and the Momentum grace stamp, an event the client cannot derive: a
- * hit at the stack cap re-stamps the clock without moving the count, so the stamp moving
- * is the move. A quiet second reads as no move; a fire, a spend, a stack move, a switch,
- * a respawn and a join all read as moves.
+ * <p>Per-lane state is one {@link LaneRead} per lane, so the shape is the class id, the lane
+ * map and the handful of facts that are not per-lane. {@code of}, the codec and
+ * {@link #movedSince} all walk {@link Lane#values()}: a seventh window costs this file nothing.
+ *
+ * <p>{@link #movedSince} is the emission guard: it compares lane and window <em>armed flags</em>
+ * (not raw remainders, which decay every rebuild) plus every discrete field — class, flip
+ * target, Roulette outcome, Momentum stacks and grace stamp, stance and Streak. The Momentum
+ * grace <em>stamp</em> is compared, never its remainder: an event the client cannot derive, a
+ * hit at the stack cap re-stamping the clock without moving the count. A quiet second reads as
+ * no move; a fire, a spend, a stack move, a switch, a respawn and a join all read as moves.
  *
  * <p>The empty class id is a state, not an absence: a classless join sends one so the
  * client hides the stack by fact. The id is always the resolved definition's own — the
  * registry lookup happens once, before the snapshot, so an unknown stored id has already
- * collapsed to no class. {@code flipTarget} is the live flip window's landing, the flip
- * record's own read, null when no flip window is live.
+ * collapsed to no class.
  */
 public record PlayerStatusPayload(
 		String classId,
-		long rushRemainingMs,
-		long rendRemainingMs,
-		long rotateRemainingMs,
-		long oathRemainingMs,
-		long rouletteRemainingMs,
-		long allInRemainingMs,
-		long rushWindowRemainingMs,
-		boolean rushBonusPending,
-		long rendWindowRemainingMs,
-		boolean rendBonusPending,
-		long flipWindowRemainingMs,
+		Map<Lane, LaneRead> lanes,
 		RotateAbility.Stance flipTarget,
-		boolean impetusPending,
-		long rouletteWindowRemainingMs,
 		RouletteAbility.Outcome rouletteOutcome,
-		long aequilibriumWindowRemainingMs,
-		long allInWindowRemainingMs,
 		int momentumStacks,
 		long momentumGraceRemainingMs,
 		long momentumGraceStampMs,
@@ -69,125 +56,26 @@ public record PlayerStatusPayload(
 	/** A fresh runtime's truth: what "no state" reads as. One shared value; nothing mutates it. */
 	private static final PlayerRuntime.State NO_STATE = new PlayerRuntime().state(0L);
 
-	/**
-	 * One snapshot field: its value, whether a change in it is movement worth a packet,
-	 * and how it leaves one. The kind is a type, never a flag: a row's compare rule and
-	 * its value always come from the same declaration.
-	 */
-	private interface Field {
-		/** The field's value on a payload. */
-		Object value(PlayerStatusPayload payload);
-
-		boolean moved(PlayerStatusPayload self, PlayerStatusPayload prev);
-
-		/** Writes the field's value; the table's shared encode path. */
-		default void write(FriendlyByteBuf buf, PlayerStatusPayload payload) {
-			writeValue(buf, value(payload));
-		}
-	}
-
-	/** A decaying remainder: compared armed-or-not at one clock, never by the raw number. */
-	private record ArmedField(ToLongFunction<PlayerStatusPayload> get) implements Field {
-		@Override
-		public Object value(PlayerStatusPayload payload) {
-			return get.applyAsLong(payload);
-		}
-
-		@Override
-		public boolean moved(PlayerStatusPayload self, PlayerStatusPayload prev) {
-			return armed(get.applyAsLong(self)) != armed(get.applyAsLong(prev));
-		}
-	}
-
-	/** A discrete fact: compared by equality. */
-	private record ExactField<T>(Function<PlayerStatusPayload, T> get) implements Field {
-		@Override
-		public Object value(PlayerStatusPayload payload) {
-			return get.apply(payload);
-		}
-
-		@Override
-		public boolean moved(PlayerStatusPayload self, PlayerStatusPayload prev) {
-			return !Objects.equals(get.apply(self), get.apply(prev));
-		}
-	}
-
-	/** Derived from another field: written, never compared — the stamp is compared, its remainder is not. */
-	private record IgnoredField<T>(Function<PlayerStatusPayload, T> get) implements Field {
-		@Override
-		public Object value(PlayerStatusPayload payload) {
-			return get.apply(payload);
-		}
-
-		@Override
-		public boolean moved(PlayerStatusPayload self, PlayerStatusPayload prev) {
-			return false;
-		}
+	/** A lane's whole read: the payload's half of the runtime state's own. */
+	public LaneRead lane(Lane lane) {
+		return lanes.get(lane);
 	}
 
 	/**
-	 * The field table, in record and wire order: every component once. {@code encode} and
-	 * {@code movedSince} walk it; {@code decode} reads in this same order by hand (records
-	 * have no table-driven construction) and ProtocolTest's populated round trip pins the
-	 * two orders to each other. The Momentum grace <em>remainder</em> is the one ignored
-	 * field: it derives from the stamp, which is compared.
-	 */
-	private static final List<Field> FIELDS = List.of(
-			new ExactField<>(PlayerStatusPayload::classId),
-			new ArmedField(PlayerStatusPayload::rushRemainingMs),
-			new ArmedField(PlayerStatusPayload::rendRemainingMs),
-			new ArmedField(PlayerStatusPayload::rotateRemainingMs),
-			new ArmedField(PlayerStatusPayload::oathRemainingMs),
-			new ArmedField(PlayerStatusPayload::rouletteRemainingMs),
-			new ArmedField(PlayerStatusPayload::allInRemainingMs),
-			new ArmedField(PlayerStatusPayload::rushWindowRemainingMs),
-			new ExactField<>(PlayerStatusPayload::rushBonusPending),
-			new ArmedField(PlayerStatusPayload::rendWindowRemainingMs),
-			new ExactField<>(PlayerStatusPayload::rendBonusPending),
-			new ArmedField(PlayerStatusPayload::flipWindowRemainingMs),
-			new ExactField<>(PlayerStatusPayload::flipTarget),
-			new ExactField<>(PlayerStatusPayload::impetusPending),
-			new ArmedField(PlayerStatusPayload::rouletteWindowRemainingMs),
-			new ExactField<>(PlayerStatusPayload::rouletteOutcome),
-			new ArmedField(PlayerStatusPayload::aequilibriumWindowRemainingMs),
-			new ArmedField(PlayerStatusPayload::allInWindowRemainingMs),
-			new ExactField<>(PlayerStatusPayload::momentumStacks),
-			new IgnoredField<>(PlayerStatusPayload::momentumGraceRemainingMs),
-			new ExactField<>(PlayerStatusPayload::momentumGraceStampMs),
-			new ExactField<>(PlayerStatusPayload::stance),
-			new ExactField<>(PlayerStatusPayload::streak));
-
-	/**
-	 * The snapshot at {@code now}: one runtime state read behind every lane and window
-	 * field, the two derived ones documented on the record. The definition arrives
-	 * already resolved — this never touches the registry — and is null only for a
-	 * classless player, whose reads all come from {@link #NO_STATE} and whose class id
-	 * reads empty.
+	 * The snapshot at {@code now}: one runtime state read behind every lane read, the
+	 * non-lane facts taken off the same read. The definition arrives already resolved —
+	 * this never touches the registry — and is null only for a classless player, whose
+	 * reads all come from {@link #NO_STATE} and whose class id reads empty. The lane map is
+	 * copied, so the payload never shares the map it was built from.
 	 */
 	public static PlayerStatusPayload of(ClassDefinition def, PlayerRuntime runtime, long now) {
-		ConditionalPassive momentum = def == null ? null : def.passiveForTrigger(ConditionalPassive.ON_HIT_DEALT);
+		ConditionalPassive momentum = def == null ? null : def.passiveForTrigger(Trigger.ON_HIT_DEALT);
 		PlayerRuntime.State state = runtime == null ? NO_STATE : runtime.state(now);
 		return new PlayerStatusPayload(
 				def == null ? "" : def.id().toString(),
-				state.rushRemaining(),
-				state.rendRemaining(),
-				state.rotateRemaining(),
-				state.oathRemaining(),
-				state.rouletteRemaining(),
-				state.allInRemaining(),
-				state.rushWindowRemaining(),
-				state.rushBonusPending(),
-				state.rendWindowRemaining(),
-				// A fired Rend window always stamps at least one stack (a zero-stack press
-				// fizzles before the arm), so the unspent stamp is the pending flag.
-				state.rendBonusStacks() > 0,
-				state.flipWindowRemaining(),
+				Map.copyOf(state.lanes()),
 				state.flipTarget(),
-				state.impetusPending(),
-				state.rouletteWindowRemaining(),
 				state.rouletteOutcome(),
-				state.aequilibriumWindowRemaining(),
-				state.allInWindowRemaining(),
 				momentum == null ? 0 : runtime.stacks(momentum),
 				momentum == null ? 0 : runtime.graceRemaining(momentum, now),
 				momentum == null ? 0 : runtime.graceStamp(momentum),
@@ -201,18 +89,30 @@ public record PlayerStatusPayload(
 	}
 
 	/**
-	 * Whether anything a client cannot derive moved since the given snapshot, walked
-	 * through the field table: class, lane/window armed flags, load flags, stacks, stance,
-	 * flip target, Streak, outcome, and the Momentum grace stamp. Raw remainders decay
-	 * with time and are never compared; a rebuild after a quiet second is no move. A null
-	 * previous snapshot is always a move (nothing was sent).
+	 * Whether anything a client cannot derive moved since the given snapshot: the class id,
+	 * every lane's two armed flags and one-shot flag, then the discrete facts. Raw remainders
+	 * decay with time and are never compared; a rebuild after a quiet second is no move. A
+	 * null previous snapshot is always a move (nothing was sent).
 	 */
 	public boolean movedSince(PlayerStatusPayload prev) {
 		if (prev == null) {
 			return true;
 		}
-		for (Field field : FIELDS) {
-			if (field.moved(this, prev)) {
+		if (!classId.equals(prev.classId())
+				|| !Objects.equals(flipTarget, prev.flipTarget())
+				|| !Objects.equals(rouletteOutcome, prev.rouletteOutcome())
+				|| momentumStacks != prev.momentumStacks()
+				|| momentumGraceStampMs != prev.momentumGraceStampMs()
+				|| !Objects.equals(stance, prev.stance())
+				|| streak != prev.streak()) {
+			return true;
+		}
+		for (Lane lane : Lane.values()) {
+			LaneRead self = lanes.get(lane);
+			LaneRead before = prev.lane(lane);
+			if (armed(self.remainingMs()) != armed(before.remainingMs())
+					|| armed(self.windowRemainingMs()) != armed(before.windowRemainingMs())
+					|| self.windowPending() != before.windowPending()) {
 				return true;
 			}
 		}
@@ -223,53 +123,40 @@ public record PlayerStatusPayload(
 		return remainingMs > 0;
 	}
 
-	/** Encodes in table order; the nullable enums travel as an empty name, decoded back to null. */
+	/** Encodes the class id, one read per lane in lane order, then the discrete facts. */
 	private static void encode(FriendlyByteBuf buf, PlayerStatusPayload p) {
-		for (Field field : FIELDS) {
-			field.write(buf, p);
+		buf.writeUtf(p.classId());
+		for (Lane lane : Lane.values()) {
+			LaneRead read = p.lane(lane);
+			buf.writeLong(read.remainingMs());
+			buf.writeLong(read.windowRemainingMs());
+			buf.writeBoolean(read.windowPending());
 		}
+		writeStance(buf, p.flipTarget());
+		writeOutcome(buf, p.rouletteOutcome());
+		buf.writeInt(p.momentumStacks());
+		buf.writeLong(p.momentumGraceRemainingMs());
+		buf.writeLong(p.momentumGraceStampMs());
+		writeStance(buf, p.stance());
+		buf.writeInt(p.streak());
 	}
 
-	/** One field value by its type: the codec's only type map, so the table owns the order. */
-	private static void writeValue(FriendlyByteBuf buf, Object value) {
-		switch (value) {
-			case null -> buf.writeUtf("");
-			case String s -> buf.writeUtf(s);
-			case Long l -> buf.writeLong(l);
-			case Boolean b -> buf.writeBoolean(b);
-			case Integer i -> buf.writeInt(i);
-			case RotateAbility.Stance s -> writeStance(buf, s);
-			case RouletteAbility.Outcome o -> writeOutcome(buf, o);
-			default -> throw new IllegalStateException("Unencodable snapshot field: " + value);
-		}
-	}
-
-	/** Reads in the table's order by hand; the populated round trip in ProtocolTest pins the order. */
+	/** Reads what {@link #encode} writes, in the same order; ProtocolTest's populated round trip pins the two. */
 	private static PlayerStatusPayload decode(FriendlyByteBuf buf) {
-		return new PlayerStatusPayload(
-				buf.readUtf(),
-				buf.readLong(),
-				buf.readLong(),
-				buf.readLong(),
-				buf.readLong(),
-				buf.readLong(),
-				buf.readLong(),
-				buf.readLong(),
-				buf.readBoolean(),
-				buf.readLong(),
-				buf.readBoolean(),
-				buf.readLong(),
-				readStance(buf),
-				buf.readBoolean(),
-				buf.readLong(),
-				readOutcome(buf),
-				buf.readLong(),
-				buf.readLong(),
-				buf.readInt(),
-				buf.readLong(),
-				buf.readLong(),
-				readStance(buf),
-				buf.readInt());
+		String classId = buf.readUtf();
+		EnumMap<Lane, LaneRead> lanes = new EnumMap<>(Lane.class);
+		for (Lane lane : Lane.values()) {
+			lanes.put(lane, new LaneRead(buf.readLong(), buf.readLong(), buf.readBoolean()));
+		}
+		RotateAbility.Stance flipTarget = readStance(buf);
+		RouletteAbility.Outcome outcome = readOutcome(buf);
+		int momentumStacks = buf.readInt();
+		long graceRemaining = buf.readLong();
+		long graceStamp = buf.readLong();
+		RotateAbility.Stance stance = readStance(buf);
+		int streak = buf.readInt();
+		return new PlayerStatusPayload(classId, lanes, flipTarget, outcome,
+				momentumStacks, graceRemaining, graceStamp, stance, streak);
 	}
 
 	private static void writeStance(FriendlyByteBuf buf, RotateAbility.Stance stance) {

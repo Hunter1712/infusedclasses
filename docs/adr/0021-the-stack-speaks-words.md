@@ -1,6 +1,6 @@
 # ADR-0021: The stack speaks words
 
-Status: accepted (the change-point carry, point 7, is superseded by ADR-0022)
+Status: accepted (the change-point carry, point 7, is superseded by ADR-0022; `peekRendBonusStacks` / `consumeRendBonus` retire into ADR-0025's lane verbs)
 
 ## Context
 

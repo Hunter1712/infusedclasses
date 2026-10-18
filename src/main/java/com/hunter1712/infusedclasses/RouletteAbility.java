@@ -102,7 +102,7 @@ public final class RouletteAbility {
 				+ " speed, Jackpot " + Outcome.JACKPOT.percent() + "% all, Bust " + Outcome.BUST.percent()
 				+ "% x" + ConditionalPassive.amount(BUST_MULT)
 				+ ", Zero " + Outcome.ZERO.percent() + "%; "
-				+ (WINDOW_TICKS / 20) + "s (R, " + (Cooldowns.ROULETTE_MS / 1000) + "s).";
+				+ (WINDOW_TICKS / 20) + "s (R, " + (Lane.ROULETTE.cooldownMs() / 1000) + "s).";
 	}
 
 	/** Every stat modifier the wheel can write: both the apply and the removal paths iterate this. */
@@ -150,9 +150,9 @@ public final class RouletteAbility {
 	 * just checked, so it cannot fail. Free: no HP is spent, checked or touched anywhere.
 	 */
 	public static Result fire(ClassDefinition def, PlayerRuntime runtime, long now, float roll) {
-		Result result = trigger(def, runtime.state(now).rouletteRemaining(), roll);
+		Result result = trigger(def, runtime.state(now).laneRemaining(Lane.ROULETTE), roll);
 		if (result.outcome().fired()) {
-			runtime.tryUseRoulette(now, result.band());
+			runtime.roulette(now, result.band());
 		}
 		return result;
 	}
