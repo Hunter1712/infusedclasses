@@ -1,6 +1,6 @@
 # Spec: Post-audit fixes
 
-Status: implemented — the in-game settle hand checks (AGENTS.md) still owed
+Status: implemented — in-game: armor/crit read, one-blow feedback, particles and rhythm follow-ups seen; spear and shield hand checks still owed
 
 ## Problem Statement
 
@@ -106,10 +106,13 @@ The balance model needed no change: it already prices the crit post-mitigation
 implementation moved to match it.
 
 Full suite green (255 tests, 1 added); `tools/mixin-targets.sh` resolves 6 targets;
-`tools/doc-flags.sh` and `tools/arch-flags.sh` clean. Nothing in-game seen yet: the
-settle hand-checks (hit plus bonus as one blow, combined `lastHurt`, armor read) are
-owed per AGENTS.md, so the round is not called done until they are read in the
-instance log.
+`tools/doc-flags.sh` and `tools/arch-flags.sh` clean. In-game (1.21.11 client, log
+clean of mod errors): a Gambler's iron sword vs a full-iron target read 3.2 normal
+(= 3.12 landed) and 4.7 crit (= 3.12 x 1.5) — the old double-mitigated code would
+have read 4.5, so the fix is seen in game. One sound/flash per hit, crit particles
+back, and repeated normal-rhythm hits steadied at 3.2 (the `lastHurt` memory holds
+the combined total). Still owed per AGENTS.md before the round is done: the
+full-charge spear thrust contract and the raised-shield zero-earn contract.
 
 Round review (uncommitted, both axes) fixed five findings in place: the ADR index
 line for 0009 now records the switch's home, `MeleePlan`'s gate value is named
