@@ -36,12 +36,19 @@ public final class AbilityApplier {
 
 	/**
 	 * The one fanfare: every fired ability plays this, the mod's only cast sound.
-	 * Reusing the wheel's pling, the shortest and most repeatable of the set.
+	 * The evoker's own cast spell, so landing a cast reads as one.
 	 */
-	public static final Identifier CAST_SOUND = Identifier.withDefaultNamespace("block.note_block.pling");
+	public static final Identifier CAST_SOUND = Identifier.withDefaultNamespace("entity.evoker.cast_spell");
+
+	/** The fanfare plays above the shared volume: the evoker's low whoosh needs it to read over combat. */
+	private static final float CAST_VOLUME = 1.6F;
 
 	/** One play path for every mod sound: resolves the id and plays it at the player. Null sound plays nothing. */
 	public static void playCast(ServerPlayer player, Identifier soundId) {
+		playCast(player, soundId, 1.0F);
+	}
+
+	private static void playCast(ServerPlayer player, Identifier soundId, float volume) {
 		if (player.level() instanceof ServerLevel level && soundId != null) {
 			Vec3 at = player.position();
 			Holder<SoundEvent> sound = player.registryAccess().lookupOrThrow(Registries.SOUND_EVENT)
@@ -50,7 +57,7 @@ public final class AbilityApplier {
 			if (sound == null) {
 				return;
 			}
-			level.playSound(null, at.x, at.y, at.z, sound, SoundSource.PLAYERS, 1.0F, 1.0F);
+			level.playSound(null, at.x, at.y, at.z, sound, SoundSource.PLAYERS, volume, 1.0F);
 		}
 	}
 
@@ -63,7 +70,7 @@ public final class AbilityApplier {
 			boolean actionBar) {
 		announce(player, announcement, actionBar);
 		if (fired) {
-			playCast(player, CAST_SOUND);
+			playCast(player, CAST_SOUND, CAST_VOLUME);
 		}
 	}
 }

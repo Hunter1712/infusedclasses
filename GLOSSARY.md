@@ -229,10 +229,11 @@ Like every cast, firing plays the shared fanfare (see `Spellcast`).
 _Avoid_: dash, charge
 
 **Spellcast** (`AbilityApplier.CAST_SOUND`):
-The one fanfare shared by every active: firing any ability plays the same note-block pling
-(through `AbilityApplier.playCast`), so landing a cast is one learnable rule; fizzles and
-rejects cost nothing and stay silent. The id and its single play path live here so appliers
-never duplicate them. Rotate carries no cast sound and announces without fanfare.
+The one fanfare shared by every active: firing any ability plays the evoker's own cast
+spell (through `AbilityApplier.playCast`) at a raised volume, so the low whoosh carries
+over combat; landing a cast is one learnable rule. Fizzles and rejects cost nothing and
+stay silent. The id and its single play path live here so appliers never duplicate them.
+Rotate carries no cast sound and announces without fanfare.
 _Avoid_: cast time, wind-up
 
 **Onslaught** (`OnslaughtAbility`):
@@ -558,23 +559,26 @@ in the joined text, derived from the join, never searched.
 _Avoid_: row, string, label
 
 **Line kind** (`ClassPresentation.LineKind`):
-Which section a card line belongs to: a passive or ability header, or a passive or ability item.
-Kind is what decides style; a line's text never does.
+Which section a card line belongs to: a passive or ability header, or a passive, checkpoint
+(`TIER`) or ability item. Kind is what decides style and indent; a line's text never does.
 _Avoid_: type, category
 
 **Line style** (`ClassPresentation.LineStyle`):
-The colour and boldness a line draws with, decided by its line kind alone: headers white bold
-(`0xFFFFFFFF`), passive items light gray (`0xFFBDBDBD`), ability items blue (`0xFF7ED6FF`).
-Continuation lines draw with the style of their parent item kind.
+The colour and boldness a line draws its name with, decided by its line kind and the
+class accent: headers white bold (`0xFFFFFFFF`), passive and ability item names the
+accent lightened to a legibility floor, checkpoint names the same accent dimmed
+(`CardPalette.tierText`). Descriptions never take the line's own colour:
+they draw the card palette's one shared tone. Continuation lines draw with the style of
+their parent item kind.
 _Avoid_: format, theme
 
 **Card lines** (`ClassPresentation.cardLinesFor`):
 The detail lines a focused card shows. A class shows a `Passives` header plus one
-name-plus-description line per passive (HP-scaled passives
-sharing a group read as one line with joined descriptions) plus one per flip buff plus
+name-plus-description rules line per passive and one indented `TIER` row per checkpoint,
+then one line per HP-scaled family (with joined descriptions), one per flip buff plus
 the generated `Crooked Dice` and `Streak` lines for a class carrying dice,
 or the
-header plus `No passives yet` when it has none, and an `Active` header plus one
+header plus `No passives yet` when it has none, and an `Actives` header plus one
 name-plus-description line per fired active. Names draw bright, descriptions dimmed.
 Nothing hides behind hover.
 _Avoid_: card text
@@ -584,7 +588,8 @@ The line under the picker title: `Your choice shapes your ability`.
 _Avoid_: header
 
 **Card accent** (`ClassPresentation.cardFor`):
-The colour of a card's top strip: the class's own accent.
+The colour of a card's top strip: the class's own accent, and the seed every card
+tone derives from through the card palette.
 _Avoid_: highlight
 
 **Picker button** (`ClassSelectScreen`):
@@ -597,7 +602,19 @@ The card content: display name, tagline, detail lines (with kinds and styles) an
 Frame and body resolve the card model once per page per frame.
 
 **Card style** (`ClassPresentation.CardStyle`, `cardFor`):
-The hover-dependent visual layer: border colour, hover wash and name colour. Derived per frame from `isHovering`.
+The hover-dependent visual layer: border colour and name colour, both derived from the
+class accent. `isHovering` picks between the plain border and the legible accent border;
+hover never washes the body.
+
+**Card palette** (`CardPalette`):
+Every colour one class's card derives from its accent: the body's whisper of a tint,
+the divider and tagline, the legible accent for the class name and every item name, the
+dimmed accent for checkpoint names, and the plain/hover border pair.
+Neutral tones (section headers) stay accent-free on purpose, and every
+description — passive, checkpoint or active — draws the palette's one shared subtle
+tone (`descText`), dim enough that every accent name stays brightest. Pure ints: the
+renderer fills and draws, the palette decides.
+_Avoid_: theme, skin
 
 **Card model** (`ClassPresentation.CardModel`, `cardFor`):
 The whole card in one decision: text + style together, so the look is decided once instead of in ternaries across callers.
@@ -619,19 +636,23 @@ _Avoid_: GUI, menu
 Everything the focused card sits in: the focused math (centered card rectangle,
 two-thirds width up to 520, pinned select rect, side arrows, dot row,
 title/subtitle/footer anchors), the header's vertical model (name, tagline and divider
-anchors with the derived body top, the divider height, the inner width), the hover
+anchors with the derived body top, the divider height, the inner width), the body's left
+edge with the checkpoint indent, the hover
 hit-test the screen positions with, and page wraparound. Rows past the visible slice
 scroll under the wheel with a thin scrollbar; the pinned select never moves, and a new
 page always opens at the top.
 
 **Card renderer** (`client/ClassCardRenderer`):
 Everything the focused card looks like: body, accent strip, border and hover highlight,
-plus the name, tagline, divider and wrapped detail lines. The screen measures the body
+plus the name, tagline, divider and wrapped detail lines. Every line left-aligns at the
+body's left edge and checkpoint rows indent past it, so a bar's tiers hang off their
+rules line; the frame tones come from the card palette. The screen measures the body
 once per frame (`measure` → `Measured(rows, layout)`), clamps the same frame's scroll
 from the result, then draws from it. The wrap and the measure take the width as a function of
 the string — the screen passes `font::width` — so both are assertable with a stub measure and
-neither reads a `Font`. The first wrapped row
-of a line draws in its own color, continuations draw dimmed so names scan, and the tone
+neither reads a `Font`. Names draw in their
+line's own colour, descriptions and their wrapped continuations in the palette's one
+shared subtle tone so names scan, and the tone
 boundary is the line's own derived `descStart()`. The frame and the body both draw from
 one card model; the screen passes the model,
 never the parts. Each visual line draws with

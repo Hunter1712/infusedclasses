@@ -13,6 +13,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Cooldowns, ability windows and passive grace run on a monotonic clock (`InfusedClasses.now()`, `System.nanoTime` millis) instead of wall time, so a clock step — a VM snapshot restore, an NTP correction — can no longer skip a cooldown or freeze one. The client HUD's countdowns stay client-local.
 
 ### Changed
+- Picker cards take their class's colours (ADR-0032): every card tone — body tint, divider,
+  tagline, class name, every item name (passive and active alike), checkpoint names, and the
+  plain/hover border pair — derives from the class accent in one pure `CardPalette`. Hover
+  brightens the border only: no wash over the body. Section headers stay white bold and
+  descriptions of both sections share one subtle neutral (`#8C8C8C`, dim enough that accent
+  names stay brightest); the backdrop deepens behind a subtle edge vignette. The card body
+  left-aligns and a bar's checkpoint rows draw as indented `TIER` lines, so they hang off
+  their rules line instead of reading as standalone passives.
+  The actives section header reads `Actives`, parallel with `Passives`.
+  The HUD, chat and wire keep their own colours.
+- The cast fanfare becomes the evoker's own cast spell (`entity.evoker.cast_spell`) instead of
+  the note-block pling: every fired ability still plays one shared sound, now one that reads as
+  a cast, played at 1.6 volume so its low whoosh carries over combat; Rotate keeps announcing
+  without a fanfare, and fizzles and rejects stay silent.
 - Player copy pass: Momentum's card line splits into its rules line plus one row per checkpoint
   (`Steady at 15` …), each still generated from the bar's own numbers, so the bar scans row by row;
   Burden's card line drops its flavour sentence, and weight wording leaves the reader-facing prose

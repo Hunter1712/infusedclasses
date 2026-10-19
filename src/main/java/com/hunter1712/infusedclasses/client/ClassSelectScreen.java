@@ -30,6 +30,11 @@ public class ClassSelectScreen extends Screen {
 	private static final int TITLE_COLOR = 0xFFE8C15A;
 	private static final int SUBTITLE_COLOR = 0xFF9A9A9A;
 	private static final int FOOTER_COLOR = 0xFF777777;
+	/** Backdrop gradient, darker toward the bottom, with the edge vignette laid on top. */
+	private static final int BACKDROP_TOP = 0xD00C0C12;
+	private static final int BACKDROP_BOTTOM = 0xE80A0A10;
+	private static final int VIGNETTE_ALPHA = 0x40;
+	private static final int VIGNETTE_STEPS = 6;
 
 	private List<ClassDefinition> classes = List.of();
 	private final List<Button> dots = new ArrayList<>();
@@ -97,12 +102,26 @@ public class ClassSelectScreen extends Screen {
 	@Override
 	public void renderBackground(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
 		super.renderBackground(graphics, mouseX, mouseY, partialTick);
-		graphics.fillGradient(0, 0, width, height, 0xC0101010, 0xD0101010);
+		graphics.fillGradient(0, 0, width, height, BACKDROP_TOP, BACKDROP_BOTTOM);
+		drawVignette(graphics);
 		if (classes.isEmpty()) {
 			return;
 		}
 		frame = resolve(mouseX, mouseY);
 		ClassCardRenderer.drawFrame(graphics, frame.card(), frame.model());
+	}
+
+	/** Deepens the screen edges in a few steps: a subtle vignette over the picker backdrop. */
+	private void drawVignette(GuiGraphics graphics) {
+		int band = Math.max(24, Math.min(width, height) / 8);
+		int strip = Math.max(1, band / VIGNETTE_STEPS);
+		for (int i = 0; i < VIGNETTE_STEPS; i++) {
+			int shade = (VIGNETTE_ALPHA * (VIGNETTE_STEPS - 1 - i) / VIGNETTE_STEPS) << 24;
+			graphics.fill(i * strip, 0, (i + 1) * strip, height, shade);
+			graphics.fill(width - (i + 1) * strip, 0, width - i * strip, height, shade);
+			graphics.fill(0, i * strip, width, (i + 1) * strip, shade);
+			graphics.fill(0, height - (i + 1) * strip, width, height - i * strip, shade);
+		}
 	}
 
 	/** The one per-frame resolution: card rectangle, presentation model and measured layout. */

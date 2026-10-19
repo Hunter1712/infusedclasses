@@ -51,14 +51,14 @@ class ClassPresentationTest {
 
 	@Test
 	void descStartIsDerivedFromTheJoin() {
-		ClassPresentation.CardLine withDesc =
-				new ClassPresentation.CardLine("Rush", "Engage.", ClassPresentation.LineKind.ABILITY);
+		ClassPresentation.CardLine withDesc = new ClassPresentation.CardLine(
+				"Rush", "Engage.", ClassPresentation.LineKind.ABILITY, 0xFFE74C3C);
 
 		assertEquals("Rush \u2014 ".length(), withDesc.descStart());
 		assertEquals("Engage.", withDesc.text().substring(withDesc.descStart()));
 
-		ClassPresentation.CardLine bare =
-				new ClassPresentation.CardLine("Passives", null, ClassPresentation.LineKind.PASSIVE_HEADER);
+		ClassPresentation.CardLine bare = new ClassPresentation.CardLine(
+				"Passives", null, ClassPresentation.LineKind.PASSIVE_HEADER, 0xFFE74C3C);
 
 		// No description: the boundary is the end, so the whole row reads as the name.
 		assertEquals(bare.text().length(), bare.descStart());
@@ -97,8 +97,8 @@ class ClassPresentationTest {
 		assertTrue(texts.contains(CritRule.STREAK + " \u2014 " + dice.streakDesc()));
 		assertTrue(texts.contains("Roulette \u2014 " + RouletteAbility.desc()));
 		assertTrue(texts.contains("All In \u2014 " + AllInAbility.desc()));
-		// The dice lines are passives, not actives: they render above the Active header.
-		int activeHeader = texts.indexOf("Active");
+		// The dice lines are passives, not actives: they render above the Actives header.
+		int activeHeader = texts.indexOf("Actives");
 		assertTrue(texts.indexOf(CritRule.STREAK + " \u2014 " + dice.streakDesc()) < activeHeader);
 		for (ClassPresentation.CardLine line : lines) {
 			if (line.text().startsWith(CritRule.CROOKED_DICE + " \u2014 ")
@@ -126,48 +126,55 @@ class ClassPresentationTest {
 		assertTrue(lines.get(0).style().bold());
 		assertTrue(lines.get(1).text().startsWith("Momentum \u2014 "));
 		assertEquals(ClassPresentation.LineKind.PASSIVE, lines.get(1).kind());
-		assertEquals(0xFFBDBDBD, lines.get(1).style().color());
+		assertEquals(CardPalette.accentText(0xFFE74C3C), lines.get(1).style().color());
 		assertFalse(lines.get(1).style().bold());
-		// Each checkpoint is its own row, named for its threshold.
+		// Each checkpoint is its own TIER row, named for its threshold and drawn in the
+		// bar's own dimmed accent: the renderer indents it under the rules line.
 		assertTrue(lines.get(2).text().startsWith("Steady at 15 \u2014 "));
-		assertEquals(ClassPresentation.LineKind.PASSIVE, lines.get(2).kind());
+		assertEquals(ClassPresentation.LineKind.TIER, lines.get(2).kind());
+		assertEquals(CardPalette.tierText(0xFFE74C3C), lines.get(2).style().color());
 		assertTrue(lines.get(3).text().startsWith("Braced at 30 \u2014 "));
+		assertEquals(ClassPresentation.LineKind.TIER, lines.get(3).kind());
 		assertTrue(lines.get(4).text().startsWith("Rooted at 45 \u2014 "));
+		assertEquals(ClassPresentation.LineKind.TIER, lines.get(4).kind());
 		assertTrue(lines.get(5).text().startsWith("Burden \u2014 "));
 		assertEquals(ClassPresentation.LineKind.PASSIVE, lines.get(5).kind());
 		// Active section
-		assertEquals("Active", lines.get(6).text());
+		assertEquals("Actives", lines.get(6).text());
 		assertEquals(ClassPresentation.LineKind.ABILITY_HEADER, lines.get(6).kind());
 		assertTrue(lines.get(7).text().startsWith("Offload \u2014 "));
 		assertEquals(ClassPresentation.LineKind.ABILITY, lines.get(7).kind());
-		assertEquals(0xFF7ED6FF, lines.get(7).style().color());
+		assertEquals(CardPalette.accentText(0xFFE74C3C), lines.get(7).style().color());
 		assertTrue(lines.get(8).text().startsWith("Onslaught \u2014 "));
 	}
 
 	@Test
 	void everyLineKindDecidesItsOwnStyle() {
+		int accent = 0xFFE74C3C;
+
 		assertEquals(new ClassPresentation.LineStyle(0xFFFFFFFF, true),
-				ClassPresentation.styleFor(ClassPresentation.LineKind.PASSIVE_HEADER));
-		assertEquals(new ClassPresentation.LineStyle(0xFFBDBDBD, false),
-				ClassPresentation.styleFor(ClassPresentation.LineKind.PASSIVE));
+				ClassPresentation.styleFor(ClassPresentation.LineKind.PASSIVE_HEADER, accent));
+		assertEquals(new ClassPresentation.LineStyle(CardPalette.accentText(accent), false),
+				ClassPresentation.styleFor(ClassPresentation.LineKind.PASSIVE, accent));
 		assertEquals(new ClassPresentation.LineStyle(0xFFFFFFFF, true),
-				ClassPresentation.styleFor(ClassPresentation.LineKind.ABILITY_HEADER));
-		assertEquals(new ClassPresentation.LineStyle(0xFF7ED6FF, false),
-				ClassPresentation.styleFor(ClassPresentation.LineKind.ABILITY));
+				ClassPresentation.styleFor(ClassPresentation.LineKind.ABILITY_HEADER, accent));
+		assertEquals(new ClassPresentation.LineStyle(CardPalette.accentText(accent), false),
+				ClassPresentation.styleFor(ClassPresentation.LineKind.ABILITY, accent));
+		assertEquals(new ClassPresentation.LineStyle(CardPalette.tierText(accent), false),
+				ClassPresentation.styleFor(ClassPresentation.LineKind.TIER, accent));
 	}
 
 	@Test
 	void everyCardHighlightsOnlyOnHover() {
 		for (ClassDefinition def : ClassRegistry.all()) {
+			int accent = def.accentColor();
 			ClassPresentation.CardStyle plain = ClassPresentation.cardFor(def, false).style();
-			assertEquals(0xFF3A3A3A, plain.borderColor());
-			assertEquals(null, plain.washColor());
-			assertEquals(0xFFFFFFFF, plain.nameColor());
+			assertEquals(CardPalette.borderPlain(accent), plain.borderColor());
+			assertEquals(CardPalette.accentText(accent), plain.nameColor());
 
 			ClassPresentation.CardStyle hovered = ClassPresentation.cardFor(def, true).style();
-			assertEquals(0xFF8A8A8A, hovered.borderColor());
-			assertEquals(0x14FFFFFF, hovered.washColor());
-			assertEquals(0xFFFFFFFF, hovered.nameColor());
+			assertEquals(CardPalette.borderHover(accent), hovered.borderColor());
+			assertEquals(CardPalette.accentText(accent), hovered.nameColor());
 		}
 	}
 
@@ -175,7 +182,7 @@ class ClassPresentationTest {
 	void everyCardLineCarriesTheStyleOfItsKind() {
 		for (ClassDefinition def : ClassRegistry.all()) {
 			for (ClassPresentation.CardLine line : ClassPresentation.cardLinesFor(def)) {
-				assertEquals(ClassPresentation.styleFor(line.kind()), line.style(),
+				assertEquals(ClassPresentation.styleFor(line.kind(), def.accentColor()), line.style(),
 						def.id() + " line \"" + line.text() + "\" draws with the style of its kind");
 			}
 		}
@@ -198,7 +205,7 @@ class ClassPresentationTest {
 				customId, "Custom",
 				List.of(),
 				List.of(),
-				0xFFFFFF, "tag",
+				0xFFFFFFFF, "tag",
 				List.of(new ClassDefinition.ActiveAbility(ClassRegistry.ONSLAUGHT_ABILITY, "Ability line", "Does a thing.")),
 				List.of(),
 				CritRule.universal());
@@ -210,13 +217,13 @@ class ClassPresentationTest {
 		assertEquals(ClassPresentation.LineKind.PASSIVE_HEADER, lines.get(0).kind());
 		assertEquals("No passives yet", lines.get(1).text());
 		assertEquals(ClassPresentation.LineKind.PASSIVE, lines.get(1).kind());
-		assertEquals(0xFFBDBDBD, lines.get(1).style().color());
+		assertEquals(CardPalette.accentText(0xFFFFFFFF), lines.get(1).style().color());
 		assertFalse(lines.get(1).style().bold());
-		assertEquals("Active", lines.get(2).text());
+		assertEquals("Actives", lines.get(2).text());
 		assertEquals(ClassPresentation.LineKind.ABILITY_HEADER, lines.get(2).kind());
 		assertEquals("Ability line \u2014 Does a thing.", lines.get(3).text());
 		assertEquals(ClassPresentation.LineKind.ABILITY, lines.get(3).kind());
-		assertEquals(0xFF7ED6FF, lines.get(3).style().color());
+		assertEquals(CardPalette.accentText(0xFFFFFFFF), lines.get(3).style().color());
 		assertFalse(lines.get(3).style().bold());
 	}
 }

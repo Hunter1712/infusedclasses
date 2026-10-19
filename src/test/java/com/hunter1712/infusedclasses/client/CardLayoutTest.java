@@ -1,5 +1,6 @@
 package com.hunter1712.infusedclasses.client;
 
+import com.hunter1712.infusedclasses.ClassPresentation;
 import com.hunter1712.infusedclasses.client.CardLayout.CardRect;
 import org.junit.jupiter.api.Test;
 
@@ -85,10 +86,17 @@ class CardLayoutTest {
 	}
 
 	@Test
-	void dimmedKeepsAlphaAndDarkens() {
-		assertEquals(0xFF6BB5D8, ClassCardRenderer.dimmed(0xFF7ED6FF));
-		assertEquals(0xFFA0A0A0, ClassCardRenderer.dimmed(0xFFBDBDBD));
-		assertEquals(0xFFD8D8D8, ClassCardRenderer.dimmed(0xFFFFFFFF));
+	void bodyLinesLeftAlignAndTiersIndent() {
+		CardRect card = CardLayout.focusedCard(854, 480);
+
+		assertEquals(card.x() + CardLayout.PAD, CardLayout.bodyLeft(card));
+		assertEquals(CardLayout.TIER_INDENT, CardLayout.rowIndent(ClassPresentation.LineKind.TIER));
+		assertEquals(0, CardLayout.rowIndent(ClassPresentation.LineKind.PASSIVE));
+		assertEquals(0, CardLayout.rowIndent(ClassPresentation.LineKind.ABILITY));
+		assertEquals(0, CardLayout.rowIndent(ClassPresentation.LineKind.PASSIVE_HEADER));
+		// An indented checkpoint still fits the inner width.
+		assertTrue(CardLayout.bodyLeft(card) + CardLayout.TIER_INDENT + 40
+				<= CardLayout.bodyLeft(card) + CardLayout.innerWidth(card));
 	}
 
 	@Test

@@ -21,7 +21,7 @@ class ClassCardRendererTest {
 	private static final ToIntFunction<String> PIXELS = String::length;
 
 	private static ClassPresentation.CardLine line(String name, String desc) {
-		return new ClassPresentation.CardLine(name, desc, ClassPresentation.LineKind.ABILITY);
+		return new ClassPresentation.CardLine(name, desc, ClassPresentation.LineKind.ABILITY, 0xFFE74C3C);
 	}
 
 	@Test
@@ -68,12 +68,28 @@ class ClassCardRendererTest {
 	@Test
 	void anEmptyDescriptionStaysOneRow() {
 		ClassPresentation.CardLine header = new ClassPresentation.CardLine(
-				"Passives", null, ClassPresentation.LineKind.PASSIVE_HEADER);
+				"Passives", null, ClassPresentation.LineKind.PASSIVE_HEADER, 0xFFE74C3C);
 
 		// Null and blank descriptions are the same line: the name alone, boundary at the end.
-		assertEquals(List.of(new ClassCardRenderer.TextRow("Passives", "Passives".length(), header.style())),
+		assertEquals(List.of(new ClassCardRenderer.TextRow("Passives", "Passives".length(), header.style(), 0)),
 				ClassCardRenderer.wrapRows(header, 4, PIXELS));
 		assertEquals(1, ClassCardRenderer.wrapRows(line("Vigor", ""), 4, PIXELS).size());
+	}
+
+	@Test
+	void checkpointRowsCarryTheirIndent() {
+		ClassPresentation.CardLine tier = new ClassPresentation.CardLine(
+				"Steady at 15", "text after", ClassPresentation.LineKind.TIER, 0xFFE74C3C);
+
+		List<ClassCardRenderer.TextRow> rows = ClassCardRenderer.wrapRows(tier, 40, PIXELS);
+
+		for (ClassCardRenderer.TextRow row : rows) {
+			assertEquals(CardLayout.TIER_INDENT, row.indent(), row.text());
+		}
+		// Every other kind starts at the body's left edge.
+		for (ClassCardRenderer.TextRow row : ClassCardRenderer.wrapRows(line("Rush", "Engage."), 40, PIXELS)) {
+			assertEquals(0, row.indent());
+		}
 	}
 
 	@Test

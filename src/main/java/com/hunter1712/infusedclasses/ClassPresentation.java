@@ -12,19 +12,13 @@ import java.util.Map;
  */
 public final class ClassPresentation {
 	private static final int HEADER_COLOR = 0xFFFFFFFF;   // white for section headers
-	private static final int PASSIVE_COLOR = 0xFFBDBDBD;   // light gray for passive items
-	private static final int ABILITY_COLOR = 0xFF7ED6FF;   // blue for ability items
-	private static final int BORDER_COLOR = 0xFF3A3A3A;
-	private static final int HOVER_BORDER_COLOR = 0xFF8A8A8A;
-	private static final int HOVER_WASH_COLOR = 0x14FFFFFF;
-	private static final int NAME_COLOR = 0xFFFFFFFF;
 
 	private ClassPresentation() {
 	}
 
 	/** One rendered card line plus which section it belongs to. */
 	public enum LineKind {
-		PASSIVE_HEADER, PASSIVE, ABILITY_HEADER, ABILITY
+		PASSIVE_HEADER, PASSIVE, TIER, ABILITY_HEADER, ABILITY
 	}
 
 	/** The colour and weight a line draws with. Decided by line kind, never by its text. */
@@ -33,9 +27,9 @@ public final class ClassPresentation {
 
 	/** One rendered card line: name plus optional description, the section it belongs to, and the style it draws with. */
 	public record CardLine(String name, String desc, LineKind kind, LineStyle style) {
-		/** A line's style comes from its kind, so a renderer never has to read the line. */
-		public CardLine(String name, String desc, LineKind kind) {
-			this(name, desc, kind, styleFor(kind));
+		/** A line's style comes from its kind and the class accent, so a renderer never has to read the line. */
+		public CardLine(String name, String desc, LineKind kind, int accent) {
+			this(name, desc, kind, styleFor(kind, accent));
 		}
 
 		/** Full text: name alone, or name plus description. The renderer draws the parts in two tones. */
@@ -53,12 +47,16 @@ public final class ClassPresentation {
 		}
 	}
 
-	/** Style per line kind: headers are bold, items are not. Continuation lines draw with their parent item's style. */
-	public static LineStyle styleFor(LineKind kind) {
+	/**
+	 * Style per line kind and class accent: headers white bold, every item name the
+	 * accent lightened until it reads, checkpoint rows the same accent dimmed. Text
+	 * never decides.
+	 */
+	public static LineStyle styleFor(LineKind kind, int accent) {
 		return switch (kind) {
 			case PASSIVE_HEADER, ABILITY_HEADER -> new LineStyle(HEADER_COLOR, true);
-			case PASSIVE -> new LineStyle(PASSIVE_COLOR, false);
-			case ABILITY -> new LineStyle(ABILITY_COLOR, false);
+			case PASSIVE, ABILITY -> new LineStyle(CardPalette.accentText(accent), false);
+			case TIER -> new LineStyle(CardPalette.tierText(accent), false);
 		};
 	}
 
@@ -69,24 +67,25 @@ public final class ClassPresentation {
 
 	/**
 	 * Lines shown on the focused card: Passives header plus, per passive, its rules line
-	 * then one line per checkpoint (e.g. `Steady at 15`), one per HP-scaled family (with
-	 * joined descriptions), one per always-on row, one per flip buff plus the generated
-	 * Crooked Dice and Streak lines for a class carrying dice, then Active header plus one
-	 * detail line per fired active. Every detail line carries name plus short description,
-	 * so nothing hides behind hover.
+	 * then one `TIER` row per checkpoint (e.g. `Steady at 15`, drawn indented so it hangs
+	 * off its bar), one per HP-scaled family (with joined descriptions), one per always-on
+	 * row, one per flip buff plus the generated Crooked Dice and Streak lines for a class
+	 * carrying dice, then Actives header plus one detail line per fired active. Every detail
+	 * line carries name plus short description, so nothing hides behind hover.
 	 */
 	public static List<CardLine> cardLinesFor(ClassDefinition def) {
+		int accent = def.accentColor();
 		List<CardLine> lines = new ArrayList<>();
-		lines.add(new CardLine("Passives", null, LineKind.PASSIVE_HEADER));
+		lines.add(new CardLine("Passives", null, LineKind.PASSIVE_HEADER, accent));
 		if (!def.passives().isEmpty() || !def.hpPassives().isEmpty() || !def.alwaysOn().isEmpty()
 				|| !def.flipBuffs().isEmpty() || def.critRule().hasDice()) {
 			for (ConditionalPassive p : def.passives()) {
-				lines.add(new CardLine(p.name(), p.rulesDesc(), LineKind.PASSIVE));
-				// Each checkpoint gets its own row: a bar scans tier by tier instead
-				// of running together as one paragraph.
+				lines.add(new CardLine(p.name(), p.rulesDesc(), LineKind.PASSIVE, accent));
+				// Each checkpoint gets its own TIER row: a bar scans tier by tier
+				// instead of running together as one paragraph.
 				for (ConditionalPassive.Tier tier : p.tiers()) {
 					lines.add(new CardLine(tier.name() + " at " + tier.threshold(),
-							p.tierDesc(tier), LineKind.PASSIVE));
+							p.tierDesc(tier), LineKind.TIER, accent));
 				}
 			}
 			for (Map.Entry<String, List<HpScaledPassive>> entry : groupedHp(def).entrySet()) {
@@ -97,25 +96,25 @@ public final class ClassPresentation {
 					}
 					joined.append(hp.fullDesc());
 				}
-				lines.add(new CardLine(entry.getKey(), joined.toString(), LineKind.PASSIVE));
+				lines.add(new CardLine(entry.getKey(), joined.toString(), LineKind.PASSIVE, accent));
 			}
 			for (ClassDefinition.AlwaysOn alwaysOn : def.alwaysOn()) {
-				lines.add(new CardLine(alwaysOn.name(), alwaysOn.desc(), LineKind.PASSIVE));
+				lines.add(new CardLine(alwaysOn.name(), alwaysOn.desc(), LineKind.PASSIVE, accent));
 			}
 			for (ClassDefinition.FlipBuff flip : def.flipBuffs()) {
-				lines.add(new CardLine(flip.name(), flip.desc(), LineKind.PASSIVE));
+				lines.add(new CardLine(flip.name(), flip.desc(), LineKind.PASSIVE, accent));
 			}
 			if (def.critRule().hasDice()) {
-				lines.add(new CardLine(CritRule.CROOKED_DICE, def.critRule().crookedDiceDesc(), LineKind.PASSIVE));
-				lines.add(new CardLine(CritRule.STREAK, def.critRule().streakDesc(), LineKind.PASSIVE));
+				lines.add(new CardLine(CritRule.CROOKED_DICE, def.critRule().crookedDiceDesc(), LineKind.PASSIVE, accent));
+				lines.add(new CardLine(CritRule.STREAK, def.critRule().streakDesc(), LineKind.PASSIVE, accent));
 			}
 		} else {
-			lines.add(new CardLine("No passives yet", null, LineKind.PASSIVE));
+			lines.add(new CardLine("No passives yet", null, LineKind.PASSIVE, accent));
 		}
 		if (!def.actives().isEmpty()) {
-			lines.add(new CardLine("Active", null, LineKind.ABILITY_HEADER));
+			lines.add(new CardLine("Actives", null, LineKind.ABILITY_HEADER, accent));
 			for (ClassDefinition.ActiveAbility active : def.actives()) {
-				lines.add(new CardLine(active.name(), active.desc(), LineKind.ABILITY));
+				lines.add(new CardLine(active.name(), active.desc(), LineKind.ABILITY, accent));
 			}
 		}
 		return lines;
@@ -137,8 +136,8 @@ public final class ClassPresentation {
 	public record CardText(String displayName, String tagline, List<CardLine> lines, int accent) {
 	}
 
-	/** Hover-dependent style only: border, wash, name colour. */
-	public record CardStyle(int borderColor, Integer washColor, int nameColor) {
+	/** Hover-dependent style only: border and name colour, both derived from the class accent. */
+	public record CardStyle(int borderColor, int nameColor) {
 	}
 
 	/**
@@ -157,13 +156,13 @@ public final class ClassPresentation {
 				def.accentColor());
 	}
 
-	private static CardStyle cardStyleFor(boolean hovered) {
-		return new CardStyle(hovered ? HOVER_BORDER_COLOR : BORDER_COLOR,
-				hovered ? HOVER_WASH_COLOR : null, NAME_COLOR);
+	private static CardStyle cardStyleFor(int accent, boolean hovered) {
+		return new CardStyle(hovered ? CardPalette.borderHover(accent) : CardPalette.borderPlain(accent),
+				CardPalette.accentText(accent));
 	}
 
 	/** Whole card in one decision: text + style. */
 	public static CardModel cardFor(ClassDefinition def, boolean hovered) {
-		return new CardModel(cardTextFor(def), cardStyleFor(hovered));
+		return new CardModel(cardTextFor(def), cardStyleFor(def.accentColor(), hovered));
 	}
 }

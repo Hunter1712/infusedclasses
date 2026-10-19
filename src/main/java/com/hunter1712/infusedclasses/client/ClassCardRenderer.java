@@ -1,5 +1,6 @@
 package com.hunter1712.infusedclasses.client;
 
+import com.hunter1712.infusedclasses.CardPalette;
 import com.hunter1712.infusedclasses.ClassPresentation;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
@@ -11,21 +12,21 @@ import java.util.function.ToIntFunction;
 
 /**
  * What the focused picker card looks like: frame palette, accent strip, hover
- * highlight and the wrapped card body text. Each line is drawn with the colour and weight the
- * presentation module put on it, so nothing here has to know what a line says. Where
- * everything sits is CardLayout's business; this only draws.
+ * highlight and the wrapped card body text. Each line's name draws with the colour and weight
+ * the presentation module put on it, while every description draws the palette's one shared
+ * subtle tone, so nothing here has to know what a line says; the frame tones also come from
+ * the card palette, so nothing here picks a class colour either. The body
+ * left-aligns at the card's padding and checkpoint rows indent past it, so a bar's tiers
+ * hang off their rules line. Where everything sits is CardLayout's business; this only draws.
  */
 public final class ClassCardRenderer {
 	private static final int ACCENT_H = 3;
-	private static final int BODY_COLOR = 0xE0141414;
-	private static final int DIVIDER_COLOR = 0xFF3A3A3A;
-	private static final int TAGLINE_COLOR = 0xFFB0A67E;
 
 	private ClassCardRenderer() {
 	}
 
-	/** One wrapped row: its text, where the description starts, and the style it draws with. */
-	static record TextRow(String text, int descStart, ClassPresentation.LineStyle style) {
+	/** One wrapped row: its text, where the description starts, the style it draws with, and how far it indents. */
+	static record TextRow(String text, int descStart, ClassPresentation.LineStyle style, int indent) {
 	}
 
 	/** Wrapped body rows plus the scroll layout they imply: measured once per frame, drawn from the result. */
@@ -50,20 +51,21 @@ public final class ClassCardRenderer {
 		// The join lives in CardLine.text; the boundary is derived there, never searched.
 		String full = line.text();
 		int prefixLength = line.descStart();
+		int indent = CardLayout.rowIndent(line.kind());
 		List<TextRow> rows = new ArrayList<>();
 		StringBuilder row = new StringBuilder();
 		for (String word : full.split(" ")) {
 			String add = row.isEmpty() ? word : " " + word;
 			if (!row.isEmpty() && width.applyAsInt(row.toString() + add) > wrapW) {
 				rows.add(new TextRow(row.toString(),
-						descStartFor(rows.size(), row.length(), prefixLength), line.style()));
+						descStartFor(rows.size(), row.length(), prefixLength), line.style(), indent));
 				row = new StringBuilder(word);
 			} else {
 				row.append(add);
 			}
 		}
 		rows.add(new TextRow(row.toString(),
-				descStartFor(rows.size(), row.length(), prefixLength), line.style()));
+				descStartFor(rows.size(), row.length(), prefixLength), line.style(), indent));
 		return rows;
 	}
 
@@ -81,49 +83,41 @@ public final class ClassCardRenderer {
 		return new Measured(List.copyOf(rows), CardLayout.layoutFor(card, rows.size()));
 	}
 
-	/** Dimmed copy of a line color for description continuations: names scan, descs recede. */
-	static int dimmed(int argb) {
-		int a = argb >>> 24;
-		int r = (argb >> 16 & 0xFF) * 85 / 100;
-		int g = (argb >> 8 & 0xFF) * 85 / 100;
-		int b = (argb & 0xFF) * 85 / 100;
-		return a << 24 | r << 16 | g << 8 | b;
-	}
-
 	/** Body, accent strip, border and hover highlight. Drawn behind the widgets. Takes the whole model, like the body pass, so the screen resolves once per page. */
 	public static void drawFrame(GuiGraphics graphics, CardLayout.CardRect card, ClassPresentation.CardModel model) {
 		ClassPresentation.CardText text = model.text();
 		ClassPresentation.CardStyle style = model.style();
 		int x1 = card.x() + card.w();
 		int y1 = card.y() + card.h();
-		graphics.fill(card.x(), card.y(), x1, y1, BODY_COLOR);
+		graphics.fill(card.x(), card.y(), x1, y1, CardPalette.body(text.accent()));
 		graphics.fill(card.x(), card.y(), x1, card.y() + ACCENT_H, text.accent());
 		graphics.fill(card.x(), card.y(), card.x() + 1, y1, style.borderColor());
 		graphics.fill(x1 - 1, card.y(), x1, y1, style.borderColor());
 		graphics.fill(card.x(), card.y(), x1, card.y() + 1, style.borderColor());
 		graphics.fill(card.x(), y1 - 1, x1, y1, style.borderColor());
-		if (style.washColor() != null) {
-			graphics.fill(card.x() + 1, card.y() + ACCENT_H, x1 - 1, y1 - 1, style.washColor());
-		}
 	}
 
 	/**
 	 * Name, tagline, divider and the measured body rows of one card: the screen resolves
-	 * the model once and measures once, never the parts. Long lines wrap inside the
-	 * card; rows past the visible slice scroll under the wheel instead of clipping
-	 * away, and the pinned select control never moves. The first wrapped row of a line
-	 * draws in its own color, continuations draw dimmed; where everything sits is
-	 * CardLayout's anchors.
+	 * the model once and measures once, never the parts. Every line starts at the body's
+	 * left edge and checkpoint rows indent past it, so a bar's tiers hang off their rules
+	 * line; the divider and tagline take the class accent's own tones. Long lines wrap
+	 * inside the card; rows past the visible slice scroll under the wheel instead of
+	 * clipping away, and the pinned select control never moves. Names draw in their
+	 * line's own colour, descriptions and their continuations in the palette's one
+	 * shared subtle tone; where everything sits is CardLayout's anchors.
 	 */
 	public static void drawBody(GuiGraphics graphics, Font font, CardLayout.CardRect card,
 			ClassPresentation.CardModel model, Measured measured, int scrollPx) {
 		ClassPresentation.CardStyle style = model.style();
-		int cx = card.x() + card.w() / 2;
-		graphics.drawCenteredString(font, model.text().displayName(), cx, CardLayout.nameY(card), style.nameColor());
-		graphics.drawCenteredString(font, model.text().tagline(), cx, CardLayout.taglineY(card), TAGLINE_COLOR);
-		graphics.fill(card.x() + CardLayout.PAD, CardLayout.dividerY(card),
-				card.x() + CardLayout.PAD + CardLayout.innerWidth(card),
-				CardLayout.dividerY(card) + CardLayout.DIVIDER_H, DIVIDER_COLOR);
+		int accent = model.text().accent();
+		int left = CardLayout.bodyLeft(card);
+		graphics.drawString(font, model.text().displayName(), left, CardLayout.nameY(card), style.nameColor());
+		graphics.drawString(font, model.text().tagline(), left, CardLayout.taglineY(card),
+				CardPalette.tagline(accent));
+		graphics.fill(left, CardLayout.dividerY(card),
+				left + CardLayout.innerWidth(card),
+				CardLayout.dividerY(card) + CardLayout.DIVIDER_H, CardPalette.divider(accent));
 
 		int top = CardLayout.bodyTop(card);
 		int stop = CardLayout.stopY(card);
@@ -137,11 +131,11 @@ public final class ClassCardRenderer {
 						: net.minecraft.network.chat.Style.EMPTY;
 				String head = row.text().substring(0, row.descStart());
 				String tail = row.text().substring(row.descStart());
-				int x = cx - (font.width(head) + font.width(tail)) / 2;
+				int x = left + row.indent();
 				graphics.drawString(font, FormattedCharSequence.forward(head, rowStyle), x, y,
 						row.style().color());
 				graphics.drawString(font, FormattedCharSequence.forward(tail, rowStyle),
-						x + font.width(head), y, dimmed(row.style().color()));
+						x + font.width(head), y, CardPalette.descText());
 			}
 		}
 	}

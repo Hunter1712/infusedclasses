@@ -1,6 +1,6 @@
 # Classes
 
-Three playable classes. The picker shows one focused card per page with the full kit printed on the card — nothing hides behind hover. A new class definition adds its own page with no layout change. Firing any ability plays the one cast fanfare, a note-block pling; Rotate announces its stance without it.
+Three playable classes. The picker shows one focused card per page with the full kit printed on the card — nothing hides behind hover. A new class definition adds its own page with no layout change. Firing any ability plays the one cast fanfare, the evoker's cast spell; Rotate announces its stance without it.
 
 ## Juggernaut — Frontline bruiser
 

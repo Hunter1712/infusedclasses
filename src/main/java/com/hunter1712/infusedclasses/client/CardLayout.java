@@ -1,5 +1,7 @@
 package com.hunter1712.infusedclasses.client;
 
+import com.hunter1712.infusedclasses.ClassPresentation;
+
 /**
  * Pure layout for the focused picker card: every rectangle, anchor and scroll
  * range in ints, no graphics object in sight. The screen positions widgets from
@@ -9,6 +11,8 @@ package com.hunter1712.infusedclasses.client;
 public final class CardLayout {
 	/** Card chrome: inner padding, pinned select height, divider height, arrow and dot metrics. */
 	public static final int PAD = 10;
+	/** How far a checkpoint row indents past the body's left edge. */
+	public static final int TIER_INDENT = 10;
 	public static final int BUTTON_H = 20;
 	public static final int DIVIDER_H = 1;
 	public static final int ARROW_W = 24;
@@ -134,6 +138,16 @@ public final class CardLayout {
 	/** Full inner width: the card minus its padding on both sides. */
 	public static int innerWidth(CardRect card) {
 		return card.w() - PAD * 2;
+	}
+
+	/** Left edge of every card line: the card's padding, so the body reads as one column. */
+	public static int bodyLeft(CardRect card) {
+		return card.x() + PAD;
+	}
+
+	/** How far a row indents past {@link #bodyLeft}: checkpoint rows hang under their bar. */
+	public static int rowIndent(ClassPresentation.LineKind kind) {
+		return kind == ClassPresentation.LineKind.TIER ? TIER_INDENT : 0;
 	}
 
 	/** Last text row: the pinned select control sits below it, never scrolled. */
