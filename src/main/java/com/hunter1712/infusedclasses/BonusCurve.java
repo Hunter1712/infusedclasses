@@ -1,12 +1,28 @@
 package com.hunter1712.infusedclasses;
 
 /**
- * The one definition of a full swing, shared by the stack feed, the crit roll and the
- * Onslaught price: full swings earn and roll, half swings and spam do neither. The
- * charge curve itself retired with Rush and Rend; the gate stayed.
+ * Charged bonus damage shared by every flat ability bonus: mod hook bonus damage
+ * scales quadratically with swing charge. Full swings pay full bonus, half charge
+ * pays a quarter, spam pays chips. Base weapon damage is never routed here — vanilla
+ * already halves spam, and the mod adds no second cut to it.
+ *
+ * <p>The same module owns the one full-swing definition, shared by the stack feed,
+ * the crit roll and the Onslaught price.
  */
 public final class BonusCurve {
 	private BonusCurve() {
+	}
+
+	/**
+	 * Bonus damage for a base amount at a charge 0-1. Clamped, so overcharge reads
+	 * full; a non-positive base reads 0, never negative.
+	 */
+	public static float bonusFor(float base, float charge) {
+		if (base <= 0) {
+			return 0;
+		}
+		float clamped = Math.max(0, Math.min(1, charge));
+		return base * clamped * clamped;
 	}
 
 	/**

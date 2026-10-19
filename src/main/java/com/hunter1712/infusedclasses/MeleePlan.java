@@ -82,7 +82,7 @@ public final class MeleePlan {
 		boolean bump = BonusCurve.isFullSwing(charge) && !onslaughtLive;
 		float onslaughtHp = BonusCurve.isFullSwing(charge)
 				&& OnslaughtAbility.liveFor(state, momentumStacks(atkDef, atkRuntime))
-				? OnslaughtAbility.HP_PER_HIT : 0;
+				? BonusCurve.bonusFor(OnslaughtAbility.HP_PER_HIT, charge) : 0;
 		boolean impetus = atkDef != null && atkDef.hasAbility(ClassRegistry.ROTATE_ABILITY)
 				&& state != null && state.impetusPending();
 		double deal = dealWithImpetus(atkDef, state, impetus) * RouletteAbility.dealMult(state);

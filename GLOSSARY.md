@@ -321,8 +321,10 @@ _Avoid_: attack cooldown, swing timer
 **Full swing** (`BonusCurve`):
 The one definition of a full swing, shared by the stack feed, the crit roll and the
 Onslaught price: exact `>= 1.0F`, so overcharge counts, half swings and spam earn
-nothing and roll nothing. The charged quadratic curve retired with Rush and Rend; the
-gate stayed. Base weapon damage never routes here — vanilla already halves spam.
+nothing and roll nothing. The same module owns the charged bonus curve (`bonusFor`:
+`base x charge x charge`, clamped): flat ability bonus damage scales with the swing —
+full swings pay full, half pays a quarter, spam pays chips. Base weapon damage never
+routes here — vanilla already halves spam.
 _Avoid_: damage falloff, charge multiplier
 
 **Melee plan** (`MeleePlan`):
@@ -716,8 +718,7 @@ owns the choice/transient split; `0003` defers the class-lookup seam until a sec
 classes exists; `0004` inverts the Juggernaut kit to high-HP rewards (Vigor plus Momentum, the Rush engage
 plus the Rend window) with sound replacing root — superseded by `0027`; `0005` moves the hit-gating decision out of the
 server entry, the stack storage out of the transient runtime, and the trigger scan onto the class;
-`0006` adds the Legionary stance tradeoff plus the universal stack gate (its charged curve retired
-with `0027`);
+`0006` adds the Legionary stance tradeoff plus the universal charged curve and stack gate;
 `0007` deepens the melee hook (plan, settle, morph) and splits the adapters, revisiting
 the `0005` bind-morph carve-out; `0008` closes the review's six seams (cooldown leak,
 one-line Rend adapter, shared gate-and-arm, full hit plan, card back door, window registry);
@@ -788,5 +789,6 @@ full hits, bleeding 1/s after 5s quiet, reading checkpoints at 15/30/45 that eac
 weight and knockback resistance; Rush and Rend retire for Offload (a flat 5-stack price for a 5s
 haste/speed window) and Onslaught (a 10-stack gate, 15s or until the bar empties, +1 per full hit
 at 2 stacks each, no gain while live); Vigor is cut; Burden (+1 damage, -0.5 attack speed) is the
-always-on chassis; and the charged bonus curve retires, leaving its full-swing gate. The wire
+always-on chassis; and the charged bonus curve stays, pricing flat ability damage with the
+full-swing gate still blocking spam. The wire
 names `rush`/`rend` stay on the reused signature and ultimate intents.

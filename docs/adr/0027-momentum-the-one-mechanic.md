@@ -28,8 +28,10 @@ curve existed only to price Rush's bonus hit and Rend's payout.
 5. **Onslaught replaces Rend on the ultimate slot.** A 10-stack gate, a 60s lane and a 15s
    window that also ends when the bar empties; each full-swing hit pays +1 damage and spends 2
    stacks, and nothing feeds the bar while it is live.
-6. **The charged bonus curve retires.** `BonusCurve` keeps only `isFullSwing`; Rush, Rend and
-   their appliers are deleted.
+6. **The charged curve stays.** `BonusCurve.bonusFor` remains the shared rule for flat
+   ability bonus damage (`base x charge x charge`, clamped); Onslaught's +1 runs through it,
+   and its full-swing gate still means spam pays nothing. Rush, Rend and their appliers are
+   deleted.
 7. **The wire keeps its names.** `RushPayload`/`RendPayload`, their channels and the R/V keys
    keep their old names; only the lanes and ability ids change
    (`infusedclasses:offload`, `infusedclasses:onslaught`, `Lane.OFFLOAD`, `Lane.ONSLAUGHT`).
@@ -42,8 +44,8 @@ curve existed only to price Rush's bonus hit and Rend's payout.
   and the melee feed stays behind the same gate.
 - The bar's quiet bleed is visible: `PassiveStacks` decays on its own clock, `decay` catches up
   whole overdue seconds in one step, and the snapshot's grace field is time-to-next-loss.
-- Supersedes ADR-0004 (Vigor and the Rush/Rend kit) and the charged-curve half of ADR-0006; the
-  stack gate and full-swing rule stand. Retires the Rush/Rend adapter splits of ADR-0008, the
+- Supersedes ADR-0004 (Vigor and the Rush/Rend kit); the charged curve and stack gate of
+  ADR-0006 stand. Retires the Rush/Rend adapter splits of ADR-0008, the
   `rush_speed`/Rend-pair vocabulary of ADR-0021, and renames ADR-0026's printed fallbacks to
   Offload and Onslaught.
 - Drift pins: `MomentumTest`, `ConditionalPassiveStacksTest`, `OffloadAbilityTest`,
