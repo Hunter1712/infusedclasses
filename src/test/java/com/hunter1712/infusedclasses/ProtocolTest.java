@@ -53,8 +53,8 @@ class ProtocolTest {
 		// Every number is distinct, so a lane order or window order drift inside the read
 		// cannot hide behind equal neighbours.
 		EnumMap<Lane, LaneRead> lanes = new EnumMap<>(Lane.class);
-		lanes.put(Lane.RUSH, new LaneRead(1_000, 2_000, true));
-		lanes.put(Lane.REND, new LaneRead(3_000, 4_000, false));
+		lanes.put(Lane.OFFLOAD, new LaneRead(1_000, 2_000, true));
+		lanes.put(Lane.ONSLAUGHT, new LaneRead(3_000, 4_000, false));
 		lanes.put(Lane.ROTATE, new LaneRead(5_000, 6_000, true));
 		lanes.put(Lane.OATH, new LaneRead(7_000, 8_000, false));
 		lanes.put(Lane.ROULETTE, new LaneRead(9_000, 10_000, true));

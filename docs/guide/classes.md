@@ -4,17 +4,26 @@ Three playable classes. The picker shows one focused card per page with the full
 
 ## Juggernaut — Frontline bruiser
 
-Rush engage plus Rend execute. No max-health bonus (vanilla 20 HP): Vigor rewards staying topped, Momentum rewards staying on target.
-
-**Actives**
-
-- **Rush** (`R`): cleanses every active harmful effect, quickens the player (+0.02 move speed) for 5s (the Rush window), and arms a one-shot bonus so the next full-swing melee hit inside the window earns +5 Momentum. Own 25s lane. Fires with zero stacks at full HP — engaging topped-off is the normal case, not a reject. Rejected presses leave the lane, window and bonus untouched. Cast fanfare: wind-burst whoosh.
-- **Rend** (`V`): arms the Rend window — the next melee hit landed within 6s deals 0.5 HP per Momentum stack bonus damage (10 HP at the full 20) — and consumes every Momentum stack plus the armor they granted up front. Own 60s lane. Zero stacks fizzles with a `No Momentum` line and arms nothing. An unswung window expires with the stacks already spent. Cast fanfare: anvil-land smash.
+One bar, two ways to spend it. Burden makes every swing heavier and slower; Momentum is what
+moves under that weight. No max-health bonus (vanilla 20 HP).
 
 **Passives**
 
-- **Momentum** (conditional passive, `on_hit_dealt`): full-swing landing hits earn stacks, max 20, `minecraft:armor` +0.4 per stack (max +8.0). 5s grace with no landed hit drops all stacks at once. Spam earns zero — only full swings bump. Transient: never saved.
-- **Vigor** (HP-scaled pair, reads as one line): current HP maps to stepped buckets, 10% per step over 10 steps — +0.3 attack damage from -1.0 (full HP +2.0) plus +0.075 attack speed from -0.25 (full HP +0.5). Recomputed every tick from live HP, transient and never saved. Rend spends Momentum only and never touches Vigor.
+- **Burden** (always on): +1 attack damage, -0.5 attack speed. The class reads heavy first.
+- **Momentum** (conditional passive): full-swing hits dealt earn +1, and hits taken earn +1
+  too, max 60. 5s quiet, then -1/s. Three checkpoints, read off the bar every tick: 15 Steady
+  (+1 armor, -2% speed, +0.25 knockback resistance), 30 Braced (+3/-4%/+0.5), 45 Rooted
+  (+5/-7%/+1.0). Past 45 stays Rooted; 45-60 is spend reserve. Transient: never saved.
+
+**Actives**
+
+- **Offload** (`R`): pays a flat 5 Momentum, then 5s of +0.2 attack speed and +10% move speed.
+  Own 10s lane. Below 5 stacks fizzles with a `No Momentum` line and arms nothing. An unspent
+  window owes nothing back. Cast fanfare: wind-burst whoosh.
+- **Onslaught** (`V`): needs 10 Momentum; for 15s every full-swing hit deals +1 damage and
+  spends 2 stacks. Nothing feeds the bar while it is live, and the window ends when its 15s
+  runs out or the bar empties, whichever comes first. Own 60s lane. Below 10 stacks fizzles
+  with a `No Momentum` line. Cast fanfare: ravager roar.
 
 ## Legionary — Sword and shield
 
@@ -48,5 +57,6 @@ Wheel-and-dice class: Roulette spins stat bands and All In loads the crits, and 
 
 ## Shared melee rules
 
-- **Bonus curve**: mod hook bonus damage scales quadratically with swing charge (half charge pays a quarter, spam pays chips). Base weapon damage never routes here.
-- **Stack gate**: conditional triggers fire only at full charge, so spam earns zero stacks and timed swings earn one. Rush bonus rides the same gate.
+- **Full swing**: only a `>= 1.0` charge earns stacks, rolls a crit or prices Onslaught. Spam
+  earns zero, and a hit fully eaten by a raised shield earns nothing on either side.
+- **Charge** no longer scales bonus damage: the charged curve retired with Rush and Rend.

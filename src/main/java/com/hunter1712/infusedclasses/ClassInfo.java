@@ -22,7 +22,7 @@ public final class ClassInfo {
 	/**
 	 * The lines for the invoking player's entry to send: the class line
 	 * ({@code Class: <displayName>}, gray), one line per lane the class carries, in
-	 * roster order ({@code Rush: 18.4s} while cooling, {@code Rend: ready} otherwise),
+	 * roster order ({@code Offload: 3.4s} while cooling, {@code Onslaught: ready} otherwise),
 	 * and the Legionary's current stance. A null definition yields the single no-class
 	 * line and reads no state.
 	 */

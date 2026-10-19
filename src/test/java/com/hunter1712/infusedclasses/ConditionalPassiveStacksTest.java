@@ -6,29 +6,26 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Conditional-passive stacks: the transient half of per-player state. Time is passed in rather
- * than read, so decay and the grace period are asserted without waiting, and the class is passed
- * in rather than looked up, so this module holds no reference to a player's choice. Stacks are
- * addressed by the passive definition, the same way production does.
+ * than read, so the feed, the per-second bleed and the price are asserted without waiting, and
+ * the class is passed in rather than looked up, so this module holds no reference to a player's
+ * choice. Stacks are addressed by the passive definition, the same way production does.
  */
 class ConditionalPassiveStacksTest {
-	/** A second trigger of our own, so per-passive counting can be read off a passive the registry never carries. */
-	private static final Trigger ON_LAND = new Trigger("on_land", "Land a swing", "no swing");
+	/** A trigger of our own, so per-passive counting can be read off a passive the registry never carries. */
+	private static final Trigger ON_LAND = new Trigger("on_land", "Land a swing");
 	/** A trigger nothing in the mod emits: feeding it must earn nothing. */
-	private static final Trigger NEVER_EMITTED = new Trigger("on_death", "Die", "no death");
+	private static final Trigger NEVER_EMITTED = new Trigger("on_death", "Die");
 
 	@Test
-	void hitDealtIncrementsStacksWhileJuggernautSelected() {
+	void hitDealtAndHitTakenEachFeedOne() {
 		PlayerRuntime runtime = new PlayerRuntime();
-		long base = System.currentTimeMillis();
+		long base = 1_000_000L;
 
 		runtime.onTrigger(juggernaut(), Trigger.ON_HIT_DEALT, base, 1.0F);
-		runtime.onTrigger(juggernaut(), Trigger.ON_HIT_DEALT, base, 1.0F);
+		runtime.onTrigger(juggernaut(), Trigger.ON_HIT_TAKEN, base, 1.0F);
 
 		assertEquals(2, runtime.stacks(momentum()));
 	}
@@ -36,19 +33,28 @@ class ConditionalPassiveStacksTest {
 	@Test
 	void stacksCapAtMaxStacks() {
 		PlayerRuntime runtime = new PlayerRuntime();
-		long base = System.currentTimeMillis();
+		long base = 1_000_000L;
 
-		for (int i = 0; i < 25; i++) {
+		for (int i = 0; i < 70; i++) {
 			runtime.onTrigger(juggernaut(), Trigger.ON_HIT_DEALT, base, 1.0F);
 		}
 
-		assertEquals(20, runtime.stacks(momentum()));
+		assertEquals(Momentum.MAX_STACKS, runtime.stacks(momentum()));
+	}
+
+	@Test
+	void spamFeedsNothing() {
+		PlayerRuntime runtime = new PlayerRuntime();
+
+		runtime.onTrigger(juggernaut(), Trigger.ON_HIT_DEALT, 0, 0.5F);
+
+		assertEquals(0, runtime.stacks(momentum()));
 	}
 
 	@Test
 	void unknownTriggerAndMissingClassAreInert() {
 		PlayerRuntime runtime = new PlayerRuntime();
-		long base = System.currentTimeMillis();
+		long base = 1_000_000L;
 
 		runtime.onTrigger(juggernaut(), NEVER_EMITTED, base, 1.0F);
 
@@ -76,9 +82,6 @@ class ConditionalPassiveStacksTest {
 		assertEquals(ClassRegistry.JUGGERNAUT.toString(), oldClasses.writeId());
 
 		// The respawn copy carries the choice and nothing else, and reads back as the same id.
-		// The new player's own stacks are zero because the server entry drops the old runtime
-		// and creates a fresh one under the shared UUID, which is wiring the suite cannot reach
-		// without a live server player; that ordering is marked in the entry instead.
 		PlayerClasses newClasses = new PlayerClasses();
 		newClasses.copyFrom(oldClasses);
 
@@ -87,123 +90,157 @@ class ConditionalPassiveStacksTest {
 	}
 
 	@Test
-	void noDecayWithinGracePeriod() {
-		PlayerRuntime runtime = new PlayerRuntime();
-		long base = System.currentTimeMillis();
-		runtime.onTrigger(juggernaut(), Trigger.ON_HIT_DEALT, base, 1.0F);
-
-		// Tick at 3 seconds after trigger - still in grace period
-		boolean changed = !runtime.tickDecayMoved(juggernaut(), base + 3_000).isEmpty();
-
-		assertFalse(changed);
-		assertEquals(1, runtime.stacks(momentum()));
-	}
-
-	@Test
-	void decayStartsAfterGracePeriod() {
-		PlayerRuntime runtime = new PlayerRuntime();
-		long base = System.currentTimeMillis();
-		runtime.onTrigger(juggernaut(), Trigger.ON_HIT_DEALT, base, 1.0F);
-
-		// Tick at 6 seconds after trigger - 1 second past grace, should lose 1
-		boolean changed = !runtime.tickDecayMoved(juggernaut(), base + 6_000).isEmpty();
-
-		assertTrue(changed);
-		assertEquals(0, runtime.stacks(momentum()));
-	}
-
-	@Test
-	void decayMultipleStacksAfterExtendedTime() {
-		PlayerRuntime runtime = new PlayerRuntime();
-		long base = System.currentTimeMillis();
-		for (int i = 0; i < 5; i++) {
-			runtime.onTrigger(juggernaut(), Trigger.ON_HIT_DEALT, base, 1.0F);
-		}
-		assertEquals(5, runtime.stacks(momentum()));
-
-		// Tick at 10 seconds after trigger - 6 seconds past grace, should lose 5
-		boolean changed = !runtime.tickDecayMoved(juggernaut(), base + 10_000).isEmpty();
-
-		assertTrue(changed);
-		assertEquals(0, runtime.stacks(momentum()));
-	}
-
-	@Test
-	void dropFiresPastGraceMillisNotTruncatedSeconds() {
+	void quietFiveSecondsLoseNothing() {
 		PlayerRuntime runtime = new PlayerRuntime();
 		long base = 1_000_000L;
 		runtime.onTrigger(juggernaut(), Trigger.ON_HIT_DEALT, base, 1.0F);
 
-		// Exactly 5s: still grace, the client agrees. Past it by a millisecond: gone on both.
-		assertTrue(runtime.tickDecayMoved(juggernaut(), base + 5_000).isEmpty());
+		runtime.decay(juggernaut(), base + 5_000);
+
 		assertEquals(1, runtime.stacks(momentum()));
-		assertFalse(runtime.tickDecayMoved(juggernaut(), base + 5_001).isEmpty());
-		assertEquals(0, runtime.stacks(momentum()));
 	}
 
 	@Test
-	void pastGraceDropsEveryStackAtOnce() {
+	void aMillisecondPastTheGraceLosesOneThenOnePerSecond() {
 		PlayerRuntime runtime = new PlayerRuntime();
-		long base = System.currentTimeMillis();
+		long base = 1_000_000L;
 		for (int i = 0; i < 5; i++) {
 			runtime.onTrigger(juggernaut(), Trigger.ON_HIT_DEALT, base, 1.0F);
 		}
-		assertEquals(5, runtime.stacks(momentum()));
 
-		// Tick at +6s drops all 5 at once; the next tick has nothing left to move.
-		assertFalse(runtime.tickDecayMoved(juggernaut(), base + 6_000).isEmpty());
-		assertEquals(0, runtime.stacks(momentum()));
-		assertTrue(runtime.tickDecayMoved(juggernaut(), base + 7_000).isEmpty());
+		runtime.decay(juggernaut(), base + 5_001);
+		assertEquals(4, runtime.stacks(momentum()));
+
+		runtime.decay(juggernaut(), base + 6_000);
+		assertEquals(4, runtime.stacks(momentum()), "the next loss is not owed until its own second");
+
+		runtime.decay(juggernaut(), base + 6_001);
+		assertEquals(3, runtime.stacks(momentum()));
 	}
 
 	@Test
-	void newTriggerRestampsTheGrace() {
+	void aLongQuietBarCatchesUpInOneStep() {
 		PlayerRuntime runtime = new PlayerRuntime();
-		long base = System.currentTimeMillis();
+		long base = 1_000_000L;
+		for (int i = 0; i < 5; i++) {
+			runtime.onTrigger(juggernaut(), Trigger.ON_HIT_DEALT, base, 1.0F);
+		}
+
+		runtime.decay(juggernaut(), base + 10_000);
+
+		assertEquals(0, runtime.stacks(momentum()));
+	}
+
+	@Test
+	void aFeedAtAnyPointRestartsTheBleed() {
+		PlayerRuntime runtime = new PlayerRuntime();
+		long base = 1_000_000L;
 		runtime.onTrigger(juggernaut(), Trigger.ON_HIT_DEALT, base, 1.0F);
 
-		// Advance 3 seconds, then trigger again
-		runtime.tickDecayMoved(juggernaut(), base + 3_000);
-		runtime.onTrigger(juggernaut(), Trigger.ON_HIT_DEALT, base + 3_000, 1.0F); // should reset grace
-
-		// Now advance 3 more seconds (6 total from first hit, 3 from second)
-		// Since second hit reset grace, still in grace period
-		runtime.tickDecayMoved(juggernaut(), base + 6_000);
+		runtime.decay(juggernaut(), base + 4_000);
+		runtime.onTrigger(juggernaut(), Trigger.ON_HIT_DEALT, base + 4_000, 1.0F);
+		runtime.decay(juggernaut(), base + 8_000);
 
 		assertEquals(2, runtime.stacks(momentum()));
+
+		runtime.decay(juggernaut(), base + 9_001);
+		assertEquals(1, runtime.stacks(momentum()));
+	}
+
+	@Test
+	void theFloorIsZeroAndNeverNegative() {
+		PlayerRuntime runtime = new PlayerRuntime();
+		runtime.onTrigger(juggernaut(), Trigger.ON_HIT_DEALT, 0, 1.0F);
+
+		runtime.decay(juggernaut(), 1_000_000);
+
+		assertEquals(0, runtime.stacks(momentum()));
+		assertEquals(0, runtime.graceRemaining(momentum(), 1_000_000));
+		assertEquals(0, runtime.graceStamp(momentum()));
+	}
+
+	@Test
+	void spendLeavesTheRemainderAndReportsWhatItTook() {
+		PlayerRuntime runtime = new PlayerRuntime();
+		for (int i = 0; i < 7; i++) {
+			runtime.onTrigger(juggernaut(), Trigger.ON_HIT_DEALT, 0, 1.0F);
+		}
+
+		assertEquals(5, runtime.spendStacks(momentum(), 5));
+		assertEquals(2, runtime.stacks(momentum()));
+
+		assertEquals(2, runtime.spendStacks(momentum(), 5));
+		assertEquals(0, runtime.stacks(momentum()));
+
+		assertEquals(0, runtime.spendStacks(momentum(), 5));
+	}
+
+	@Test
+	void aSpendDoesNotRestartTheBleed() {
+		PlayerRuntime runtime = new PlayerRuntime();
+		long base = 1_000_000L;
+		for (int i = 0; i < 8; i++) {
+			runtime.onTrigger(juggernaut(), Trigger.ON_HIT_DEALT, base, 1.0F);
+		}
+
+		assertEquals(5, runtime.spendStacks(momentum(), 5));
+		assertEquals(3, runtime.stacks(momentum()));
+
+		// The feed stamp still runs from the last hit, not from the spend.
+		runtime.decay(juggernaut(), base + 5_001);
+		assertEquals(2, runtime.stacks(momentum()));
+	}
+
+	@Test
+	void theDecayStepIsPureAndCoversWholeSeconds() {
+		assertEquals(new PassiveStacks.Decay(3, 5_000, 0), PassiveStacks.nextDecay(3, 5_000, 4_000));
+		assertEquals(new PassiveStacks.Decay(3, 5_000, 0), PassiveStacks.nextDecay(3, 5_000, 5_000));
+		assertEquals(new PassiveStacks.Decay(2, 6_000, 1), PassiveStacks.nextDecay(3, 5_000, 5_001));
+		assertEquals(new PassiveStacks.Decay(2, 6_000, 1), PassiveStacks.nextDecay(3, 5_000, 6_000));
+		assertEquals(new PassiveStacks.Decay(1, 7_000, 2), PassiveStacks.nextDecay(3, 5_000, 6_001));
+		assertEquals(new PassiveStacks.Decay(0, 0, 3), PassiveStacks.nextDecay(3, 5_000, 7_001));
+		assertEquals(new PassiveStacks.Decay(0, 0, 0), PassiveStacks.nextDecay(0, 5_000, 9_000));
 	}
 
 	@Test
 	void capAndGraceComeFromThePassiveNotFromThisModule() {
-		ConditionalPassive swift = new ConditionalPassive("Swift", ON_LAND, 4, ClassRegistry.ARMOR,
-				Identifier.fromNamespaceAndPath("infusedclasses", "swift_armor"), 0.5, 2);
+		ConditionalPassive swift = new ConditionalPassive("Swift",
+				List.of(new ConditionalPassive.Earn(ON_LAND, 1)), 4,
+				List.of(new ConditionalPassive.Tier(2, "Quick", 0.5, -0.001, 0.25)), 2);
 		ClassDefinition def = withPassives(swift);
 		PlayerRuntime runtime = new PlayerRuntime();
-		long base = System.currentTimeMillis();
+		long base = 1_000_000L;
 
 		for (int i = 0; i < 6; i++) {
 			runtime.onTrigger(def, ON_LAND, base, 1.0F);
 		}
-		assertEquals(4, runtime.stacks(swift)); // its own cap, not the ten Momentum allows
+		assertEquals(4, runtime.stacks(swift));
 
-		assertTrue(runtime.tickDecayMoved(def, base + 2_000).isEmpty()); // still inside its own two-second grace
-		assertFalse(runtime.tickDecayMoved(def, base + 3_000).isEmpty()); // past grace, every stack drops at once
-		assertEquals(0, runtime.stacks(swift));
+		runtime.decay(def, base + 2_000);
+		assertEquals(4, runtime.stacks(swift), "still inside its own two-second grace");
+
+		runtime.decay(def, base + 2_001);
+		assertEquals(3, runtime.stacks(swift), "past grace, one per second");
 	}
 
 	@Test
 	void eachPassiveIsCountedSeparatelyAndOnlyForItsOwnTrigger() {
-		ConditionalPassive swift = new ConditionalPassive("Swift", ON_LAND, 4, ClassRegistry.ARMOR,
-				Identifier.fromNamespaceAndPath("infusedclasses", "swift_speed"), 0.5, 2);
+		ConditionalPassive swift = new ConditionalPassive("Swift",
+				List.of(new ConditionalPassive.Earn(ON_LAND, 1)), 4,
+				List.of(new ConditionalPassive.Tier(2, "Quick", 0.5, -0.001, 0.25)), 2);
 		ClassDefinition def = withPassives(momentum(), swift);
 		PlayerRuntime runtime = new PlayerRuntime();
-		long base = System.currentTimeMillis();
+		long base = 1_000_000L;
 
 		runtime.onTrigger(def, Trigger.ON_HIT_DEALT, base, 1.0F);
 		runtime.onTrigger(def, Trigger.ON_HIT_DEALT, base, 1.0F);
 
 		assertEquals(2, runtime.stacks(momentum()));
 		assertEquals(0, runtime.stacks(swift));
+
+		runtime.onTrigger(def, ON_LAND, base, 1.0F);
+
+		assertEquals(1, runtime.stacks(swift));
 	}
 
 	private static ClassDefinition juggernaut() {

@@ -11,11 +11,11 @@ a later decision revises or supersedes a point.
 - [0001 — Decide purely, apply in an adapter](0001-decide-purely-apply-in-an-adapter.md) — decisions take data and return a description of an outcome; adapters apply it.
 - [0002 — Transient per-player state is owned by the server entry](0002-transient-state-lifetime.md) — the class choice module stays live-free; the entry's runtime owns the transient half.
 - [0003 — Class lookup stays a direct registry call until a second source of classes exists](0003-defer-class-lookup-seam.md) — no lookup interface; a deliberate deferral, reversed by its own trigger.
-- [0004 — Juggernaut inversion (high-HP rewards) and root-to-sound swap](0004-juggernaut-inversion.md) — Fury→Vigor (current HP), Bulwark→Momentum (hit-dealt); heals help instead of cooling.
+- [0004 — Juggernaut inversion (high-HP rewards) and root-to-sound swap](0004-juggernaut-inversion.md) — Fury→Vigor (current HP), Bulwark→Momentum (hit-dealt); heals help instead of cooling. *(superseded by 0027)*
 - [0005 — Hit gating, stack storage, and trigger-scan seams](0005-hit-gating-stack-seams.md) — the entry never compares ability ids to gate rewards; gating stays in the pure modules.
-- [0006 — Legionary stances plus the universal charged curve and stack gate](0006-legionary-stances-quad-curve.md) — bonus damage is `bonus x charge x charge`; base weapon damage is never touched.
+- [0006 — Legionary stances plus the universal charged curve and stack gate](0006-legionary-stances-quad-curve.md) — bonus damage is `bonus x charge x charge`; base weapon damage is never touched. *(its charged curve superseded by 0027; the stack gate stands)*
 - [0007 — Melee plan, damage settle, bind morph, and adapter splits](0007-melee-plan-settle-morph-splits.md) — `MeleePlan` decides a hit's earn and settle, `DamageSettle` applies; reopens 0005's bind-morph carve-out.
-- [0008 — Close the six architecture-review seams](0008-review-seam-closures.md) — the second review's six seams close: cooldown lanes stay the runtime's implementation, Rend lands through the shared announce path.
+- [0008 — Close the six architecture-review seams](0008-review-seam-closures.md) — the second review's six seams close: cooldown lanes stay the runtime's implementation, Rend lands through the shared announce path. *(its Rush adapter split superseded by 0027)*
 - [0009 — Oath dispatch stays in the server entry](0009-oath-dispatch-stays-in-entry.md) — the three-way switch stays; `BindMorph` decides what a reused bind means and the entry maps it. *(point 3 superseded by 0026)*
 - [0010 — Pay the flip, not the camp (switch buffs + Aequilibrium)](0010-switch-buffs-aequilibrium.md) — stances nerfed at half tax; `Impetus`/`Testudo` move to flip buffs off one flip record.
 - [0011 — Fold the stance adapter and the flip holders home](0011-fold-stance-and-flip-holders.md) — stance application becomes private to `PassiveApplier`; reopens 0007.3 for the stance case only.
@@ -33,4 +33,5 @@ a later decision revises or supersedes a point.
 - [0023 — The roster row carries the stack's view](0023-roster-carries-the-stack-view.md) — a row carries its lane read plus rider rules. *(point 1's `View` and point 2's ultimate-bind sentence revised by 0025 and 0026)*
 - [0024 — One silent reject](0024-one-silent-reject.md) — a rejected press says nothing, grants nothing, arms nothing (`AbilityOutcome.rejected()`).
 - [0025 — The lane is the key](0025-the-lane-is-the-key.md) — `Lane` owns the cooldown lengths; cooldowns, windows, payload and roster share one lane-keyed vocabulary.
-- [0026 — The ultimate is not lent](0026-the-ultimate-is-not-lent.md) — each target names the ability it fires; one walk of the class's own actives.
+- [0026 — The ultimate is not lent](0026-the-ultimate-is-not-lent.md) — each target names the ability it fires; one walk of the class's own actives. *(its printed fallback names renamed by 0027)*
+- [0027 — Momentum is the Juggernaut's one mechanic](0027-momentum-the-one-mechanic.md) — a 60-stack bar with 15/30/45 checkpoints, spent by Offload and Onslaught; Burden is the chassis; Vigor, Rush, Rend and the charged curve retire.

@@ -2,7 +2,6 @@ package com.hunter1712.infusedclasses;
 
 import java.util.EnumMap;
 import java.util.Map;
-import java.util.Set;
 
 /**
  * Transient per-player state: conditional-passive stacks and ability cooldowns. Nothing here is
@@ -10,16 +9,18 @@ import java.util.Set;
  * and owns that lifetime: created on first use, empty again after a respawn, dropped on logout.
  *
  * Time arrives as a parameter and the class whose passives these are is passed in too, so this
- * module holds no clock and no reference to anyone's choice. Stack storage (counts, grace
- * timestamps, decay) lives in {@link PassiveStacks}; this module coordinates it with cooldowns
- * and ability windows. Stacks, the cap, the grace period and the decay rate are the passive's
- * own facts, read off the definition it is handed, which is also what a stack is keyed by:
- * a passive is addressed by what it is, not by its name.
+ * module holds no clock and no reference to anyone's choice. Stack storage (counts, feed
+ * stamps, the per-second bleed) lives in {@link PassiveStacks}; this module coordinates it
+ * with cooldowns and ability windows. Stacks, the cap, the grace period and the earn amounts
+ * are the passive's own facts, read off the definition it is handed, which is also what a
+ * stack is keyed by: a passive is addressed by what it is, not by its name.
  *
  * <p>Ability state is keyed by {@link Lane}: one entry per lane, holding the cooldown
  * ({@link Cooldowns}) and the lane's window. Each ability owns its window constant and passes it
  * in where it arms, so this module never spells a lane's duration and a seventh window adds a
- * {@link Lane} value, not a field.
+ * {@link Lane} value, not a field. Windows are timed and peeked, never owed: a window's spend
+ * is decided by whoever reads it (the melee plan prices Onslaught off the live window), so a
+ * window carries no payload of its own.
  *
  * <p>Reads cross one seam: {@link #state} answers the whole transient read at a {@code now},
  * so the status paths (the snapshot builder, {@code /class info}, the melee plan) take one
@@ -28,15 +29,15 @@ import java.util.Set;
 public final class PlayerRuntime {
 	// ponytail: cooldowns reset on relog, persist to NBT if the reset becomes an exploit.
 	private final Cooldowns cooldowns = new Cooldowns();
-	// Ability windows: press timestamps plus their one-shot payloads, one per lane. A window
-	// carries the duration stamped beside it at arm time (the firing ability's own constant,
-	// passed in) and its one-shot: the melee plan peeks it and the hit settle spends it, so
-	// each bonus lands at most once. Windows nothing spends (Aequilibrium, All In, Roulette's
-	// outcome) are peeked every tick of the applier instead. Cleared with everything else, so
-	// switch and respawn never inherit a window.
+	// Ability windows: press timestamps, one per lane. A window carries the duration stamped
+	// beside it at arm time (the firing ability's own constant, passed in). Timed windows
+	// nothing consumes are peeked every tick of the applier instead (Aequilibrium, All In,
+	// the Roulette outcome, Offload and Onslaught's rate reads) and can be ended early by
+	// their owner ({@link #endWindow}). Cleared with everything else, so switch and respawn
+	// never inherit a window.
 	private final EnumMap<Lane, Window> windows = freshWindows();
-	// Conditional-passive stacks: counts plus grace timestamps, keyed by the passive
-	// definition, never by its name.
+	// Conditional-passive stacks: the bar, its feed stamp and its bleed clock, keyed by the
+	// passive definition, never by its name.
 	private final PassiveStacks passiveStacks = new PassiveStacks();
 	// Legionary form: transient per ADR-0002, every Legionary enters in Scutum.
 	// The choice stays in PlayerClasses; this is where the body is, not the pick.
@@ -68,12 +69,12 @@ public final class PlayerRuntime {
 	 * The whole transient read at {@code now}: the one shape every status path crosses
 	 * this seam with, so lane and window reads cannot re-state their semantics per
 	 * caller. One {@link LaneRead} per lane; {@code flipTarget} is the live flip window's
-	 * landing, null when no flip window is live; {@code rendBonusStacks} is the unspent
-	 * Rend stamp, 0 when nothing is owed; {@code stance} is Scutum until the first Rotate.
+	 * landing, null when no flip window is live; {@code stance} is Scutum until the first
+	 * Rotate. The bar is not lane state and is read off the runtime by the callers that
+	 * need it (the snapshot, the applier, the melee plan).
 	 */
 	public record State(
 			Map<Lane, LaneRead> lanes,
-			int rendBonusStacks,
 			RotateAbility.Stance flipTarget,
 			RouletteAbility.Outcome rouletteOutcome,
 			RotateAbility.Stance stance,
@@ -106,7 +107,6 @@ public final class PlayerRuntime {
 		}
 		return new State(
 				lanes,
-				windows.get(Lane.REND).peekPayload(now),
 				windows.get(Lane.ROTATE).isLive(now) ? flippedTo : null,
 				windows.get(Lane.ROULETTE).isLive(now) ? rouletteOutcome : null,
 				stance,
@@ -127,17 +127,12 @@ public final class PlayerRuntime {
 	// without the other. The duration is the firing ability's own constant, passed in at
 	// its arm site (or, for the two landings that carry one, named by the landing); the
 	// trigger read the same lane at the same now, so the use here cannot fail for a fired press.
-	/** Arms the lane and stamps its window together: every fired press whose window carries nothing else. */
+	/** Arms the lane and stamps its window together: every fired press. */
 	public boolean arm(Lane lane, long now, long windowMs) {
-		return arm(lane, now, windowMs, 0);
-	}
-
-	/** Arms the lane and stamps the window's one-shot payload together: fired Rend presses. */
-	public boolean arm(Lane lane, long now, long windowMs, int payload) {
 		if (!cooldowns.use(lane, now)) {
 			return false;
 		}
-		windows.get(lane).arm(now, windowMs, payload);
+		windows.get(lane).arm(now, windowMs);
 		return true;
 	}
 
@@ -164,21 +159,20 @@ public final class PlayerRuntime {
 
 	/**
 	 * Consumes the one-shot a lane's window carries, exactly once: true when one was waiting,
-	 * false when nothing was owed. Rush's next-hit credit and Rotate's Impetus both spend
-	 * through here; a stale window with no bonus left grants nothing, and an unswung window
-	 * simply stops being live.
+	 * false when nothing was owed. Rotate's Impetus spends through here; a stale window with
+	 * no bonus left grants nothing, and an unswung window simply stops being live.
 	 */
 	public boolean consumeBonus(Lane lane, long now) {
 		return windows.get(lane).consume(now);
 	}
 
 	/**
-	 * Spends a lane's stamped payload exactly once: the stamped value when a live window was
-	 * waiting, 0 when nothing was owed. An unswung window simply stops being live; what it
-	 * cost is already gone.
+	 * Ends a lane's window early, its cooldown untouched: the owner of a window whose
+	 * duration is not purely the clock (Onslaught lasts its bar too) says when it is over.
+	 * Nothing owed is spilled — a timed window's rate is read while it lives and nowhere else.
 	 */
-	public int consumePayload(Lane lane, long now) {
-		return windows.get(lane).consumePayload(now);
+	public void endWindow(Lane lane) {
+		windows.get(lane).clear();
 	}
 
 	/** One non-crit full hit loads the pocket: called by the hit settle with the plan's movement. */
@@ -207,16 +201,15 @@ public final class PlayerRuntime {
 	}
 
 	/**
-	 * One ability window: a press timestamp, the duration stamped beside it at arm time,
-	 * and its one-shot payload, live for that duration after a fired press. Cleared with
-	 * everything else, so switch and respawn never inherit a window. One clock throughout:
-	 * each ability names its window constant once, where it arms.
+	 * One ability window: a press timestamp and the duration stamped beside it at arm time,
+	 * live for that duration after a fired press. Cleared with everything else, so switch
+	 * and respawn never inherit a window. One clock throughout: each ability names its
+	 * window constant once, where it arms.
 	 */
 	private static final class Window {
 		private long pressedAt = -1L;
 		private long durationMs;
 		private boolean pending;
-		private int payload;
 
 		boolean isLive(long now) {
 			return pressedAt >= 0 && now - pressedAt < durationMs;
@@ -229,11 +222,10 @@ public final class PlayerRuntime {
 			return durationMs - (now - pressedAt);
 		}
 
-		void arm(long now, long durationMs, int payload) {
+		void arm(long now, long durationMs) {
 			pressedAt = now;
 			this.durationMs = durationMs;
 			pending = true;
-			this.payload = payload;
 		}
 
 		boolean hasPending(long now) {
@@ -248,23 +240,10 @@ public final class PlayerRuntime {
 			return true;
 		}
 
-		int peekPayload(long now) {
-			return hasPending(now) ? payload : 0;
-		}
-
-		int consumePayload(long now) {
-			if (!hasPending(now)) {
-				return 0;
-			}
-			pending = false;
-			return payload;
-		}
-
 		void clear() {
 			pressedAt = -1L;
 			durationMs = 0;
 			pending = false;
-			payload = 0;
 		}
 	}
 
@@ -273,46 +252,40 @@ public final class PlayerRuntime {
 		return passiveStacks.stacks(passive);
 	}
 
-	/** Millis left before this passive's stacks drop, 0 when it holds none. Exactly at grace is still live. */
+	/** Millis until the next stack is owed, 0 when the bar holds none. The same clock the bleed runs on. */
 	public long graceRemaining(ConditionalPassive passive, long now) {
 		return passiveStacks.graceRemaining(passive, now);
 	}
 
-	/** The grace clock's last stamp for this passive, 0 when it holds none. Compared for movement, never read as time. */
+	/** The feed clock's last stamp for this passive, 0 when it holds none. Compared for movement, never read as time. */
 	public long graceStamp(ConditionalPassive passive) {
 		return passiveStacks.graceStamp(passive);
 	}
 
-	/** Bumps every passive on the given class whose trigger matches.
+	/** Bumps every passive on the given class whose earns name the trigger, each by its own amount.
 	 *  Unknown triggers, a missing class and trigger-less classes are inert.
 	 *  Only a full swing ({@code charge == 1.0}) earns stacks; spam earns zero.
-	 *  Callers with no swing (bonus grants, tests) must pass {@code 1.0F} explicitly. */
+	 *  Callers with no swing (taken hits, tests) must pass {@code 1.0F} explicitly. */
 	public void onTrigger(ClassDefinition def, Trigger trigger, long now, float charge) {
 		passiveStacks.onTrigger(def, trigger, now, charge);
 	}
 
+	/** Spends up to {@code n} stacks through the passive applier's price: the amount actually spent, 0 when the bar is empty. */
+	public int spendStacks(ConditionalPassive passive, int n) {
+		return passiveStacks.spend(passive, n);
+	}
+
 	/**
-	 * Per-passive movement: which passives lost stacks this tick. The applier needs the set,
-	 * not the global flag: a tick that decayed passive A must not remove passive B sitting at
-	 * zero. Unmodifiable, possibly empty, never null. Past grace every stack drops at once,
-	 * vanilla-style: there is no per-second bleed.
+	 * The tick's bleed: one stack per whole second past the grace, for every passive on
+	 * the class. The applier runs this before reconciling, so a drained bar reconciles to
+	 * the row it names now and the Onslaught end reads the same count.
 	 */
-	public Set<ConditionalPassive> tickDecayMoved(ClassDefinition def, long now) {
-		return passiveStacks.tickDecayMoved(def, now);
+	public void decay(ClassDefinition def, long now) {
+		passiveStacks.decay(def, now);
 	}
 
 	/** Drops stacks for one class's passives: class switch leaves no stale counts behind. */
 	public void clear(ClassDefinition def) {
 		passiveStacks.clear(def);
-	}
-
-	/** Drops one passive's stacks and timestamp: a spender consumes only what it priced. */
-	public void clear(ConditionalPassive passive) {
-		passiveStacks.clear(passive);
-	}
-
-	/** Bumps one passive record N times: single cap, single grace stamp. Used by Rush bonus grant. */
-	public void bumpPassive(ConditionalPassive passive, int times, long now) {
-		passiveStacks.bumpPassive(passive, times, now);
 	}
 }

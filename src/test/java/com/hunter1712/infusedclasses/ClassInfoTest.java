@@ -35,27 +35,27 @@ class ClassInfoTest {
 
 	@Test
 	void freshJuggernautShowsBothLanesReady() {
-		assertEquals(List.of("Class: Juggernaut", "Rush: ready", "Rend: ready"),
+		assertEquals(List.of("Class: Juggernaut", "Offload: ready", "Onslaught: ready"),
 				texts(juggernaut(), new PlayerRuntime(), 0));
 	}
 
 	@Test
 	void coolingJuggernautPinsOneDecimal() {
 		PlayerRuntime runtime = new PlayerRuntime();
-		runtime.arm(Lane.RUSH, 0, RushAbility.WINDOW_TICKS * 50L);
-		runtime.arm(Lane.REND, 0, RendAbility.WINDOW_TICKS * 50L, 0);
+		runtime.arm(Lane.OFFLOAD, 0, OffloadAbility.WINDOW_TICKS * 50L);
+		runtime.arm(Lane.ONSLAUGHT, 0, OnslaughtAbility.WINDOW_TICKS * 50L);
 
-		assertEquals(List.of("Class: Juggernaut", "Rush: 18.4s", "Rend: 53.4s"),
+		assertEquals(List.of("Class: Juggernaut", "Offload: 3.4s", "Onslaught: 53.4s"),
 				texts(juggernaut(), runtime, 6_600));
 	}
 
 	@Test
 	void aLaneAtItsExpiryBoundaryReadsReady() {
 		PlayerRuntime runtime = new PlayerRuntime();
-		runtime.arm(Lane.RUSH, 0, RushAbility.WINDOW_TICKS * 50L);
+		runtime.arm(Lane.OFFLOAD, 0, OffloadAbility.WINDOW_TICKS * 50L);
 
-		assertEquals(List.of("Class: Juggernaut", "Rush: ready", "Rend: ready"),
-				texts(juggernaut(), runtime, Lane.RUSH.cooldownMs()));
+		assertEquals(List.of("Class: Juggernaut", "Offload: ready", "Onslaught: ready"),
+				texts(juggernaut(), runtime, Lane.OFFLOAD.cooldownMs()));
 	}
 
 	@Test
@@ -127,8 +127,8 @@ class ClassInfoTest {
 
 		List<String> legionary = texts(legionary(), new PlayerRuntime(), 0);
 		assertTrue(legionary.contains("Stance: Scutum"));
-		assertFalse(legionary.contains("Rush: ready"));
-		assertFalse(legionary.contains("Rend: ready"));
+		assertFalse(legionary.contains("Offload: ready"));
+		assertFalse(legionary.contains("Onslaught: ready"));
 
 		List<String> gambler = texts(gambler(), new PlayerRuntime(), 0);
 		assertFalse(gambler.contains("Stance: Scutum"));
@@ -137,14 +137,14 @@ class ClassInfoTest {
 
 	@Test
 	void aCustomDefinitionComposesByItsOwnActives() {
-		ClassDefinition rendOnly = new ClassDefinition(
+		ClassDefinition onslaughtOnly = new ClassDefinition(
 				Identifier.fromNamespaceAndPath("infusedclasses", "test"), "Test",
 				List.of(), List.of(), 0, "",
-				List.of(new ClassDefinition.ActiveAbility(ClassRegistry.REND_ABILITY, "Rend", "test copy")),
+				List.of(new ClassDefinition.ActiveAbility(ClassRegistry.ONSLAUGHT_ABILITY, "Onslaught", "test copy")),
 				List.of(),
 				CritRule.universal());
 
-		assertEquals(List.of("Class: Test", "Rend: ready"), texts(rendOnly, new PlayerRuntime(), 0));
+		assertEquals(List.of("Class: Test", "Onslaught: ready"), texts(onslaughtOnly, new PlayerRuntime(), 0));
 	}
 
 	@Test

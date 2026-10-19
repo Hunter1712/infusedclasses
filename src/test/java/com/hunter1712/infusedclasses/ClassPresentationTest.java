@@ -17,7 +17,7 @@ class ClassPresentationTest {
 
 		assertEquals(0xFFE74C3C, juggernaut.accentColor());
 		assertEquals("Frontline bruiser", juggernaut.tagline());
-		assertEquals(List.of("Rush", "Rend"),
+		assertEquals(List.of("Offload", "Onslaught"),
 				juggernaut.actives().stream().map(ClassDefinition.ActiveAbility::name).toList());
 	}
 
@@ -40,11 +40,11 @@ class ClassPresentationTest {
 				.map(ClassPresentation.CardLine::text).toList();
 
 		assertTrue(texts.contains("Momentum \u2014 " + momentum.fullDesc()));
-		assertTrue(texts.stream().anyMatch(t -> t.contains("(max " + momentum.maxStacks() + ")")));
-		assertTrue(texts.stream().anyMatch(t -> t.startsWith("Rush \u2014 ")
-				&& t.contains("(R, " + (Lane.RUSH.cooldownMs() / 1000) + "s)")));
-		assertTrue(texts.stream().anyMatch(t -> t.startsWith("Rend \u2014 ")
-				&& t.contains("per Momentum")));
+		assertTrue(texts.stream().anyMatch(t -> t.contains("Max " + momentum.maxStacks() + ".")));
+		assertTrue(texts.stream().anyMatch(t -> t.startsWith("Offload \u2014 ")
+				&& t.contains("(R, " + (Lane.OFFLOAD.cooldownMs() / 1000) + "s)")));
+		assertTrue(texts.stream().anyMatch(t -> t.startsWith("Onslaught \u2014 ")
+				&& t.contains("per full hit") && t.contains("spending 2")));
 		assertFalse(texts.stream().anyMatch(t -> t.contains("Roots")));
 	}
 
@@ -127,15 +127,15 @@ class ClassPresentationTest {
 		assertEquals(ClassPresentation.LineKind.PASSIVE, lines.get(1).kind());
 		assertEquals(0xFFBDBDBD, lines.get(1).style().color());
 		assertFalse(lines.get(1).style().bold());
-		assertTrue(lines.get(2).text().startsWith("Vigor \u2014 "));
+		assertTrue(lines.get(2).text().startsWith("Burden \u2014 "));
 		assertEquals(ClassPresentation.LineKind.PASSIVE, lines.get(2).kind());
 		// Active section
 		assertEquals("Active", lines.get(3).text());
 		assertEquals(ClassPresentation.LineKind.ABILITY_HEADER, lines.get(3).kind());
-		assertTrue(lines.get(4).text().startsWith("Rush \u2014 "));
+		assertTrue(lines.get(4).text().startsWith("Offload \u2014 "));
 		assertEquals(ClassPresentation.LineKind.ABILITY, lines.get(4).kind());
 		assertEquals(0xFF7ED6FF, lines.get(4).style().color());
-		assertTrue(lines.get(5).text().startsWith("Rend \u2014 "));
+		assertTrue(lines.get(5).text().startsWith("Onslaught \u2014 "));
 	}
 
 	@Test
@@ -193,7 +193,7 @@ class ClassPresentationTest {
 				List.of(),
 				List.of(),
 				0xFFFFFF, "tag",
-				List.of(new ClassDefinition.ActiveAbility(ClassRegistry.REND_ABILITY, "Ability line", "Does a thing.")),
+				List.of(new ClassDefinition.ActiveAbility(ClassRegistry.ONSLAUGHT_ABILITY, "Ability line", "Does a thing.")),
 				List.of(),
 				CritRule.universal());
 

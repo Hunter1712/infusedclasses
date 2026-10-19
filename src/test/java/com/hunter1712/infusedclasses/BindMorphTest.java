@@ -23,25 +23,25 @@ class BindMorphTest {
 	}
 
 	@Test
-	void signatureIsWheelForGamblersRotateForLegionariesRushForEveryoneElse() {
+	void signatureIsWheelForGamblersRotateForLegionariesOffloadForEveryoneElse() {
 		assertEquals(BindMorph.SignatureTarget.ROULETTE,
 				BindMorph.signatureFor(ClassRegistry.byId(ClassRegistry.GAMBLER)));
 		assertEquals(BindMorph.SignatureTarget.ROTATE,
 				BindMorph.signatureFor(ClassRegistry.byId(ClassRegistry.LEGIONARY)));
-		assertEquals(BindMorph.SignatureTarget.RUSH,
+		assertEquals(BindMorph.SignatureTarget.OFFLOAD,
 				BindMorph.signatureFor(ClassRegistry.byId(ClassRegistry.JUGGERNAUT)));
-		assertEquals(BindMorph.SignatureTarget.RUSH, BindMorph.signatureFor(null));
+		assertEquals(BindMorph.SignatureTarget.OFFLOAD, BindMorph.signatureFor(null));
 	}
 
 	@Test
-	void ultimateIsAllInForGamblersAequilibriumForLegionariesRendForEveryoneElse() {
+	void ultimateIsAllInForGamblersAequilibriumForLegionariesOnslaughtForEveryoneElse() {
 		assertEquals(BindMorph.UltimateTarget.ALL_IN,
 				BindMorph.ultimateFor(ClassRegistry.byId(ClassRegistry.GAMBLER)));
 		assertEquals(BindMorph.UltimateTarget.AEQUILIBRIUM,
 				BindMorph.ultimateFor(ClassRegistry.byId(ClassRegistry.LEGIONARY)));
-		assertEquals(BindMorph.UltimateTarget.REND,
+		assertEquals(BindMorph.UltimateTarget.ONSLAUGHT,
 				BindMorph.ultimateFor(ClassRegistry.byId(ClassRegistry.JUGGERNAUT)));
-		assertEquals(BindMorph.UltimateTarget.REND, BindMorph.ultimateFor(null));
+		assertEquals(BindMorph.UltimateTarget.ONSLAUGHT, BindMorph.ultimateFor(null));
 	}
 
 	@Test
@@ -51,14 +51,14 @@ class BindMorphTest {
 		ClassDefinition allInOnly = defWith(active(ClassRegistry.ALL_IN_ABILITY, "All In"));
 
 		assertEquals(BindMorph.SignatureTarget.ROTATE, BindMorph.signatureFor(rotateOnly));
-		assertEquals(BindMorph.SignatureTarget.RUSH, BindMorph.signatureFor(otherWithoutRotate));
+		assertEquals(BindMorph.SignatureTarget.OFFLOAD, BindMorph.signatureFor(otherWithoutRotate));
 		// The ultimate is picked by the class's own ultimate ability, never lent from the
 		// signature row: Aequilibrium without Rotate now fires Aequilibrium, and Rotate
-		// alone only falls back to Rend — which its definition cannot fire (ADR-0026).
-		assertEquals(BindMorph.UltimateTarget.REND, BindMorph.ultimateFor(rotateOnly));
+		// alone only falls back to Onslaught — which its definition cannot fire (ADR-0026).
+		assertEquals(BindMorph.UltimateTarget.ONSLAUGHT, BindMorph.ultimateFor(rotateOnly));
 		assertEquals(BindMorph.UltimateTarget.AEQUILIBRIUM, BindMorph.ultimateFor(otherWithoutRotate));
 		assertEquals(BindMorph.UltimateTarget.ALL_IN, BindMorph.ultimateFor(allInOnly));
-		assertEquals(BindMorph.SignatureTarget.RUSH, BindMorph.signatureFor(allInOnly));
+		assertEquals(BindMorph.SignatureTarget.OFFLOAD, BindMorph.signatureFor(allInOnly));
 		// The drawn rows follow the same walk: what the class carries is what it draws.
 		assertEquals(AbilityRoster.ROTATE, BindMorph.shape(rotateOnly).signatureRow());
 		assertNull(BindMorph.shape(rotateOnly).ultimateRow());
@@ -69,22 +69,22 @@ class BindMorphTest {
 	/** Two slot-shaped actives: the class's own active order decides, the same answer the bind fires. */
 	@Test
 	void theFirstActiveNamingASlotWins() {
-		ClassDefinition rushThenRotate = defWith(
-				active(ClassRegistry.RUSH_ABILITY, "Rush"),
+		ClassDefinition offloadThenRotate = defWith(
+				active(ClassRegistry.OFFLOAD_ABILITY, "Offload"),
 				active(ClassRegistry.ROTATE_ABILITY, "Rotate"));
-		ClassDefinition rotateThenRush = defWith(
+		ClassDefinition rotateThenOffload = defWith(
 				active(ClassRegistry.ROTATE_ABILITY, "Rotate"),
-				active(ClassRegistry.RUSH_ABILITY, "Rush"));
-		ClassDefinition allInThenRend = defWith(
+				active(ClassRegistry.OFFLOAD_ABILITY, "Offload"));
+		ClassDefinition allInThenOnslaught = defWith(
 				active(ClassRegistry.ALL_IN_ABILITY, "All In"),
-				active(ClassRegistry.REND_ABILITY, "Rend"));
+				active(ClassRegistry.ONSLAUGHT_ABILITY, "Onslaught"));
 
-		assertEquals(BindMorph.SignatureTarget.RUSH, BindMorph.signatureFor(rushThenRotate));
-		assertEquals(AbilityRoster.RUSH, BindMorph.shape(rushThenRotate).signatureRow());
+		assertEquals(BindMorph.SignatureTarget.OFFLOAD, BindMorph.signatureFor(offloadThenRotate));
+		assertEquals(AbilityRoster.OFFLOAD, BindMorph.shape(offloadThenRotate).signatureRow());
 		// Order is the class's own actives, not the roster's and not the enum's.
-		assertEquals(BindMorph.SignatureTarget.ROTATE, BindMorph.signatureFor(rotateThenRush));
-		assertEquals(AbilityRoster.ROTATE, BindMorph.shape(rotateThenRush).signatureRow());
-		assertEquals(BindMorph.UltimateTarget.ALL_IN, BindMorph.ultimateFor(allInThenRend));
-		assertEquals(AbilityRoster.ALL_IN, BindMorph.shape(allInThenRend).ultimateRow());
+		assertEquals(BindMorph.SignatureTarget.ROTATE, BindMorph.signatureFor(rotateThenOffload));
+		assertEquals(AbilityRoster.ROTATE, BindMorph.shape(rotateThenOffload).signatureRow());
+		assertEquals(BindMorph.UltimateTarget.ALL_IN, BindMorph.ultimateFor(allInThenOnslaught));
+		assertEquals(AbilityRoster.ALL_IN, BindMorph.shape(allInThenOnslaught).ultimateRow());
 	}
 }

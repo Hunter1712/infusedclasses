@@ -10,8 +10,10 @@ package com.hunter1712.infusedclasses;
  * stays behind the lane-keyed verbs.
  */
 public enum Lane {
-	RUSH(25_000L),
-	REND(60_000L),
+	/** Juggernaut Offload lane: one Momentum spend per 10s. */
+	OFFLOAD(10_000L),
+	/** Juggernaut Onslaught lane: the ultimate's 60s wait. */
+	ONSLAUGHT(60_000L),
 	/** Rotate lock in millis: 8s between stance flips. Owned by the lane that enforces it. */
 	ROTATE(8_000L),
 	/** The Legionary shared oath lane: 50s, owned solely by Aequilibrium. */

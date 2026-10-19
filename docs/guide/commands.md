@@ -7,7 +7,7 @@
 Open to everyone. Speaks for the invoking player only:
 
 - `Class: <displayName>` first.
-- One line per lane the class carries, with the remaining time in one decimal: `Rush: 18.4s`, `Rend: ready`. A lane off cooldown says `ready`.
+- One line per lane the class carries, with the remaining time in one decimal: `Offload: 3.4s`, `Onslaught: ready`. A lane off cooldown says `ready`.
 - Legionaries also get `Stance: Gladius` or `Stance: Scutum`.
 - No class yet: a single `No class chosen` line.
 
@@ -49,4 +49,4 @@ Gamemaster only — the per-player "has cheats". Reopens your own picker on your
 
 - First join with no class choice opens the picker automatically.
 - Rejoining with a saved choice loads silently — no GUI.
-- `R` arrives as the rotate intent for Legionaries, the roulette intent for Gamblers and Rush for everyone else; `V` arrives as the oath intent for Legionaries, All In for Gamblers and Rend for everyone else (bind morph). Binds survive the class.
+- `R` arrives as the rotate intent for Legionaries, the roulette intent for Gamblers and Offload for everyone else; `V` arrives as the oath intent for Legionaries, All In for Gamblers and Onslaught for everyone else (bind morph). Binds survive the class.

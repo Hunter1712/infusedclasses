@@ -17,7 +17,7 @@ import java.util.Locale;
  * legend. The words are the owners' own: the {@link AbilityRoster} carries the ability
  * names, the stance its display name, the passive and the crit rule their own. Row order
  * is fixed: the anchored stance (Legionary), the signature row, the ultimate row, then
- * the state rows (Momentum, Streak). The two slot rows are the class's shape —
+ * the state rows (Momentum with its checkpoint rider, Streak). The two slot rows are the class's shape —
  * {@link BindMorph#shape} — the same value the keys fire from, so the stack cannot draw
  * one ultimate while the key fires another. Each lane line is its roster row's: the word,
  * the countdown, and whatever riders the row's rules draw beside them — usually a dotted
@@ -64,7 +64,15 @@ public final class StatusHud {
 		rows.add(laneRow(status, shape.ultimateRow(), elapsed));
 		ConditionalPassive momentum = def.passiveForTrigger(Trigger.ON_HIT_DEALT);
 		if (momentum != null && status.momentumStacks() > 0) {
-			rows.add(new Row(List.of(new Chip(momentum.name(), momentumValue(status, elapsed), true, false))));
+			List<Chip> chips = new ArrayList<>();
+			chips.add(new Chip(momentum.name(), momentumValue(status, elapsed), true, false));
+			// The live checkpoint rides beside the bar as a bare word, the same shape
+			// as the wheel's band rider: which row the bar has reached is the information.
+			String tier = momentum.tierNameFor(status.momentumStacks());
+			if (!tier.isEmpty()) {
+				chips.add(new Chip(tier, "", true, true));
+			}
+			rows.add(new Row(List.copyOf(chips)));
 		}
 		if (def.critRule().hasDice() && status.streak() > 0) {
 			rows.add(new Row(List.of(new Chip(CritRule.STREAK, Integer.toString(status.streak()), true, false))));
@@ -95,9 +103,9 @@ public final class StatusHud {
 	}
 
 	/**
-	 * Momentum's words: stacks, then the grace countdown while one is live. A stale
-	 * snapshot — stacks still reported, grace already spent — prints bare stacks rather
-	 * than a `0s`, so the number only ever shows live time.
+	 * Momentum's words: stacks, then the countdown to the next stack the bleed owes while
+	 * one is owed. A stale snapshot — stacks still reported, the clock already past — prints
+	 * bare stacks rather than a `0s`, so the number only ever shows live time.
 	 */
 	private static String momentumValue(PlayerStatusPayload status, long elapsed) {
 		long grace = status.momentumGraceRemainingMs() - elapsed;

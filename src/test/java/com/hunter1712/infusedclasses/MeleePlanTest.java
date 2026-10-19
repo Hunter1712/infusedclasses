@@ -25,6 +25,19 @@ class MeleePlanTest {
 		return ClassRegistry.byId(ClassRegistry.GAMBLER);
 	}
 
+	private static ConditionalPassive momentum() {
+		return juggernaut().passiveForTrigger(Trigger.ON_HIT_DEALT);
+	}
+
+	/** A Juggernaut with the given full-swing hits already fed, at the given clock. */
+	private static PlayerRuntime loaded(int stacks) {
+		PlayerRuntime runtime = new PlayerRuntime();
+		for (int i = 0; i < stacks; i++) {
+			runtime.onTrigger(juggernaut(), Trigger.ON_HIT_DEALT, 0, 1.0F);
+		}
+		return runtime;
+	}
+
 	private static PlayerRuntime inStance(RotateAbility.Stance stance) {
 		PlayerRuntime runtime = new PlayerRuntime();
 		runtime.rotate(0, stance);
@@ -59,7 +72,7 @@ class MeleePlanTest {
 		assertTrue(plan.impetusPending());
 		assertFalse(plan.bump());
 		MeleePlan.Landed landed = MeleePlan.resolve(legionary(), gladius, null, null, 0.5F, 1.0F, 0, 0.5F);
-		assertEquals(0.0F, landed.rendHp());
+		assertEquals(0.0F, landed.onslaughtHp());
 		assertFalse(gladius.state(0).impetusPending());
 		assertEquals(1.0, dealOf(legionary(), gladius, 0), 1e-9);
 	}
@@ -117,19 +130,16 @@ class MeleePlanTest {
 	}
 
 	@Test
-	void planHitGatesStacksAndPeeksOneShots() {
+	void planHitGatesTheBumpOnFullCharge() {
 		PlayerRuntime runtime = new PlayerRuntime();
-		RushAbility.fire(juggernaut(), runtime, 0);
 
 		MeleePlan.HitPlan full = MeleePlan.planHit(juggernaut(), runtime, null, null, 1.0F, 1.0F, 0, 0.5F);
 		MeleePlan.HitPlan spam = MeleePlan.planHit(juggernaut(), runtime, null, null, 0.5F, 1.0F, 0, 0.5F);
 
 		assertTrue(full.bump());
 		assertFalse(spam.bump());
-		assertTrue(full.rushBonus());
-		assertFalse(spam.rushBonus());
-		assertEquals(0, full.rendStacks());
-		assertEquals(0, full.rendHp());
+		assertEquals(0.0F, full.onslaughtHp());
+		assertEquals(0.0F, spam.onslaughtHp());
 	}
 
 	@Test
@@ -191,7 +201,7 @@ class MeleePlanTest {
 		assertEquals(CritRoll.Movement.NONE, crit.dice().movement());
 		// Settling a classless hit touches no stacks, no lanes, no Streak.
 		MeleePlan.Landed landed = MeleePlan.resolve(null, runtime, null, null, 1.0F, 1.0F, 0, 0.05F);
-		assertEquals(0.0F, landed.rendHp());
+		assertEquals(0.0F, landed.onslaughtHp());
 		assertEquals(CritRoll.Verdict.CRIT, landed.verdict());
 		assertEquals(0, runtime.state(0).streak());
 	}
@@ -202,7 +212,7 @@ class MeleePlanTest {
 		// settle both read null as "no abilities to move" and still roll the universal dice.
 		MeleePlan.Landed landed = MeleePlan.resolve(null, null, null, null, 1.0F, 1.0F, 0, 0.05F);
 
-		assertEquals(0.0F, landed.rendHp());
+		assertEquals(0.0F, landed.onslaughtHp());
 		assertEquals(CritRoll.Verdict.CRIT, landed.verdict());
 		assertEquals(1.25, landed.combined(), 1e-9);
 	}
@@ -226,47 +236,64 @@ class MeleePlanTest {
 	}
 
 	@Test
-	void rendBonusIsUntouchedByTheDice() {
-		PlayerRuntime runtime = new PlayerRuntime();
-		ConditionalPassive momentum = juggernaut().passives().get(0);
-		for (int i = 0; i < 5; i++) {
-			runtime.onTrigger(juggernaut(), Trigger.ON_HIT_DEALT, 0, 1.0F);
-		}
-		RendAbility.fire(juggernaut(), runtime, 0);
+	void onslaughtPricesAFullSwingAndSpendsTwo() {
+		PlayerRuntime runtime = loaded(10);
+		assertTrue(OnslaughtAbility.fire(juggernaut(), runtime, 0).fired());
 
-		MeleePlan.HitPlan plan = MeleePlan.planHit(juggernaut(), runtime, null, null, 1.0F, 1.0F, 0, 0.05F);
+		MeleePlan.HitPlan plan = MeleePlan.planHit(juggernaut(), runtime, null, null, 1.0F, 1.0F, 0, 0.5F);
 
-		// The Rend bonus is its own: the crit folds into the settled mult, never into rendHp.
-		assertEquals(CritRoll.Verdict.CRIT, plan.dice().verdict());
-		assertEquals(1.25, plan.dice().mult(), 1e-9);
-		assertEquals(RendAbility.bonusFor(5), plan.rendHp(), 1e-9);
-		MeleePlan.Landed landed = MeleePlan.resolve(juggernaut(), runtime, null, null, 1.0F, 1.0F, 0, 0.05F);
-		assertEquals(plan.rendHp(), landed.rendHp(), 1e-9);
-		assertEquals(1.25, landed.combined(), 1e-9);
-		// The resolve bumps the stack it earned; the entry's consume is what drops them for the fire.
-		assertEquals(6, runtime.stacks(momentum));
+		assertFalse(plan.bump(), "no bar feeds while the window is live");
+		assertEquals(1.0F, plan.onslaughtHp());
+		MeleePlan.Landed landed = MeleePlan.resolve(juggernaut(), runtime, null, null, 1.0F, 1.0F, 0, 0.5F);
+		assertEquals(1.0F, landed.onslaughtHp());
+		assertEquals(8, runtime.stacks(momentum()));
+		assertTrue(runtime.state(0).lane(Lane.ONSLAUGHT).windowRemainingMs() > 0);
 	}
 
 	@Test
-	void settleConsumesWhatThePlanPeeked() {
-		PlayerRuntime runtime = new PlayerRuntime();
-		ConditionalPassive momentum = juggernaut().passives().get(0);
+	void onslaughtBonusIsUntouchedByTheDice() {
+		PlayerRuntime runtime = loaded(10);
+		OnslaughtAbility.fire(juggernaut(), runtime, 0);
+
+		MeleePlan.HitPlan plan = MeleePlan.planHit(juggernaut(), runtime, null, null, 1.0F, 1.0F, 0, 0.05F);
+
+		// The Onslaught bonus is its own: the crit folds into the settled mult, never into the HP.
+		assertEquals(CritRoll.Verdict.CRIT, plan.dice().verdict());
+		assertEquals(1.25, plan.dice().mult(), 1e-9);
+		assertEquals(1.0F, plan.onslaughtHp());
+		MeleePlan.Landed landed = MeleePlan.resolve(juggernaut(), runtime, null, null, 1.0F, 1.0F, 0, 0.05F);
+		assertEquals(1.0F, landed.onslaughtHp());
+		assertEquals(1.25, landed.combined(), 1e-9);
+		assertEquals(8, runtime.stacks(momentum()));
+	}
+
+	@Test
+	void spamInsideTheWindowLandsAndSpendsNothing() {
+		PlayerRuntime runtime = loaded(10);
+		OnslaughtAbility.fire(juggernaut(), runtime, 0);
+
+		MeleePlan.Landed landed = MeleePlan.resolve(juggernaut(), runtime, null, null, 0.5F, 1.0F, 0, 0.5F);
+
+		assertEquals(0.0F, landed.onslaughtHp());
+		assertEquals(10, runtime.stacks(momentum()));
+	}
+
+	@Test
+	void theEmptyBarEndsTheWindowAndTheNextHitFeedsAgain() {
+		PlayerRuntime runtime = loaded(10);
+		OnslaughtAbility.fire(juggernaut(), runtime, 0);
+
 		for (int i = 0; i < 5; i++) {
-			runtime.onTrigger(juggernaut(), Trigger.ON_HIT_DEALT, 0, 1.0F);
+			MeleePlan.resolve(juggernaut(), runtime, null, null, 1.0F, 1.0F, 0, 0.5F);
 		}
-		RushAbility.fire(juggernaut(), runtime, 0);
-		RendAbility.fire(juggernaut(), runtime, 0);
-		MeleePlan.HitPlan plan = MeleePlan.planHit(juggernaut(), runtime, null, null, 1.0F, 1.0F, 0, 0.5F);
+		assertEquals(0, runtime.stacks(momentum()));
+		assertEquals(0, runtime.state(0).lane(Lane.ONSLAUGHT).windowRemainingMs());
+		assertEquals(Lane.ONSLAUGHT.cooldownMs(), runtime.state(0).laneRemaining(Lane.ONSLAUGHT));
 
-		MeleePlan.Landed landed = MeleePlan.resolve(juggernaut(), runtime, null, null, 1.0F, 1.0F, 0, 0.5F);
-
-		// The resolve returns the stamped bonus to land: the entry lands what it settled.
-		assertEquals(plan.rendHp(), landed.rendHp(), 1e-9);
-		assertTrue(landed.rendHp() > 0);
-		// Settle owns the bump too: full swing earns one (+1), Rush credits +5, Rend snapshot spent, not refunded.
-		assertEquals(11, runtime.stacks(momentum));
-		assertFalse(runtime.state(0).lane(Lane.RUSH).windowPending());
-		assertEquals(0, runtime.state(0).rendBonusStacks());
+		// The window is over: the next full swing earns again and prices nothing.
+		MeleePlan.Landed after = MeleePlan.resolve(juggernaut(), runtime, null, null, 1.0F, 1.0F, 0, 0.5F);
+		assertEquals(0.0F, after.onslaughtHp());
+		assertEquals(1, runtime.stacks(momentum()));
 	}
 
 	@Test
@@ -275,11 +302,10 @@ class MeleePlanTest {
 
 		MeleePlan.Landed landed = MeleePlan.resolve(juggernaut(), runtime, null, null, 0.5F, 1.0F, 0, 0.5F);
 
-		assertEquals(0.0F, landed.rendHp());
-
-		assertEquals(0, runtime.stacks(juggernaut().passives().get(0)));
-		assertFalse(runtime.state(0).lane(Lane.RUSH).windowPending());
-		assertEquals(0, runtime.state(0).rendBonusStacks());
+		assertEquals(0.0F, landed.onslaughtHp());
+		assertEquals(CritRoll.Verdict.NONE, landed.verdict());
+		assertEquals(1.0, landed.combined(), 1e-9);
+		assertEquals(0, runtime.stacks(momentum()));
 	}
 
 	@Test
@@ -299,29 +325,23 @@ class MeleePlanTest {
 		PlayerRuntime runtime = new PlayerRuntime();
 
 		MeleePlan.resolve(juggernaut(), runtime, null, null, 0.5F, 1.0F, 0, 0.5F);
-		assertEquals(0, runtime.stacks(juggernaut().passives().get(0)));
+		assertEquals(0, runtime.stacks(momentum()));
 
 		MeleePlan.resolve(juggernaut(), runtime, null, null, 1.0F, 1.0F, 0, 0.5F);
-		assertEquals(1, runtime.stacks(juggernaut().passives().get(0)));
+		assertEquals(1, runtime.stacks(momentum()));
 	}
 
 	@Test
 	void aHitThatLandedNothingEarnsNothing() {
-		PlayerRuntime runtime = new PlayerRuntime();
-		RushAbility.fire(juggernaut(), runtime, 0);
-		for (int i = 0; i < 5; i++) {
-			runtime.onTrigger(juggernaut(), Trigger.ON_HIT_DEALT, 0, 1.0F);
-		}
-		RendAbility.fire(juggernaut(), runtime, 0);
+		PlayerRuntime runtime = loaded(10);
+		OnslaughtAbility.fire(juggernaut(), runtime, 0);
 
 		// A shielded full swing took no damage: it earns nothing even with a crit roll handed in.
 		MeleePlan.HitPlan plan = MeleePlan.planHit(juggernaut(), runtime, null, null, 1.0F, 0.0F, 0, 0.05F);
 
 		assertFalse(plan.bump());
-		assertFalse(plan.rushBonus());
 		assertFalse(plan.impetusPending());
-		assertEquals(0, plan.rendStacks());
-		assertEquals(0.0F, plan.rendHp());
+		assertEquals(0.0F, plan.onslaughtHp());
 		assertEquals(CritRoll.Verdict.NONE, plan.dice().verdict());
 		assertEquals(CritRoll.Movement.NONE, plan.dice().movement());
 		assertEquals(1.0, plan.combined(), 1e-9);
@@ -329,23 +349,18 @@ class MeleePlanTest {
 
 	@Test
 	void aHitThatLandedNothingSpendsNothing() {
-		PlayerRuntime runtime = new PlayerRuntime();
-		ConditionalPassive momentum = juggernaut().passiveForTrigger(Trigger.ON_HIT_DEALT);
-		RushAbility.fire(juggernaut(), runtime, 0);
-		for (int i = 0; i < 5; i++) {
-			runtime.onTrigger(juggernaut(), Trigger.ON_HIT_DEALT, 0, 1.0F);
-		}
-		RendAbility.fire(juggernaut(), runtime, 0);
+		PlayerRuntime runtime = loaded(10);
+		OnslaughtAbility.fire(juggernaut(), runtime, 0);
 
 		MeleePlan.Landed landed = MeleePlan.resolve(juggernaut(), runtime, null, null, 1.0F, 0.0F, 0, 0.5F);
 
-		// Nothing earned, nothing spent: the pocket, the Rush bonus and the Rend stamp all wait.
-		assertEquals(0.0F, landed.rendHp());
+		// Nothing earned, nothing spent: the bar and the window both wait for a hit that lands.
+		assertEquals(0.0F, landed.onslaughtHp());
 		assertEquals(CritRoll.Verdict.NONE, landed.verdict());
 		assertEquals(1.0, landed.combined(), 1e-9);
-		assertEquals(5, runtime.stacks(momentum));
-		assertTrue(runtime.state(0).lane(Lane.RUSH).windowPending());
-		assertEquals(5, runtime.state(0).rendBonusStacks());
+		assertEquals(10, runtime.stacks(momentum()));
+		assertEquals(OnslaughtAbility.WINDOW_TICKS * 50L,
+				runtime.state(0).lane(Lane.ONSLAUGHT).windowRemainingMs());
 	}
 
 	@Test
@@ -361,18 +376,17 @@ class MeleePlanTest {
 	}
 
 	@Test
-	void aShieldedHitLeavesTheBonusForTheNextLandedHit() {
-		PlayerRuntime runtime = new PlayerRuntime();
-		ConditionalPassive momentum = juggernaut().passiveForTrigger(Trigger.ON_HIT_DEALT);
-		RushAbility.fire(juggernaut(), runtime, 0);
+	void aShieldedHitLeavesTheOnslaughtPriceForTheNextLandedHit() {
+		PlayerRuntime runtime = loaded(10);
+		OnslaughtAbility.fire(juggernaut(), runtime, 0);
 
 		MeleePlan.resolve(juggernaut(), runtime, null, null, 1.0F, 0.0F, 0, 0.5F);
-		assertTrue(runtime.state(0).lane(Lane.RUSH).windowPending());
+		assertEquals(10, runtime.stacks(momentum()));
 
-		// The next swing that lands pays normally: a partial hit still earns, bump plus Rush credit.
-		MeleePlan.resolve(juggernaut(), runtime, null, null, 1.0F, 2.0F, 0, 0.5F);
-		assertEquals(6, runtime.stacks(momentum));
-		assertFalse(runtime.state(0).lane(Lane.RUSH).windowPending());
+		// The next swing that lands pays normally: the price still takes two.
+		MeleePlan.Landed landed = MeleePlan.resolve(juggernaut(), runtime, null, null, 1.0F, 2.0F, 0, 0.5F);
+		assertEquals(1.0F, landed.onslaughtHp());
+		assertEquals(8, runtime.stacks(momentum()));
 	}
 
 	@Test
@@ -385,5 +399,43 @@ class MeleePlanTest {
 		MeleePlan.HitPlan plan = MeleePlan.planHit(juggernaut(), runtime, legionary(), victim, 1.0F, 0.0F, 0, 0.5F);
 
 		assertEquals(1.0, plan.take(), 1e-9);
+	}
+
+	@Test
+	void aTakenHitFeedsTheVictimsBar() {
+		PlayerRuntime victim = new PlayerRuntime();
+
+		MeleePlan.resolveTaken(juggernaut(), () -> victim, 3.0F, 0);
+
+		assertEquals(1, victim.stacks(momentum()));
+	}
+
+	@Test
+	void aTakenHitThatLandedNothingFeedsNothingAndMaterialisesNoRuntime() {
+		Supplier<PlayerRuntime> victim = () -> {
+			throw new AssertionError("victim runtime materialised");
+		};
+
+		MeleePlan.resolveTaken(juggernaut(), victim, 0.0F, 0);
+	}
+
+	@Test
+	void aClasslessOrUnaidedVictimCostsNoRuntime() {
+		Supplier<PlayerRuntime> victim = () -> {
+			throw new AssertionError("victim runtime materialised");
+		};
+
+		MeleePlan.resolveTaken(null, victim, 3.0F, 0);
+		MeleePlan.resolveTaken(legionary(), victim, 3.0F, 0);
+	}
+
+	@Test
+	void noTakenGainWhileTheVictimsOnslaughtWindowIsLive() {
+		PlayerRuntime victim = loaded(10);
+		OnslaughtAbility.fire(juggernaut(), victim, 0);
+
+		MeleePlan.resolveTaken(juggernaut(), () -> victim, 3.0F, 0);
+
+		assertEquals(10, victim.stacks(momentum()));
 	}
 }

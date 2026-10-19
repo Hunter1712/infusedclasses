@@ -15,7 +15,7 @@ place to watch mid-fight.
 - **One space between the name and its number**: the stack reads as written, so `Roulette 13s`
   sits over `All In 34s` and `Streak 2` with no padding — words lead, numbers follow, and
   the numbers are ragged down the stack.
-- **Riders** are the dotted numbers after a lane's countdown, like `Rush 25s · 5s`. They
+- **Riders** are the dotted numbers after a lane's countdown, like `Offload 10s · 5s`. They
   track windows the abilities open — a bonus still loaded, a catch still open, a spin still
   running. A rider disappears the moment its window ends, so if it is not there, the bonus is
   not there. The Roulette outcome is the one rider that keeps its word (`· Jackpot 8s`):
@@ -28,19 +28,21 @@ place to watch mid-fight.
 | Row | Juggernaut | Legionary | Gambler |
 |-----|------------|-----------|---------|
 | Stance | — | `Gladius` / `Scutum`, no number | — |
-| Signature | `Rush` | `Rotate` | `Roulette` |
-| Ultimate | `Rend` | `Aequilibrium` | `All In` |
-| State | `Momentum` (stacks · grace) | — | `Streak` (count) |
+| Signature | `Offload` | `Rotate` | `Roulette` |
+| Ultimate | `Onslaught` | `Aequilibrium` | `All In` |
+| State | `Momentum` (stacks · grace · checkpoint) | — | `Streak` (count) |
 
 State rows appear only while they are above zero: a Juggernaut with no Momentum stacks has no
 Momentum row, and a Gambler at Streak 0 has no Streak row. The Momentum row reads `12 · 5s`
-while its grace clock is live, and bare `12` the moment the clock has run out.
+while its grace clock is live, bare `12` the moment the clock has run out, and gains its
+checkpoint word at 15: `22 · 5s · Braced`.
 
 ## Riders
 
-- **Juggernaut**: the Rush window after the Rush lane (`Rush 25s · 5s`) — the same window
-  whose next full-swing hit pays +5 Momentum, spent or not, so the count is the whole story;
-  the Rend window after the Rend lane while its next hit is still loaded.
+- **Juggernaut**: the Offload window after its lane (`Offload 10s · 5s`) — the countdown is the
+  whole story, since the price was paid at the press; the Onslaught window after its lane while
+  it is live (`Onslaught 60s · 15s`), counting down to whichever of its window or its bar ends
+  first.
 - **Legionary**: the Rotate rider after a Gladius flip while the next-hit bonus is loaded, or
   while the Scutum catch is open; the Aequilibrium rider while its window runs.
 - **Gambler**: the spin's outcome word after Roulette — `Edge`, `Ward`, `Haste`, `Jackpot` or

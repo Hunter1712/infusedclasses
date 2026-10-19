@@ -66,10 +66,14 @@ final class ServerEvents {
 				// Victim: mob melee on a Legionary still pays the stance take mult
 				// (player-vs-player take settles in the attacker branch above).
 				// takeFor is 1.0 for non-Legionaries, and the settle is a no-op at 1.0.
-				double take = MeleePlan.takeFor(PlayerClassAccess.of(victim).currentDefinition(),
+				ClassDefinition victimDef = PlayerClassAccess.of(victim).currentDefinition();
+				double take = MeleePlan.takeFor(victimDef,
 						() -> InfusedClasses.runtime(victim), now);
 				DamageSettle.settleTake(victim, damageTaken, take,
 						() -> mobAttacker.damageSources().mobAttack(mobAttacker));
+				// The struck player's own bar feeds here too: a melee hit taken is the
+				// same earning event as one dealt, and the same zero-damage gate applies.
+				MeleePlan.resolveTaken(victimDef, () -> InfusedClasses.runtime(victim), damageTaken, now);
 			}
 		});
 
@@ -87,6 +91,13 @@ final class ServerEvents {
 				// snapshot is rebuilt from it, so a tick reads state once per player.
 				PlayerRuntime.State state = runtime.state(now);
 				PassiveApplier.apply(player, def, runtime, state, now);
+				// The Onslaught window lasts the bar as well as the clock: an empty bar
+				// ends it here, after the bleed. If it ended, re-read before the snapshot:
+				// otherwise the tick would draw a rider for a window that just closed.
+				boolean ended = OnslaughtAbility.endIfDrained(def, runtime, state);
+				if (ended) {
+					state = runtime.state(now);
+				}
 				// The one steady-state emission point: a tick that moved a lane, a window
 				// or a stack tells the client; a quiet tick rebuilds and compares for free.
 				StatusSync.maybeSend(player, def, runtime, state, now);
@@ -140,7 +151,7 @@ final class ServerEvents {
 	 */
 	private static void pressSignature(ServerPlayer player, ClassDefinition def, PlayerRuntime runtime, long now) {
 		// Reused signature bind: the wheel for Gamblers, the rotate intent for Legionaries,
-		// Rush for everyone else, so binds survive the class.
+		// Offload for everyone else, so binds survive the class.
 		switch (BindMorph.signatureFor(def)) {
 			// Rotate announces without fanfare on purpose: it carries no cast sound.
 			case ROTATE -> {
@@ -154,7 +165,11 @@ final class ServerEvents {
 				AbilityApplier.announceAndCast(player, result.outcome().announcement(),
 						result.outcome().fired(), RouletteAbility.CAST_SOUND, true);
 			}
-			case RUSH -> RushApplier.apply(player, RushAbility.fire(def, runtime, now));
+			case OFFLOAD -> {
+				AbilityOutcome result = OffloadAbility.fire(def, runtime, now);
+				AbilityApplier.announceAndCast(player, result.announcement(),
+						result.fired(), OffloadAbility.CAST_SOUND, true);
+			}
 		}
 	}
 
@@ -164,7 +179,7 @@ final class ServerEvents {
 	 */
 	private static void pressUltimate(ServerPlayer player, ClassDefinition def, PlayerRuntime runtime, long now) {
 		// Reused ultimate bind: All In for Gamblers, the oath ultimate for Legionaries,
-		// Rend for everyone else.
+		// Onslaught for everyone else.
 		switch (BindMorph.ultimateFor(def)) {
 			case AEQUILIBRIUM -> {
 				AbilityOutcome result = AequilibriumAbility.fire(def, runtime, now);
@@ -176,23 +191,27 @@ final class ServerEvents {
 				AbilityApplier.announceAndCast(player, result.announcement(),
 						result.fired(), AllInAbility.CAST_SOUND, true);
 			}
-			case REND -> RendApplier.apply(player, def, runtime, RendAbility.fire(def, runtime, now));
+			case ONSLAUGHT -> {
+				AbilityOutcome result = OnslaughtAbility.fire(def, runtime, now);
+				AbilityApplier.announceAndCast(player, result.announcement(),
+						result.fired(), OnslaughtAbility.CAST_SOUND, true);
+			}
 		}
 	}
 
 	/**
 	 * One attacker melee hit: the plan resolves the whole hit in field order (deciding,
-	 * then settling the bump, dice movement, Rush credit, Impetus spend and Rend spend
-	 * on the runtime), and this entry lands exactly what the resolve returned — the
-	 * verdict's cue, the Rend bonus, the stance/dice settle. The sequence lives behind
-	 * the seam so the hook cannot reorder or half-apply it. A direct melee hit builds
-	 * stacks for any class carrying an on-hit-dealt passive — full swings only, spam
-	 * earns zero, and a hit that took no damage earns and spends nothing — and a full
-	 * swing inside a live Rush window with its bonus still pending lands the engage
-	 * bonus too. Classless players settle the universal crit and nothing else: the
-	 * entry draws one roll per landed full-charge hit for every player, classless
-	 * included, and sweeps draw per swept target. Self-damage excluded by the attacker
-	 * check, projectiles and spells by the direct check.
+	 * then settling the bump, dice movement, Impetus spend and Onslaught price on the
+	 * runtime), and this entry lands exactly what the resolve returned — the verdict's
+	 * cue, the Onslaught bonus, the stance/dice settle, and the victim's own taken feed.
+	 * The sequence lives behind the seam so the hook cannot reorder or half-apply it. A
+	 * direct melee hit builds stacks for any class carrying an on-hit-dealt bar — full
+	 * swings only, spam earns zero, and a hit that took no damage earns and spends
+	 * nothing — and a full swing inside a live Onslaught window pays the ultimate's
+	 * bonus instead of feeding. Classless players settle the universal crit and nothing
+	 * else: the entry draws one roll per landed full-charge hit for every player,
+	 * classless included, and sweeps draw per swept target. Self-damage excluded by the
+	 * attacker check, projectiles and spells by the direct check.
 	 */
 	private static void settleAttackerHit(ServerPlayer attacker, net.minecraft.world.entity.Entity entity,
 			float landedDamage, long now) {
@@ -214,15 +233,18 @@ final class ServerEvents {
 		// The plan resolves the whole hit: it decides in field order and settles the
 		// runtime movements in the same order, returning exactly what this entry lands.
 		MeleePlan.Landed landed = MeleePlan.resolve(atkDef, atkRuntime, victimDef, victimRt, charge, landedDamage, now, roll);
-		// Spam grants zero stacks; the pending bonus waits for a full swing.
+		// Spam grants zero stacks; the ultimate's price waits for a full swing.
 		// Empty bonuses settle as no-ops in the adapter, so no pre-checks here.
 		// The verdict's cue lands once per hit, classless included: a crit replays the
 		// vanilla particles and sound, a betrayal gets its own crack.
 		CritCue.apply(attacker, entity, landed.verdict());
-		// Rend window: the stamped bonus lands on this hit and only this one,
+		// Onslaught window: the flat bonus lands on this hit and only this one,
 		// applied through the adapter like every other outcome; the bonus is
 		// what the resolve already settled, never recomputed.
-		DamageSettle.dealBonus(attacker, entity, landed.rendHp());
+		DamageSettle.dealBonus(attacker, entity, landed.onslaughtHp());
+		// The victim's own bar: a player struck by a player feeds ON_HIT_TAKEN here
+		// (mob strikes feed it in the branch below), under the same landed gate.
+		MeleePlan.resolveTaken(victimDef, victimRt, landedDamage, now);
 		// Stance and dice mults: attacker deal times victim take times the dice mult,
 		// settled at once from what the hit landed. Gladius + Impetus reads x1.1 deal,
 		// Scutum + Testudo x0.85 take, a crit x1.25: see HitPlan.combined. A hit that

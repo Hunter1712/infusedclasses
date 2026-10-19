@@ -30,30 +30,30 @@ class AbilityRosterTest {
 	@Test
 	void rowsAreTheSixAbilitiesInLaneOrder() {
 		assertEquals(
-				List.of(ClassRegistry.RUSH_ABILITY, ClassRegistry.REND_ABILITY, ClassRegistry.ROTATE_ABILITY,
+				List.of(ClassRegistry.OFFLOAD_ABILITY, ClassRegistry.ONSLAUGHT_ABILITY, ClassRegistry.ROTATE_ABILITY,
 						ClassRegistry.AEQUILIBRIUM_ABILITY, ClassRegistry.ROULETTE_ABILITY, ClassRegistry.ALL_IN_ABILITY),
 				AbilityRoster.all().stream().map(AbilityRoster.Row::ability).toList());
 		assertEquals(
-				List.of("Rush", "Rend", "Rotate", "Aequilibrium", "Roulette", "All In"),
+				List.of("Offload", "Onslaught", "Rotate", "Aequilibrium", "Roulette", "All In"),
 				AbilityRoster.all().stream().map(AbilityRoster.Row::name).toList());
 		assertEquals(
-				List.of(Lane.RUSH, Lane.REND, Lane.ROTATE, Lane.OATH, Lane.ROULETTE, Lane.ALL_IN),
+				List.of(Lane.OFFLOAD, Lane.ONSLAUGHT, Lane.ROTATE, Lane.OATH, Lane.ROULETTE, Lane.ALL_IN),
 				AbilityRoster.all().stream().map(AbilityRoster.Row::lane).toList());
 	}
 
 	@Test
 	void rowsReadTheirOwnLane() {
 		PlayerRuntime runtime = new PlayerRuntime();
-		runtime.arm(Lane.RUSH, 0, RushAbility.WINDOW_TICKS * 50L);
-		runtime.arm(Lane.REND, 0, RendAbility.WINDOW_TICKS * 50L, 1);
+		runtime.arm(Lane.OFFLOAD, 0, OffloadAbility.WINDOW_TICKS * 50L);
+		runtime.arm(Lane.ONSLAUGHT, 0, OnslaughtAbility.WINDOW_TICKS * 50L);
 		runtime.rotate(0, RotateAbility.Stance.GLADIUS);
 		runtime.arm(Lane.OATH, 0, AequilibriumAbility.WINDOW_TICKS * 50L);
 		runtime.roulette(0, RouletteAbility.Outcome.EDGE);
 		runtime.arm(Lane.ALL_IN, 0, AllInAbility.WINDOW_TICKS * 50L);
 		PlayerRuntime.State state = runtime.state(0);
 
-		assertEquals(Lane.RUSH.cooldownMs(), AbilityRoster.RUSH.laneRemaining(state));
-		assertEquals(Lane.REND.cooldownMs(), AbilityRoster.REND.laneRemaining(state));
+		assertEquals(Lane.OFFLOAD.cooldownMs(), AbilityRoster.OFFLOAD.laneRemaining(state));
+		assertEquals(Lane.ONSLAUGHT.cooldownMs(), AbilityRoster.ONSLAUGHT.laneRemaining(state));
 		assertEquals(Lane.ROTATE.cooldownMs(), AbilityRoster.ROTATE.laneRemaining(state));
 		assertEquals(Lane.OATH.cooldownMs(), AbilityRoster.AEQUILIBRIUM.laneRemaining(state));
 		assertEquals(Lane.ROULETTE.cooldownMs(), AbilityRoster.ROULETTE.laneRemaining(state));
@@ -62,8 +62,8 @@ class AbilityRosterTest {
 
 	@Test
 	void shapeDrawsTheRowsTheSlotsFire() {
-		assertEquals(AbilityRoster.RUSH, BindMorph.shape(juggernaut()).signatureRow());
-		assertEquals(AbilityRoster.REND, BindMorph.shape(juggernaut()).ultimateRow());
+		assertEquals(AbilityRoster.OFFLOAD, BindMorph.shape(juggernaut()).signatureRow());
+		assertEquals(AbilityRoster.ONSLAUGHT, BindMorph.shape(juggernaut()).ultimateRow());
 		assertEquals(AbilityRoster.ROTATE, BindMorph.shape(legionary()).signatureRow(),
 				"the ultimate no longer keys on the ROTATE row: the draw and the fire are one walk");
 		assertEquals(AbilityRoster.AEQUILIBRIUM, BindMorph.shape(legionary()).ultimateRow());
@@ -88,8 +88,8 @@ class AbilityRosterTest {
 	@Test
 	void laneReadsAgreeWithTheRuntime() {
 		PlayerRuntime runtime = new PlayerRuntime();
-		runtime.arm(Lane.RUSH, 0, RushAbility.WINDOW_TICKS * 50L);
-		runtime.arm(Lane.REND, 0, RendAbility.WINDOW_TICKS * 50L, 1);
+		runtime.arm(Lane.OFFLOAD, 0, OffloadAbility.WINDOW_TICKS * 50L);
+		runtime.arm(Lane.ONSLAUGHT, 0, OnslaughtAbility.WINDOW_TICKS * 50L);
 		runtime.rotate(0, RotateAbility.Stance.GLADIUS);
 		runtime.arm(Lane.OATH, 0, AequilibriumAbility.WINDOW_TICKS * 50L);
 		runtime.roulette(1_000, RouletteAbility.Outcome.EDGE);
@@ -107,14 +107,14 @@ class AbilityRosterTest {
 
 	@Test
 	void ridersReadTheirOwnWindow() {
-		PlayerStatusPayload status = windows(11_000, 12_000, 13_000, 14_000, 15_000, 16_000);
+		PlayerStatusPayload status = windows(21_000, 22_000, 23_000, 24_000, 25_000, 26_000);
 
-		assertRidersRead(AbilityRoster.RUSH, status, 11_000);
-		assertRidersRead(AbilityRoster.REND, status, 12_000);
-		assertRidersRead(AbilityRoster.ROTATE, status, 13_000);
-		assertRidersRead(AbilityRoster.ROULETTE, status, 14_000);
-		assertRidersRead(AbilityRoster.AEQUILIBRIUM, status, 15_000);
-		assertRidersRead(AbilityRoster.ALL_IN, status, 16_000);
+		assertRidersRead(AbilityRoster.OFFLOAD, status, 21_000);
+		assertRidersRead(AbilityRoster.ONSLAUGHT, status, 22_000);
+		assertRidersRead(AbilityRoster.ROTATE, status, 23_000);
+		assertRidersRead(AbilityRoster.ROULETTE, status, 24_000);
+		assertRidersRead(AbilityRoster.AEQUILIBRIUM, status, 25_000);
+		assertRidersRead(AbilityRoster.ALL_IN, status, 26_000);
 	}
 
 	/** Every rider of the row reads the one window it is keyed to. */
@@ -152,11 +152,17 @@ class AbilityRosterTest {
 		assertTrue(AbilityRoster.ROULETTE.riders().get(0).wanted().test(spun));
 		assertEquals("Edge", AbilityRoster.ROULETTE.riders().get(0).label().apply(spun));
 
-		// The Rend rider exists exactly while its next-hit snapshot is unspent.
-		assertFalse(AbilityRoster.REND.riders().get(0).wanted().test(snapshot(new PlayerRuntime())));
+		// The Juggernaut rows ride bare windows: they draw whatever the bar did, and read
+		// only their own lane's window.
 		PlayerRuntime holding = new PlayerRuntime();
-		holding.arm(Lane.REND, 0, RendAbility.WINDOW_TICKS * 50L, 3);
-		assertTrue(AbilityRoster.REND.riders().get(0).wanted().test(snapshot(holding)));
+		assertEquals(0, AbilityRoster.OFFLOAD.riders().get(0).remaining().applyAsLong(snapshot(holding)));
+		assertTrue(holding.arm(Lane.OFFLOAD, 0, OffloadAbility.WINDOW_TICKS * 50L));
+		assertTrue(holding.arm(Lane.ONSLAUGHT, 0, OnslaughtAbility.WINDOW_TICKS * 50L));
+		PlayerStatusPayload armed = snapshot(holding);
+		assertEquals(OffloadAbility.WINDOW_TICKS * 50L,
+				AbilityRoster.OFFLOAD.riders().get(0).remaining().applyAsLong(armed));
+		assertEquals(OnslaughtAbility.WINDOW_TICKS * 50L,
+				AbilityRoster.ONSLAUGHT.riders().get(0).remaining().applyAsLong(armed));
 	}
 
 	private static ClassDefinition juggernaut() {
@@ -172,13 +178,14 @@ class AbilityRosterTest {
 	}
 
 	/** A snapshot with only the six windows set, all distinct, so a rider reading the wrong one fails. */
-	private static PlayerStatusPayload windows(long rush, long rend, long flip, long roulette, long aeq, long allIn) {
+	private static PlayerStatusPayload windows(long offload, long onslaught, long flip, long roulette, long aeq,
+			long allIn) {
 		EnumMap<Lane, LaneRead> lanes = new EnumMap<>(Lane.class);
 		for (Lane lane : Lane.values()) {
 			lanes.put(lane, new LaneRead(0, 0, false));
 		}
-		lanes.put(Lane.RUSH, new LaneRead(0, rush, false));
-		lanes.put(Lane.REND, new LaneRead(0, rend, true));
+		lanes.put(Lane.OFFLOAD, new LaneRead(0, offload, false));
+		lanes.put(Lane.ONSLAUGHT, new LaneRead(0, onslaught, true));
 		lanes.put(Lane.ROTATE, new LaneRead(0, flip, false));
 		lanes.put(Lane.ROULETTE, new LaneRead(0, roulette, false));
 		lanes.put(Lane.OATH, new LaneRead(0, aeq, false));

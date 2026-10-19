@@ -28,19 +28,24 @@ Alpha jars may invalidate choices. Reselect in the picker or ask an admin for `/
 By design. Stacks, stance windows, cooldown lanes and pending bonuses are transient — only the class choice is saved. See [stances-passives.md](stances-passives.md).
 
 **Spam-clicking earns nothing.**
-By design. The stack gate feeds conditional triggers only at full charge, and hook bonuses scale quadratically with charge — half charge pays a quarter, spam pays chips. Time your swings.
+By design. The stack gate feeds conditional triggers only at full charge — half swings and spam
+earn zero Momentum and roll no crit. Time your swings.
 
-**Rend did nothing / said `No Momentum`.**
-Rend needs at least one Momentum stack and an off-cooldown lane (60s). Firing spends every stack plus the armor up front, and the bonus lands on the next melee hit within 6s — an unswung window expires with the stacks already spent.
+**Onslaught did nothing / said `No Momentum`.**
+Onslaught needs at least 10 Momentum and an off-cooldown lane (60s). Inside its 15s window each
+full-swing hit deals +1 damage and spends 2 stacks; nothing feeds the bar until the window ends.
+If the bar empties first, the window ends there.
 
-**Rush did nothing.**
-Rush has its own 25s lane. Rejected presses (wrong class, on cooldown) leave the lane, window and bonus untouched — wait out the cooldown and press again.
+**Offload did nothing.**
+Offload needs at least 5 Momentum and its own 10s lane. A press below the price says
+`No Momentum`; a wrong class or a press on cooldown rejects silently. The stacks are spent at
+the press, so an unspent window owes nothing back.
 
 **Rotate did nothing.**
 Rotate has an 8s lock. Rejects arm nothing and grant no buff — flip when the lock is ready.
 
 **R and V do different things per class?**
-Yes. `R` is the Signature bind — Rush for Juggernaut, Rotate for Legionary, Roulette for Gambler; `V` is the Ultimate bind — Rend for Juggernaut, the Aequilibrium oath for Legionary, All In for Gambler. Binds survive the class by design. Keys are remappable: Controls is the truth for what a slot is bound to, and `/class info` names the slots' abilities.
+Yes. `R` is the Signature bind — Offload for Juggernaut, Rotate for Legionary, Roulette for Gambler; `V` is the Ultimate bind — Onslaught for Juggernaut, the Aequilibrium oath for Legionary, All In for Gambler. Binds survive the class by design. Keys are remappable: Controls is the truth for what a slot is bound to, and `/class info` names the slots' abilities.
 
 ## Reporting problems
 

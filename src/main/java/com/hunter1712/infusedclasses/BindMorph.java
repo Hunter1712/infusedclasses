@@ -5,21 +5,21 @@ import net.minecraft.resources.Identifier;
 /**
  * Bind morph decisions: what a reused slot bind means for a class. Every class reuses the two
  * slot binds so binds survive the class: the signature slot arrives as the rotate intent for
- * Legionaries, the roulette intent for Gamblers, Rush for everyone else; the ultimate slot
- * arrives as the oath ultimate for Legionaries, All In for Gamblers, Rend for everyone else.
- * Each target carries the ability it fires, so one walk of the class's actives answers both
- * what the slot fires and the row that draws it: a further class adds actives, not branches,
- * and the stack can never draw one ultimate while the key fires another.
+ * Legionaries, the roulette intent for Gamblers, Offload for everyone else; the ultimate slot
+ * arrives as the oath ultimate for Legionaries, All In for Gamblers, Onslaught for everyone
+ * else. Each target carries the ability it fires, so one walk of the class's actives answers
+ * both what the slot fires and the row that draws it: a further class adds actives, not
+ * branches, and the stack can never draw one ultimate while the key fires another.
  *
- * <p>The printed fallbacks (Rush, Rend) keep both keys working for a classless player and for
- * a class carrying neither slot's abilities; the drawn rows stay null there, because there is
- * no lane to draw. The intent receivers wire, this decides; decisions and applies stay
- * pure/adapter.
+ * <p>The printed fallbacks (Offload, Onslaught) keep both keys working for a classless player
+ * and for a class carrying neither slot's abilities; the drawn rows stay null there, because
+ * there is no lane to draw. The intent receivers wire, this decides; decisions and applies
+ * stay pure/adapter.
  */
 public final class BindMorph {
 	/** What the signature slot means once the class is known: the one ability it fires. */
 	public enum SignatureTarget {
-		RUSH(ClassRegistry.RUSH_ABILITY),
+		OFFLOAD(ClassRegistry.OFFLOAD_ABILITY),
 		ROTATE(ClassRegistry.ROTATE_ABILITY),
 		ROULETTE(ClassRegistry.ROULETTE_ABILITY);
 
@@ -37,7 +37,7 @@ public final class BindMorph {
 
 	/** What the ultimate slot means once the class is known: the one ability it fires. */
 	public enum UltimateTarget {
-		REND(ClassRegistry.REND_ABILITY),
+		ONSLAUGHT(ClassRegistry.ONSLAUGHT_ABILITY),
 		AEQUILIBRIUM(ClassRegistry.AEQUILIBRIUM_ABILITY),
 		ALL_IN(ClassRegistry.ALL_IN_ABILITY);
 
@@ -68,7 +68,7 @@ public final class BindMorph {
 	private BindMorph() {
 	}
 
-	/** What the signature slot means: the class's first active naming a signature ability, Rush for everyone else. */
+	/** What the signature slot means: the class's first active naming a signature ability, Offload for everyone else. */
 	public static SignatureTarget signatureFor(ClassDefinition def) {
 		if (def != null) {
 			for (ClassDefinition.ActiveAbility active : def.actives()) {
@@ -78,10 +78,10 @@ public final class BindMorph {
 				}
 			}
 		}
-		return SignatureTarget.RUSH;
+		return SignatureTarget.OFFLOAD;
 	}
 
-	/** What the ultimate slot means: the class's first active naming an ultimate ability, Rend for everyone else. */
+	/** What the ultimate slot means: the class's first active naming an ultimate ability, Onslaught for everyone else. */
 	public static UltimateTarget ultimateFor(ClassDefinition def) {
 		if (def != null) {
 			for (ClassDefinition.ActiveAbility active : def.actives()) {
@@ -91,7 +91,7 @@ public final class BindMorph {
 				}
 			}
 		}
-		return UltimateTarget.REND;
+		return UltimateTarget.ONSLAUGHT;
 	}
 
 	/**

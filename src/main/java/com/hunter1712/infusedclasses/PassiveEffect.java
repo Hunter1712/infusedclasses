@@ -5,10 +5,11 @@ import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.entity.ai.attributes.Attribute;
 
 /**
- * Stack-to-attribute mapping, as a decision. Given a passive and its current stack count it
- * answers which attribute should carry a modifier, under which id, at what value. Pure: no
- * player, level or attribute instance is involved, so plain JUnit asserts the mapping and the
- * server entry only has to apply the answer.
+ * Attribute-modifier math, as a decision: the shared {@link Modifier} value every kit
+ * writes under, and the HP-scaled bucket mapping. Pure: no player, level or attribute
+ * instance is involved, so plain JUnit asserts the mapping and the server entry only has
+ * to apply the answer. Conditional passives map through their own module
+ * ({@link Momentum#forStacks}), read as the same Modifier shape.
  */
 public final class PassiveEffect {
 	private PassiveEffect() {
@@ -19,9 +20,8 @@ public final class PassiveEffect {
 	}
 
 	/**
-	 * What a tick should do about one passive: write the modifier its stacks call for, take off
-	 * what dead stacks earned, or nothing. The stacks-moved flag is the tick's own decay answer:
-	 * a tick that moved no stacks cannot have changed what should be on the player.
+	 * What a tick should do about one HP-scaled passive: write the modifier its bucket
+	 * calls for, take off what a dead bucket earned, or nothing.
 	 */
 	public sealed interface Plan {
 		record Write(Modifier wanted) implements Plan {
@@ -50,37 +50,10 @@ public final class PassiveEffect {
 	}
 
 	/**
-	 * The modifier the passive's current stacks call for, or null when it should carry none.
-	 * Zero or fewer stacks grant nothing. The cap is the stack state's job, not this one's.
-	 */
-	public static Modifier forStacks(ConditionalPassive passive, int stacks) {
-		if (passive == null || stacks <= 0) {
-			return null;
-		}
-		return new Modifier(passive.attribute(), passive.modifierId(), stacks * passive.perStack());
-	}
-
-	/**
-	 * The whole answer for one passive this tick, so the adapter never reads the passive
-	 * behind the decision's back. No stacks plus no movement means nothing to do; no stacks
-	 * after movement means taking off what those stacks earned.
-	 */
-	public static Plan planFor(ConditionalPassive passive, int stacks, boolean stacksMoved) {
-		Modifier wanted = forStacks(passive, stacks);
-		if (wanted != null) {
-			return new Plan.Write(wanted);
-		}
-		if (stacksMoved && passive != null) {
-			return new Plan.Remove(passive.attribute(), passive.modifierId());
-		}
-		return new Plan.Skip();
-	}
-
-	/**
-	 * The whole answer for one HP-scaled passive this tick, in the same shape as
-	 * {@link #planFor}: write the bucket's modifier, take off what a dead bucket earned,
-	 * or nothing. The bucket is recomputed from live HP every tick and the writer's
-	 * early-out covers no-op ticks, so unlike conditionals there is no moved-set.
+	 * The whole answer for one HP-scaled passive this tick: write the bucket's modifier,
+	 * take off what a dead bucket earned, or nothing. The bucket is recomputed from live
+	 * HP every tick and the writer's early-out covers no-op ticks, so unlike the tiered
+	 * bar there is no moved-set.
 	 */
 	public static Plan planForBucket(HpScaledPassive hp, int bucket) {
 		Modifier wanted = forBucket(hp, bucket);

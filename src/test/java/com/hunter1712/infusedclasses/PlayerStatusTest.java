@@ -33,22 +33,22 @@ class PlayerStatusTest {
 	void builderReadsLanesWindowsAndLoadFlags() {
 		PlayerRuntime runtime = new PlayerRuntime();
 		long now = 1_000L;
-		assertTrue(runtime.arm(Lane.RUSH, now, RushAbility.WINDOW_TICKS * 50L));
-		assertTrue(runtime.arm(Lane.REND, now, RendAbility.WINDOW_TICKS * 50L, 7));
+		assertTrue(runtime.arm(Lane.OFFLOAD, now, OffloadAbility.WINDOW_TICKS * 50L));
+		assertTrue(runtime.arm(Lane.ONSLAUGHT, now, OnslaughtAbility.WINDOW_TICKS * 50L));
 
 		PlayerStatusPayload payload = snapshot(juggernaut(), runtime, now);
 
 		assertEquals("infusedclasses:juggernaut", payload.classId());
-		assertEquals(Lane.RUSH.cooldownMs(), payload.lane(Lane.RUSH).remainingMs());
-		assertEquals(Lane.REND.cooldownMs(), payload.lane(Lane.REND).remainingMs());
+		assertEquals(Lane.OFFLOAD.cooldownMs(), payload.lane(Lane.OFFLOAD).remainingMs());
+		assertEquals(Lane.ONSLAUGHT.cooldownMs(), payload.lane(Lane.ONSLAUGHT).remainingMs());
 		assertEquals(0, payload.lane(Lane.ROTATE).remainingMs());
 		assertEquals(0, payload.lane(Lane.OATH).remainingMs());
 		assertEquals(0, payload.lane(Lane.ROULETTE).remainingMs());
 		assertEquals(0, payload.lane(Lane.ALL_IN).remainingMs());
-		assertEquals(5_000, payload.lane(Lane.RUSH).windowRemainingMs());
-		assertTrue(payload.lane(Lane.RUSH).windowPending());
-		assertEquals(6_000, payload.lane(Lane.REND).windowRemainingMs());
-		assertTrue(payload.lane(Lane.REND).windowPending());
+		assertEquals(5_000, payload.lane(Lane.OFFLOAD).windowRemainingMs());
+		assertTrue(payload.lane(Lane.OFFLOAD).windowPending());
+		assertEquals(15_000, payload.lane(Lane.ONSLAUGHT).windowRemainingMs());
+		assertTrue(payload.lane(Lane.ONSLAUGHT).windowPending());
 		assertEquals(0, payload.lane(Lane.ROTATE).windowRemainingMs());
 		assertNull(payload.flipTarget());
 		assertFalse(payload.lane(Lane.ROTATE).windowPending());
@@ -79,17 +79,17 @@ class PlayerStatusTest {
 	@Test
 	void movedSinceCatchesAGraceRestampAtTheStackCap() {
 		PlayerRuntime runtime = new PlayerRuntime();
-		for (int i = 0; i < 20; i++) {
+		for (int i = 0; i < Momentum.MAX_STACKS; i++) {
 			runtime.onTrigger(juggernaut(), Trigger.ON_HIT_DEALT, 0, 1.0F);
 		}
 		PlayerStatusPayload capped = snapshot(juggernaut(), runtime, 0);
-		assertEquals(20, capped.momentumStacks());
+		assertEquals(Momentum.MAX_STACKS, capped.momentumStacks());
 
 		// A hit at the cap moves neither count nor any armed flag: only the grace stamp.
 		runtime.onTrigger(juggernaut(), Trigger.ON_HIT_DEALT, 4_000, 1.0F);
 		PlayerStatusPayload restamped = snapshot(juggernaut(), runtime, 4_000);
 
-		assertEquals(20, restamped.momentumStacks());
+		assertEquals(Momentum.MAX_STACKS, restamped.momentumStacks());
 		assertEquals(5_000, restamped.momentumGraceRemainingMs());
 		assertEquals(4_000, restamped.momentumGraceStampMs());
 		assertTrue(restamped.movedSince(capped));
@@ -146,7 +146,7 @@ class PlayerStatusTest {
 	@Test
 	void movedSinceIsFalseForQuietDecay() {
 		PlayerRuntime runtime = new PlayerRuntime();
-		assertTrue(runtime.arm(Lane.RUSH, 1_000, RushAbility.WINDOW_TICKS * 50L));
+		assertTrue(runtime.arm(Lane.OFFLOAD, 1_000, OffloadAbility.WINDOW_TICKS * 50L));
 
 		PlayerStatusPayload atFire = snapshot(juggernaut(), runtime, 1_000);
 		PlayerStatusPayload oneSecondLater = snapshot(juggernaut(), runtime, 2_000);
@@ -166,18 +166,13 @@ class PlayerStatusTest {
 		assertTrue(ready.movedSince(null));
 
 		// Lane armed.
-		assertTrue(runtime.arm(Lane.RUSH, 0, RushAbility.WINDOW_TICKS * 50L));
-		PlayerStatusPayload rushed = snapshot(juggernaut(), runtime, 0);
-		assertTrue(rushed.movedSince(ready));
-
-		// Bonus spent while the lane still runs: a load-flag move.
-		assertTrue(runtime.consumeBonus(Lane.RUSH, 0));
-		PlayerStatusPayload spent = snapshot(juggernaut(), runtime, 0);
-		assertTrue(spent.movedSince(rushed));
+		assertTrue(runtime.arm(Lane.OFFLOAD, 0, OffloadAbility.WINDOW_TICKS * 50L));
+		PlayerStatusPayload armed = snapshot(juggernaut(), runtime, 0);
+		assertTrue(armed.movedSince(ready));
 
 		// Window expired while the lane still runs: an armed-flag move.
 		PlayerStatusPayload windowGone = snapshot(juggernaut(), runtime, 5_000);
-		assertTrue(windowGone.movedSince(spent));
+		assertTrue(windowGone.movedSince(armed));
 
 		// Momentum stack moved.
 		PlayerRuntime stacking = new PlayerRuntime();
@@ -211,11 +206,11 @@ class PlayerStatusTest {
 	@Test
 	void windowAndGraceReadsHitTheirBoundaries() {
 		PlayerRuntime runtime = new PlayerRuntime();
-		assertTrue(runtime.arm(Lane.RUSH, 1_000, RushAbility.WINDOW_TICKS * 50L));
+		assertTrue(runtime.arm(Lane.OFFLOAD, 1_000, OffloadAbility.WINDOW_TICKS * 50L));
 
-		assertEquals(5_000, runtime.state(1_000).lane(Lane.RUSH).windowRemainingMs());
-		assertEquals(1, runtime.state(5_999).lane(Lane.RUSH).windowRemainingMs());
-		assertEquals(0, runtime.state(6_000).lane(Lane.RUSH).windowRemainingMs());
+		assertEquals(5_000, runtime.state(1_000).lane(Lane.OFFLOAD).windowRemainingMs());
+		assertEquals(1, runtime.state(5_999).lane(Lane.OFFLOAD).windowRemainingMs());
+		assertEquals(0, runtime.state(6_000).lane(Lane.OFFLOAD).windowRemainingMs());
 		assertEquals(0, runtime.state(1_000).lane(Lane.ROTATE).windowRemainingMs());
 
 		runtime.onTrigger(juggernaut(), Trigger.ON_HIT_DEALT, 1_000, 1.0F);
@@ -224,7 +219,7 @@ class PlayerStatusTest {
 		assertEquals(1, runtime.graceRemaining(momentum, 5_999));
 		assertEquals(0, runtime.graceRemaining(momentum, 6_000));
 		assertEquals(1_000, runtime.graceStamp(momentum));
-		runtime.clear(momentum);
+		runtime.spendStacks(momentum, 1);
 		assertEquals(0, runtime.graceRemaining(momentum, 1_000));
 		assertEquals(0, runtime.graceStamp(momentum));
 

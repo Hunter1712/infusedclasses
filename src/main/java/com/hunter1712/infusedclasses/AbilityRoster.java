@@ -67,13 +67,13 @@ public final class AbilityRoster {
 		return new Rider(pending(lane), windowRemaining(lane), status -> "");
 	}
 
-	/** Rush: the engage's window draws while it lives, spent or not; the loaded bonus says nothing of its own. */
-	public static final Row RUSH = new Row(Lane.RUSH, ClassRegistry.RUSH_ABILITY, RushAbility.NAME,
-			List.of(window(Lane.RUSH)));
+	/** Offload: the loosened window draws its countdown while it lives, spent or not; the price is already paid. */
+	public static final Row OFFLOAD = new Row(Lane.OFFLOAD, ClassRegistry.OFFLOAD_ABILITY, OffloadAbility.NAME,
+			List.of(window(Lane.OFFLOAD)));
 
-	/** Rend: countdown-only, so the rider vanishes on the settle instead of counting on. */
-	public static final Row REND = new Row(Lane.REND, ClassRegistry.REND_ABILITY, RendAbility.NAME,
-			List.of(pendingWindow(Lane.REND)));
+	/** Onslaught: the window draws its countdown while it lives; both ends of it are bar-side. */
+	public static final Row ONSLAUGHT = new Row(Lane.ONSLAUGHT, ClassRegistry.ONSLAUGHT_ABILITY, OnslaughtAbility.NAME,
+			List.of(window(Lane.ONSLAUGHT)));
 
 	/**
 	 * Rotate: the Impetus rider is one-shot (pending only), so it vanishes on the spend;
@@ -101,7 +101,7 @@ public final class AbilityRoster {
 			List.of(window(Lane.ALL_IN)));
 
 	/** Rows in lane order: the order {@code /class info} prints and the classes carry their actives in. */
-	private static final List<Row> ALL = List.of(RUSH, REND, ROTATE, AEQUILIBRIUM, ROULETTE, ALL_IN);
+	private static final List<Row> ALL = List.of(OFFLOAD, ONSLAUGHT, ROTATE, AEQUILIBRIUM, ROULETTE, ALL_IN);
 
 	private AbilityRoster() {
 	}

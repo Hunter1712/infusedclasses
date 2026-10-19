@@ -4,20 +4,35 @@ How the mod's persistent bonuses work: what earns them, what spends them, and wh
 
 ## Conditional passives (Juggernaut)
 
-**Momentum** — `on_hit_dealt`, max 20 stacks, `minecraft:armor` +0.4 per stack (max +8.0), 5s grace, all stacks drop at once after. Picker line: `Land a hit: +0.4 armor (max 20). 5s no hit: lose all.`
+**Momentum** — `on_hit_dealt` and `on_hit_taken`, +1 each, max 60, 5s grace, then -1/s.
+Picker line: `Land a hit: +1. Take a hit: +1. Max 60. 5s no feed: -1/s.` followed by the three
+checkpoints:
 
-- Earned only by full-swing landing hits (stack gate over the bonus curve). Spam earns zero.
-- Rush's one-shot bonus adds +5 on the next full-swing hit inside its 5s window.
-- Rend spends every stack plus the armor up front. Zero stacks fizzles.
-- Transient: counts plus last-trigger timestamps live in the session runtime, keyed by passive definition. Relog, respawn and class switch all clear them. A class switch removes what the old class earned but the new one does not carry.
+- 15 **Steady**: +1 armor, -2% speed, +0.25 knockback resistance.
+- 30 **Braced**: +3 armor, -4% speed, +0.5 knockback resistance.
+- 45 **Rooted**: +5 armor, -7% speed, +1 knockback resistance. Past 45 stays Rooted; 45-60 is
+  the actives' spend reserve.
 
-## HP-scaled pair (Juggernaut)
+The bar reads its last reached checkpoint every tick, so losing a tier takes the modifiers off
+with it.
 
-**Vigor** — current HP maps to stepped buckets, 10% per step over 10 steps, each step adding a fixed bonus on top of a floor. Reads as one line with both bonus descs joined, so one passive never looks like two.
+- Dealt: only a full-swing landing hit earns. Taken: any landed damaging hit earns. A hit
+  fully eaten by a raised shield earns nothing on either side.
+- Offload pays a flat 5. Onslaught needs 10 and spends 2 per full hit inside its window.
+- Onslaught stops the feed while live: dealt and taken hits add nothing.
+- Transient: counts, last-feed stamps and the next-loss clock live in the session runtime,
+  keyed by passive definition. Relog, respawn and class switch all clear them. A class switch
+  removes what the old class earned but the new one does not carry.
 
-- Damage: +0.3 attack damage per step from -1.0 (-1 at 0 HP, +2.0 full).
-- Speed: +0.075 attack speed per step from -0.25 (-0.25 at 0 HP, +0.5 full).
-- Recomputed every tick from live HP, transient and never saved. Rend never touches it.
+## Always-on chassis (Juggernaut)
+
+**Burden** — +1 attack damage (`infusedclasses:burden_damage`), -0.5 attack speed
+(`infusedclasses:burden_swing`). Written every tick while classed, never earned.
+
+## HP-scaled machinery
+
+No class registers an HP-scaled passive today. The shared bucket machinery remains for a later
+kit; Vigor retired with the Momentum rework.
 
 ## Stances (Legionary)
 
@@ -39,9 +54,12 @@ Not stacks: transient auras applied and removed at once on flip. Only the curren
 
 | Lane | Length | Verbs |
 |---|---|---|
-| Rush | 25s | fire only when ready, rejects leave everything untouched |
-| Rend | 60s | fire only when ready, fizzle arms nothing |
+| Offload | 10s | fire only when ready, fizzle arms nothing |
+| Onslaught | 60s | fire only when ready, fizzle arms nothing |
 | Rotate | 8s | the only gate on both switch buffs |
 | Oath (Aequilibrium) | 50s | owned solely by the oath |
 
-`reset` readies every lane again for class switch and respawn. The Rush/Rend engage windows are one-shot (peeked, then spent on the next hit, each bonus landing at most once); Testudo and Aequilibrium windows are timed (peeked while live, never consumed).
+`reset` readies every lane again for class switch and respawn. Offload's window, Testudo,
+Aequilibrium and All In are timed (peeked while live, never consumed); Onslaught's window ends
+with its 15s or with the bar, whichever empties first; Impetus is the one-shot (peeked, then
+spent on the next landed hit).

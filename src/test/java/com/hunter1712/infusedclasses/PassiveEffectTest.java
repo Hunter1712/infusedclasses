@@ -1,9 +1,6 @@
 package com.hunter1712.infusedclasses;
 
-import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.Identifier;
-import net.minecraft.resources.ResourceKey;
-import net.minecraft.world.entity.ai.attributes.Attribute;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -11,85 +8,47 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * The stack-to-attribute mapping, asserted as a decision. Plain JUnit: no player, level,
- * attribute instance or graphics object is constructed to make these assertions.
+ * The HP-scaled modifier plan, asserted as a decision: bucket to amount, and write versus
+ * remove versus skip. Plain JUnit: no player, level, attribute instance or graphics object
+ * is constructed to make these assertions.
  */
 class PassiveEffectTest {
-	private static final ConditionalPassive MOMENTUM = ClassRegistry.byId(ClassRegistry.JUGGERNAUT).passives().get(0);
+	private static final HpScaledPassive VIGOR = new HpScaledPassive(ClassRegistry.ATTACK_DAMAGE,
+			Identifier.fromNamespaceAndPath("infusedclasses", "test_damage"), 0.3, "Test", -1.0);
 
 	@Test
-	void noStacksMeansNoModifier() {
-		assertNull(PassiveEffect.forStacks(MOMENTUM, 0));
+	void bucketZeroYieldsNoModifier() {
+		assertNull(PassiveEffect.forBucket(VIGOR, 0));
+		assertNull(PassiveEffect.forBucket(VIGOR, -1));
+		assertNull(PassiveEffect.forBucket(null, 5));
 	}
 
 	@Test
-	void negativeStacksMeanNoModifier() {
-		assertNull(PassiveEffect.forStacks(MOMENTUM, -1));
+	void bonusIsBasePlusBucketTimesPerStep() {
+		assertEquals(0.5, PassiveEffect.forBucket(VIGOR, 5).amount());
+		assertEquals(2.0, PassiveEffect.forBucket(VIGOR, 10).amount());
 	}
 
 	@Test
-	void missingPassiveMeansNoModifier() {
-		assertNull(PassiveEffect.forStacks(null, 3));
+	void bonusNeverExceedsTheCap() {
+		assertEquals(2.0, PassiveEffect.forBucket(VIGOR, 11).amount());
+		assertEquals(2.0, PassiveEffect.forBucket(VIGOR, 99).amount());
 	}
 
 	@Test
-	void oneStackGrantsThePassivesOwnAttributeModifier() {
-		PassiveEffect.Modifier wanted = PassiveEffect.forStacks(MOMENTUM, 1);
+	void theModifierCarriesItsOwnAttributeAndId() {
+		PassiveEffect.Modifier wanted = PassiveEffect.forBucket(VIGOR, 3);
 
-		assertEquals(ClassRegistry.ARMOR, wanted.attribute());
-		assertEquals(Identifier.fromNamespaceAndPath("infusedclasses", "momentum_armor"), wanted.modifierId());
-		assertEquals(0.4, wanted.amount());
-	}
-
-	@Test
-	void stacksScaleLinearlyToTheCap() {
-		PassiveEffect.Modifier atCap = PassiveEffect.forStacks(MOMENTUM, MOMENTUM.maxStacks());
-
-		assertEquals(8.0, atCap.amount());
-	}
-
-	@Test
-	void theMappingFollowsThePassiveNotAParticularName() {
-		ResourceKey<Attribute> speed = ResourceKey.create(Registries.ATTRIBUTE,
-				Identifier.withDefaultNamespace("movement_speed"));
-		ConditionalPassive swift = new ConditionalPassive(
-				"Something Else",
-				new Trigger("on_land", "Land a swing", "no swing"),
-				4,
-				speed,
-				Identifier.fromNamespaceAndPath("infusedclasses", "swift_speed"),
-				0.5,
-				3);
-
-		PassiveEffect.Modifier wanted = PassiveEffect.forStacks(swift, 3);
-
-		assertEquals(speed, wanted.attribute());
-		assertEquals(Identifier.fromNamespaceAndPath("infusedclasses", "swift_speed"), wanted.modifierId());
-		assertEquals(1.5, wanted.amount());
-	}
-
-	@Test
-	void stacksWriteTheirModifier() {
-		assertTrue(PassiveEffect.planFor(MOMENTUM, 3, false) instanceof PassiveEffect.Plan.Write write
-				&& Math.abs(write.wanted().amount() - 1.2) < 1e-9);
-	}
-
-	@Test
-	void deadStacksRemoveOnlyWhenTheyMoved() {
-		assertTrue(PassiveEffect.planFor(MOMENTUM, 0, true) instanceof PassiveEffect.Plan.Remove);
-		assertTrue(PassiveEffect.planFor(MOMENTUM, 0, false) instanceof PassiveEffect.Plan.Skip);
-		assertTrue(PassiveEffect.planFor(null, 0, true) instanceof PassiveEffect.Plan.Skip);
+		assertEquals(ClassRegistry.ATTACK_DAMAGE, wanted.attribute());
+		assertEquals(Identifier.fromNamespaceAndPath("infusedclasses", "test_damage"), wanted.modifierId());
 	}
 
 	@Test
 	void bucketsWriteLiveAndRemoveDead() {
-		HpScaledPassive vigor = ClassRegistry.byId(ClassRegistry.JUGGERNAUT).hpPassives().get(0);
-
-		assertTrue(PassiveEffect.planForBucket(vigor, 10) instanceof PassiveEffect.Plan.Write write
+		assertTrue(PassiveEffect.planForBucket(VIGOR, 10) instanceof PassiveEffect.Plan.Write write
 				&& write.wanted().amount() == 2.0);
-		assertTrue(PassiveEffect.planForBucket(vigor, 0)
-				instanceof PassiveEffect.Plan.Remove remove
-				&& remove.attribute().equals(vigor.attribute()));
+		assertTrue(PassiveEffect.planForBucket(VIGOR, 0) instanceof PassiveEffect.Plan.Remove remove
+				&& remove.attribute().equals(VIGOR.attribute()));
 		assertTrue(PassiveEffect.planForBucket(null, 0) instanceof PassiveEffect.Plan.Skip);
 	}
 }

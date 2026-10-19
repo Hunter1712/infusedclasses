@@ -109,40 +109,40 @@ class StatusHudTest {
 	@Test
 	void readyJuggernautShowsTwoDimWordLanes() {
 		assertEquals(List.of(
-				new StatusHud.Row(List.of(ready(AbilityRoster.RUSH.name()))),
-				new StatusHud.Row(List.of(ready(AbilityRoster.REND.name())))),
+				new StatusHud.Row(List.of(ready(AbilityRoster.OFFLOAD.name()))),
+				new StatusHud.Row(List.of(ready(AbilityRoster.ONSLAUGHT.name())))),
 				rows(new Snap().build(), 0));
 	}
 
 	@Test
 	void coolingLanesLightUpWithWholeSecondNumbers() {
-		long[] remaining = {60_000, 59_999, 25_000, 10_000, 9_999, 1_000, 999, 1};
-		String[] text = {"60s", "60s", "25s", "10s", "10s", "1s", "1s", "1s"};
+		long[] remaining = {60_000, 59_999, 10_000, 9_999, 1_000, 999, 1};
+		String[] text = {"60s", "60s", "10s", "10s", "1s", "1s", "1s"};
 		for (int i = 0; i < remaining.length; i++) {
-			Snap snap = new Snap().lane(Lane.RUSH, remaining[i]);
-			assertEquals(text[i], chip(snap.build(), 0, 0).value(), "rush " + remaining[i] + "ms");
-			assertTrue(chip(snap.build(), 0, 0).lit());
-			assertEquals(AbilityRoster.RUSH.name(), chip(snap.build(), 0, 0).label());
+			Snap snap = new Snap().lane(Lane.ONSLAUGHT, remaining[i]);
+			assertEquals(text[i], chip(snap.build(), 1, 0).value(), "onslaught " + remaining[i] + "ms");
+			assertTrue(chip(snap.build(), 1, 0).lit());
+			assertEquals(AbilityRoster.ONSLAUGHT.name(), chip(snap.build(), 1, 0).label());
 		}
 	}
 
 	@Test
 	void elapsedCountsDownAndReadyLandsAtItsBoundary() {
-		PlayerStatusPayload status = new Snap().lane(Lane.RUSH, 20_000).build();
+		PlayerStatusPayload status = new Snap().lane(Lane.OFFLOAD, 10_000).build();
 
-		assertEquals("5s", rows(status, 15_000).get(0).chips().get(0).value());
-		assertEquals("1s", rows(status, 19_001).get(0).chips().get(0).value());
-		assertEquals(ready(AbilityRoster.RUSH.name()), rows(status, 20_000).get(0).chips().get(0));
-		assertEquals(ready(AbilityRoster.RUSH.name()), rows(status, 25_000).get(0).chips().get(0));
+		assertEquals("5s", rows(status, 5_000).get(0).chips().get(0).value());
+		assertEquals("1s", rows(status, 9_001).get(0).chips().get(0).value());
+		assertEquals(ready(AbilityRoster.OFFLOAD.name()), rows(status, 10_000).get(0).chips().get(0));
+		assertEquals(ready(AbilityRoster.OFFLOAD.name()), rows(status, 15_000).get(0).chips().get(0));
 	}
 
 	@Test
-	void rushWindowRiderIsABareNumberSpentOrNot() {
-		Snap snap = new Snap().window(Lane.RUSH, 5_000);
+	void offloadWindowRiderIsABareNumberForItsWholeLife() {
+		Snap snap = new Snap().window(Lane.OFFLOAD, 5_000);
 		assertEquals(rider("", "5s"), chip(snap.build(), 0, 1));
 
-		// The spend drops nothing: the window's countdown is the whole story.
-		snap.spend(Lane.RUSH);
+		// The price is paid at the press: the countdown is the whole story.
+		snap.spend(Lane.OFFLOAD);
 		assertEquals(rider("", "5s"), chip(snap.build(), 0, 1));
 
 		// The rider counts with elapsed; the window expiring drops it.
@@ -151,12 +151,11 @@ class StatusHudTest {
 	}
 
 	@Test
-	void rendRiderVanishesOnSpend() {
-		Snap snap = new Snap().window(Lane.REND, 6_000);
-		assertEquals(rider("", "6s"), chip(snap.build(), 1, 1));
-
-		snap.spend(Lane.REND);
-		assertEquals(1, row(snap.build(), 1).chips().size());
+	void onslaughtWindowRiderCountsDownUntilTheWindowEnds() {
+		Snap snap = new Snap().window(Lane.ONSLAUGHT, 15_000);
+		assertEquals(rider("", "15s"), chip(snap.build(), 1, 1));
+		assertEquals(rider("", "1s"), rows(snap.build(), 14_000).get(1).chips().get(1));
+		assertEquals(1, rows(snap.build(), 15_000).get(1).chips().size());
 	}
 
 	@Test
@@ -219,6 +218,32 @@ class StatusHudTest {
 		snap.stacks = 0;
 		snap.grace = 0;
 		assertEquals(2, rows(snap.build(), 0).size());
+	}
+
+	@Test
+	void momentumRowCarriesItsCheckpointWord() {
+		Snap snap = new Snap();
+
+		snap.stacks = 15;
+		assertEquals(rider("Steady", ""), chip(snap.build(), 2, 1));
+
+		snap.stacks = 30;
+		assertEquals(rider("Braced", ""), chip(snap.build(), 2, 1));
+
+		snap.stacks = 45;
+		assertEquals(rider("Rooted", ""), chip(snap.build(), 2, 1));
+
+		// The reserve above the top checkpoint stays Rooted.
+		snap.stacks = Momentum.MAX_STACKS;
+		assertEquals(rider("Rooted", ""), chip(snap.build(), 2, 1));
+	}
+
+	@Test
+	void aBarBelowTheFirstCheckpointDrawsNoRider() {
+		Snap snap = new Snap();
+		snap.stacks = 14;
+
+		assertEquals(1, row(snap.build(), 2).chips().size());
 	}
 
 	@Test

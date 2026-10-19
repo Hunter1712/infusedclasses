@@ -34,9 +34,10 @@ class ClassSwitchCleanupTest {
 
 	@Test
 	void juggernautToLegionaryTakesOffItsOwnKit() {
-		// Momentum's armor, both Vigor modifiers, and the Rush window's speed: the new
-		// class writes none of them, so none would ever be revisited.
-		assertEquals(List.of("momentum_armor", "vigor_damage", "vigor_speed", "rush_speed"),
+		// Momentum's armor and weight, its knockback row, Burden's pair, and the
+		// Offload window's pair: the new class writes none of them.
+		assertEquals(List.of("momentum_armor", "momentum_weight", "momentum_knockback",
+				"burden_damage", "burden_swing", "offload_haste", "offload_speed"),
 				ids(juggernaut(), legionary()));
 	}
 
@@ -65,7 +66,8 @@ class ClassSwitchCleanupTest {
 		assertEquals(List.of(), ids(null, juggernaut()));
 
 		// class -> null: no tick ever runs, so the whole kit comes off here.
-		assertEquals(List.of("momentum_armor", "vigor_damage", "vigor_speed", "rush_speed"),
+		assertEquals(List.of("momentum_armor", "momentum_weight", "momentum_knockback",
+				"burden_damage", "burden_swing", "offload_haste", "offload_speed"),
 				ids(juggernaut(), null));
 		assertEquals(List.of("gladius_damage", "gladius_alacrity", "scutum_plate", "scutum_toughness",
 				"scutum_weight", "aequilibrium_edge", "aequilibrium_plate"),

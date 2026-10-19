@@ -4,12 +4,13 @@ import net.minecraft.resources.Identifier;
 
 import java.util.List;
 
-/** A character class: id, display name, passives, actives with their copy, crit rule. */
+/** A character class: id, display name, passives (earned and always-on), actives with their copy, crit rule. */
 public record ClassDefinition(
 		Identifier id,
 		String displayName,
 		List<ConditionalPassive> passives,
 		List<HpScaledPassive> hpPassives,
+		List<AlwaysOn> alwaysOn,
 		int accentColor,
 		String tagline,
 		List<ActiveAbility> actives,
@@ -20,18 +21,33 @@ public record ClassDefinition(
 	public record ActiveAbility(Identifier id, String name, String desc) {
 	}
 
+	/**
+	 * One always-on passive: a chassis row that is written while the class is held and
+	 * never earned, with the modifier list the applier writes. Plain data like the others,
+	 * so the card copy, the tick and the switch cleanup read one source.
+	 */
+	public record AlwaysOn(String name, String desc, List<PassiveEffect.Modifier> modifiers) {
+	}
+
 	/** One flip buff on a card: display copy only, never gated. */
 	public record FlipBuff(String name, String desc) {
 	}
 
+	/** A kit with no always-on rows: nothing to write while classed. */
+	public ClassDefinition(Identifier id, String displayName, List<ConditionalPassive> passives,
+			List<HpScaledPassive> hpPassives, int accentColor, String tagline,
+			List<ActiveAbility> actives, List<FlipBuff> flipBuffs, CritRule critRule) {
+		this(id, displayName, passives, hpPassives, List.of(), accentColor, tagline, actives, flipBuffs, critRule);
+	}
+
 	/**
-	 * The first passive on the given trigger, or null. The single scan for trigger-found
-	 * passives: decisions and adapters resolve through here, never by list position, so
-	 * reordering passives cannot silently spend or credit the wrong one.
+	 * The first passive whose earns name the given trigger, or null. The single scan for
+	 * trigger-fed passives: decisions and adapters resolve through here, never by list
+	 * position, so reordering passives cannot silently spend or credit the wrong one.
 	 */
 	public ConditionalPassive passiveForTrigger(Trigger trigger) {
 		for (ConditionalPassive passive : passives()) {
-			if (passive.trigger().equals(trigger)) {
+			if (passive.earnsOn(trigger)) {
 				return passive;
 			}
 		}
@@ -55,4 +71,3 @@ public record ClassDefinition(
 		return false;
 	}
 }
-

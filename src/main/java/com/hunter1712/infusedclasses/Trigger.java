@@ -7,11 +7,15 @@ package com.hunter1712.infusedclasses;
  * carry; a definition cannot spell a trigger the mod never emits and still read as live,
  * because there is no string to misspell. Plain data, no game bootstrap needed.
  *
+ * <p>Decay copy is the passive's own, not a trigger's: a bar with two earners has no
+ * single idle word, so its quiet clock says "no feed" and its rate is its own.
+ *
  * @param id the trigger's own name, what a definition and {@code onTrigger} match on
  * @param earn what the copy says earns a stack ("Land a hit")
- * @param idle what the copy says idleness costs ("no hit")
  */
-public record Trigger(String id, String earn, String idle) {
-	/** Fed by landing a full-swing melee hit: the Momentum earner, the one trigger the mod emits. */
-	public static final Trigger ON_HIT_DEALT = new Trigger("on_hit_dealt", "Land a hit", "no hit");
+public record Trigger(String id, String earn) {
+	/** Fed by landing a full-swing melee hit: Momentum's dealt earner. */
+	public static final Trigger ON_HIT_DEALT = new Trigger("on_hit_dealt", "Land a hit");
+	/** Fed by taking a melee hit that dealt damage: Momentum's taken earner, the same amount as one dealt. */
+	public static final Trigger ON_HIT_TAKEN = new Trigger("on_hit_taken", "Take a hit");
 }

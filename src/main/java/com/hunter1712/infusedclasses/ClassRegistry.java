@@ -12,17 +12,18 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * All classes. Adding a class = one definition here. Juggernaut carries Rush plus
- * Rend, one conditional passive (Momentum) and the Vigor HP-scaled pair.
- * Legionary carries Rotate plus the Impetus/Testudo flip buffs and the Aequilibrium
- * oath ultimate; its stances are transient auras, not passives. Gambler carries the
- * free Roulette wheel and All In, with Crooked Dice and Streak generated from its
- * crit rule and rendering as its passives.
+ * All classes. Adding a class = one definition here. Juggernaut carries Burden (the
+ * always-on heavy chassis) plus one Momentum bar, and the Offload/Onslaught pair that
+ * spends it. Legionary carries Rotate plus the Impetus/Testudo flip buffs and the
+ * Aequilibrium oath ultimate; its stances are transient auras, not passives. Gambler
+ * carries the free Roulette wheel and All In, with Crooked Dice and Streak generated
+ * from its crit rule and rendering as its passives.
  */
 public final class ClassRegistry {
 	public static final Identifier JUGGERNAUT = Identifier.fromNamespaceAndPath(InfusedClasses.MOD_ID, "juggernaut");
-	public static final Identifier RUSH_ABILITY = Identifier.fromNamespaceAndPath(InfusedClasses.MOD_ID, "rush");
-	public static final Identifier REND_ABILITY = Identifier.fromNamespaceAndPath(InfusedClasses.MOD_ID, "rend");
+	public static final Identifier OFFLOAD_ABILITY = Identifier.fromNamespaceAndPath(InfusedClasses.MOD_ID, "offload");
+	public static final Identifier ONSLAUGHT_ABILITY =
+			Identifier.fromNamespaceAndPath(InfusedClasses.MOD_ID, "onslaught");
 	public static final Identifier LEGIONARY = Identifier.fromNamespaceAndPath(InfusedClasses.MOD_ID, "legionary");
 	public static final Identifier ROTATE_ABILITY = Identifier.fromNamespaceAndPath(InfusedClasses.MOD_ID, "rotate");
 	public static final Identifier AEQUILIBRIUM_ABILITY =
@@ -41,6 +42,8 @@ public final class ClassRegistry {
 			ResourceKey.create(Registries.ATTRIBUTE, Identifier.withDefaultNamespace("movement_speed"));
 	public static final ResourceKey<Attribute> ARMOR_TOUGHNESS =
 			ResourceKey.create(Registries.ATTRIBUTE, Identifier.withDefaultNamespace("armor_toughness"));
+	public static final ResourceKey<Attribute> KNOCKBACK_RESISTANCE =
+			ResourceKey.create(Registries.ATTRIBUTE, Identifier.withDefaultNamespace("knockback_resistance"));
 
 	private static final Map<Identifier, ClassDefinition> BY_ID = new LinkedHashMap<>();
 
@@ -48,32 +51,16 @@ public final class ClassRegistry {
 		register(new ClassDefinition(
 				JUGGERNAUT,
 				"Juggernaut",
-				List.of(new ConditionalPassive(
-						"Momentum",
-						Trigger.ON_HIT_DEALT,
-						20,
-						ARMOR,
-						Identifier.fromNamespaceAndPath(InfusedClasses.MOD_ID, "momentum_armor"),
-						0.4,
-						5)),
-				List.of(
-						new HpScaledPassive(
-								ATTACK_DAMAGE,
-								Identifier.fromNamespaceAndPath(InfusedClasses.MOD_ID, "vigor_damage"),
-								0.3,
-								"Vigor",
-								-1.0),
-						new HpScaledPassive(
-								ATTACK_SPEED,
-								Identifier.fromNamespaceAndPath(InfusedClasses.MOD_ID, "vigor_speed"),
-								0.075,
-								"Vigor",
-								-0.25)),
+				List.of(Momentum.PASSIVE),
+				List.of(),
+				List.of(Burden.chassis()),
 				0xFFE74C3C,
 				"Frontline bruiser",
 				List.of(
-						new ClassDefinition.ActiveAbility(RUSH_ABILITY, RushAbility.NAME, RushAbility.desc()),
-						new ClassDefinition.ActiveAbility(REND_ABILITY, RendAbility.NAME, RendAbility.desc())),
+						new ClassDefinition.ActiveAbility(
+								OFFLOAD_ABILITY, OffloadAbility.NAME, OffloadAbility.desc()),
+						new ClassDefinition.ActiveAbility(
+								ONSLAUGHT_ABILITY, OnslaughtAbility.NAME, OnslaughtAbility.desc())),
 				List.of(),
 				CritRule.universal()));
 

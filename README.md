@@ -2,7 +2,7 @@
 
 Character classes for Minecraft (Fabric). **Alpha — manual builds only.**
 
-- Juggernaut: Rush engage with cleanse, Momentum armor on landing hits, Rend execute to spend it.
+- Juggernaut: Momentum checkpoints and Burden's heavy chassis, Offload to ease the weight for a moment, Onslaught to spend the bar on damage.
 - Legionary: rotate stances, Impetus/Testudo flip buffs, Aequilibrium oath.
 - Gambler: Crooked Dice crits with Streak loading the odds, free Roulette wheel, All In ultimate.
 

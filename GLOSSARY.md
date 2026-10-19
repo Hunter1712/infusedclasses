@@ -18,35 +18,31 @@ JUnit; the adapter owns every one of those.
 _Avoid_: the seam, the pure/live split (both too vague on their own), effect system
 
 **Passive effect** (`PassiveEffect`):
-The decision of which attribute modifier a conditional passive's current stacks are worth, as an
-attribute, a modifier id and an amount. Zero or fewer stacks mean the passive contributes nothing, and
-that answer is an absent modifier rather than a zero-valued one.
+The decision of which attribute modifier an HP-scaled bucket is worth, as an attribute, a
+modifier id and an amount, plus the write/remove/skip plan for it. Bucket zero means the passive
+contributes nothing, and that answer is an absent modifier rather than a zero-valued one; the
+bar's own rows are the `ConditionalPassive` tiers, not this.
 _Avoid_: passive bonus, armor bonus, stack effect (the decision is not the thing on the player)
 
 **Passive applier** (`PassiveApplier`):
 The adapter that makes the player's attributes agree with the passive effect. It writes only when
-the applied value differs from the wanted one, following the decision's plan: write the wanted
-modifier, take off what dead stacks earned, or nothing. A tick that moved no stacks cannot have
-changed what should be on the player, so it needs no attribute write. Movement travels per
-passive (`tickDecayMoved`), so a decayed passive never removes one sitting at zero; a class
-switch removes what the old class earned but the new one does not carry — the pure
-`cleanupFor(oldDef, newDef)` answers every modifier of that list, keyed by id, and
-`onClassChanged` only removes what it answered — then drops the old stacks and resets the
-lanes. The hit settle now belongs to the melee
-plan (see `Melee plan`); the spender half stays here: `consumeSpent` resolves the priced
-passive and drops its stacks, `dropStacks` is its JUnit-reachable core, and the
-attribute removal rides with the player.
-The window-driven half reconciles as `Window aura family` entries.
+the applied value differs from the wanted one, following one reconcile-by-modifier-id pass:
+write every wanted row, then remove every id in the family's full set that the wanted set does
+not name. Each tick runs the bleed (`PlayerRuntime.decay`), the Momentum rows for the bar's
+current count (`Momentum.forStacks`), each always-on chassis row (`Burden`), the HP-scaled
+buckets, then the window-aura families. A class switch removes what the old class wrote but the
+new one does not carry — the pure `cleanupFor(oldDef, newDef)` answers every modifier of that
+list, keyed by id, and `onClassChanged` only removes what it answered — then drops the old
+stacks and resets the lanes. The hit settle belongs to the melee plan (see `Melee plan`).
 _Avoid_: passive system, stat updater
 
 **Window aura family** (`PassiveApplier.WindowFamily`):
 One window ability's aura group: the marker ability that owns it, every modifier the family can
 write, and `wanted(state)`, the pure decision of what the ability's live windows earn. The tick
-reconciles each family once after the stack and Vigor passes — a held marker writes what is wanted
+reconciles each family once after the bar and bucket passes — a held marker writes what is wanted
 and removes the rest, so the write and remove sides cannot drift; an absent marker sweeps
-everything the family could write, so removal has one home beside the write. The Rush window's
-speed is a family member like the stance and the wheel; `RushApplier` keeps only the cleanse and
-the announce.
+everything the family could write. The three families are the Legionary stance plus its
+Aequilibrium window, the wheel's live spin, and Offload's loosened pair.
 _Avoid_: aura group, modifier set, buff family
 
 **Ability outcome** (`AbilityOutcome`):
@@ -54,9 +50,7 @@ The shared envelope every ability decision returns: whether the press fired and 
 announcement that goes with it. `fired`, `rejected` (silent — a wrong class and a lane
 still cooling down are the same shape) and `fizzled` (says its line, no cast) are the
 three factories. An ability with a payload wraps the envelope in its
-own `Result` record instead of widening it: Rotate's landed stance, Roulette's band,
-Rend's consume flag. The Rend window's amount is not part of any of them: the fire stamps the
-stack count on the runtime, and hit time recomputes the amount from it.
+own `Result` record instead of widening it: Rotate's landed stance, Roulette's band.
 `trigger` gates read-only; `fire` gates and arms the transient runtime's cooldown together, so no
 caller can fire without arming, and rejected presses leave the cooldown untouched.
 _Avoid_: applied outcome, ability result (both name the wrapper), buff
@@ -64,15 +58,13 @@ _Avoid_: applied outcome, ability result (both name the wrapper), buff
 **Ability applier** (`AbilityApplier`):
 The shared adapter seams every ability outcome and class-choice outcome passes through: the announcement
 on the action bar (abilities, rotate) or chat (class-choice), plus the cast fanfare (`playCast`) for fired abilities. Effect and sound ids resolve
-at their single use sites — the Rush window's speed modifier in its own module
-(`RushAbility.SPEED`), the cast sound in the fanfare itself — never behind shared
+at their single use sites — Offload's pair in its own module
+(`OffloadAbility.HASTE_ID`/`SPEED_ID`), the cast sound in the fanfare itself — never behind shared
 lookups with one caller each. A result with nothing to grant and nothing
 to say — a wrong-class, on-cooldown or no-stacks press — lands nothing.
-A fired-or-fizzle press lands through `announceAndCast` alone — Rotate with no
-sound (it carries no cast sound, so it announces without fanfare); only the two abilities
-whose landing is more than the announce keep their own adapter — Rush (`RushApplier`) for
-the cleanse, Rend (`RendApplier`) for the priced stack spend — routing their fanfare
-through the shared path. Class-choice rejections and accepts route through `announce` with the `actionBar` flag.
+A fired-or-fizzle press lands through `announceAndCast` alone: the Juggernaut pair, Rotate
+and the two ultimates all arm inside their decision and route their fanfare through the shared
+path. Class-choice rejections and accepts route through `announce` with the `actionBar` flag.
 _Avoid_: ability system, effect handler
 
 **Ability roster** (`AbilityRoster`):
@@ -86,8 +78,8 @@ decision draws each lane line, word and countdown and riders included, from the 
 target's `ability()` (the first that answers wins) and returns the fired target's own row
 (`shape(def)`), so a word, a lane read, a rider rule or a bind cannot drift between the
 consumers. The ultimate is the class's own ultimate ability, never lent from the signature row
-(ADR-0026) — a class carrying neither slot ability draws no slot lines and falls back to Rush
-and Rend. A new ability adds a row; a test
+(ADR-0026) — a class carrying neither slot ability draws no slot lines and falls back to Offload
+and Onslaught. A new ability adds a row; a test
 pins that every registered active id has one.
 _Avoid_: ability list, lane table, ability registry
 
@@ -101,7 +93,7 @@ _Avoid_: fire helper, trigger wrapper
 
 **Chat line** (`ChatLine`):
 The text and the chat style a decision returns for the server entry to send verbatim.
-Rend's fire line is `Rend!` in red, Rush's is `Rush!` in yellow. Fire lines and fizzles
+Onslaught's fire line is `Onslaught!` in red, Offload's is `Offload!` in yellow. Fire lines and fizzles
 speak only what happened: a press on cooldown says nothing, so `ChatLine.cooldown`
 (`%.1fs`, one decimal) stays the `/class info` lane shape (ADR-0017, whose silence
 carried at ADR-0019). Its wording, rounding and locale are decided with the ability (or class-choice outcome),
@@ -112,33 +104,33 @@ _Avoid_: message, notification, cooldown echo
 **Picker copy** (`ConditionalPassive.fullDesc`):
 The decision of what a conditional passive's picker copy says, generated from its own numbers so it
 cannot drift from behaviour. Every detail line shows name plus short copy
-(`Land a hit: +0.4 armor (max 20). 5s no hit: lose all.`).
+(`Land a hit: +1. Take a hit: +1. Max 60. 5s no feed: -1/s.`).
 Copy stays short on purpose: every active desc holds at most 200 chars, pinned by
 test, so full kits fit the focused card with little scroll.
-The one trigger the mod emits is described as the event it is ("Land a hit"
-for `on_hit_dealt`); a trigger carries its own picker words (its `earn` and `idle` lines), so
-a further trigger cannot be spelled inert. Whole numbers read
+Both triggers the mod emits are described as the event they are ("Land a hit" for
+`on_hit_dealt`, "Take a hit" for `on_hit_taken`); a trigger carries its own picker
+word (`earn`), so a further trigger cannot be spelled inert. Whole numbers read
 as `1`, not `1.0`.
 _Avoid_: description, lore text
 
 ### Classes, passives and stacks
 
 **Class** (`ClassDefinition`):
-A playable archetype, registered once with its id, display name, passives, accent
-colour, tagline, the actives list (one row per fired active: its ability id, name and
+A playable archetype, registered once with its id, display name, passives, always-on rows,
+HP-scaled passives, accent colour, tagline, the actives list (one row per fired active: its ability id, name and
 picker description) plus the flip-buff list (one `FlipBuff` row per trigger-fired
 active: name plus description, shown under `Passives`). A class is data: it carries no player and no state of its own. The first passive on a
 trigger is found with `passiveForTrigger`, never by list position. Juggernaut, Legionary and Gambler are the three
-playable classes today: `Juggernaut`, Rush (`infusedclasses:rush`) plus Rend
-(`infusedclasses:rend`), accent `0xFFE74C3C`,
-tagline `Frontline bruiser`, actives `Rush` and `Rend`, with picker copy
+playable classes today: `Juggernaut`, Offload (`infusedclasses:offload`) plus Onslaught
+(`infusedclasses:onslaught`), accent `0xFFE74C3C`,
+tagline `Frontline bruiser`, actives `Offload` and `Onslaught`, with picker copy
 generated from the ability constants, so the numbers
 cannot drift from behaviour; `Legionary` (see below), Rotate plus the Impetus/Testudo
 flip buffs and the Aequilibrium oath ultimate, accent `0xFFB87333`, tagline `Sword and shield`;
 `Gambler` (see below), Roulette plus All In and a crit rule that doubles as its
 passives, accent `0xFFD4AF37`, tagline `Double or nothing`.
-Juggernaut carries no max-health bonus (vanilla 20 HP):
-Vigor below is the reward for staying topped, and Momentum is the armor for staying on target.
+Juggernaut carries no max-health bonus (vanilla 20 HP): Burden is the heavy chassis and
+Momentum is the one bar the kit earns and spends.
 _Avoid_: character class definition, build
 
 **Locked class**:
@@ -150,7 +142,7 @@ _Avoid_: unavailable class, future class, hidden class
 **Active** (`ClassDefinition.ActiveAbility`):
 One playable active on a class card: its ability id, name and picker description in one row.
 The id is what `hasAbility` reads, so a card row and its gate cannot drift apart. A class
-carries one per active — Juggernaut carries Rush and Rend — so names never join with `+`.
+carries one per active — Juggernaut carries Offload and Onslaught — so names never join with `+`.
 _Avoid_: ability (ambiguous with the gating id), spell
 
 **Flip buff** (`ClassDefinition.FlipBuff`):
@@ -161,33 +153,37 @@ _Avoid_: passive (it is not stack-driven), toggle
 
 **Conditional passive** (`ConditionalPassive`):
 A passive that earns stacks when a named trigger fires, rather than always being on. It carries its
-own numbers — stack cap, attribute, per-stack value, grace period — and its picker copy
-is generated from those numbers so the copy cannot claim something the behaviour does not do.
-Momentum, the Juggernaut passive, is `on_hit_dealt`, max 20, `minecraft:armor` under
-`infusedclasses:momentum_armor`, +0.4 per stack (max +8.0), 5s grace, all stacks drop at once after.
+own numbers — the earns list (a trigger plus its amount each), stack cap, attribute tiers and grace
+period — and its picker copy is generated from those numbers so the copy cannot claim something
+the behaviour does not do. Momentum, the Juggernaut's one bar, is earned by both `on_hit_dealt`
+and `on_hit_taken` (+1 each), caps at 60, bleeds 1/s after 5s quiet, and reads three checkpoints:
+15 Steady (+1 armor, -2% speed, +0.25 knockback resistance), 30 Braced (+3/-4%/+0.5) and
+45 Rooted (+5/-7%/+1.0); past 45 the bar stays Rooted, and the reserve above 45 is the actives'
+spend headroom.
 _Avoid_: buff, stackable stat
 
-**Vigor** (`HpScaledPassive`):
-The Juggernaut's HP-scaled passive pair: current HP maps to stepped buckets, 10% per step
-over 10 steps, each step adding a fixed bonus on top of a floor — +0.3 attack damage
-from -1.0 (`infusedclasses:vigor_damage`, -1 at 0 HP, +2.0 full) and +0.075 attack speed
-from -0.25 (`infusedclasses:vigor_speed`, -0.25 at 0 HP, +0.5 full).
-The pair reads as one `Vigor` line on the card (see `HpScaledPassive.group`),
-with both bonus descs joined, so one passive never looks like two.
-Recomputed every tick from live HP, transient and never saved; Rend spends
-Momentum only and never touches it.
+**Burden** (`Burden`):
+The Juggernaut's always-on chassis: +1.0 attack damage (`infusedclasses:burden_damage`)
+and -0.5 attack speed (`infusedclasses:burden_swing`), written every tick while classed and
+never earned. The class reads heavy first; Momentum is what moves under that weight.
+_Avoid_: rage, frenzy stacks
+
+**HP-scaled passive** (`HpScaledPassive`):
+The shared bucket machinery: current HP maps to ten stepped buckets, each a fixed bonus over a
+floor, recomputed every tick and transient. No class registers one today — Vigor retired with
+ADR-0027 — but the module and the applier's bucket pass remain for the next kit that wants one.
 _Avoid_: rage, frenzy stacks
 
 **Stack**:
 One earned increment of a conditional passive, counted per player and capped at that passive's
 maximum. Stacks are keyed by the passive definition, never by its name, so a passive is addressed
-by what it is rather than by what it is called. Past the grace period every stack drops
-at once, vanilla-style, and stacks are transient: they do not survive relog or respawn.
+by what it is rather than by what it is called. Past the grace the bar bleeds one stack
+per second, and stacks are transient: they do not survive relog or respawn.
 _Avoid_: charge, level, rank
 
 **Cooldown** (`Lane`, `Cooldowns`):
 The wait after an ability fires, tracked per player, also transient. `Lane` is the one enum
-of the six windows — Rush 25s, Rend 60s, Rotate 8s, the Legionary shared oath 50s, the
+of the six windows — Offload 10s, Onslaught 60s, Rotate 8s, the Legionary shared oath 50s, the
 Gambler's Roulette 25s and All In 75s — and each value owns its own length
 (`cooldownMs()`), so a seventh window is one value plus its arm site. `Cooldowns` is the
 lane-keyed `use(lane, now)` / `remaining(lane, now)` / `reset()` triad: `use` fires only when
@@ -196,42 +192,42 @@ and `reset` readies every lane again for class switch and respawn. The window ri
 lane on the transient runtime: a fired press arms the lane and stamps the window together
 (`PlayerRuntime.arm`; `rotate` and `roulette` arm the two landings that carry more), the
 state reads each lane as one `LaneRead` (cooldown, window remainder, one-shot flag), and
-switch and respawn clear all of it. Rush and Rend windows are one-shot (the melee plan peeks
-them, its resolve spends them, each bonus landing at most once); Testudo and Aequilibrium
-windows are timed (peeked while live, never consumed).
+switch and respawn clear all of it. Offload's window, Testudo, Aequilibrium, the Roulette
+outcome and All In are timed (peeked while live, never consumed); Onslaught's lasts the
+window or its bar, whichever empties first, and Impetus is the one-shot (peeked, spent on the
+next landed hit).
 _Avoid_: timer
 
-**Rush** (`RushAbility`):
-The Juggernaut's engage on `R`: cleanses every active harmful effect, quickens the player
-(+0.02 move speed, `infusedclasses:rush_speed`) for 5s (`WINDOW_TICKS`, the Rush window),
-and arms a one-shot bonus so the next full-swing melee hit inside
-the window earns +5 Momentum (`BONUS_STACKS`), on its own 25s lane. Spam leaves the bonus pending. Fires with zero stacks at full
-HP — engaging topped-off is the normal case, not a reject — and rejected presses leave
-the lane, the window and the bonus untouched. Decided in the trigger/fire gate-and-arm
-shape. A stat, never a vanilla effect: no effect icon, no effect dependency.
-Like every cast, firing plays its sound (see `Spellcast`): a wind-burst whoosh for the engage.
+**Offload** (`OffloadAbility`):
+The Juggernaut's spender on `R`: pays a flat 5 Momentum (`COST_STACKS`), arms its own 10s
+lane and stamps a 5s window (`WINDOW_TICKS`) of looser swings and a quicker step
+(+0.2 attack speed `infusedclasses:offload_haste`, +0.01 move speed
+`infusedclasses:offload_speed`). Below the price it fizzles with a `No Momentum` line and
+arms nothing; a wrong-class press and one during the lane's cooldown reject silently.
+Nothing is owed back when the window goes unspent: the stacks are already gone. Decided in
+the trigger/fire gate-and-arm shape. A stat, never a vanilla effect: no effect icon, no
+effect dependency.
+Like every cast, firing plays its sound (see `Spellcast`): a wind-burst whoosh.
 _Avoid_: dash, charge
 
 **Spellcast** (`AbilityApplier.playCast`):
 The fanfare shared by every active: firing any ability plays its own sound — wind burst for
-Rush, anvil land for Rend — so landing a cast is one learnable rule; fizzles and rejects cost
-nothing and stay silent. The single play path lives here so appliers never duplicate it.
+Offload, a ravager roar for Onslaught — so landing a cast is one learnable rule; fizzles and
+rejects cost nothing and stay silent. The single play path lives here so appliers never
+duplicate it. Rotate carries no cast sound and announces without fanfare.
 _Avoid_: cast time, wind-up
 
-**Rend** (`RendAbility`):
-The Juggernaut's Momentum spender on `V`: arms the Rend window — the next melee hit landed
-within 6s (`WINDOW_TICKS`) deals `0.5 HP per stack` bonus damage (10 HP at the full 20) — and
-consumes every Momentum stack plus the armor they granted up front, on its own 60s lane. An
-unswung window simply expires with the stacks already spent. Zero stacks fizzles with a
-`No Momentum` line and arms nothing. Decided in the trigger/fire
-gate-and-arm shape; the spent passive is found once with `passiveForTrigger`
-(never by position), the stamped amount rides the transient runtime next to the lane, and
-the consume flag rides in the wrapper result: the entry asks the passive applier to consume
-that passive while `MeleePlan.resolve` spends the snapshot on the next hit and returns the
-stamped bonus in its `Landed`, landing only what it settled, and only when the plan saw one
-live, so empty hits never touch a window.
-Like every cast, firing plays its sound (see `Spellcast`): an anvil-land smash for the spend.
-_Avoid_: heal button, second ability
+**Onslaught** (`OnslaughtAbility`):
+The Juggernaut's ultimate on `V`: needs 10 Momentum (`MIN_STACKS`), arms its own 60s lane
+and a 15s window (`WINDOW_TICKS`). Inside it every full-swing hit pays +1 damage
+(`HP_PER_HIT`) and spends 2 stacks (`COST_PER_HIT`), and nothing feeds the bar — dealt or
+taken. The window lasts the bar and the window, whichever empties first: a spend down to
+zero ends it there, and a bleed does too on the tick that reads the empty bar. Below 10
+stacks the press fizzles with a `No Momentum` line and arms nothing. Decided in the
+trigger/fire gate-and-arm shape; the melee plan prices each full-swing landing hit and the
+settle spends, so a hit eaten by a shield never pays.
+Like every cast, firing plays its sound (see `Spellcast`): a ravager roar.
+_Avoid_: execute, heal button, second ability
 
 **Legionary** (`ClassRegistry`):
 The second playable class: `infusedclasses:legionary`, display `Legionary`,
@@ -322,33 +318,32 @@ damage (spears) or never (mace). The damage hook runs after all of these, so the
 capture is the hook's only source for it.
 _Avoid_: attack cooldown, swing timer
 
-**Bonus curve** (`BonusCurve`):
-The universal melee rule: mod hook bonus damage scales quadratically with swing
-charge (`bonus x charge x charge`, half charge pays a quarter, spam pays chips).
-Base weapon damage never routes here — vanilla already halves spam. One call
-site in the attacker branch; every melee class shares it, no per-class copies.
-`isFullSwing` is the one definition of a full swing both the curve and the gate call.
+**Full swing** (`BonusCurve`):
+The one definition of a full swing, shared by the stack feed, the crit roll and the
+Onslaught price: exact `>= 1.0F`, so overcharge counts, half swings and spam earn
+nothing and roll nothing. The charged quadratic curve retired with Rush and Rend; the
+gate stayed. Base weapon damage never routes here — vanilla already halves spam.
 _Avoid_: damage falloff, charge multiplier
 
 **Melee plan** (`MeleePlan`):
 The decision of what one melee hit earns and settles, taken from definitions,
 transient state and what the hit landed: whether the swing earns stacks (full
 swings only, spam earns zero; a hit that took no damage earns nothing and reads
-no state at all),
-the stance deal and take mults (1.0 for anyone else), the wheel's live deal mult and
+no state at all), the Onslaught price (+1 HP per full swing inside a live window,
+2 stacks), the stance deal and take mults (1.0 for anyone else), the wheel's live deal mult and
 the Impetus flip buff (pending only, spent once, any charge). `planHit` is the pure half:
-it decides the whole hit in field order — bump, Rush credit, Rend spend, Impetus spend,
-dice verdict, combined mult (deal x take x dice) — peeking only. `resolve` plans through
-it and settles the runtime movements in the same order at the same moment, returning
-`Landed(rendHp, verdict, combined)` for the entry to land, so the pairing the plan saw
-is the pairing that lands and empty hits never touch a window; the attacker branch
-(`settleAttackerHit`) lands exactly what the resolve returned (cue, Rend bonus, combined
-mult) so the hook cannot reorder or half-apply it; Gladius plus Impetus reads
-x1.1 deal, Scutum plus Testudo x0.85 take, a crit x1.25 deal, named once in the plan rather than emerging in the
-entry. The server entry maps, adapters
-apply; the victim runtime arrives lazily, so a non-Legionary victim costs no transient
-state — a blocked hit materialises none at all, gated by the landed amount it is handed.
-Owns every ability-id check the hook needs, so the entry never compares
+it decides the whole hit in field order — bump (suppressed while Onslaught is live),
+Onslaught bonus, Impetus spend, dice verdict, combined mult (deal x take x dice) — peeking
+only. `resolve` plans through it and settles the runtime movements in the same order at the
+same moment, returning `Landed(onslaughtHp, verdict, combined)` for the entry to land, so the
+pairing the plan saw is the pairing that lands and empty hits never touch a window; the
+attacker branch (`settleAttackerHit`) lands exactly what the resolve returned (cue,
+Onslaught bonus, combined mult) so the hook cannot reorder or half-apply it; Gladius plus
+Impetus reads x1.1 deal, Scutum plus Testudo x0.85 take, a crit x1.25 deal, named once in the
+plan rather than emerging in the entry. `resolveTaken` feeds the victim's `on_hit_taken`
++1, suppressed while its Onslaught window is live and only for a landed hit; the server
+entry maps, adapters apply; the victim runtime arrives lazily, so a classless victim costs
+no transient state. Owns every ability-id check the hook needs, so the entry never compares
 ability ids to gate rewards.
 _Avoid_: damage handler, hook logic
 
@@ -357,7 +352,7 @@ The single guarded hurt for the whole mod plus the stance-mult settle every mele
 branch funnels through. Over 1.0 lands extra hurt (dead targets deal nothing); under
 1.0 heals back the discount, so the net hit reads as landed times mult; exactly 1.0
 touches nothing. The base it scales is what the hit landed after shield and modifier
-reductions, so a blocked hit settles nothing. Rend and Impetus bonuses land here too.
+reductions, so a blocked hit settles nothing. Onslaught and Impetus bonuses land here too.
 Vanilla drops any same-tick
 follow-up that does not beat `lastHurt`, so the extra goes in with that memory
 cleared and leaves the memory at the hit plus the bonus: the step lands silently
@@ -375,7 +370,7 @@ _Avoid_: recursion flag, lock
 **Stance applier** (`PassiveApplier`):
 The adapter that makes the player's attributes agree with the Legionary stance: only
 the current stance's modifiers sit on the player, the other stance's come off, same
-write-only-on-change shape as the Vigor tick. Aequilibrium edge and plate ride the oath
+write-only-on-change shape as the always-on and bucket passes. Aequilibrium edge and plate ride the oath
 window while live. Both sides iterate the stance's single aura list (`RotateAbility.auraFor`,
 `AequilibriumAbility.windowModifiers`), so write and remove cannot drift. The Roulette
 outcome window's stat auras are the wheel's own family (`rouletteWanted`) on the same tick,
@@ -386,8 +381,8 @@ _Avoid_: stance system, aura updater
 **Bind morph** (`BindMorph`):
 The decision of what a slot bind means for a class: the signature slot (`R`)
 arrives as the rotate intent for Legionaries, the roulette intent for Gamblers,
-and Rush for everyone else; the ultimate slot (`V`) arrives as the
-oath ultimate for Legionaries in any stance, All In for Gamblers, and Rend for
+and Offload for everyone else; the ultimate slot (`V`) arrives as the
+oath ultimate for Legionaries in any stance, All In for Gamblers, and Onslaught for
 everyone else. One ultimate per class, never lent from the signature row (ADR-0026): each
 target names the ability it fires, so one walk of the class's own actives answers both the
 slot and the row that draws it (`shape(def)`): the keys fire from the same walk, and the
@@ -399,9 +394,9 @@ _Avoid_: key routing, bind table
 **Stack gate**:
 The other half of the spam fix: the attacker branch reads `attackStrengthScale`
 once per swing and feeds conditional triggers only at full charge
-(`MeleePlan.shouldBump` over `BonusCurve.isFullSwing`), so spam
-earns zero stacks and timed swings earn one. Rush bonus is gated on the same bump
-and scales via the curve. Crit rolls and Streak movement ride the same gate:
+(`MeleePlan.planHit` over `BonusCurve.isFullSwing`), so spam
+earns zero stacks and timed swings earn one. Onslaught prices on the same gate.
+Crit rolls and Streak movement ride the same gate:
 half swings never roll and never load the pocket.
 `Juggernaut Momentum` grace reads 5s to cover the swing timer
 under the gate.
@@ -482,14 +477,16 @@ The per-player stacks, cooldowns, ability windows and the Gambler's Streak
 counter that last only as long as the session. It is handed the class they
 belong to and the current time on each call, so it holds neither a clock nor a reference to anyone's
 choice, and it is owned per player by the server entry rather than stored on the player. Stack
-storage (counts plus last-trigger timestamps in definition-keyed maps) lives in `PassiveStacks`:
+storage (counts, last-feed stamps and the next-loss clock in definition-keyed maps) lives in `PassiveStacks`:
 `stacks` reads one passive, `onTrigger` bumps
 every passive on the class whose trigger matches (unknown triggers, a missing class and trigger-less
-classes are inert, each bump re-stamps grace), `tickDecayMoved` drops every stack of each
-passive on the class past its own grace, and reports the set that moved. `clear` drops one class's
+classes are inert, each bump re-stamps grace), `decay` bleeds every passive past its own grace
+and catches up whole seconds in one step, and `spendStacks` pays a price without re-stamping.
+`clear` drops one class's
 stacks; cooldowns and windows are lane-keyed (`Lane`): the one
-`arm`/`rotate`/`roulette`/`consumeBonus`/`consumePayload` set arms both together, only an
-ability `fire` calls it, and `resetAll` readies every lane for the adapter's switch and
+`arm`/`rotate`/`roulette`/`consumeBonus` set arms both together, `endWindow` ends a window
+early, only an ability `fire` calls the arm set, and `resetAll` readies every lane for the
+adapter's switch and
 respawn. Each ability names its window constant once, at its arm site; reads take only the
 clock. Callers and tests
 cross this module's seam; the stacks module is its implementation.
@@ -497,7 +494,7 @@ _Avoid_: player state, live state, runtime (too generic on its own)
 
 **Runtime state** (`PlayerRuntime.State`):
 The whole transient read at one clock: a `LaneRead` per lane (its cooldown, its window
-remainder, its one-shot flag), the flip target, the unspent Rend stacks, the stance and the
+remainder, its one-shot flag), the flip target, the stance and the
 Streak, taken in one `PlayerRuntime.state(now)` call. It is the one read every status path
 crosses — the snapshot builder, `/class info`, the melee plan, the ability fires and the
 passive applier — so lane and window semantics cannot be re-stated per caller; the per-window
@@ -604,7 +601,8 @@ _Avoid_: card widget, draw helper
 **Status HUD** (`StatusHud`, `StatusHudElement`):
 The one thing on screen that shows class state: a vertical text stack anchored to the left
 screen edge, the block vertically centred. One row per chip family — the Legionary's stance,
-the signature lane, the ultimate lane, then the Momentum and Streak rows — with the anchored
+the signature lane, the ultimate lane, then the state rows (Momentum with its checkpoint
+word, Streak) — with the anchored
 chip's name first and its number after it, and riders after the number as dotted counts. The
 names are the glossary's own nouns in Title Case, never keys. Countdowns are whole seconds,
 rounded up, so a live chip never reads zero; a ready lane draws dim with no number, and the
@@ -617,12 +615,12 @@ _Avoid_: strip, overlay, widget
 
 **Rider**:
 A chip that draws on its lane's row after the lane's number: a window or one-shot that rides
-its ability rather than owning a row. Riders are bare dotted counts — `Rush 25s · 5s`; one
+its ability rather than owning a row. Riders are bare dotted counts — `Offload 10s · 5s`; one
 window per lane, so the number needs no word — with one exception: the Roulette outcome keeps
 its band word (`· Jackpot 8s`) because which band spun is the information. There are no
 badges and no `+` marker: the `IMP`/`TES`/`AEQ`/`ALL` vocabulary retired with ADR-0021, and
-the Rush window's count reads the same spent or loaded. A one-shot's rider vanishes on the
-spend (the Rend window works that way); a Zero outcome draws no rider at all.
+the Offload window's count reads the same spent or loaded. A one-shot's rider vanishes on the
+spend (the Rotate Impetus rider works that way); a Zero outcome draws no rider at all.
 _Avoid_: window chip, badge
 
 **Status snapshot** (`PlayerStatusPayload`):
@@ -665,28 +663,27 @@ against the choice module; a rejected pick leaves the picker open for retry. An 
 clears what the old class earned and resets the cooldown, so no stale modifier survives.
 _Avoid_: select packet
 
-**Rush intent** (`RushPayload`):
+**Signature intent** (`RushPayload`):
 The client's `infusedclasses:rush` intent, the signature slot's: "I pressed the
 signature key", sent while the `R` key (`key.infusedclasses.signature`) is
 consumed each client tick. The payload class and channel keep their old `rush`
 names on purpose — the wire is not the player surface, so the protocol and the
-player vocabulary diverge by design. The server validates class and cooldown;
-rejected presses leave the lane, the window and the bonus untouched.
-For a Legionary the same bind arrives as the rotate intent and for a Gambler as
-the Roulette spin, so binds survive the class.
-_Avoid_: shout packet, key packet
+player vocabulary diverge by design (ADR-0027). The server validates class and cooldown;
+rejected presses leave the lane and the window untouched.
+For a Juggernaut the press fires Offload; for a Legionary the same bind arrives as the rotate
+intent and for a Gambler as the Roulette spin, so binds survive the class.
+_Avoid_: shout packet, key packet, Rush intent
 
-**Rend intent** (`RendPayload`):
+**Ultimate intent** (`RendPayload`):
 The client's `infusedclasses:rend` intent, the ultimate slot's: "I pressed the
 ultimate key", sent while the `V` key (`key.infusedclasses.ultimate`) is
 consumed each client tick. The payload class and channel keep their old `rend`
 names on purpose — the wire is not the player surface, so the protocol and the
-player vocabulary diverge by design. The server validates class, stacks and
-cooldown; rejected presses leave the cooldown untouched, and the Rend window's
-bonus lands on the next melee hit inside it.
-For a Legionary the same bind arrives as the oath intent (Aequilibrium in any stance) and for a
-Gambler as All In, so binds survive the class.
-_Avoid_: heal packet, key packet
+player vocabulary diverge by design (ADR-0027). The server validates class, stacks and
+cooldown; rejected presses leave the lane and the window untouched.
+For a Juggernaut the press fires Onslaught; for a Legionary the same bind arrives as the oath
+intent (Aequilibrium in any stance) and for a Gambler as All In, so binds survive the class.
+_Avoid_: heal packet, key packet, Rend intent
 
 **Picker signal** (`OpenClassScreenPayload`):
 The server's `infusedclasses:open_class_screen` signal telling the client to open the picker,
@@ -717,9 +714,10 @@ _Avoid_: admin command, cheat
 Recorded in `docs/adr/`. `0001` is the decide-then-apply rule these terms are named after; `0002`
 owns the choice/transient split; `0003` defers the class-lookup seam until a second source of
 classes exists; `0004` inverts the Juggernaut kit to high-HP rewards (Vigor plus Momentum, the Rush engage
-plus the Rend window) with sound replacing root; `0005` moves the hit-gating decision out of the
+plus the Rend window) with sound replacing root — superseded by `0027`; `0005` moves the hit-gating decision out of the
 server entry, the stack storage out of the transient runtime, and the trigger scan onto the class;
-`0006` adds the Legionary stance tradeoff plus the universal charged curve and stack gate;
+`0006` adds the Legionary stance tradeoff plus the universal stack gate (its charged curve retired
+with `0027`);
 `0007` deepens the melee hook (plan, settle, morph) and splits the adapters, revisiting
 the `0005` bind-morph carve-out; `0008` closes the review's six seams (cooldown leak,
 one-line Rend adapter, shared gate-and-arm, full hit plan, card back door, window registry);
@@ -785,3 +783,10 @@ one silent shape: `AbilityOutcome` loses its machine-readable remainder and its
 target names the ability it fires, one walk of the class's own actives answers both the slot
 and the row that draws it, so the rows decision's class-shape pick moves into the shape
 (revising `0009`'s shared-marker keying and `0023`'s ultimate-bind sentence).
+`0027` makes Momentum the Juggernaut's one mechanic: a 60-stack bar fed +1 by both dealt and taken
+full hits, bleeding 1/s after 5s quiet, reading checkpoints at 15/30/45 that each add armor,
+weight and knockback resistance; Rush and Rend retire for Offload (a flat 5-stack price for a 5s
+haste/speed window) and Onslaught (a 10-stack gate, 15s or until the bar empties, +1 per full hit
+at 2 stacks each, no gain while live); Vigor is cut; Burden (+1 damage, -0.5 attack speed) is the
+always-on chassis; and the charged bonus curve retires, leaving its full-swing gate. The wire
+names `rush`/`rend` stay on the reused signature and ultimate intents.

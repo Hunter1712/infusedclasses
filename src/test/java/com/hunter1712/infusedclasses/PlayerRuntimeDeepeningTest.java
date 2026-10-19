@@ -4,20 +4,24 @@ import net.minecraft.resources.Identifier;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
-import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-/** Per-passive decay, the lane-keyed arms and the one-state read: the C1/C2 deepening. */
+/** Per-passive bleed, the lane-keyed arms, the bar's spend/end verbs and the one-state read. */
 class PlayerRuntimeDeepeningTest {
-	/** A second trigger of our own, so per-passive decay can be read off a passive the registry never carries. */
-	private static final Trigger ON_LAND = new Trigger("on_land", "Land a swing", "no swing");
+	/** A trigger of our own, so per-passive bleed can be read off a passive the registry never carries. */
+	private static final Trigger ON_LAND = new Trigger("on_land", "Land a swing");
 
 	private static ConditionalPassive momentum() {
 		return ClassRegistry.byId(ClassRegistry.JUGGERNAUT).passives().get(0);
+	}
+
+	private static ConditionalPassive swift() {
+		return new ConditionalPassive("Swift", List.of(new ConditionalPassive.Earn(ON_LAND, 1)), 6,
+				List.of(new ConditionalPassive.Tier(2, "Quick", 0.5, -0.001, 0.25)), 2);
 	}
 
 	private static ClassDefinition withPassives(ConditionalPassive... passives) {
@@ -26,28 +30,30 @@ class PlayerRuntimeDeepeningTest {
 	}
 
 	@Test
-	void decayedPassiveMovesWithoutTouchingIdleOne() {
-		ConditionalPassive swift = new ConditionalPassive("Swift", ON_LAND, 4, ClassRegistry.ARMOR,
-				Identifier.fromNamespaceAndPath("infusedclasses", "swift_armor"), 0.5, 2);
+	void decayBleedsEachFedPassiveOnItsOwnClock() {
+		ConditionalPassive swift = swift();
 		ClassDefinition def = withPassives(momentum(), swift);
 		PlayerRuntime runtime = new PlayerRuntime();
 		long base = 1_000_000L;
 		runtime.onTrigger(def, Trigger.ON_HIT_DEALT, base, 1.0F);
-		// Swift never triggered: 0 stacks, never moved.
+		for (int i = 0; i < 5; i++) {
+			runtime.onTrigger(def, ON_LAND, base, 1.0F);
+		}
 
-		Set<ConditionalPassive> moved = runtime.tickDecayMoved(def, base + 6_000);
+		runtime.decay(def, base + 3_000);
 
-		assertTrue(moved.contains(momentum()));
-		assertFalse(moved.contains(swift));
-		// Old global flag would have removed Swift spuriously; per-passive must not.
-		assertTrue(PassiveEffect.planFor(swift, runtime.stacks(swift), moved.contains(swift))
-				instanceof PassiveEffect.Plan.Skip);
+		assertEquals(1, runtime.stacks(momentum()), "Momentum's own 5s grace still holds");
+		assertEquals(4, runtime.stacks(swift), "Swift's own 2s grace already bled one");
+
+		runtime.decay(def, base + 6_000);
+
+		assertEquals(0, runtime.stacks(momentum()));
+		assertEquals(1, runtime.stacks(swift));
 	}
 
 	@Test
 	void clearDropsOnlyThatClassStacks() {
-		ConditionalPassive swift = new ConditionalPassive("Swift", ON_LAND, 4, ClassRegistry.ARMOR,
-				Identifier.fromNamespaceAndPath("infusedclasses", "swift_armor"), 0.5, 2);
+		ConditionalPassive swift = swift();
 		ClassDefinition both = withPassives(momentum(), swift);
 		PlayerRuntime runtime = new PlayerRuntime();
 		long base = 1_000_000L;
@@ -62,22 +68,6 @@ class PlayerRuntimeDeepeningTest {
 	}
 
 	@Test
-	void clearDropsOnlyThePricedPassive() {
-		ConditionalPassive swift = new ConditionalPassive("Swift", ON_LAND, 4, ClassRegistry.ARMOR,
-				Identifier.fromNamespaceAndPath("infusedclasses", "swift_armor"), 0.5, 2);
-		ClassDefinition both = withPassives(momentum(), swift);
-		PlayerRuntime runtime = new PlayerRuntime();
-		long base = 1_000_000L;
-		runtime.onTrigger(both, Trigger.ON_HIT_DEALT, base, 1.0F);
-		runtime.onTrigger(both, ON_LAND, base, 1.0F);
-
-		runtime.clear(momentum());
-
-		assertEquals(0, runtime.stacks(momentum()));
-		assertEquals(1, runtime.stacks(swift));
-	}
-
-	@Test
 	void freshStateIsTheEmptyRead() {
 		PlayerRuntime.State state = new PlayerRuntime().state(0);
 
@@ -86,7 +76,6 @@ class PlayerRuntimeDeepeningTest {
 			assertEquals(0, state.lane(lane).windowRemainingMs(), lane.name());
 			assertFalse(state.lane(lane).windowPending(), lane.name());
 		}
-		assertEquals(0, state.rendBonusStacks());
 		assertNull(state.flipTarget());
 		assertFalse(state.impetusPending());
 		assertNull(state.rouletteOutcome());
@@ -97,23 +86,49 @@ class PlayerRuntimeDeepeningTest {
 	@Test
 	void laneVerbsArmWithoutExposingMutation() {
 		PlayerRuntime runtime = new PlayerRuntime();
-		assertEquals(0, runtime.state(0).laneRemaining(Lane.REND));
-		assertTrue(runtime.arm(Lane.REND, 0, RendAbility.WINDOW_TICKS * 50L, 5));
-		assertEquals(Lane.REND.cooldownMs(), runtime.state(0).laneRemaining(Lane.REND));
+		assertEquals(0, runtime.state(0).laneRemaining(Lane.OFFLOAD));
+		assertTrue(runtime.arm(Lane.OFFLOAD, 0, OffloadAbility.WINDOW_TICKS * 50L));
+		assertEquals(Lane.OFFLOAD.cooldownMs(), runtime.state(0).laneRemaining(Lane.OFFLOAD));
 		runtime.resetAll();
-		assertEquals(0, runtime.state(0).laneRemaining(Lane.REND));
+		assertEquals(0, runtime.state(0).laneRemaining(Lane.OFFLOAD));
 	}
 
 	/** A rejected arm is one decision: the cooling lane and its window are left untouched together. */
 	@Test
 	void rejectedArmLeavesTheWindowUntouched() {
 		PlayerRuntime runtime = new PlayerRuntime();
-		runtime.arm(Lane.REND, 0, RendAbility.WINDOW_TICKS * 50L, 5);
+		runtime.arm(Lane.OFFLOAD, 0, OffloadAbility.WINDOW_TICKS * 50L);
 
-		assertFalse(runtime.arm(Lane.REND, 1_000, RendAbility.WINDOW_TICKS * 50L, 9));
-		assertEquals(5, runtime.state(1_000).rendBonusStacks());
-		assertEquals(RendAbility.WINDOW_TICKS * 50L - 1_000,
-				runtime.state(1_000).lane(Lane.REND).windowRemainingMs());
+		assertFalse(runtime.arm(Lane.OFFLOAD, 1_000, OffloadAbility.WINDOW_TICKS * 50L));
+		assertEquals(OffloadAbility.WINDOW_TICKS * 50L - 1_000,
+				runtime.state(1_000).lane(Lane.OFFLOAD).windowRemainingMs());
+	}
+
+	@Test
+	void spendStacksMovesTheBarAndReportsTheSpend() {
+		PlayerRuntime runtime = new PlayerRuntime();
+		ConditionalPassive momentum = momentum();
+		for (int i = 0; i < 3; i++) {
+			runtime.onTrigger(ClassRegistry.byId(ClassRegistry.JUGGERNAUT),
+					Trigger.ON_HIT_DEALT, 0, 1.0F);
+		}
+
+		assertEquals(2, runtime.spendStacks(momentum, 2));
+		assertEquals(1, runtime.stacks(momentum));
+		assertEquals(1, runtime.spendStacks(momentum, 5));
+		assertEquals(0, runtime.stacks(momentum));
+		assertEquals(0, runtime.spendStacks(momentum, 5));
+	}
+
+	@Test
+	void endWindowDropsTheWindowAndLeavesTheLaneCooling() {
+		PlayerRuntime runtime = new PlayerRuntime();
+		assertTrue(runtime.arm(Lane.ONSLAUGHT, 0, OnslaughtAbility.WINDOW_TICKS * 50L));
+
+		runtime.endWindow(Lane.ONSLAUGHT);
+
+		assertEquals(0, runtime.state(0).lane(Lane.ONSLAUGHT).windowRemainingMs());
+		assertEquals(Lane.ONSLAUGHT.cooldownMs(), runtime.state(0).laneRemaining(Lane.ONSLAUGHT));
 	}
 
 	@Test
@@ -149,20 +164,20 @@ class PlayerRuntimeDeepeningTest {
 	void everyWindowReadsZeroWhenDeadAndItsExactBoundaryWhenLive() {
 		PlayerRuntime runtime = new PlayerRuntime();
 		long base = 1_000L;
-		assertTrue(runtime.arm(Lane.RUSH, base, RushAbility.WINDOW_TICKS * 50L));
-		assertTrue(runtime.arm(Lane.REND, base, RendAbility.WINDOW_TICKS * 50L, 4));
+		assertTrue(runtime.arm(Lane.OFFLOAD, base, OffloadAbility.WINDOW_TICKS * 50L));
+		assertTrue(runtime.arm(Lane.ONSLAUGHT, base, OnslaughtAbility.WINDOW_TICKS * 50L));
 		assertTrue(runtime.rotate(base, RotateAbility.Stance.GLADIUS));
 		assertTrue(runtime.arm(Lane.OATH, base, AequilibriumAbility.WINDOW_TICKS * 50L));
 		assertTrue(runtime.roulette(base, RouletteAbility.Outcome.EDGE));
 		assertTrue(runtime.arm(Lane.ALL_IN, base, AllInAbility.WINDOW_TICKS * 50L));
 
-		assertEquals(5_000, runtime.state(base).lane(Lane.RUSH).windowRemainingMs());
-		assertEquals(1, runtime.state(base + 4_999).lane(Lane.RUSH).windowRemainingMs());
-		assertEquals(0, runtime.state(base + 5_000).lane(Lane.RUSH).windowRemainingMs());
+		assertEquals(5_000, runtime.state(base).lane(Lane.OFFLOAD).windowRemainingMs());
+		assertEquals(1, runtime.state(base + 4_999).lane(Lane.OFFLOAD).windowRemainingMs());
+		assertEquals(0, runtime.state(base + 5_000).lane(Lane.OFFLOAD).windowRemainingMs());
 
-		assertEquals(6_000, runtime.state(base).lane(Lane.REND).windowRemainingMs());
-		assertEquals(1, runtime.state(base + 5_999).lane(Lane.REND).windowRemainingMs());
-		assertEquals(0, runtime.state(base + 6_000).lane(Lane.REND).windowRemainingMs());
+		assertEquals(15_000, runtime.state(base).lane(Lane.ONSLAUGHT).windowRemainingMs());
+		assertEquals(1, runtime.state(base + 14_999).lane(Lane.ONSLAUGHT).windowRemainingMs());
+		assertEquals(0, runtime.state(base + 15_000).lane(Lane.ONSLAUGHT).windowRemainingMs());
 
 		assertEquals(5_000, runtime.state(base).lane(Lane.ROTATE).windowRemainingMs());
 		assertEquals(RotateAbility.Stance.GLADIUS, runtime.state(base).flipTarget());
@@ -192,8 +207,8 @@ class PlayerRuntimeDeepeningTest {
 	@Test
 	void resetWipesEveryWindowAndTheFlipRecord() {
 		PlayerRuntime runtime = new PlayerRuntime();
-		assertTrue(runtime.arm(Lane.RUSH, 0, RushAbility.WINDOW_TICKS * 50L));
-		assertTrue(runtime.arm(Lane.REND, 0, RendAbility.WINDOW_TICKS * 50L, 4));
+		assertTrue(runtime.arm(Lane.OFFLOAD, 0, OffloadAbility.WINDOW_TICKS * 50L));
+		assertTrue(runtime.arm(Lane.ONSLAUGHT, 0, OnslaughtAbility.WINDOW_TICKS * 50L));
 		assertTrue(runtime.rotate(0, RotateAbility.Stance.GLADIUS));
 		assertTrue(runtime.arm(Lane.OATH, 0, AequilibriumAbility.WINDOW_TICKS * 50L));
 

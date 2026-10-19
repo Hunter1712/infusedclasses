@@ -44,13 +44,13 @@ class WindowFamilyTest {
 	}
 
 	@Test
-	void rushWantsItsSpeedOnlyWhileTheWindowIsLive() {
+	void offloadWantsItsPairOnlyWhileTheWindowIsLive() {
 		PlayerRuntime runtime = new PlayerRuntime();
-		assertEquals(List.of(), PassiveApplier.rushWanted(runtime.state(0)));
+		assertEquals(List.of(), PassiveApplier.offloadWanted(runtime.state(0)));
 
-		runtime.arm(Lane.RUSH, 0, RushAbility.WINDOW_TICKS * 50L);
-		assertEquals(List.of(RushAbility.SPEED), PassiveApplier.rushWanted(runtime.state(0)));
-		assertEquals(List.of(RushAbility.SPEED), PassiveApplier.rushWanted(runtime.state(4_999)));
-		assertEquals(List.of(), PassiveApplier.rushWanted(runtime.state(5_000)));
+		runtime.arm(Lane.OFFLOAD, 0, OffloadAbility.WINDOW_TICKS * 50L);
+		assertEquals(OffloadAbility.windowModifiers(), PassiveApplier.offloadWanted(runtime.state(0)));
+		assertEquals(OffloadAbility.windowModifiers(), PassiveApplier.offloadWanted(runtime.state(4_999)));
+		assertEquals(List.of(), PassiveApplier.offloadWanted(runtime.state(5_000)));
 	}
 }

@@ -29,30 +29,44 @@ public final class PassiveApplier {
 	private static final List<WindowFamily> FAMILIES = List.of(
 			new WindowFamily(ClassRegistry.ROTATE_ABILITY, stanceModifiers(), PassiveApplier::stanceWanted),
 			new WindowFamily(ClassRegistry.ROULETTE_ABILITY, RouletteAbility.allStatModifiers(), PassiveApplier::rouletteWanted),
-			new WindowFamily(ClassRegistry.RUSH_ABILITY, List.of(RushAbility.SPEED), PassiveApplier::rushWanted));
+			new WindowFamily(ClassRegistry.OFFLOAD_ABILITY, OffloadAbility.windowModifiers(), PassiveApplier::offloadWanted));
 
 	/**
-	 * One tick for one player: the single reconcile home. Decay, then conditionals, then
-	 * the HP-scaled pair, then the window-aura families (the stance and its Aequilibrium
-	 * window, the wheel's live spin, the Rush window's speed), in that order; the switch's
-	 * cleanup takes off what {@link #cleanupFor} decides is stale. The tick order and the
-	 * write-only-on-change discipline are decided once. The caller owns the tick's one
-	 * state read and passes it: decay touches no window or lane, so the read is the same
-	 * before or after it. Idempotent: an attribute is only written when what is applied
-	 * differs from what should be, so the modifier is created once and left alone while
-	 * the stacks hold still.
+	 * One tick for one player: the single reconcile home. Bleed, then the tiered bars,
+	 * then the always-on chassis, then the HP-scaled pair, then the window-aura families
+	 * (the stance and its Aequilibrium window, the wheel's live spin, Offload's loosened
+	 * window), in that order; the switch's cleanup takes off what {@link #cleanupFor}
+	 * decides is stale. The tick order and the write-only-on-change discipline are
+	 * decided once. The caller owns the tick's one state read and passes it: the bleed
+	 * touches no window or lane, so the read is the same before or after it. Idempotent:
+	 * an attribute is only written when what is applied differs from what should be, so
+	 * the modifier is created once and left alone while the bar holds still.
 	 */
 	public static void apply(ServerPlayer player, ClassDefinition def, PlayerRuntime runtime,
 			PlayerRuntime.State state, long now) {
 		if (def == null) {
 			return;
 		}
-		Set<ConditionalPassive> moved = runtime.tickDecayMoved(def, now);
+		runtime.decay(def, now);
 		for (ConditionalPassive passive : def.passives()) {
-			settlePlan(player, PassiveEffect.planFor(passive, runtime.stacks(passive), moved.contains(passive)));
+			// Momentum owns the one tier-to-modifier table today. Another bar adds its
+			// own module and a dispatch here; applying Momentum's ids to it would leak
+			// the wrong rows onto the player and into the switch cleanup.
+			if (!Momentum.PASSIVE.equals(passive)) {
+				continue;
+			}
+			// The bar is read, never remembered: losing or spending stacks re-reconciles
+			// to the row the bar names now, and below the first checkpoint the sweep takes
+			// the row off entirely.
+			reconcile(player, Momentum.allModifiers(), Momentum.forStacks(runtime.stacks(passive)));
 		}
-		// Vigor: no stacks, no grace. Recomputed from live HP every tick; the writer's
-		// early-out already covers no-op ticks, bucket 0 removes like dead stacks.
+		for (ClassDefinition.AlwaysOn alwaysOn : def.alwaysOn()) {
+			for (PassiveEffect.Modifier modifier : alwaysOn.modifiers()) {
+				AttributeWriter.write(player, modifier);
+			}
+		}
+		// No stacks, no grace: recomputed from live HP every tick; the writer's early-out
+		// already covers no-op ticks, bucket 0 removes like a dead bar.
 		int bucket = HpScaledPassive.bucketForCurrent(player.getHealth(), player.getMaxHealth());
 		for (HpScaledPassive hp : def.hpPassives()) {
 			settlePlan(player, PassiveEffect.planForBucket(hp, bucket));
@@ -65,14 +79,35 @@ public final class PassiveApplier {
 		for (WindowFamily family : FAMILIES) {
 			List<PassiveEffect.Modifier> wanted = def.hasAbility(family.marker())
 					? family.wanted().apply(state) : List.of();
-			for (PassiveEffect.Modifier modifier : family.all()) {
-				if (wanted.contains(modifier)) {
-					AttributeWriter.write(player, modifier);
-				} else {
-					AttributeWriter.remove(player, modifier.attribute(), modifier.modifierId());
-				}
+			reconcile(player, family.all(), wanted);
+		}
+	}
+
+	/**
+	 * The one reconcile pass: write every wanted modifier, then take off every sweep id
+	 * the wanted set does not name. Keyed by id, so two rows sharing an id write once and
+	 * a row that changed its amount overwrites in place instead of remove-then-write.
+	 */
+	private static void reconcile(ServerPlayer player, List<PassiveEffect.Modifier> all,
+			List<PassiveEffect.Modifier> wanted) {
+		for (PassiveEffect.Modifier modifier : wanted) {
+			AttributeWriter.write(player, modifier);
+		}
+		for (PassiveEffect.Modifier modifier : all) {
+			if (!names(wanted, modifier.modifierId())) {
+				AttributeWriter.remove(player, modifier.attribute(), modifier.modifierId());
 			}
 		}
+	}
+
+	/** Whether any modifier in the list carries the id. */
+	private static boolean names(List<PassiveEffect.Modifier> modifiers, Identifier id) {
+		for (PassiveEffect.Modifier modifier : modifiers) {
+			if (modifier.modifierId().equals(id)) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	/** The stance family's wanted set: the current stance's aura, plus Aequilibrium's while its window is live. */
@@ -90,9 +125,10 @@ public final class PassiveApplier {
 		return outcome == null ? List.of() : RouletteAbility.statAuraFor(outcome);
 	}
 
-	/** The Rush family's wanted set: the speed stat while the engage window is live. */
-	static List<PassiveEffect.Modifier> rushWanted(PlayerRuntime.State state) {
-		return state.lane(Lane.RUSH).windowRemainingMs() > 0 ? List.of(RushAbility.SPEED) : List.of();
+	/** The Offload family's wanted set: the haste and speed pair while the loosened window is live. */
+	static List<PassiveEffect.Modifier> offloadWanted(PlayerRuntime.State state) {
+		return state.lane(Lane.OFFLOAD).windowRemainingMs() > 0
+				? OffloadAbility.windowModifiers() : List.of();
 	}
 
 	/** The stance family's full set: both stances' auras plus the window pair, so write and remove cannot drift. */
@@ -117,16 +153,6 @@ public final class PassiveApplier {
 	}
 
 	/**
-	 * Spender consume by class: resolves the priced passive by trigger and consumes it. The
-	 * single path for Rend, so the entry never looks the passive up itself: the definition
-	 * owns the one trigger scan, and the entry stays out.
-	 */
-	public static boolean consumeSpent(ServerPlayer player, PlayerRuntime runtime, ClassDefinition def) {
-		return def != null
-				&& consumeStacks(player, runtime, def.passiveForTrigger(Trigger.ON_HIT_DEALT));
-	}
-
-	/**
 	 * Class switch: the new class's tick never visits the old passives, so their modifiers
 	 * would orphan. Removes every modifier {@link #cleanupFor} says is stale, drops the old
 	 * stacks, and resets the runtime: a new class starts empty. The rule is a decision, so
@@ -146,11 +172,11 @@ public final class PassiveApplier {
 
 	/**
 	 * What a switch must take off: every modifier the old class's kit could write — its
-	 * stack passives, its Vigor pair, and the whole list of every window-aura family it
-	 * marks — minus every modifier id the new class writes. One entry per id, so a kit
-	 * naming an id twice removes it once; keyed by id, so a class that re-earns a modifier
-	 * keeps it and the next tick rewrites its value, and a family both classes mark is left
-	 * to the family's own sweep. Pure: the wiring only removes.
+	 * tiered bars, its always-on rows, its HP-scaled pair, and the whole list of every
+	 * window-aura family it marks — minus every modifier id the new class writes. One
+	 * entry per id, so a kit naming an id twice removes it once; keyed by id, so a class
+	 * that re-earns a modifier keeps it and the next tick rewrites its value, and a family
+	 * both classes mark is left to the family's own sweep. Pure: the wiring only removes.
 	 */
 	static List<PassiveEffect.Modifier> cleanupFor(ClassDefinition oldDef, ClassDefinition newDef) {
 		Set<Identifier> stillWritten = new HashSet<>();
@@ -168,9 +194,10 @@ public final class PassiveApplier {
 	}
 
 	/**
-	 * Every modifier a class's kit can put on the player: its stack passives, its Vigor
-	 * pair, and the whole modifier list of each window family whose marker it holds — the
-	 * same sets the tick can write, read through the same mapping. Empty for no class.
+	 * Every modifier a class's kit can put on the player: its tiered bars, its always-on
+	 * rows, its HP-scaled pair, and the whole modifier list of each window family whose
+	 * marker it holds — the same sets the tick can write, read through the same mapping.
+	 * Empty for no class.
 	 */
 	private static List<PassiveEffect.Modifier> writtenBy(ClassDefinition def) {
 		if (def == null) {
@@ -178,7 +205,12 @@ public final class PassiveApplier {
 		}
 		List<PassiveEffect.Modifier> all = new ArrayList<>();
 		for (ConditionalPassive passive : def.passives()) {
-			all.add(PassiveEffect.forStacks(passive, 1));
+			if (Momentum.PASSIVE.equals(passive)) {
+				all.addAll(Momentum.allModifiers());
+			}
+		}
+		for (ClassDefinition.AlwaysOn alwaysOn : def.alwaysOn()) {
+			all.addAll(alwaysOn.modifiers());
 		}
 		for (HpScaledPassive hp : def.hpPassives()) {
 			all.add(PassiveEffect.forBucket(hp, 1));
@@ -189,32 +221,5 @@ public final class PassiveApplier {
 			}
 		}
 		return all;
-	}
-
-	/**
-	 * Pure stack drop: clears one passive's stacks and timestamp, reporting whether
-	 * anything was dropped. The JUnit-reachable half of the spender consume; the
-	 * attribute removal rides with the player in {@link #consumeSpent}.
-	 */
-	static boolean dropStacks(PlayerRuntime runtime, ConditionalPassive passive) {
-		if (passive == null || runtime.stacks(passive) <= 0) {
-			return false;
-		}
-		runtime.clear(passive);
-		return true;
-	}
-
-	/**
-	 * Spender consume: drops the one passive's stacks and timestamp and takes the armor they
-	 * earned off the player. Reports whether anything was consumed. Nothing held means
-	 * nothing done. Only the priced passive is touched: a second stacker on the class
-	 * keeps every stack.
-	 */
-	private static boolean consumeStacks(ServerPlayer player, PlayerRuntime runtime, ConditionalPassive passive) {
-		if (!dropStacks(runtime, passive)) {
-			return false;
-		}
-		AttributeWriter.remove(player, passive.attribute(), passive.modifierId());
-		return true;
 	}
 }

@@ -69,16 +69,16 @@ public final class ClassPresentation {
 
 	/**
 	 * Lines shown on the focused card: Passives header plus one detail line per passive
-	 * (one per HP-scaled family, with joined descriptions) plus one per flip buff plus
-	 * the generated Crooked Dice and Streak lines for a class carrying dice,
+	 * (one per HP-scaled family, with joined descriptions), one per always-on row, one per
+	 * flip buff plus the generated Crooked Dice and Streak lines for a class carrying dice,
 	 * then Active header plus one detail line per fired active. Every detail line carries
 	 * name plus short description, so nothing hides behind hover.
 	 */
 	public static List<CardLine> cardLinesFor(ClassDefinition def) {
 		List<CardLine> lines = new ArrayList<>();
 		lines.add(new CardLine("Passives", null, LineKind.PASSIVE_HEADER));
-		if (!def.passives().isEmpty() || !def.hpPassives().isEmpty() || !def.flipBuffs().isEmpty()
-				|| def.critRule().hasDice()) {
+		if (!def.passives().isEmpty() || !def.hpPassives().isEmpty() || !def.alwaysOn().isEmpty()
+				|| !def.flipBuffs().isEmpty() || def.critRule().hasDice()) {
 			for (ConditionalPassive p : def.passives()) {
 				lines.add(new CardLine(p.name(), p.fullDesc(), LineKind.PASSIVE));
 			}
@@ -91,6 +91,9 @@ public final class ClassPresentation {
 					joined.append(hp.fullDesc());
 				}
 				lines.add(new CardLine(entry.getKey(), joined.toString(), LineKind.PASSIVE));
+			}
+			for (ClassDefinition.AlwaysOn alwaysOn : def.alwaysOn()) {
+				lines.add(new CardLine(alwaysOn.name(), alwaysOn.desc(), LineKind.PASSIVE));
 			}
 			for (ClassDefinition.FlipBuff flip : def.flipBuffs()) {
 				lines.add(new CardLine(flip.name(), flip.desc(), LineKind.PASSIVE));

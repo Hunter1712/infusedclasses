@@ -7,9 +7,9 @@ package com.hunter1712.infusedclasses;
  *
  * @param remainingMs milliseconds left on the lane's cooldown, 0 when ready
  * @param windowRemainingMs milliseconds left on the lane's window, 0 when dead
- * @param windowPending whether the lane's one-shot read is pending — Rush's and Rend's
- *                      next-hit credit, Rotate's Impetus (a Gladius landing only); true while
- *                      live for the timed windows nothing spends
+ * @param windowPending whether the lane's one-shot read is pending — Rotate's Impetus
+ *                      (a Gladius landing only); true while live for the timed windows
+ *                      nothing spends
  */
 public record LaneRead(long remainingMs, long windowRemainingMs, boolean windowPending) {
 }

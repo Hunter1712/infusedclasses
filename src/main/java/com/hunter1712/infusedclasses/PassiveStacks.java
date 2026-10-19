@@ -1,73 +1,124 @@
 package com.hunter1712.infusedclasses;
 
-import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
 
 /**
- * Conditional-passive stack storage: counts plus last-trigger timestamps, keyed by the passive
- * definition, never by its name. Pure: no player, clock or choice in here — time and the class
- * arrive as parameters, so decay and caps are assertable without a game.
+ * Conditional-passive stack storage: the bar, its feed stamp and the clock its bleed runs
+ * on, keyed by the passive definition, never by its name. Pure: no player, clock or choice
+ * in here — time and the class arrive as parameters, so feeding, spending and the
+ * per-second bleed are assertable without a game.
  *
- * <p>Past the grace period every stack drops at once, vanilla-style: there is no per-second
- * bleed. Stacks are transient: they do not survive relog or respawn. {@link PlayerRuntime}
- * owns the only instance per player and coordinates this with cooldowns and ability windows.
+ * <p>Past the grace the bar bleeds one stack per second; the step is a pure function of
+ * the count, the next-loss stamp and {@code now}, so a catch-up tick loses exactly what
+ * the seconds owed it. Spending moves the count only and never re-stamps the clock. Stacks
+ * are transient: they do not survive relog or respawn. {@link PlayerRuntime} owns the only
+ * instance per player and coordinates this with cooldowns and ability windows.
  */
 final class PassiveStacks {
-	private final Map<ConditionalPassive, Integer> passiveStacks = new HashMap<>();
-	private final Map<ConditionalPassive, Long> lastTriggerTime = new HashMap<>();
+	/** One held bar: the count, the last feed stamp and the next moment a stack is owed. */
+	private record Held(int stacks, long lastFeedAt, long nextDecayAt) {
+		static final Held EMPTY = new Held(0, 0L, 0L);
+	}
+
+	/** One decay step's answer: the count after it, the next-loss stamp, and how many were lost. */
+	record Decay(int stacks, long nextDecayAt, int lost) {
+	}
+
+	private final Map<ConditionalPassive, Held> held = new HashMap<>();
 
 	/** Current stacks for a passive, 0 when never triggered. */
 	int stacks(ConditionalPassive passive) {
-		return passiveStacks.getOrDefault(passive, 0);
+		return held.getOrDefault(passive, Held.EMPTY).stacks();
 	}
 
-	/** Bumps every passive on the given class whose trigger matches.
-	 *  Unknown triggers, a missing class and trigger-less classes are inert.
-	 *  Only a full swing ({@code charge == 1.0}) earns stacks; spam earns zero.
-	 *  Callers with no swing (bonus grants, tests) must pass {@code 1.0F} explicitly. */
+	/**
+	 * Feeds every passive on the given class whose earns name the trigger, each by its own
+	 * amount, capped, and re-stamps the bleed: a feed at any stack count restarts the quiet
+	 * clock. Unknown triggers, a missing class and trigger-less classes are inert. Only a
+	 * full swing ({@code charge == 1.0}) earns; spam earns zero. Callers with no swing
+	 * (taken hits, tests) must pass {@code 1.0F} explicitly.
+	 */
 	void onTrigger(ClassDefinition def, Trigger trigger, long now, float charge) {
-		if (!BonusCurve.isFullSwing(charge)) {
+		if (!BonusCurve.isFullSwing(charge) || def == null) {
 			return;
 		}
+		for (ConditionalPassive passive : def.passives()) {
+			int amount = passive.amountFor(trigger);
+			if (amount > 0) {
+				feed(passive, amount, now);
+			}
+		}
+	}
+
+	/** One feed: bump by the amount, capped, and re-stamp the quiet clock. */
+	private void feed(ConditionalPassive passive, int amount, long now) {
+		Held current = held.getOrDefault(passive, Held.EMPTY);
+		int capped = Math.min(passive.maxStacks(), current.stacks() + amount);
+		held.put(passive, new Held(capped, now, now + passive.graceSeconds() * 1000L));
+	}
+
+	/**
+	 * Spends up to {@code n} stacks: the amount actually spent, 0 when the bar is empty.
+	 * A spend moves the count only; the bleed clock keeps running from the last feed.
+	 */
+	int spend(ConditionalPassive passive, int n) {
+		Held current = held.getOrDefault(passive, Held.EMPTY);
+		int spent = Math.min(Math.max(0, n), current.stacks());
+		if (spent <= 0) {
+			return 0;
+		}
+		int left = current.stacks() - spent;
+		if (left <= 0) {
+			held.remove(passive);
+		} else {
+			held.put(passive, new Held(left, current.lastFeedAt(), current.nextDecayAt()));
+		}
+		return spent;
+	}
+
+	/**
+	 * The tick's bleed for every passive on the class: one stack per whole second past
+	 * the grace, folded through the pure step so a catch-up tick covers every owed second.
+	 */
+	void decay(ClassDefinition def, long now) {
 		if (def == null) {
 			return;
 		}
 		for (ConditionalPassive passive : def.passives()) {
-			if (passive.trigger().equals(trigger)) {
-				passiveStacks.put(passive, Math.min(passive.maxStacks(), stacks(passive) + 1));
-				lastTriggerTime.put(passive, now);
+			Held current = held.get(passive);
+			if (current == null) {
+				continue;
+			}
+			Decay step = nextDecay(current.stacks(), current.nextDecayAt(), now);
+			if (step.lost() <= 0) {
+				continue;
+			}
+			if (step.stacks() <= 0) {
+				held.remove(passive);
+			} else {
+				held.put(passive, new Held(step.stacks(), current.lastFeedAt(), step.nextDecayAt()));
 			}
 		}
 	}
 
 	/**
-	 * Per-passive movement: which passives lost stacks this tick. The applier needs the set,
-	 * not the global flag: a tick that decayed passive A must not remove passive B sitting at
-	 * zero. Unmodifiable, possibly empty, never null.
+	 * One decay step, pure: the count after the seconds owed at {@code now}, the next
+	 * loss's stamp, and how many were lost. At the grace's own moment nothing is lost
+	 * ({@code >}, never {@code >=}); a millisecond past it one stack goes, and every
+	 * further whole second one more, so a long-quiet bar catches up in one step.
 	 */
-	Set<ConditionalPassive> tickDecayMoved(ClassDefinition def, long now) {
-		if (def == null) {
-			return Set.of();
+	static Decay nextDecay(int stacks, long nextDecayAt, long now) {
+		if (stacks <= 0) {
+			return new Decay(0, 0L, 0);
 		}
-		Set<ConditionalPassive> moved = new HashSet<>();
-		for (ConditionalPassive passive : def.passives()) {
-			int current = stacks(passive);
-			if (current <= 0) {
-				continue;
-			}
-			if (pastGrace(lastTriggerTime.get(passive), passive.graceSeconds(), now)) {
-				passiveStacks.put(passive, 0);
-				lastTriggerTime.remove(passive);
-				moved.add(passive);
-			}
+		long overdue = now - nextDecayAt;
+		if (overdue <= 0) {
+			return new Decay(stacks, nextDecayAt, 0);
 		}
-		if (moved.isEmpty()) {
-			return Set.of();
-		}
-		return Collections.unmodifiableSet(moved);
+		int lost = (int) Math.min(stacks, (overdue + 999L) / 1000L);
+		int left = stacks - lost;
+		return new Decay(left, left <= 0 ? 0L : nextDecayAt + lost * 1000L, lost);
 	}
 
 	/** Drops stacks for one class's passives: class switch leaves no stale counts behind. */
@@ -76,59 +127,26 @@ final class PassiveStacks {
 			return;
 		}
 		for (ConditionalPassive passive : def.passives()) {
-			clear(passive);
+			held.remove(passive);
 		}
 	}
 
-	/** Bumps one passive record N times: single cap application, single grace stamp, same clamp semantics. */
-	void bumpPassive(ConditionalPassive passive, int times, long now) {
-		if (passive == null || times <= 0) {
-			return;
-		}
-		int current = stacks(passive);
-		int capped = Math.min(passive.maxStacks(), current + times);
-		if (capped > current) {
-			passiveStacks.put(passive, capped);
-			lastTriggerTime.put(passive, now);
-		}
-	}
-
-	/** Drops one passive's stacks and timestamp: a spender consumes only what it priced. */
-	void clear(ConditionalPassive passive) {
-		if (passive == null) {
-			return;
-		}
-		passiveStacks.remove(passive);
-		lastTriggerTime.remove(passive);
-	}
-
-	/**
-	 * Grace-expiry math, folded home: one caller, one predicate. Exactly at grace is
-	 * still live ({@code >}, never {@code >=}); a passive never triggered has nothing
-	 * to decay, so a null timestamp never expires.
-	 */
-	private static boolean pastGrace(Long lastTrigger, int graceSeconds, long now) {
-		if (lastTrigger == null) {
-			return false;
-		}
-		return (now - lastTrigger) > graceSeconds * 1000L;
-	}
-
-	/** Millis left before this passive's stacks drop, 0 when it holds none. The same boundary as decay. */
+	/** Millis until the next stack is owed, 0 when the bar holds none. The same clock the bleed runs on. */
 	long graceRemaining(ConditionalPassive passive, long now) {
-		Long lastTrigger = lastTriggerTime.get(passive);
-		if (stacks(passive) <= 0 || lastTrigger == null) {
+		Held current = held.get(passive);
+		if (current == null || current.stacks() <= 0) {
 			return 0L;
 		}
-		return Math.max(0L, passive.graceSeconds() * 1000L - (now - lastTrigger));
+		return Math.max(0L, current.nextDecayAt() - now);
 	}
 
 	/**
-	 * The grace clock's last stamp for this passive, 0 when it holds none. Not remaining
-	 * time: the same value across a quiet second, and a new value every re-stamp — a hit
-	 * at the stack cap re-stamps without moving the count, and this is how that reads.
+	 * The feed clock's last stamp for this passive, 0 when it holds none. Not remaining
+	 * time: the same value across a quiet second, and a new value every feed — a hit at
+	 * the stack cap re-stamps without moving the count, and this is how that reads.
 	 */
 	long graceStamp(ConditionalPassive passive) {
-		return lastTriggerTime.getOrDefault(passive, 0L);
+		Held current = held.get(passive);
+		return current == null ? 0L : current.lastFeedAt();
 	}
 }

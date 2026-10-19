@@ -1,9 +1,6 @@
 package com.hunter1712.infusedclasses;
 
-import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.Identifier;
-import net.minecraft.resources.ResourceKey;
-import net.minecraft.world.entity.ai.attributes.Attribute;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -58,27 +55,51 @@ class ClassRegistryTest {
 		assertEquals(1, passives.size());
 		ConditionalPassive momentum = passives.get(0);
 		assertEquals("Momentum", momentum.name());
-		assertEquals(Trigger.ON_HIT_DEALT, momentum.trigger());
-		assertEquals(20, momentum.maxStacks());
+		assertTrue(momentum.earnsOn(Trigger.ON_HIT_DEALT));
+		assertTrue(momentum.earnsOn(Trigger.ON_HIT_TAKEN));
+		assertEquals(1, momentum.amountFor(Trigger.ON_HIT_DEALT));
+		assertEquals(1, momentum.amountFor(Trigger.ON_HIT_TAKEN));
+		assertEquals(Momentum.MAX_STACKS, momentum.maxStacks());
+		assertEquals(Momentum.GRACE_SECONDS, momentum.graceSeconds());
 		assertFalse(momentum.fullDesc().isBlank());
+	}
+
+	@Test
+	void juggernautCarriesTheBurdenAlwaysOnChassis() {
+		ClassDefinition juggernaut = ClassRegistry.byId(ClassRegistry.JUGGERNAUT);
+
+		assertEquals(1, juggernaut.alwaysOn().size());
+		assertEquals("Burden", juggernaut.alwaysOn().get(0).name());
+		assertEquals(List.of("infusedclasses:burden_damage", "infusedclasses:burden_swing"),
+				juggernaut.alwaysOn().get(0).modifiers().stream()
+						.map(PassiveEffect.Modifier::modifierId)
+						.map(Identifier::toString)
+						.toList());
+		// Vigor is cut: the class carries no HP-scaled passive.
+		assertTrue(juggernaut.hpPassives().isEmpty());
 	}
 
 	@Test
 	void juggernautPassiveCopySaysWhatItDoesToday() {
 		ConditionalPassive momentum = ClassRegistry.byId(ClassRegistry.JUGGERNAUT).passives().get(0);
 
-		assertEquals("Land a hit: +0.4 armor (max 20). 5s no hit: lose all.", momentum.fullDesc());
+		assertEquals("Land a hit: +1. Take a hit: +1. Max 60. 5s no feed: -1/s. "
+						+ "15 Steady: +1 armor, -2% speed, +0.25 knockback resistance. "
+						+ "30 Braced: +3 armor, -4% speed, +0.5 knockback resistance. "
+						+ "45 Rooted: +5 armor, -7% speed, +1 knockback resistance.",
+				momentum.fullDesc());
 	}
 
 	@Test
 	void passiveCopyIsGeneratedFromItsOwnNumbersAndItsTriggersOwnWords() {
-		ConditionalPassive swift = new ConditionalPassive("Swift", new Trigger("on_land", "Land a swing", "no swing"), 4,
-				ResourceKey.create(Registries.ATTRIBUTE, Identifier.withDefaultNamespace("movement_speed")),
-				Identifier.fromNamespaceAndPath("infusedclasses", "swift_speed"),
-				0.5, 3);
+		ConditionalPassive swift = new ConditionalPassive("Swift",
+				List.of(new ConditionalPassive.Earn(new Trigger("on_land", "Land a swing"), 1)), 4,
+				List.of(new ConditionalPassive.Tier(2, "Quick", 0.5, -0.001, 0.25)), 3);
 
-		// The words ride the trigger: an on_land passive is described by its own, never as a hit.
-		assertEquals("Land a swing: +0.5 movement speed (max 4). 3s no swing: lose all.", swift.fullDesc());
+		// The words ride the earns: an on_land passive is described by its own, never as a hit.
+		assertEquals("Land a swing: +1. Max 4. 3s no feed: -1/s. "
+						+ "2 Quick: +0.5 armor, -1% speed, +0.25 knockback resistance.",
+				swift.fullDesc());
 		assertFalse(swift.fullDesc().contains("hit"));
 	}
 
@@ -117,8 +138,8 @@ class ClassRegistryTest {
 	void hasAbilityReadsTheRowsAndIsNullSafeOnTheId() {
 		ClassDefinition juggernaut = ClassRegistry.byId(ClassRegistry.JUGGERNAUT);
 
-		assertTrue(juggernaut.hasAbility(ClassRegistry.RUSH_ABILITY));
-		assertTrue(juggernaut.hasAbility(ClassRegistry.REND_ABILITY));
+		assertTrue(juggernaut.hasAbility(ClassRegistry.OFFLOAD_ABILITY));
+		assertTrue(juggernaut.hasAbility(ClassRegistry.ONSLAUGHT_ABILITY));
 		assertFalse(juggernaut.hasAbility(ClassRegistry.ROTATE_ABILITY));
 		assertFalse(juggernaut.hasAbility(null));
 	}
