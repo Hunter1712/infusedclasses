@@ -43,7 +43,11 @@ class LegionaryTest {
 		assertTrue(copy.contains("Flip to Scutum"));
 		assertTrue(copy.contains("next hit x" + RotateAbility.SWITCH_DEAL_MULT));
 		assertTrue(copy.contains("take x" + RotateAbility.SWITCH_TAKE_MULT));
-		assertTrue(copy.contains("+" + ConditionalPassive.amount(AequilibriumAbility.EDGE_BONUS) + " damage"));
+		assertTrue(copy.contains("x" + ConditionalPassive.amount(RotateAbility.GLADIUS_DEAL_MULT)
+				+ " damage"));
+		assertTrue(copy.contains("take x" + RotateAbility.GLADIUS_TAKEN_MULT));
+		assertTrue(copy.contains("x" + ConditionalPassive.amount(AequilibriumAbility.DEAL_MULT)
+				+ " damage"));
 		assertTrue(copy.contains("+" + ConditionalPassive.amount(AequilibriumAbility.PLATE_BONUS) + " armor"));
 		assertTrue(copy.contains("(V, " + (Lane.OATH.cooldownMs() / 1000) + "s oath)"));
 		assertTrue(copy.contains("No downside"));
@@ -99,10 +103,10 @@ class LegionaryTest {
 	@Test
 	void stanceMatrix() {
 		// Stance-only mults (RotateAbility)
-		assertEquals(1.1, RotateAbility.takeMult(RotateAbility.Stance.GLADIUS));
+		assertEquals(1.2, RotateAbility.takeMult(RotateAbility.Stance.GLADIUS));
 		assertEquals(1.0, RotateAbility.takeMult(RotateAbility.Stance.SCUTUM));
 		assertEquals(0.9, RotateAbility.dealMult(RotateAbility.Stance.SCUTUM));
-		assertEquals(1.0, RotateAbility.dealMult(RotateAbility.Stance.GLADIUS));
+		assertEquals(RotateAbility.GLADIUS_DEAL_MULT, RotateAbility.dealMult(RotateAbility.Stance.GLADIUS));
 		// Flip factors ride the same constants as the picker copy, so balance and copy cannot drift.
 		assertEquals(1.10, RotateAbility.SWITCH_DEAL_MULT);
 		assertEquals(0.85, RotateAbility.SWITCH_TAKE_MULT);
@@ -208,22 +212,20 @@ class LegionaryTest {
 		var scutum = RotateAbility.auraFor(RotateAbility.Stance.SCUTUM);
 		var window = AequilibriumAbility.windowModifiers();
 
-		// What the applier writes is what it removes: two auras plus the window pair.
+		// What the applier writes is what it removes: two auras plus the window plate.
 		assertEquals(
-				java.util.List.of(RotateAbility.GLADIUS_DAMAGE_ID, RotateAbility.GLADIUS_ALACRITY_ID),
+				java.util.List.of(RotateAbility.GLADIUS_ALACRITY_ID),
 				gladius.stream().map(PassiveEffect.Modifier::modifierId).toList());
 		assertEquals(
 				java.util.List.of(RotateAbility.SCUTUM_PLATE_ID, RotateAbility.SCUTUM_TOUGHNESS_ID,
 						RotateAbility.SCUTUM_WEIGHT_ID),
 				scutum.stream().map(PassiveEffect.Modifier::modifierId).toList());
 		assertEquals(
-				java.util.List.of(AequilibriumAbility.EDGE_ID, AequilibriumAbility.PLATE_ID),
+				java.util.List.of(AequilibriumAbility.PLATE_ID),
 				window.stream().map(PassiveEffect.Modifier::modifierId).toList());
-		assertEquals(1.0, gladius.get(0).amount());
-		assertEquals(0.3, gladius.get(1).amount());
+		assertEquals(0.3, gladius.get(0).amount());
 		assertEquals(3.0, scutum.get(0).amount());
-		assertEquals(-0.006, scutum.get(2).amount());
-		assertEquals(AequilibriumAbility.EDGE_BONUS, window.get(0).amount());
-		assertEquals(AequilibriumAbility.PLATE_BONUS, window.get(1).amount());
+		assertEquals(-0.005, scutum.get(2).amount());
+		assertEquals(AequilibriumAbility.PLATE_BONUS, window.get(0).amount());
 	}
 }

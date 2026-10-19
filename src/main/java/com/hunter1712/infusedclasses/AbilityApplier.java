@@ -14,9 +14,9 @@ import net.minecraft.world.phys.Vec3;
 
 /**
  * Shared adapter seams: the single place ability outcomes are announced and cast
- * sounds are played. Ids ride in decisions, holders resolve at their single use
- * sites — never behind shared lookups with one caller each. Per-ability adapters
- * own what their own result lands; this owns what they share.
+ * sounds are played. The one cast fanfare id sits here beside the path that plays
+ * it; effect ids ride in decisions and resolve at their single use sites. Per-ability
+ * adapters own what their own result lands; this owns what they share.
  */
 public final class AbilityApplier {
 	private AbilityApplier() {
@@ -34,7 +34,13 @@ public final class AbilityApplier {
 		player.displayClientMessage(line, actionBar);
 	}
 
-	/** One cast fanfare for every fired ability: resolves the sound id and plays it. Fizzles never reach here. Null sound plays nothing. */
+	/**
+	 * The one fanfare: every fired ability plays this, the mod's only cast sound.
+	 * Reusing the wheel's pling, the shortest and most repeatable of the set.
+	 */
+	public static final Identifier CAST_SOUND = Identifier.withDefaultNamespace("block.note_block.pling");
+
+	/** One play path for every mod sound: resolves the id and plays it at the player. Null sound plays nothing. */
 	public static void playCast(ServerPlayer player, Identifier soundId) {
 		if (player.level() instanceof ServerLevel level && soundId != null) {
 			Vec3 at = player.position();
@@ -50,14 +56,14 @@ public final class AbilityApplier {
 
 	/**
 	 * One announce-plus-fanfare path for every fired-or-fizzle outcome: says the line,
-	 * plays the sound on FIRED only. Null says nothing, missing sound stays silent.
+	 * plays {@link #CAST_SOUND} on FIRED only. Null says nothing.
 	 * If actionBar is true, sends to action bar; otherwise to chat.
 	 */
 	public static void announceAndCast(ServerPlayer player, ChatLine announcement, boolean fired,
-			Identifier soundId, boolean actionBar) {
+			boolean actionBar) {
 		announce(player, announcement, actionBar);
 		if (fired) {
-			playCast(player, soundId);
+			playCast(player, CAST_SOUND);
 		}
 	}
 }

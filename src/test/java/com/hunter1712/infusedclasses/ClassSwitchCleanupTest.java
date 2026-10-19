@@ -34,17 +34,17 @@ class ClassSwitchCleanupTest {
 
 	@Test
 	void juggernautToLegionaryTakesOffItsOwnKit() {
-		// Momentum's armor and weight, its knockback row, Burden's pair, and the
+		// Momentum's armor and weight, its knockback row, Burden's swing, and the
 		// Offload window's pair: the new class writes none of them.
 		assertEquals(List.of("momentum_armor", "momentum_weight", "momentum_knockback",
-				"burden_damage", "burden_swing", "offload_haste", "offload_speed"),
+				"burden_swing", "offload_haste", "offload_speed"),
 				ids(juggernaut(), legionary()));
 	}
 
 	@Test
 	void legionaryToGamblerTakesOffTheStanceAurasAndTheOathWindowPair() {
-		assertEquals(List.of("gladius_damage", "gladius_alacrity", "scutum_plate", "scutum_toughness",
-				"scutum_weight", "aequilibrium_edge", "aequilibrium_plate"),
+		assertEquals(List.of("gladius_alacrity", "scutum_plate", "scutum_toughness",
+				"scutum_weight", "aequilibrium_plate"),
 				ids(legionary(), gambler()));
 	}
 
@@ -67,10 +67,10 @@ class ClassSwitchCleanupTest {
 
 		// class -> null: no tick ever runs, so the whole kit comes off here.
 		assertEquals(List.of("momentum_armor", "momentum_weight", "momentum_knockback",
-				"burden_damage", "burden_swing", "offload_haste", "offload_speed"),
+				"burden_swing", "offload_haste", "offload_speed"),
 				ids(juggernaut(), null));
-		assertEquals(List.of("gladius_damage", "gladius_alacrity", "scutum_plate", "scutum_toughness",
-				"scutum_weight", "aequilibrium_edge", "aequilibrium_plate"),
+		assertEquals(List.of("gladius_alacrity", "scutum_plate", "scutum_toughness",
+				"scutum_weight", "aequilibrium_plate"),
 				ids(legionary(), null));
 	}
 

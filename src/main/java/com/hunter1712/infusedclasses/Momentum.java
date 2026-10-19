@@ -28,9 +28,9 @@ public final class Momentum {
 
 	/** The three checkpoints: armor up, weight up, a heavier stance against knockback each row. */
 	public static final List<ConditionalPassive.Tier> TIERS = List.of(
-			new ConditionalPassive.Tier(15, "Steady", 1.0, -0.002, 0.25),
-			new ConditionalPassive.Tier(30, "Braced", 3.0, -0.004, 0.5),
-			new ConditionalPassive.Tier(45, "Rooted", 5.0, -0.007, 1.0));
+			new ConditionalPassive.Tier(15, "Steady", 1.0, -0.005, 0.25),
+			new ConditionalPassive.Tier(30, "Braced", 3.0, -0.01, 0.5),
+			new ConditionalPassive.Tier(45, "Rooted", 5.0, -0.015, 1.0));
 
 	/** Armor modifier id, resolved by the applier. */
 	public static final Identifier ARMOR_ID =

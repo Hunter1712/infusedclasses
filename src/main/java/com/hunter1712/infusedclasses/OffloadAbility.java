@@ -28,8 +28,6 @@ public final class OffloadAbility {
 	/** Speed modifier id, resolved by the applier. */
 	public static final Identifier SPEED_ID =
 			Identifier.fromNamespaceAndPath(InfusedClasses.MOD_ID, "offload_speed");
-	/** Cast sound id, resolved by the adapter; the wind burst is the weight leaving the shoulders. */
-	public static final Identifier CAST_SOUND = Identifier.withDefaultNamespace("entity.wind_charge.wind_burst");
 
 	/**
 	 * The window's pair (shared, never mutated): single source for the applier's write
@@ -45,7 +43,7 @@ public final class OffloadAbility {
 	/** Picker copy, generated from the numbers so it cannot drift from behaviour. */
 	public static String desc() {
 		return "Spend " + COST_STACKS + " Momentum: +" + ConditionalPassive.amount(HASTE_BONUS)
-				+ " attack speed, " + ConditionalPassive.percent(SPEED_BONUS) + " speed for "
+				+ " attack speed, +" + ConditionalPassive.amount(SPEED_BONUS) + " speed for "
 				+ (WINDOW_TICKS / 20) + "s (R, " + (Lane.OFFLOAD.cooldownMs() / 1000) + "s).";
 	}
 

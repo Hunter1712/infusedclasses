@@ -8,9 +8,9 @@ How the mod's persistent bonuses work: what earns them, what spends them, and wh
 Picker line: `Land a hit: +1. Take a hit: +1. Max 60. 5s no feed: -1/s.` followed by the three
 checkpoints:
 
-- 15 **Steady**: +1 armor, -2% speed, +0.25 knockback resistance.
-- 30 **Braced**: +3 armor, -4% speed, +0.5 knockback resistance.
-- 45 **Rooted**: +5 armor, -7% speed, +1 knockback resistance. Past 45 stays Rooted; 45-60 is
+- 15 **Steady**: +1 armor, -0.005 speed, +0.25 knockback resistance.
+- 30 **Braced**: +3 armor, -0.01 speed, +0.5 knockback resistance.
+- 45 **Rooted**: +5 armor, -0.015 speed, +1 knockback resistance. Past 45 stays Rooted; 45-60 is
   the actives' spend reserve.
 
 The bar reads its last reached checkpoint every tick, so losing a tier takes the modifiers off
@@ -18,7 +18,8 @@ with it.
 
 - Dealt: only a full-swing landing hit earns. Taken: any landed damaging hit earns. A hit
   fully eaten by a raised shield earns nothing on either side.
-- Offload pays a flat 5. Onslaught needs 10 and spends 2 per full hit inside its window.
+- Offload pays a flat 5. Onslaught needs 10 and spends 2 per full swing inside its window;
+  its mult pays on any landed hit while live.
 - Onslaught stops the feed while live: dealt and taken hits add nothing.
 - Transient: counts, last-feed stamps and the next-loss clock live in the session runtime,
   keyed by passive definition. Relog, respawn and class switch all clear them. A class switch
@@ -26,8 +27,8 @@ with it.
 
 ## Always-on chassis (Juggernaut)
 
-**Burden** — +1 attack damage (`infusedclasses:burden_damage`), -0.5 attack speed
-(`infusedclasses:burden_swing`). Written every tick while classed, never earned.
+**Burden** — x1.15 damage (`DEAL_MULT`, read by the melee plan), -0.4 attack speed
+(`infusedclasses:burden_swing`). The swing is written every tick while classed, never earned.
 
 ## HP-scaled machinery
 
@@ -40,15 +41,15 @@ Not stacks: transient auras applied and removed at once on flip. Only the curren
 
 | | Damage | Speed | Armor | Toughness | Move | Deal mult | Take mult |
 |---|---|---|---|---|---|---|---|
-| Gladius | +1.0 | +0.3 | — | — | — | — | x1.1 taken |
-| Scutum (default) | — | — | +3 | +1 | about -6% | x0.9 dealt | — |
+| Gladius | — | +0.3 | — | — | — | x1.15 dealt | x1.2 taken |
+| Scutum (default) | — | — | +3 | +1 | -0.005 | x0.9 dealt | — |
 
 **Flip buffs** ride the flip record, not a lane:
 
 - **Impetus**: flip to Gladius → next melee hit x1.10, any charge, one-shot, 5s expiry. Flipping away drops it.
 - **Testudo**: flip to Scutum → melee taken x0.85 for 1.5s. Timed, never consumed.
 
-**Aequilibrium** window: +1.0 damage +3.0 armor for 6s on the 50s oath lane, either stance, both layers count.
+**Aequilibrium** window: melee dealt x1.15, +3.0 armor for 6s on the 50s oath lane, either stance, both layers count.
 
 ## Cooldowns (transient lanes)
 

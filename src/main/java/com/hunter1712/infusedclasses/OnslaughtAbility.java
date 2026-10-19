@@ -1,37 +1,34 @@
 package com.hunter1712.infusedclasses;
 
 import net.minecraft.ChatFormatting;
-import net.minecraft.resources.Identifier;
 
 /**
  * Onslaught decisions: the Juggernaut's ultimate on {@code V}. The press needs 10
- * Momentum, arms its own 60s lane and stamps a 15s window; inside it every full-swing
- * hit pays +1 damage and spends 2 stacks, and nothing feeds the bar — dealt or taken.
- * The window lasts the bar and the window, whichever empties first: a spend down to
- * zero ends it there and a bleed does too, on the tick that reads the empty bar. Pure
- * gate-and-arm shape on its own lane.
+ * Momentum, arms its own 60s lane and stamps a 15s window; inside it every landed hit
+ * deals x1.15 and each full-swing hit spends 2 stacks, and nothing feeds the bar —
+ * dealt or taken. The window lasts the bar and the window, whichever empties first: a
+ * spend down to zero ends it there and a bleed does too, on the tick that reads the
+ * empty bar. Pure gate-and-arm shape on its own lane.
  */
 public final class OnslaughtAbility {
 	public static final String NAME = "Onslaught";
 	/** What arming the window needs: below this the press fizzles. */
 	public static final int MIN_STACKS = 10;
-	/** What each full-swing hit inside the window spends, for {@link #HP_PER_HIT}. */
+	/** What each full-swing hit inside the window spends, for {@link #DEAL_MULT}. */
 	public static final int COST_PER_HIT = 2;
-	/** Flat bonus damage per full-swing hit inside the window: +1. */
-	public static final float HP_PER_HIT = 1.0F;
+	/** Melee dealt mult while the window is live: x1.15, any charge. */
+	public static final double DEAL_MULT = 1.15;
 	/** Window in ticks: 15 seconds, cut short the moment its bar empties. */
 	public static final int WINDOW_TICKS = 300;
-	/** Cast sound id, resolved by the adapter; the roar is the commitment. */
-	public static final Identifier CAST_SOUND = Identifier.withDefaultNamespace("entity.ravager.roar");
 
 	private OnslaughtAbility() {
 	}
 
 	/** Picker copy, generated from the numbers so it cannot drift from behaviour. */
 	public static String desc() {
-		return "Needs " + MIN_STACKS + " Momentum: " + (WINDOW_TICKS / 20) + "s (or until the bar empties) of +"
-				+ ConditionalPassive.amount(HP_PER_HIT) + " per full hit, spending " + COST_PER_HIT
-				+ " each; no Momentum gained while live (V, " + (Lane.ONSLAUGHT.cooldownMs() / 1000) + "s).";
+		return "Needs " + MIN_STACKS + " Momentum: " + (WINDOW_TICKS / 20) + "s (or until the bar empties) of x"
+				+ ConditionalPassive.amount(DEAL_MULT) + " melee, spending " + COST_PER_HIT
+				+ " per full swing; no Momentum gained while live (V, " + (Lane.ONSLAUGHT.cooldownMs() / 1000) + "s).";
 	}
 
 	/**
@@ -79,6 +76,11 @@ public final class OnslaughtAbility {
 	 */
 	public static boolean liveFor(PlayerRuntime.State state, int stacks) {
 		return windowLive(state) && stacks > 0;
+	}
+
+	/** Melee dealt mult while the window is live with a stack left: x1.15 any charge, 1.0 otherwise. */
+	public static double dealMult(PlayerRuntime.State state, int stacks) {
+		return liveFor(state, stacks) ? DEAL_MULT : 1.0;
 	}
 
 	/**

@@ -127,8 +127,8 @@ class OnslaughtAbilityTest {
 		String copy = OnslaughtAbility.desc();
 
 		assertTrue(copy.contains("Needs 10 Momentum"));
-		assertTrue(copy.contains("+1 per full hit"));
-		assertTrue(copy.contains("spending 2 each"));
+		assertTrue(copy.contains("x1.15 melee"));
+		assertTrue(copy.contains("per full swing"));
 		assertTrue(copy.contains("or until the bar empties"));
 		assertTrue(copy.contains("(V, 60s)"));
 	}

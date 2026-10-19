@@ -44,7 +44,7 @@ class ClassPresentationTest {
 		assertTrue(texts.stream().anyMatch(t -> t.startsWith("Offload \u2014 ")
 				&& t.contains("(R, " + (Lane.OFFLOAD.cooldownMs() / 1000) + "s)")));
 		assertTrue(texts.stream().anyMatch(t -> t.startsWith("Onslaught \u2014 ")
-				&& t.contains("per full hit") && t.contains("spending 2")));
+				&& t.contains("per full swing") && t.contains("spending 2")));
 		assertFalse(texts.stream().anyMatch(t -> t.contains("Roots")));
 	}
 

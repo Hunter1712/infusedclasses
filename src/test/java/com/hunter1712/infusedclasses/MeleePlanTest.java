@@ -50,40 +50,50 @@ class MeleePlanTest {
 	}
 
 	@Test
-	void dealMultIsStanceForLegionariesOneForEveryoneElse() {
+	void dealMultIsChassisTimesStanceForEveryoneElseOne() {
 		PlayerRuntime scutum = inStance(RotateAbility.Stance.SCUTUM);
 		PlayerRuntime gladius = inStance(RotateAbility.Stance.GLADIUS);
 
 		assertEquals(0.9, dealOf(legionary(), scutum, 0));
-		assertEquals(1.0, dealOf(legionary(), gladius, 10_000));
-		assertEquals(1.0, dealOf(juggernaut(), scutum, 0));
+		assertEquals(RotateAbility.GLADIUS_DEAL_MULT, dealOf(legionary(), gladius, 10_000));
+		assertEquals(Burden.DEAL_MULT, dealOf(juggernaut(), scutum, 0));
 		assertEquals(1.0, dealOf(null, scutum, 0));
+	}
+
+	@Test
+	void burdenDealsItsMultOnAnyCharge() {
+		PlayerRuntime runtime = new PlayerRuntime();
+
+		MeleePlan.HitPlan spam = MeleePlan.planHit(juggernaut(), runtime, null, null, 0.5F, 1.0F, 0, 0.5F);
+
+		assertEquals(Burden.DEAL_MULT, spam.deal(), 1e-9);
+		assertEquals(Burden.DEAL_MULT, spam.combined(), 1e-9);
 	}
 
 	@Test
 	void impetusFlipMultipliesDealAtAnyChargeAndSpendsOnce() {
 		PlayerRuntime gladius = inStance(RotateAbility.Stance.GLADIUS);
 
-		assertEquals(1.10, dealOf(legionary(), gladius, 0), 1e-9);
+		assertEquals(RotateAbility.GLADIUS_DEAL_MULT * RotateAbility.SWITCH_DEAL_MULT,
+				dealOf(legionary(), gladius, 0), 1e-9);
 
 		MeleePlan.HitPlan plan = MeleePlan.planHit(legionary(), gladius, null, null, 0.5F, 1.0F, 0, 0.5F);
 
 		// Any charge: spam still sees the flip buff (but earns no stacks, no roll).
 		assertTrue(plan.impetusPending());
 		assertFalse(plan.bump());
-		MeleePlan.Landed landed = MeleePlan.resolve(legionary(), gladius, null, null, 0.5F, 1.0F, 0, 0.5F);
-		assertEquals(0.0F, landed.onslaughtHp());
+		MeleePlan.resolve(legionary(), gladius, null, null, 0.5F, 1.0F, 0, 0.5F);
 		assertFalse(gladius.state(0).impetusPending());
-		assertEquals(1.0, dealOf(legionary(), gladius, 0), 1e-9);
+		assertEquals(RotateAbility.GLADIUS_DEAL_MULT, dealOf(legionary(), gladius, 0), 1e-9);
 	}
 
 	@Test
 	void impetusBuffExpiresUnspent() {
 		PlayerRuntime gladius = inStance(RotateAbility.Stance.GLADIUS);
 
-		assertEquals(1.10,
+		assertEquals(RotateAbility.GLADIUS_DEAL_MULT * RotateAbility.SWITCH_DEAL_MULT,
 				dealOf(legionary(), gladius, RotateAbility.SWITCH_DEAL_MS - 1), 1e-9);
-		assertEquals(1.0,
+		assertEquals(RotateAbility.GLADIUS_DEAL_MULT,
 				dealOf(legionary(), gladius, RotateAbility.SWITCH_DEAL_MS), 1e-9);
 	}
 
@@ -100,20 +110,21 @@ class MeleePlanTest {
 	void takeMultIsStanceForLegionariesOneForEveryoneElse() {
 		PlayerRuntime gladius = inStance(RotateAbility.Stance.GLADIUS);
 
-		assertEquals(1.1, MeleePlan.takeFor(legionary(), () -> gladius, 10_000));
+		assertEquals(1.2, MeleePlan.takeFor(legionary(), () -> gladius, 10_000));
 		assertEquals(1.0, MeleePlan.takeFor(juggernaut(), () -> gladius, 0));
 		assertEquals(1.0, MeleePlan.takeFor(null, () -> gladius, 0));
 	}
 
 	@Test
-	void aequilibriumWindowKeepsStanceMults() {
+	void aequilibriumWindowStacksItsMultOnTheStance() {
 		PlayerRuntime scutum = new PlayerRuntime();
 		AequilibriumAbility.fire(legionary(), scutum, 0);
 
-		// The ultimate adds attributes, never mults: the stance tradeoff stays underneath.
-		assertEquals(0.9, dealOf(legionary(), scutum, 0), 1e-9);
+		// The oath adds a deal mult on top: the stance tradeoff stays underneath.
+		assertEquals(0.9 * AequilibriumAbility.DEAL_MULT, dealOf(legionary(), scutum, 0), 1e-9);
 		assertEquals(1.0, MeleePlan.takeFor(legionary(), () -> scutum, 0), 1e-9);
-		assertEquals(1.0, dealOf(juggernaut(), scutum, 0));
+		// Expiry drops it back to the stance alone.
+		assertEquals(0.9, dealOf(legionary(), scutum, AequilibriumAbility.WINDOW_TICKS * 50L), 1e-9);
 	}
 
 	@Test
@@ -123,10 +134,11 @@ class MeleePlanTest {
 
 		MeleePlan.HitPlan peak = MeleePlan.planHit(legionary(), attacker, legionary(), () -> victim, 1.0F, 1.0F, 0, 0.5F);
 
-		assertEquals(1.10, peak.deal(), 1e-9);
+		double deal = RotateAbility.GLADIUS_DEAL_MULT * RotateAbility.SWITCH_DEAL_MULT;
+		assertEquals(deal, peak.deal(), 1e-9);
 		assertEquals(0.85, peak.take(), 1e-9);
 		assertEquals(CritRoll.Verdict.NORMAL, peak.dice().verdict());
-		assertEquals(1.10 * 0.85, peak.combined(), 1e-9);
+		assertEquals(deal * 0.85, peak.combined(), 1e-9);
 	}
 
 	@Test
@@ -138,8 +150,8 @@ class MeleePlanTest {
 
 		assertTrue(full.bump());
 		assertFalse(spam.bump());
-		assertEquals(0.0F, full.onslaughtHp());
-		assertEquals(0.0F, spam.onslaughtHp());
+		assertFalse(full.priceOnslaught());
+		assertFalse(spam.priceOnslaught());
 	}
 
 	@Test
@@ -149,12 +161,12 @@ class MeleePlanTest {
 		MeleePlan.HitPlan crit = MeleePlan.planHit(juggernaut(), runtime, null, null, 1.0F, 1.0F, 0, 0.05F);
 		MeleePlan.HitPlan normal = MeleePlan.planHit(juggernaut(), runtime, null, null, 1.0F, 1.0F, 0, 0.5F);
 
-		// The universal rule: a crit at x1.25, folded into the swing's combined mult.
+		// The universal rule: a crit at x1.25 folds into the swing's chassis mult.
 		assertEquals(CritRoll.Verdict.CRIT, crit.dice().verdict());
 		assertEquals(1.25, crit.dice().mult(), 1e-9);
-		assertEquals(1.25, crit.combined(), 1e-9);
+		assertEquals(Burden.DEAL_MULT * 1.25, crit.combined(), 1e-9);
 		assertEquals(CritRoll.Verdict.NORMAL, normal.dice().verdict());
-		assertEquals(1.0, normal.combined(), 1e-9);
+		assertEquals(Burden.DEAL_MULT, normal.combined(), 1e-9);
 	}
 
 	@Test
@@ -201,7 +213,6 @@ class MeleePlanTest {
 		assertEquals(CritRoll.Movement.NONE, crit.dice().movement());
 		// Settling a classless hit touches no stacks, no lanes, no Streak.
 		MeleePlan.Landed landed = MeleePlan.resolve(null, runtime, null, null, 1.0F, 1.0F, 0, 0.05F);
-		assertEquals(0.0F, landed.onslaughtHp());
 		assertEquals(CritRoll.Verdict.CRIT, landed.verdict());
 		assertEquals(0, runtime.state(0).streak());
 	}
@@ -212,7 +223,6 @@ class MeleePlanTest {
 		// settle both read null as "no abilities to move" and still roll the universal dice.
 		MeleePlan.Landed landed = MeleePlan.resolve(null, null, null, null, 1.0F, 1.0F, 0, 0.05F);
 
-		assertEquals(0.0F, landed.onslaughtHp());
 		assertEquals(CritRoll.Verdict.CRIT, landed.verdict());
 		assertEquals(1.25, landed.combined(), 1e-9);
 	}
@@ -243,38 +253,39 @@ class MeleePlanTest {
 		MeleePlan.HitPlan plan = MeleePlan.planHit(juggernaut(), runtime, null, null, 1.0F, 1.0F, 0, 0.5F);
 
 		assertFalse(plan.bump(), "no bar feeds while the window is live");
-		assertEquals(1.0F, plan.onslaughtHp());
-		MeleePlan.Landed landed = MeleePlan.resolve(juggernaut(), runtime, null, null, 1.0F, 1.0F, 0, 0.5F);
-		assertEquals(1.0F, landed.onslaughtHp());
+		assertTrue(plan.priceOnslaught());
+		assertEquals(Burden.DEAL_MULT * OnslaughtAbility.DEAL_MULT, plan.deal(), 1e-9);
+		MeleePlan.resolve(juggernaut(), runtime, null, null, 1.0F, 1.0F, 0, 0.5F);
 		assertEquals(8, runtime.stacks(momentum()));
 		assertTrue(runtime.state(0).lane(Lane.ONSLAUGHT).windowRemainingMs() > 0);
 	}
 
 	@Test
-	void onslaughtBonusIsUntouchedByTheDice() {
+	void onslaughtMultFoldsIntoTheCombinedWithTheDice() {
 		PlayerRuntime runtime = loaded(10);
 		OnslaughtAbility.fire(juggernaut(), runtime, 0);
 
 		MeleePlan.HitPlan plan = MeleePlan.planHit(juggernaut(), runtime, null, null, 1.0F, 1.0F, 0, 0.05F);
 
-		// The Onslaught bonus is its own: the crit folds into the settled mult, never into the HP.
+		// Window mult and dice both fold into the settled mult; the bar still pays two.
 		assertEquals(CritRoll.Verdict.CRIT, plan.dice().verdict());
 		assertEquals(1.25, plan.dice().mult(), 1e-9);
-		assertEquals(1.0F, plan.onslaughtHp());
+		assertEquals(Burden.DEAL_MULT * OnslaughtAbility.DEAL_MULT, plan.deal(), 1e-9);
 		MeleePlan.Landed landed = MeleePlan.resolve(juggernaut(), runtime, null, null, 1.0F, 1.0F, 0, 0.05F);
-		assertEquals(1.0F, landed.onslaughtHp());
-		assertEquals(1.25, landed.combined(), 1e-9);
+		assertEquals(Burden.DEAL_MULT * OnslaughtAbility.DEAL_MULT * 1.25, landed.combined(), 1e-9);
 		assertEquals(8, runtime.stacks(momentum()));
 	}
 
 	@Test
-	void spamInsideTheWindowLandsAndSpendsNothing() {
+	void spamInsideTheWindowPaysTheMultAndSpendsNothing() {
 		PlayerRuntime runtime = loaded(10);
 		OnslaughtAbility.fire(juggernaut(), runtime, 0);
 
-		MeleePlan.Landed landed = MeleePlan.resolve(juggernaut(), runtime, null, null, 0.5F, 1.0F, 0, 0.5F);
+		MeleePlan.HitPlan plan = MeleePlan.planHit(juggernaut(), runtime, null, null, 0.5F, 1.0F, 0, 0.5F);
+		assertEquals(Burden.DEAL_MULT * OnslaughtAbility.DEAL_MULT, plan.deal(), 1e-9);
+		assertFalse(plan.priceOnslaught());
 
-		assertEquals(0.0F, landed.onslaughtHp());
+		MeleePlan.resolve(juggernaut(), runtime, null, null, 0.5F, 1.0F, 0, 0.5F);
 		assertEquals(10, runtime.stacks(momentum()));
 	}
 
@@ -290,9 +301,9 @@ class MeleePlanTest {
 		assertEquals(0, runtime.state(0).lane(Lane.ONSLAUGHT).windowRemainingMs());
 		assertEquals(Lane.ONSLAUGHT.cooldownMs(), runtime.state(0).laneRemaining(Lane.ONSLAUGHT));
 
-		// The window is over: the next full swing earns again and prices nothing.
+		// The window is over: the next full swing earns again, with no window mult.
 		MeleePlan.Landed after = MeleePlan.resolve(juggernaut(), runtime, null, null, 1.0F, 1.0F, 0, 0.5F);
-		assertEquals(0.0F, after.onslaughtHp());
+		assertEquals(Burden.DEAL_MULT, after.combined(), 1e-9);
 		assertEquals(1, runtime.stacks(momentum()));
 	}
 
@@ -302,9 +313,9 @@ class MeleePlanTest {
 
 		MeleePlan.Landed landed = MeleePlan.resolve(juggernaut(), runtime, null, null, 0.5F, 1.0F, 0, 0.5F);
 
-		assertEquals(0.0F, landed.onslaughtHp());
+		// The Burden chassis pays on any charge; spam still earns and prices nothing.
 		assertEquals(CritRoll.Verdict.NONE, landed.verdict());
-		assertEquals(1.0, landed.combined(), 1e-9);
+		assertEquals(Burden.DEAL_MULT, landed.combined(), 1e-9);
 		assertEquals(0, runtime.stacks(momentum()));
 	}
 
@@ -341,7 +352,7 @@ class MeleePlanTest {
 
 		assertFalse(plan.bump());
 		assertFalse(plan.impetusPending());
-		assertEquals(0.0F, plan.onslaughtHp());
+		assertFalse(plan.priceOnslaught());
 		assertEquals(CritRoll.Verdict.NONE, plan.dice().verdict());
 		assertEquals(CritRoll.Movement.NONE, plan.dice().movement());
 		assertEquals(1.0, plan.combined(), 1e-9);
@@ -355,7 +366,6 @@ class MeleePlanTest {
 		MeleePlan.Landed landed = MeleePlan.resolve(juggernaut(), runtime, null, null, 1.0F, 0.0F, 0, 0.5F);
 
 		// Nothing earned, nothing spent: the bar and the window both wait for a hit that lands.
-		assertEquals(0.0F, landed.onslaughtHp());
 		assertEquals(CritRoll.Verdict.NONE, landed.verdict());
 		assertEquals(1.0, landed.combined(), 1e-9);
 		assertEquals(10, runtime.stacks(momentum()));
@@ -384,8 +394,9 @@ class MeleePlanTest {
 		assertEquals(10, runtime.stacks(momentum()));
 
 		// The next swing that lands pays normally: the price still takes two.
-		MeleePlan.Landed landed = MeleePlan.resolve(juggernaut(), runtime, null, null, 1.0F, 2.0F, 0, 0.5F);
-		assertEquals(1.0F, landed.onslaughtHp());
+		MeleePlan.HitPlan plan = MeleePlan.planHit(juggernaut(), runtime, null, null, 1.0F, 2.0F, 0, 0.5F);
+		assertTrue(plan.priceOnslaught());
+		MeleePlan.resolve(juggernaut(), runtime, null, null, 1.0F, 2.0F, 0, 0.5F);
 		assertEquals(8, runtime.stacks(momentum()));
 	}
 

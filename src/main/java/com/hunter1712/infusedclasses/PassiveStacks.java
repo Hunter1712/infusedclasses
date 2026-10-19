@@ -40,7 +40,7 @@ final class PassiveStacks {
 	 * (taken hits, tests) must pass {@code 1.0F} explicitly.
 	 */
 	void onTrigger(ClassDefinition def, Trigger trigger, long now, float charge) {
-		if (!BonusCurve.isFullSwing(charge) || def == null) {
+		if (!FullSwing.isFull(charge) || def == null) {
 			return;
 		}
 		for (ConditionalPassive passive : def.passives()) {

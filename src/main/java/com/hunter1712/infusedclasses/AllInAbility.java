@@ -1,7 +1,6 @@
 package com.hunter1712.infusedclasses;
 
 import net.minecraft.ChatFormatting;
-import net.minecraft.resources.Identifier;
 
 /**
  * All In decisions: the Gambler's ultimate on {@code V}. Pure gate-and-arm shape on its
@@ -14,9 +13,7 @@ public final class AllInAbility {
 	/** Window in ticks: 15 seconds, tracked as a press timestamp on the runtime. */
 	public static final int WINDOW_TICKS = 300;
 	/** Crit multiplier while live: what a Gambler's x1.5 becomes for the window. */
-	public static final double CRIT_MULT = 2.0;
-	/** Cast sound id, resolved by the adapter; the beacon swell is the commitment. */
-	public static final Identifier CAST_SOUND = Identifier.withDefaultNamespace("block.beacon.activate");
+	public static final double CRIT_MULT = 1.75;
 
 	private AllInAbility() {
 	}

@@ -46,7 +46,7 @@ public final class CritRoll {
 	 * still resets the Streak.
 	 */
 	public static Result roll(CritRule rule, int streak, float charge, float roll, boolean allIn) {
-		if (!BonusCurve.isFullSwing(charge)) {
+		if (!FullSwing.isFull(charge)) {
 			return Result.NONE;
 		}
 		if (roll < rule.betrayalChance()) {

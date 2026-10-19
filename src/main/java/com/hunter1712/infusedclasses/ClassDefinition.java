@@ -23,10 +23,15 @@ public record ClassDefinition(
 
 	/**
 	 * One always-on passive: a chassis row that is written while the class is held and
-	 * never earned, with the modifier list the applier writes. Plain data like the others,
-	 * so the card copy, the tick and the switch cleanup read one source.
+	 * never earned, with the modifier list the applier writes and the melee deal mult
+	 * the plan reads. Plain data like the others, so the card copy, the tick, the switch
+	 * cleanup and the melee plan read one source.
 	 */
-	public record AlwaysOn(String name, String desc, List<PassiveEffect.Modifier> modifiers) {
+	public record AlwaysOn(String name, String desc, List<PassiveEffect.Modifier> modifiers, double dealMult) {
+		/** A chassis with no melee mult: the common row. */
+		public AlwaysOn(String name, String desc, List<PassiveEffect.Modifier> modifiers) {
+			this(name, desc, modifiers, 1.0);
+		}
 	}
 
 	/** One flip buff on a card: display copy only, never gated. */
@@ -69,5 +74,14 @@ public record ClassDefinition(
 			}
 		}
 		return false;
+	}
+
+	/** The product of every always-on row's melee deal mult: 1.0 with none. */
+	public double chassisDealMult() {
+		double mult = 1.0;
+		for (AlwaysOn row : alwaysOn()) {
+			mult *= row.dealMult();
+		}
+		return mult;
 	}
 }

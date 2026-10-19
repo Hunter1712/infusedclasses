@@ -34,8 +34,6 @@ public final class RotateAbility {
 
 	// Stance auras. Downsides ride in the damage hooks as multipliers, never as
 	// negative attributes (armor reads back 0 under negatives).
-	public static final Identifier GLADIUS_DAMAGE_ID =
-			Identifier.fromNamespaceAndPath(InfusedClasses.MOD_ID, "gladius_damage");
 	public static final Identifier GLADIUS_ALACRITY_ID =
 			Identifier.fromNamespaceAndPath(InfusedClasses.MOD_ID, "gladius_alacrity");
 	public static final Identifier SCUTUM_PLATE_ID =
@@ -44,22 +42,19 @@ public final class RotateAbility {
 			Identifier.fromNamespaceAndPath(InfusedClasses.MOD_ID, "scutum_toughness");
 	public static final Identifier SCUTUM_WEIGHT_ID =
 			Identifier.fromNamespaceAndPath(InfusedClasses.MOD_ID, "scutum_weight");
-	/** Gladius aura: +1 attack damage, glass. */
-	public static final double GLADIUS_DAMAGE = 1.0;
+	/** Gladius aura: melee dealt x1.15, glass. */
+	public static final double GLADIUS_DEAL_MULT = 1.15;
 	/** Gladius aura: +0.3 attack speed, paying back part of the damage cut as rate. */
 	public static final double GLADIUS_SPEED = 0.3;
 	/** Scutum aura: +3 armor, plate. */
 	public static final double SCUTUM_ARMOR = 3.0;
 	/** Scutum aura: +1 armor toughness. */
 	public static final double SCUTUM_TOUGHNESS = 1.0;
-	// ponytail: absolute -0.006 (~-6% of the 0.1 base) through the ADD_VALUE
-	// write path, so no per-operation plumbing for one slow. Revisit with a
-	// multiplied operation if base speed ever stops being 0.1.
-	/** Scutum aura: slower, about -6% move speed. */
-	public static final double SCUTUM_WEIGHT = -0.006;
+	/** Scutum aura: slower, flat -0.005 move speed like every movement row. */
+	public static final double SCUTUM_WEIGHT = -0.005;
 
-	/** Gladius downside: melee taken x1.1, glass reads as glass. */
-	public static final double GLADIUS_TAKEN_MULT = 1.1;
+	/** Gladius downside: melee taken x1.2, glass reads as glass. */
+	public static final double GLADIUS_TAKEN_MULT = 1.2;
 	/** Scutum downside: melee dealt x0.9, plate reads as plate. */
 	public static final double SCUTUM_DEAL_MULT = 0.9;
 
@@ -103,7 +98,6 @@ public final class RotateAbility {
 	}
 
 	private static final List<PassiveEffect.Modifier> GLADIUS_AURA = List.of(
-			new PassiveEffect.Modifier(ClassRegistry.ATTACK_DAMAGE, GLADIUS_DAMAGE_ID, GLADIUS_DAMAGE),
 			new PassiveEffect.Modifier(ClassRegistry.ATTACK_SPEED, GLADIUS_ALACRITY_ID, GLADIUS_SPEED));
 	private static final List<PassiveEffect.Modifier> SCUTUM_AURA = List.of(
 			new PassiveEffect.Modifier(ClassRegistry.ARMOR, SCUTUM_PLATE_ID, SCUTUM_ARMOR),
@@ -112,15 +106,15 @@ public final class RotateAbility {
 
 	/**
 	 * Outgoing melee multiplier for a stance (no flip buff).
-	 * Scutum deals x0.9; Gladius deals x1.0. The Impetus flip buff applies its own factor in MeleePlan.
+	 * Gladius deals x1.15; Scutum deals x0.9. The Impetus flip buff applies its own factor in MeleePlan.
 	 */
 	public static double dealMult(Stance stance) {
-		return stance == Stance.SCUTUM ? SCUTUM_DEAL_MULT : 1.0;
+		return stance == Stance.SCUTUM ? SCUTUM_DEAL_MULT : GLADIUS_DEAL_MULT;
 	}
 
 	/**
 	 * Incoming melee multiplier for a stance (no flip buff).
-	 * Gladius takes x1.1; Scutum takes x1.0. The Testudo flip buff applies its own factor in MeleePlan.
+	 * Gladius takes x1.2; Scutum takes x1.0. The Testudo flip buff applies its own factor in MeleePlan.
 	 */
 	public static double takeMult(Stance stance) {
 		return stance == Stance.GLADIUS ? GLADIUS_TAKEN_MULT : 1.0;
@@ -133,12 +127,12 @@ public final class RotateAbility {
 
 	/** Picker copy for the toggle, generated from the numbers so it cannot drift from behaviour. */
 	public static String desc() {
-		return "Gladius (+" + ConditionalPassive.amount(GLADIUS_DAMAGE)
+		return "Gladius (x" + ConditionalPassive.amount(GLADIUS_DEAL_MULT)
 				+ " damage, +" + ConditionalPassive.amount(GLADIUS_SPEED)
 				+ " speed, take x" + GLADIUS_TAKEN_MULT
 				+ ") or Scutum (+" + ConditionalPassive.amount(SCUTUM_ARMOR)
 				+ " armor, +" + ConditionalPassive.amount(SCUTUM_TOUGHNESS)
-				+ " toughness, slower) (R, "
+				+ " toughness, " + ConditionalPassive.amount(SCUTUM_WEIGHT) + " speed) (R, "
 				+ (Lane.ROTATE.cooldownMs() / 1000) + "s).";
 	}
 

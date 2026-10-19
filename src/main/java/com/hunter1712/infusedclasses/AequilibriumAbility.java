@@ -8,25 +8,21 @@ import java.util.List;
 /**
  * Aequilibrium decisions: the Legionary's clean ultimate on {@code V}. Pure gate-and-arm
  * shape on the reused shared oath lane: fires in either stance, firing arms the lane and
- * stamps a 6s window. Edge plus plate ride the stance applier while live; the stance stays
- * underneath, so both layers count. No deal/take mults, no knockback immunity, no downsides.
+ * stamps a 6s window. The plate rides the stance applier while live and the edge is a
+ * deal mult the melee plan reads; the stance stays underneath, so both layers count.
+ * No take mults, no knockback immunity, no downsides.
  */
 public final class AequilibriumAbility {
 	public static final String NAME = "Aequilibrium";
-	/** Edge granted while live: +1 attack damage. */
-	public static final double EDGE_BONUS = 1.0;
+	/** Edge granted while live: melee dealt x1.15. */
+	public static final double DEAL_MULT = 1.15;
 	/** Plate granted while live: +3 armor. */
 	public static final double PLATE_BONUS = 3.0;
 	/** Ultimate window in ticks: 6 seconds, tracked as a press timestamp on the runtime. */
 	public static final int WINDOW_TICKS = 120;
-	/** Modifier id for the window edge. */
-	public static final Identifier EDGE_ID =
-			Identifier.fromNamespaceAndPath(InfusedClasses.MOD_ID, "aequilibrium_edge");
 	/** Modifier id for the window plate. */
 	public static final Identifier PLATE_ID =
 			Identifier.fromNamespaceAndPath(InfusedClasses.MOD_ID, "aequilibrium_plate");
-	/** Cast sound id, resolved by the adapter; fail silent if missing. */
-	public static final Identifier CAST_SOUND = Identifier.withDefaultNamespace("entity.player.levelup");
 
 	/**
 	 * The window aura as modifiers: what sits on the player while Aequilibrium is live.
@@ -38,7 +34,6 @@ public final class AequilibriumAbility {
 	}
 
 	private static final List<PassiveEffect.Modifier> WINDOW_AURA = List.of(
-			new PassiveEffect.Modifier(ClassRegistry.ATTACK_DAMAGE, EDGE_ID, EDGE_BONUS),
 			new PassiveEffect.Modifier(ClassRegistry.ARMOR, PLATE_ID, PLATE_BONUS));
 
 	private AequilibriumAbility() {
@@ -46,10 +41,18 @@ public final class AequilibriumAbility {
 
 	/** Picker copy, generated from the numbers so it cannot drift from behaviour. */
 	public static String desc() {
-		return "Any stance: +" + ConditionalPassive.amount(EDGE_BONUS)
+		return "Any stance: x" + ConditionalPassive.amount(DEAL_MULT)
 				+ " damage, +" + ConditionalPassive.amount(PLATE_BONUS)
 				+ " armor, " + (WINDOW_TICKS / 20) + "s (V, "
 				+ (Lane.OATH.cooldownMs() / 1000) + "s oath). No downside.";
+	}
+
+	/** Melee dealt mult while the oath window is live, 1.0 otherwise. Read by the melee plan. */
+	public static double dealMult(PlayerRuntime.State state) {
+		if (state == null) {
+			return 1.0;
+		}
+		return state.lane(Lane.OATH).windowRemainingMs() > 0 ? DEAL_MULT : 1.0;
 	}
 
 	/**

@@ -57,12 +57,13 @@ _Avoid_: applied outcome, ability result (both name the wrapper), buff
 
 **Ability applier** (`AbilityApplier`):
 The shared adapter seams every ability outcome and class-choice outcome passes through: the announcement
-on the action bar (abilities, rotate) or chat (class-choice), plus the cast fanfare (`playCast`) for fired abilities. Effect and sound ids resolve
-at their single use sites — Offload's pair in its own module
-(`OffloadAbility.HASTE_ID`/`SPEED_ID`), the cast sound in the fanfare itself — never behind shared
+on the action bar (abilities, rotate) or chat (class-choice), plus the one cast fanfare
+(`CAST_SOUND`, played by `playCast`) for fired abilities. The fanfare id lives here beside its
+play path; effect ids resolve at their single use sites — Offload's pair in its own module
+(`OffloadAbility.HASTE_ID`/`SPEED_ID`) — never behind shared
 lookups with one caller each. A result with nothing to grant and nothing
 to say — a wrong-class, on-cooldown or no-stacks press — lands nothing.
-A fired-or-fizzle press lands through `announceAndCast` alone: the Juggernaut pair, Rotate
+A fired-or-fizzle press lands through `announceAndCast` alone: the Juggernaut pair, Roulette
 and the two ultimates all arm inside their decision and route their fanfare through the shared
 path. Class-choice rejections and accepts route through `announce` with the `actionBar` flag.
 _Avoid_: ability system, effect handler
@@ -151,21 +152,30 @@ One trigger-fired Legionary buff on a class card: name plus picker description, 
 `hasAbility` for it.
 _Avoid_: passive (it is not stack-driven), toggle
 
+**Always-on passive** (`ClassDefinition.AlwaysOn`):
+One chassis row that is written while the class is held and never earned: the name, the picker
+description, the attribute modifiers the tick applier writes, and the melee deal mult the melee
+plan reads (`dealMult`, 1.0 when the row carries none; `ClassDefinition.chassisDealMult` is the
+product over the rows). The written half and the read half share the row so the card copy, the
+tick and the plan cannot drift. `Burden` is the only carrier: swing penalty written, x1.15 read.
+_Avoid_: unconditional buff, base stat
+
 **Conditional passive** (`ConditionalPassive`):
 A passive that earns stacks when a named trigger fires, rather than always being on. It carries its
 own numbers — the earns list (a trigger plus its amount each), stack cap, attribute tiers and grace
 period — and its picker copy is generated from those numbers so the copy cannot claim something
 the behaviour does not do. Momentum, the Juggernaut's one bar, is earned by both `on_hit_dealt`
 and `on_hit_taken` (+1 each), caps at 60, bleeds 1/s after 5s quiet, and reads three checkpoints:
-15 Steady (+1 armor, -2% speed, +0.25 knockback resistance), 30 Braced (+3/-4%/+0.5) and
-45 Rooted (+5/-7%/+1.0); past 45 the bar stays Rooted, and the reserve above 45 is the actives'
+15 Steady (+1 armor, -0.005 speed, +0.25 knockback resistance), 30 Braced (+3/-0.01/+0.5) and
+45 Rooted (+5/-0.015/+1.0); past 45 the bar stays Rooted, and the reserve above 45 is the actives'
 spend headroom.
 _Avoid_: buff, stackable stat
 
 **Burden** (`Burden`):
-The Juggernaut's always-on chassis: +1.0 attack damage (`infusedclasses:burden_damage`)
-and -0.5 attack speed (`infusedclasses:burden_swing`), written every tick while classed and
-never earned. The class reads heavy first; Momentum is what moves under that weight.
+The Juggernaut's always-on chassis: melee dealt x1.15 (`DEAL_MULT`) and -0.4 attack speed
+(`infusedclasses:burden_swing`), written every tick while classed and never earned. The heavier
+hit is a deal mult the melee plan reads (see `Always-on passive`), never a written attribute. The
+class reads heavy first; Momentum is what moves under that weight.
 _Avoid_: rage, frenzy stacks
 
 **HP-scaled passive** (`HpScaledPassive`):
@@ -207,26 +217,27 @@ arms nothing; a wrong-class press and one during the lane's cooldown reject sile
 Nothing is owed back when the window goes unspent: the stacks are already gone. Decided in
 the trigger/fire gate-and-arm shape. A stat, never a vanilla effect: no effect icon, no
 effect dependency.
-Like every cast, firing plays its sound (see `Spellcast`): a wind-burst whoosh.
+Like every cast, firing plays the shared fanfare (see `Spellcast`).
 _Avoid_: dash, charge
 
-**Spellcast** (`AbilityApplier.playCast`):
-The fanfare shared by every active: firing any ability plays its own sound — wind burst for
-Offload, a ravager roar for Onslaught — so landing a cast is one learnable rule; fizzles and
-rejects cost nothing and stay silent. The single play path lives here so appliers never
-duplicate it. Rotate carries no cast sound and announces without fanfare.
+**Spellcast** (`AbilityApplier.CAST_SOUND`):
+The one fanfare shared by every active: firing any ability plays the same note-block pling
+(through `AbilityApplier.playCast`), so landing a cast is one learnable rule; fizzles and
+rejects cost nothing and stay silent. The id and its single play path live here so appliers
+never duplicate them. Rotate carries no cast sound and announces without fanfare.
 _Avoid_: cast time, wind-up
 
 **Onslaught** (`OnslaughtAbility`):
 The Juggernaut's ultimate on `V`: needs 10 Momentum (`MIN_STACKS`), arms its own 60s lane
-and a 15s window (`WINDOW_TICKS`). Inside it every full-swing hit pays +1 damage
-(`HP_PER_HIT`) and spends 2 stacks (`COST_PER_HIT`), and nothing feeds the bar — dealt or
+and a 15s window (`WINDOW_TICKS`). Inside it every landed hit deals x1.15 melee (`DEAL_MULT`)
+and each full-swing hit spends 2 stacks (`COST_PER_HIT`), and nothing feeds the bar — dealt or
 taken. The window lasts the bar and the window, whichever empties first: a spend down to
 zero ends it there, and a bleed does too on the tick that reads the empty bar. Below 10
 stacks the press fizzles with a `No Momentum` line and arms nothing. Decided in the
-trigger/fire gate-and-arm shape; the melee plan prices each full-swing landing hit and the
-settle spends, so a hit eaten by a shield never pays.
-Like every cast, firing plays its sound (see `Spellcast`): a ravager roar.
+trigger/fire gate-and-arm shape; the melee plan pays the mult on any landed hit while the
+window is live and prices full swings only, so a hit eaten by a shield never pays. Spam inside
+the window pays the mult without a price: the bar drains only on full swings and the bleed.
+Like every cast, firing plays the shared fanfare (see `Spellcast`).
 _Avoid_: execute, heal button, second ability
 
 **Legionary** (`ClassRegistry`):
@@ -239,15 +250,14 @@ in the fired actives. Every Legionary enters in `Scutum`.
 _Avoid_: roman, tank class
 
 **Gladius**:
-The Legionary's striking stance: `attack_damage` +1.0
-(`infusedclasses:gladius_damage`), `attack_speed` +0.3
-(`infusedclasses:gladius_alacrity`), melee taken x1.1. Glass reads as glass.
+The Legionary's striking stance: melee dealt x1.15 (`GLADIUS_DEAL_MULT`),
+`attack_speed` +0.3 (`infusedclasses:gladius_alacrity`), melee taken x1.2. Glass reads as glass.
 _Avoid_: dps stance, sword form
 
 **Scutum**:
 The Legionary's plate stance and the default: `armor` +3
 (`infusedclasses:scutum_plate`), `armor_toughness` +1
-(`infusedclasses:scutum_toughness`), `movement_speed` about -6%
+(`infusedclasses:scutum_toughness`), `movement_speed` -0.005 flat
 (`infusedclasses:scutum_weight`), melee dealt x0.9. Plate reads as plate.
 _Avoid_: tank stance, shield form
 
@@ -277,11 +287,11 @@ Timed, never consumed: every hit inside the catch is discounted.
 _Avoid_: block, turtle
 
 **Aequilibrium** (`AequilibriumAbility`):
-The Legionary's clean oath ultimate on `V`: +1.0 attack damage
-(`infusedclasses:aequilibrium_edge`) + +3.0 armor
+The Legionary's clean oath ultimate on `V`: melee dealt x1.15 (`DEAL_MULT`) + +3.0 armor
 (`infusedclasses:aequilibrium_plate`) for 6s (`WINDOW_TICKS`), in either stance,
-on the shared 50s oath lane (`Lane.OATH`). No
-deal/take mults, no knockback immunity, no downsides: the stance stays
+on the shared 50s oath lane (`Lane.OATH`). The edge is a deal mult the melee plan reads
+while the window is live (never a written attribute); the plate rides the stance applier.
+No take mult, no knockback immunity, no downside: the stance stays
 underneath and both layers count. Firing announces `Aequilibrium!` gold;
 rejects arm nothing. Decided in the trigger/fire gate-and-arm shape.
 _Avoid_: ultimate, finisher
@@ -304,7 +314,7 @@ melee plan.
 _Avoid_: wheel button, gamble skill
 
 **All In** (`AllInAbility`):
-The Gambler's ultimate on `V`, 75s lane: crits deal ×2.0 instead of ×1.5 for
+The Gambler's ultimate on `V`, 75s lane: crits deal ×1.75 instead of ×1.5 for
 15s. The dice rules never bend: betrayal, Streak resets and every band stay as
 they are.
 _Avoid_: double damage, ultimate form
@@ -318,30 +328,31 @@ damage (spears) or never (mace). The damage hook runs after all of these, so the
 capture is the hook's only source for it.
 _Avoid_: attack cooldown, swing timer
 
-**Full swing** (`BonusCurve`):
+**Full swing** (`FullSwing`):
 The one definition of a full swing, shared by the stack feed, the crit roll and the
 Onslaught price: exact `>= 1.0F`, so overcharge counts, half swings and spam earn
-nothing and roll nothing. The same module owns the charged bonus curve (`bonusFor`:
-`base x charge x charge`, clamped): flat ability bonus damage scales with the swing —
-full swings pay full, half pays a quarter, spam pays chips. The curve is universal,
-every class and classless players alike; Onslaught's +1 is the only flat-bonus caller
-today. Base weapon damage never routes here — vanilla already halves spam.
+nothing, roll nothing and price nothing. The timer scale itself is not an ability
+concern: full-charge weapon damage is vanilla's (`baseDamageScaleFactor`, 0.2 + 0.8 x
+charge squared), and the mod never touches it. (The charged bonus curve retired with
+ADR-0028; `bonusFor` had already lost its last caller.)
 _Avoid_: damage falloff, charge multiplier
 
 **Melee plan** (`MeleePlan`):
 The decision of what one melee hit earns and settles, taken from definitions,
 transient state and what the hit landed: whether the swing earns stacks (full
 swings only, spam earns zero; a hit that took no damage earns nothing and reads
-no state at all), the Onslaught price (+1 HP per full swing inside a live window,
-2 stacks), the stance deal and take mults (1.0 for anyone else), the wheel's live deal mult and
+no state at all), the Onslaught price (full swings only, 2 stacks, inside a live window),
+the chassis deal mult (every always-on row's `dealMult`, any charge), the stance deal and take
+mults (1.0 for anyone else), the wheel's live deal mult, the oath window's deal mult and
 the Impetus flip buff (pending only, spent once, any charge). `planHit` is the pure half:
 it decides the whole hit in field order — bump (suppressed while Onslaught is live),
-Onslaught bonus, Impetus spend, dice verdict, combined mult (deal x take x dice) — peeking
+Onslaught price flag, Impetus spend, dice verdict, combined mult (chassis x stance x
+wheel x oath x onslaught x take x dice) — peeking
 only. `resolve` plans through it and settles the runtime movements in the same order at the
-same moment, returning `Landed(onslaughtHp, verdict, combined)` for the entry to land, so the
+same moment, returning `Landed(verdict, combined)` for the entry to land, so the
 pairing the plan saw is the pairing that lands and empty hits never touch a window; the
 attacker branch (`settleAttackerHit`) lands exactly what the resolve returned (cue,
-Onslaught bonus, combined mult) so the hook cannot reorder or half-apply it; Gladius plus
+combined mult) so the hook cannot reorder or half-apply it; Gladius plus
 Impetus reads x1.1 deal, Scutum plus Testudo x0.85 take, a crit x1.25 deal, named once in the
 plan rather than emerging in the entry. `resolveTaken` feeds the victim's `on_hit_taken`
 +1, suppressed while its Onslaught window is live and only for a landed hit; the server
@@ -351,11 +362,13 @@ ability ids to gate rewards.
 _Avoid_: damage handler, hook logic
 
 **Damage settle** (`DamageSettle`):
-The single guarded hurt for the whole mod plus the stance-mult settle every melee
+The single guarded hurt for the whole mod plus the mult settle every melee
 branch funnels through. Over 1.0 lands extra hurt (dead targets deal nothing); under
 1.0 heals back the discount, so the net hit reads as landed times mult; exactly 1.0
 touches nothing. The base it scales is what the hit landed after shield and modifier
-reductions, so a blocked hit settles nothing. Onslaught and Impetus bonuses land here too.
+reductions, so a blocked hit settles nothing. Every attacker-side mult — chassis,
+stance, wheel, oath, window, dice — arrives as the one combined mult, so the
+settle is the single landing point.
 Vanilla drops any same-tick
 follow-up that does not beat `lastHurt`, so the extra goes in with that memory
 cleared and leaves the memory at the hit plus the bonus: the step lands silently
@@ -373,8 +386,8 @@ _Avoid_: recursion flag, lock
 **Stance applier** (`PassiveApplier`):
 The adapter that makes the player's attributes agree with the Legionary stance: only
 the current stance's modifiers sit on the player, the other stance's come off, same
-write-only-on-change shape as the always-on and bucket passes. Aequilibrium edge and plate ride the oath
-window while live. Both sides iterate the stance's single aura list (`RotateAbility.auraFor`,
+write-only-on-change shape as the always-on and bucket passes. Aequilibrium plate rides the oath
+window while live (its edge is a deal mult, never written). Both sides iterate the stance's single aura list (`RotateAbility.auraFor`,
 `AequilibriumAbility.windowModifiers`), so write and remove cannot drift. The Roulette
 outcome window's stat auras are the wheel's own family (`rouletteWanted`) on the same tick,
 swept when the class leaves. Leaving the class
@@ -397,7 +410,7 @@ _Avoid_: key routing, bind table
 **Stack gate**:
 The other half of the spam fix: the attacker branch reads `attackStrengthScale`
 once per swing and feeds conditional triggers only at full charge
-(`MeleePlan.planHit` over `BonusCurve.isFullSwing`), so spam
+(`MeleePlan.planHit` over `FullSwing.isFull`), so spam
 earns zero stacks and timed swings earn one. Onslaught prices on the same gate.
 Crit rolls and Streak movement ride the same gate:
 half swings never roll and never load the pocket.
@@ -425,9 +438,9 @@ Streak reset target cannot drift from the chance base.
 _Avoid_: crit config, dice passive
 
 **Crooked Dice**:
-The Gambler's crit rule: 20% crit at ×1.5, 5% betrayal at ×0.5, +15
+The Gambler's crit rule: 15% crit at ×1.5, 5% betrayal at ×0.5, +15
 percentage points of crit per non-crit full hit. The crit band locks at 95%
-from streak 5; betrayal stays 5% forever.
+from streak 6; betrayal stays 5% forever.
 _Avoid_: luck passive
 
 **Betrayal**:
@@ -438,7 +451,7 @@ _Avoid_: backlash, mishap
 **Streak**:
 The Gambler's loaded pocket: +15 percentage points of crit chance per non-crit
 full hit (a betrayal counts as one); any crit resets it to base. The crit band
-stops growing at 95% from streak 5. A transient counter like every earned
+stops growing at 95% from streak 6. A transient counter like every earned
 count: wiped by class switch, respawn and relog.
 _Avoid_: charge, counter
 
@@ -719,7 +732,8 @@ owns the choice/transient split; `0003` defers the class-lookup seam until a sec
 classes exists; `0004` inverts the Juggernaut kit to high-HP rewards (Vigor plus Momentum, the Rush engage
 plus the Rend window) with sound replacing root — superseded by `0027`; `0005` moves the hit-gating decision out of the
 server entry, the stack storage out of the transient runtime, and the trigger scan onto the class;
-`0006` adds the Legionary stance tradeoff plus the universal charged curve and stack gate;
+`0006` adds the Legionary stance tradeoff plus the universal charged curve and stack gate (the
+curve point revised by `0028`);
 `0007` deepens the melee hook (plan, settle, morph) and splits the adapters, revisiting
 the `0005` bind-morph carve-out; `0008` closes the review's six seams (cooldown leak,
 one-line Rend adapter, shared gate-and-arm, full hit plan, card back door, window registry);
@@ -791,5 +805,15 @@ weight and knockback resistance; Rush and Rend retire for Offload (a flat 5-stac
 haste/speed window) and Onslaught (a 10-stack gate, 15s or until the bar empties, +1 per full hit
 at 2 stacks each, no gain while live); Vigor is cut; Burden (+1 damage, -0.5 attack speed) is the
 always-on chassis; and the charged bonus curve stays, pricing flat ability damage with the
-full-swing gate still blocking spam. The wire
+full-swing gate still blocking spam (the Onslaught pay shape, Burden's damage row and the
+movement weights revised by `0028`). `0028` makes one unit per stat family: damage power becomes a
+deal mult (Burden, Gladius, Aequilibrium and Onslaught all x1.15 at the iron-sword reference,
+composed in the plan's combined), attribute stats stay flat in their own unit (movement rows on
+one 0.005 grid, copy in the same unit), chances stay percents, the charged bonus curve retires —
+`FullSwing.isFull` keeps the shared gate — and balance gains a target (±10% expected payout at
+two references) and a sheet (`.scratch/balance-pass/`, revising `0006`'s curve and `0027`'s
+Onslaught price and movement weights). The sheet's tuning round (defense measured per hit on
+the same timeline as offense, band checked around the mean) settled Burden's swing at -0.4,
+Gladius's glass tax at x1.2, the dice at 15% base and All In at x1.75; Scutum stays as it
+reads. The wire
 names `rush`/`rend` stay on the reused signature and ultimate intents.

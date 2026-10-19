@@ -52,8 +52,8 @@ class CritRollTest {
 	void diceBandsAtStreakZero() {
 		CritRoll.Result betrayal = roll(DICE, 0, 0.049F);
 		CritRoll.Result crit = roll(DICE, 0, 0.05F);
-		CritRoll.Result critHigh = roll(DICE, 0, 0.249F);
-		CritRoll.Result normal = roll(DICE, 0, 0.25F);
+		CritRoll.Result critHigh = roll(DICE, 0, 0.199F);
+		CritRoll.Result normal = roll(DICE, 0, 0.21F);
 
 		assertEquals(CritRoll.Verdict.BETRAYAL, betrayal.verdict());
 		assertEquals(0.5, betrayal.mult(), 1e-9);
@@ -72,13 +72,14 @@ class CritRollTest {
 
 	@Test
 	void streakLoadsTheCritBandAndLocksAtTheCap() {
-		// Streak 3: the crit band tops out around 0.70.
-		assertEquals(CritRoll.Verdict.CRIT, roll(DICE, 3, 0.69F).verdict());
-		assertEquals(CritRoll.Verdict.NORMAL, roll(DICE, 3, 0.71F).verdict());
+		// Streak 3: the crit band tops out at 0.65.
+		assertEquals(CritRoll.Verdict.CRIT, roll(DICE, 3, 0.64F).verdict());
+		assertEquals(CritRoll.Verdict.NORMAL, roll(DICE, 3, 0.66F).verdict());
 
-		// Streak 4: still a normal band above ~0.85; streak 5 fills the wheel and the normal band is gone.
-		assertEquals(CritRoll.Verdict.NORMAL, roll(DICE, 4, 0.86F).verdict());
-		assertEquals(CritRoll.Verdict.CRIT, roll(DICE, 5, 0.9999F).verdict());
+		// Streak 4: still a normal band above 0.80; streak 6 fills the wheel and the normal band is gone.
+		assertEquals(CritRoll.Verdict.NORMAL, roll(DICE, 4, 0.81F).verdict());
+		assertEquals(CritRoll.Verdict.CRIT, roll(DICE, 5, 0.94F).verdict());
+		assertEquals(CritRoll.Verdict.CRIT, roll(DICE, 6, 0.9999F).verdict());
 		assertEquals(CritRoll.Verdict.CRIT, roll(DICE, 9, 0.9999F).verdict());
 		// Betrayal keeps its fixed 5% forever: the lock never swallows it.
 		assertEquals(CritRoll.Verdict.BETRAYAL, roll(DICE, 9, 0.049F).verdict());
@@ -103,8 +104,8 @@ class CritRollTest {
 
 	@Test
 	void generatedDiceCopyMatchesTheRuleNumbers() {
-		assertEquals("Full-charge hits: 20% crit x1.5, 5% betrayal x0.5.", DICE.crookedDiceDesc());
-		assertEquals("Non-crit hit: +15% crit (a crit resets to 20%). Locks at 95% from streak 5.",
+		assertEquals("Full-charge hits: 15% crit x1.5, 5% betrayal x0.5.", DICE.crookedDiceDesc());
+		assertEquals("Non-crit hit: +15% crit (a crit resets to 15%). Locks at 95% from streak 6.",
 				DICE.streakDesc());
 		assertTrue(DICE.hasDice());
 	}

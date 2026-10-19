@@ -62,10 +62,10 @@ class MomentumTest {
 		assertEquals(List.of(ClassRegistry.ARMOR, ClassRegistry.MOVEMENT_SPEED,
 				ClassRegistry.KNOCKBACK_RESISTANCE),
 				steady.stream().map(PassiveEffect.Modifier::attribute).toList());
-		assertEquals(List.of(1.0, -0.002, 0.25), amounts(steady));
+		assertEquals(List.of(1.0, -0.005, 0.25), amounts(steady));
 
-		assertEquals(List.of(3.0, -0.004, 0.5), amounts(Momentum.forStacks(30)));
-		assertEquals(List.of(5.0, -0.007, 1.0), amounts(Momentum.forStacks(45)));
+		assertEquals(List.of(3.0, -0.01, 0.5), amounts(Momentum.forStacks(30)));
+		assertEquals(List.of(5.0, -0.015, 1.0), amounts(Momentum.forStacks(45)));
 	}
 
 	@Test
@@ -100,9 +100,9 @@ class MomentumTest {
 	@Test
 	void copySpellsTheEarnsTheRowsAndTheRate() {
 		assertEquals("Land a hit: +1. Take a hit: +1. Max 60. 5s no feed: -1/s. "
-				+ "15 Steady: +1 armor, -2% speed, +0.25 knockback resistance. "
-				+ "30 Braced: +3 armor, -4% speed, +0.5 knockback resistance. "
-				+ "45 Rooted: +5 armor, -7% speed, +1 knockback resistance.",
+				+ "15 Steady: +1 armor, -0.005 speed, +0.25 knockback resistance. "
+				+ "30 Braced: +3 armor, -0.01 speed, +0.5 knockback resistance. "
+				+ "45 Rooted: +5 armor, -0.015 speed, +1 knockback resistance.",
 				Momentum.PASSIVE.fullDesc());
 	}
 }

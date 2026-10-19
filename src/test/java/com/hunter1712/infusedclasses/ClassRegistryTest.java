@@ -70,11 +70,13 @@ class ClassRegistryTest {
 
 		assertEquals(1, juggernaut.alwaysOn().size());
 		assertEquals("Burden", juggernaut.alwaysOn().get(0).name());
-		assertEquals(List.of("infusedclasses:burden_damage", "infusedclasses:burden_swing"),
+		assertEquals(List.of("infusedclasses:burden_swing"),
 				juggernaut.alwaysOn().get(0).modifiers().stream()
 						.map(PassiveEffect.Modifier::modifierId)
 						.map(Identifier::toString)
 						.toList());
+		// The heavier hit is a deal mult the plan reads, never a written attribute.
+		assertEquals(Burden.DEAL_MULT, juggernaut.alwaysOn().get(0).dealMult());
 		// Vigor is cut: the class carries no HP-scaled passive.
 		assertTrue(juggernaut.hpPassives().isEmpty());
 	}
@@ -84,9 +86,9 @@ class ClassRegistryTest {
 		ConditionalPassive momentum = ClassRegistry.byId(ClassRegistry.JUGGERNAUT).passives().get(0);
 
 		assertEquals("Land a hit: +1. Take a hit: +1. Max 60. 5s no feed: -1/s. "
-						+ "15 Steady: +1 armor, -2% speed, +0.25 knockback resistance. "
-						+ "30 Braced: +3 armor, -4% speed, +0.5 knockback resistance. "
-						+ "45 Rooted: +5 armor, -7% speed, +1 knockback resistance.",
+						+ "15 Steady: +1 armor, -0.005 speed, +0.25 knockback resistance. "
+						+ "30 Braced: +3 armor, -0.01 speed, +0.5 knockback resistance. "
+						+ "45 Rooted: +5 armor, -0.015 speed, +1 knockback resistance.",
 				momentum.fullDesc());
 	}
 
@@ -98,7 +100,7 @@ class ClassRegistryTest {
 
 		// The words ride the earns: an on_land passive is described by its own, never as a hit.
 		assertEquals("Land a swing: +1. Max 4. 3s no feed: -1/s. "
-						+ "2 Quick: +0.5 armor, -1% speed, +0.25 knockback resistance.",
+						+ "2 Quick: +0.5 armor, -0.001 speed, +0.25 knockback resistance.",
 				swift.fullDesc());
 		assertFalse(swift.fullDesc().contains("hit"));
 	}

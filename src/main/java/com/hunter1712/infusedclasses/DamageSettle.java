@@ -1,7 +1,6 @@
 package com.hunter1712.infusedclasses;
 
 import com.hunter1712.infusedclasses.mixin.LivingEntityAccessor;
-import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
@@ -27,23 +26,12 @@ public final class DamageSettle {
 	}
 
 	/**
-	 * Lands stamped bonus damage on the just-hit entity. Reports whether anything was
-	 * dealt: a re-entrant call (from the hurt below) or a dead target deals nothing.
-	 */
-	public static boolean dealBonus(ServerPlayer attacker, Entity target, float bonusHp) {
-		if (target == null || !target.isAlive() || bonusHp <= 0) {
-			return false;
-		}
-		return hurtGuarded(target, attacker.damageSources().playerAttack(attacker), bonusHp);
-	}
-
-	/**
 	 * Settles a stance mult on a just-hit entity: over 1.0 lands extra hurt through
 	 * the guarded path (dead targets deal nothing); under 1.0 heals back
 	 * the discount, so the net hit reads as landed times mult. Exactly 1.0 touches
 	 * nothing. The base it scales is what the hit landed after shield and modifier
-	 * reductions, so a blocked hit settles nothing. The single home for stance
-	 * settle: the entry maps, this applies. The source arrives as a supplier so it
+	 * reductions, so a blocked hit settles nothing. The single home for every melee
+	 * mult settle: the entry maps, this applies. The source arrives as a supplier so it
 	 * is only resolved by this adapter, never by the entry, whichever side dealt the
 	 * hit.
 	 */

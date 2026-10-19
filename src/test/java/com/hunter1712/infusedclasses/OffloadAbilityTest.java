@@ -117,7 +117,7 @@ class OffloadAbilityTest {
 
 		assertTrue(copy.contains("Spend 5 Momentum"));
 		assertTrue(copy.contains("+0.2 attack speed"));
-		assertTrue(copy.contains("+10% speed"));
+		assertTrue(copy.contains("+0.01 speed"));
 		assertTrue(copy.contains("(R, 10s)"));
 	}
 }

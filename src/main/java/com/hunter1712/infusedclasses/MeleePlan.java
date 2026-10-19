@@ -24,6 +24,11 @@ public final class MeleePlan {
 		return base * flip;
 	}
 
+	/** The attacker's always-on chassis deal mult: 1.0 without a class or a row. */
+	private static double chassisDeal(ClassDefinition atkDef) {
+		return atkDef == null ? 1.0 : atkDef.chassisDealMult();
+	}
+
 	/** Incoming melee multiplier for a victim: the stance take mult times the live Testudo flip catch, 1.0 for anyone else. */
 	public static double takeFor(ClassDefinition victimDef, Supplier<PlayerRuntime> runtime, long now) {
 		if (victimDef == null || !victimDef.hasAbility(ClassRegistry.ROTATE_ABILITY)) {
@@ -43,24 +48,25 @@ public final class MeleePlan {
 
 	/**
 	 * What one melee hit earns and settles, decided in field order: the stack bump (bars
-	 * feed only outside an Onslaught window), the Onslaught price, the Impetus spend, then
-	 * the stance, wheel and dice mults. Resolving applies the movements in the same order
-	 * and returns the stamped Onslaught bonus to land; the combined mult (deal x take x
-	 * dice) settles after. One-shot flags are peeked here and consumed there, at the same
-	 * {@code now}. A hit that took no damage (a raised shield ate it) earns nothing: it
-	 * reads no state, materialises no victim runtime and draws no verdict, so nothing of
-	 * it can settle.
+	 * feed only outside an Onslaught window), the Onslaught price (full swings only, 2
+	 * stacks), the Impetus spend, then the chassis, stance, wheel, oath and window mults.
+	 * The Onslaught mult pays on any landed hit while its window is live; its price waits
+	 * for a full swing. Resolving applies the movements in the same order and returns the
+	 * stamped verdict and combined mult to land. One-shot flags are peeked here and
+	 * consumed there, at the same {@code now}. A hit that took no damage (a raised shield
+	 * ate it) earns nothing: it reads no state, materialises no victim runtime and draws
+	 * no verdict, so nothing of it can settle.
 	 */
-	public record HitPlan(boolean bump, float charge, float onslaughtHp, boolean impetusPending,
+	public record HitPlan(boolean bump, float charge, boolean priceOnslaught, boolean impetusPending,
 			double deal, double take, double combined, CritRoll.Result dice) {
 		/** The plan of a hit that earned nothing: no peek, no verdict, neutral mults against the zero landed. */
 		static HitPlan none(float charge) {
-			return new HitPlan(false, charge, 0, false, 1.0, 1.0, 1.0, CritRoll.Result.NONE);
+			return new HitPlan(false, charge, false, false, 1.0, 1.0, 1.0, CritRoll.Result.NONE);
 		}
 	}
 
-	/** What one settled hit lands: the Onslaught bonus, the verdict to cue, the combined mult to settle. */
-	public record Landed(float onslaughtHp, CritRoll.Verdict verdict, double combined) {
+	/** What one settled hit lands: the verdict to cue and the combined mult to settle. */
+	public record Landed(CritRoll.Verdict verdict, double combined) {
 	}
 
 	/**
@@ -77,20 +83,22 @@ public final class MeleePlan {
 			return HitPlan.none(charge);
 		}
 		PlayerRuntime.State state = atkRuntime == null ? null : atkRuntime.state(now);
+		int stacks = momentumStacks(atkDef, atkRuntime);
 		boolean onslaughtLive = OnslaughtAbility.windowLive(state);
 		// No bar feeds while the ultimate is live: the hit pays instead of earning.
-		boolean bump = BonusCurve.isFullSwing(charge) && !onslaughtLive;
-		float onslaughtHp = BonusCurve.isFullSwing(charge)
-				&& OnslaughtAbility.liveFor(state, momentumStacks(atkDef, atkRuntime))
-				? BonusCurve.bonusFor(OnslaughtAbility.HP_PER_HIT, charge) : 0;
+		boolean bump = FullSwing.isFull(charge) && !onslaughtLive;
+		// The mult pays any charge; the price waits for a full swing.
+		boolean priceOnslaught = FullSwing.isFull(charge) && OnslaughtAbility.liveFor(state, stacks);
 		boolean impetus = atkDef != null && atkDef.hasAbility(ClassRegistry.ROTATE_ABILITY)
 				&& state != null && state.impetusPending();
-		double deal = dealWithImpetus(atkDef, state, impetus) * RouletteAbility.dealMult(state);
+		double deal = chassisDeal(atkDef) * dealWithImpetus(atkDef, state, impetus)
+				* RouletteAbility.dealMult(state) * AequilibriumAbility.dealMult(state)
+				* OnslaughtAbility.dealMult(state, stacks);
 		double take = victimDef == null || victimRuntime == null ? 1.0 : takeFor(victimDef, victimRuntime, now);
 		CritRule rule = atkDef == null ? CritRule.universal() : atkDef.critRule();
 		boolean allIn = state != null && state.lane(Lane.ALL_IN).windowRemainingMs() > 0;
 		CritRoll.Result dice = CritRoll.roll(rule, state == null ? 0 : state.streak(), charge, roll, allIn);
-		return new HitPlan(bump, charge, onslaughtHp, impetus, deal, take,
+		return new HitPlan(bump, charge, priceOnslaught, impetus, deal, take,
 				deal * take * dice.mult(), dice);
 	}
 
@@ -98,21 +106,22 @@ public final class MeleePlan {
 	 * Decision and settle in one: plans the hit through {@link #planHit} and settles the
 	 * runtime movements in the plan's field order — the stack bump, the dice movement,
 	 * the Impetus spend, then the Onslaught price — all at the same {@code now} the plan
-	 * peeked them. Returns what the entry lands: the Onslaught bonus, the crit verdict to
-	 * cue, and the combined mult. The one seam between the plan and the entry, so nothing
-	 * lands a hit that was not resolved. A hit that took no damage resolves the empty
-	 * plan and moves nothing.
+	 * peeked them. Returns what the entry lands: the crit verdict to cue and the combined
+	 * mult to settle. The one seam between the plan and the entry, so nothing lands a hit
+	 * that was not resolved. A hit that took no damage resolves the empty plan and moves
+	 * nothing.
 	 */
 	public static Landed resolve(ClassDefinition atkDef, PlayerRuntime atkRuntime, ClassDefinition victimDef,
 			Supplier<PlayerRuntime> victimRuntime, float charge, float landedDamage, long now, float roll) {
 		HitPlan plan = planHit(atkDef, atkRuntime, victimDef, victimRuntime, charge, landedDamage, now, roll);
-		return new Landed(settle(atkRuntime, atkDef, plan, now), plan.dice().verdict(), plan.combined());
+		settle(atkRuntime, atkDef, plan, now);
+		return new Landed(plan.dice().verdict(), plan.combined());
 	}
 
-	/** Settles the plan's movements; returns the Onslaught bonus to land, 0 when the plan saw nothing owed. */
-	private static float settle(PlayerRuntime runtime, ClassDefinition def, HitPlan plan, long now) {
+	/** Settles the plan's movements in field order; the entry lands nothing the plan did not stamp. */
+	private static void settle(PlayerRuntime runtime, ClassDefinition def, HitPlan plan, long now) {
 		if (runtime == null || plan == null) {
-			return 0;
+			return;
 		}
 		if (plan.bump()) {
 			// Replays the plan's gated charge through the shared gate, so the settle
@@ -128,15 +137,13 @@ public final class MeleePlan {
 		if (plan.impetusPending()) {
 			runtime.consumeBonus(Lane.ROTATE, now);
 		}
-		if (plan.onslaughtHp() > 0) {
+		if (plan.priceOnslaught()) {
 			spendOnslaught(runtime, def);
-			return plan.onslaughtHp();
 		}
-		return 0;
 	}
 
 	/**
-	 * The Onslaught price: {@link OnslaughtAbility#COST_PER_HIT} stacks per priced hit, and a
+	 * The Onslaught price: {@link OnslaughtAbility#COST_PER_HIT} stacks per full-swing hit, and a
 	 * bar reaching empty ends the window there — the ultimate lasts the bar and the window,
 	 * whichever empties first.
 	 */

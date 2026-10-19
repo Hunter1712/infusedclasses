@@ -14,14 +14,14 @@ public record CritRule(double critChance, double critMult, double betrayalChance
 	public static final String STREAK = "Streak";
 
 	private static final CritRule UNIVERSAL = new CritRule(0.10, 1.25, 0.0, 1.0, 0.0);
-	private static final CritRule CROOKED_DICE_RULE = new CritRule(0.20, 1.5, 0.05, 0.5, 0.15);
+	private static final CritRule CROOKED_DICE_RULE = new CritRule(0.15, 1.5, 0.05, 0.5, 0.15);
 
 	/** The universal baseline: 10% crit at x1.25, no betrayal, no Streak movement. Classless reads as this. */
 	public static CritRule universal() {
 		return UNIVERSAL;
 	}
 
-	/** The Gambler's Crooked Dice: 20% crit at x1.5, 5% betrayal at x0.5, +15pp of crit per non-crit. */
+	/** The Gambler's Crooked Dice: 15% crit at x1.5, 5% betrayal at x0.5, +15pp of crit per non-crit. */
 	public static CritRule crookedDice() {
 		return CROOKED_DICE_RULE;
 	}

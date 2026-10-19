@@ -77,19 +77,10 @@ public record ConditionalPassive(
 		for (Tier tier : tiers) {
 			copy.append(tier.threshold()).append(' ').append(tier.name()).append(": +")
 					.append(amount(tier.armor())).append(" armor, ")
-					.append(percent(tier.weight())).append(" speed, +")
+					.append(amount(tier.weight())).append(" speed, +")
 					.append(amount(tier.knockback())).append(" knockback resistance. ");
 		}
 		return copy.toString().trim();
-	}
-
-	/**
-	 * Move-speed weight as the copy spells it: the absolute delta over the player's
-	 * 0.1 movement-speed base reads as whole percent, signed.
-	 */
-	static String percent(double weight) {
-		double percent = weight * 1000.0;
-		return (percent > 0 ? "+" : "") + amount(percent) + "%";
 	}
 
 	/** Whole numbers read as "1", not "1.0", so the copy matches the game. */
