@@ -12,7 +12,7 @@ Usually a missing or outdated **Fabric API**, the **wrong jar** for your game ve
 No. Install the mod on both client and server. All logic is server-side and server-authoritative; the client sends intents and renders the picker. See [compatibility.md](compatibility.md#client--server).
 
 **Will it break my existing world?**
-Saves load fine — new players pick on next join. But 0.x jars may break worlds between updates with no migration until beta. Expect wipes and class resets at any time; reselect with `/class select <player>` when told to.
+Saves load fine — new players pick on next join. If a jar invalidates your choice, reselect with `/class select <player>`.
 
 ## Picker
 
@@ -20,7 +20,7 @@ Saves load fine — new players pick on next join. But 0.x jars may break worlds
 It opens once, on first join with no saved class choice. Rejoining with a choice loads silently. Admins can reopen it with `/class select <player>`. A rejected pick stays open until the server confirms — the player sees a red `Unknown or locked class` line in chat.
 
 **My choice didn't stick / wrong class after update.**
-Alpha jars may invalidate choices. Reselect in the picker or ask an admin for `/class set <player> <class>`.
+A jar may invalidate choices. Reselect in the picker or ask an admin for `/class set <player> <class>`.
 
 ## Gameplay
 
@@ -33,7 +33,7 @@ earn zero Momentum and roll no crit. Time your swings.
 
 **Onslaught did nothing / said `No Momentum`.**
 Onslaught needs at least 10 Momentum and an off-cooldown lane (60s). Inside its 15s window each
-full-swing hit deals +1 damage and spends 2 stacks; nothing feeds the bar until the window ends.
+full-swing hit spends 2 stacks while every landed hit deals x1.15 melee; nothing feeds the bar until the window ends.
 If the bar empties first, the window ends there.
 
 **Offload did nothing.**

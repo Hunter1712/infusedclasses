@@ -23,7 +23,7 @@ Gamemaster only. Sets the player's class choice. Suggests registered playable id
 
 ## `/class select <player>`
 
-Gamemaster only, testing-only. Reopens the picker on the player's current page for GUI iteration — used after alpha updates when players are told to reselect, and by developers iterating on card copy.
+Gamemaster only, testing-only. Reopens the picker on the player's current page for GUI iteration — used after updates when players are told to reselect, and by developers iterating on card copy.
 
 - Carries the current class so reopening lands on its page.
 - Picking still validates server-side; the picker closes only on the pick confirm. A rejected pick stays open for retry.

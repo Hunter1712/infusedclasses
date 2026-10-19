@@ -25,10 +25,10 @@ Infused Classes is **All Rights Reserved**, but the licence explicitly permits i
 
 ## Tuning it for your pack
 
-No code changes are needed and no knobs exist — there is no config file. Everything pack-relevant is the install contract plus the alpha policy:
+No code changes are needed and no knobs exist — there is no config file. Everything pack-relevant is the install shape:
 
 - Ship the jar matching your pack's game version (`+1.21.11`); all players plus the server run the same jar.
-- Tell players alpha jars may require reselect (`/class select <player>`) and that worlds may break between 0.x updates with no migration.
+- Tell players an update may require a reselect (`/class select <player>`).
 
 ## Dependencies
 

@@ -1,6 +1,6 @@
 # Infused Classes
 
-Character classes for Minecraft (Fabric). **Alpha — manual builds only.**
+Character classes for Minecraft (Fabric). **Beta — manual builds only.**
 
 - Juggernaut: Momentum checkpoints and Burden's heavy chassis, Offload to ease the weight for a moment, Onslaught to spend the bar on damage.
 - Legionary: rotate stances, Impetus/Testudo flip buffs, Aequilibrium oath.
@@ -17,17 +17,11 @@ Crits are a mod rule: vanilla jump crits are retired, and every full-charge land
 ## Install (manual, forever)
 
 1. Install Fabric Loader for 1.21.11 + Fabric API.
-2. Build or fetch the jar: `./gradlew build` produces `build/libs/infusedclasses-0.3.0.jar` (`gradle.properties:8`, gitignored via `.gitignore:2`). At listing time jars carry the game version (`infusedclasses-<mod>+1.21.11.jar`) so a future 26.x jar slots onto the same page.
+2. Build or fetch the jar: `./gradlew build` produces `build/libs/infusedclasses-0.4.0.jar` (`gradle.properties:8`, gitignored via `.gitignore:2`). At listing time jars carry the game version (`infusedclasses-<mod>+1.21.11.jar`) so a future 26.x jar slots onto the same page.
 3. Drop the same jar in `mods/` on **both client and server** (server-required; the supported setup installs both sides). For the live dev instance: `./gradlew deployClient` (`build.gradle:50-65`).
 4. Reset class data after updates if told to: `/class select <player>`.
 
-No auto-updater. Modrinth + CurseForge listings (Alpha channel) are future manual uploads — this repo stays the source of truth.
-
-## Alpha contract
-
-- **Wipes/resets at any time in 0.x.** Worlds may break between alpha jars. No data migration until beta.
-- Balance/content is out of scope for alpha success; crash-hunt + core loop feel is the goal.
-- Support cap is best-effort. Off-topic reports (wrong loader/MC version, no log) close as wontfix.
+No auto-updater. Modrinth + CurseForge listings (Beta channel) are future manual uploads — this repo stays the source of truth.
 
 ## Feedback
 
@@ -41,9 +35,9 @@ Homepage/sources: https://github.com/Hunter1712/infusedclasses
 
 ## Draft listing blurb (Modrinth/CurseForge, when listed)
 
-> Infused Classes — ALPHA. Fabric 1.21.11 + Java 21 + Fabric API required, server + client install. Manual installs only. Expect wipes and class resets between 0.x updates with no migration. Report crashes with latest.log to GitHub Issues.
+> Infused Classes — BETA. Fabric 1.21.11 + Java 21 + Fabric API required, server + client install. Manual installs only. Report crashes with latest.log to GitHub Issues.
 
-Icon: `src/main/resources/assets/infusedclasses/icon.png` (128x128, wired in `fabric.mod.json`). Listing stays unlisted until beta — prepped docs below, no upload yet.
+Icon: `src/main/resources/assets/infusedclasses/icon.png` (128x128, wired in `fabric.mod.json`). Listing is prepped for the Beta channel — no upload yet.
 
 ## Player guide (prepped for listing, source of truth)
 
