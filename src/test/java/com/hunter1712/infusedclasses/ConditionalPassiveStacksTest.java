@@ -155,8 +155,8 @@ class ConditionalPassiveStacksTest {
 		runtime.decay(juggernaut(), 1_000_000);
 
 		assertEquals(0, runtime.stacks(momentum()));
-		assertEquals(0, runtime.graceRemaining(momentum(), 1_000_000));
-		assertEquals(0, runtime.graceStamp(momentum()));
+		assertEquals(0, runtime.bar(momentum(), 1_000_000).graceRemainingMs());
+		assertEquals(0, runtime.bar(momentum(), 1_000_000).graceStampMs());
 	}
 
 	@Test

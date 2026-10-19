@@ -35,10 +35,18 @@ public class ClassSelectScreen extends Screen {
 	private final List<Button> dots = new ArrayList<>();
 	private int page;
 	private int scrollPx;
-	private int lastMaxScroll;
-	// One card model per frame: the background pass resolves it, the body pass reuses it,
-	// so cardFor runs once instead of twice. Background always runs first per frame.
-	private ClassPresentation.CardModel frameModel;
+	// One resolved view per frame: the background pass resolves the card, its model and its
+	// measured layout together, and the body pass reuses that one value. Scroll clamps
+	// against the same measured layout instead of a separate last-max field.
+	private View frame;
+
+	/** One frame's resolved card: its rectangle, its presentation and its wrapped layout. */
+	private record View(CardLayout.CardRect card, ClassPresentation.CardModel model,
+			ClassCardRenderer.Measured measured) {
+		int maxScroll() {
+			return measured.layout().maxScroll();
+		}
+	}
 
 	public ClassSelectScreen(String currentClassId) {
 		super(Component.literal(TITLE));
@@ -93,10 +101,16 @@ public class ClassSelectScreen extends Screen {
 		if (classes.isEmpty()) {
 			return;
 		}
+		frame = resolve(mouseX, mouseY);
+		ClassCardRenderer.drawFrame(graphics, frame.card(), frame.model());
+	}
+
+	/** The one per-frame resolution: card rectangle, presentation model and measured layout. */
+	private View resolve(int mouseX, int mouseY) {
 		CardLayout.CardRect card = CardLayout.focusedCard(width, height);
-		ClassDefinition def = classes.get(page);
-		frameModel = ClassPresentation.cardFor(def, CardLayout.isHovering(card, mouseX, mouseY));
-		ClassCardRenderer.drawFrame(graphics, card, frameModel);
+		ClassPresentation.CardModel model = ClassPresentation.cardFor(classes.get(page),
+				CardLayout.isHovering(card, mouseX, mouseY));
+		return new View(card, model, ClassCardRenderer.measure(card, model, font::width));
 	}
 
 	@Override
@@ -105,22 +119,17 @@ public class ClassSelectScreen extends Screen {
 		if (classes.isEmpty()) {
 			return;
 		}
-		CardLayout.CardRect card = CardLayout.focusedCard(width, height);
+		View view = frame != null ? frame : resolve(mouseX, mouseY);
+		CardLayout.CardRect card = view.card();
 		graphics.drawCenteredString(font, TITLE_BOLD, width / 2, CardLayout.titleY(card), TITLE_COLOR);
 		graphics.drawCenteredString(font, ClassPresentation.subtitle(), width / 2, CardLayout.subtitleY(card),
 				SUBTITLE_COLOR);
 
-		ClassDefinition def = classes.get(page);
-		boolean hovered = CardLayout.isHovering(card, mouseX, mouseY);
-		ClassPresentation.CardModel model = frameModel != null ? frameModel
-				: ClassPresentation.cardFor(def, hovered);
-		// Measure first: the scroll clamps against this frame's own content, so a page
-		// that shrank (or a reset) can never draw one frame past its end.
-		ClassCardRenderer.Measured measured = ClassCardRenderer.measure(card, model, font::width);
-		scrollPx = CardLayout.clampScroll(scrollPx, measured.layout().maxScroll());
-		lastMaxScroll = measured.layout().maxScroll();
-		ClassCardRenderer.drawBody(graphics, font, card, model, measured, scrollPx);
-		CardLayout.ButtonRect bar = CardLayout.scrollBar(card, measured.layout(), scrollPx);
+		// The scroll clamps against this frame's own measured content, so a page that
+		// shrank (or a reset) can never draw one frame past its end.
+		scrollPx = CardLayout.clampScroll(scrollPx, view.maxScroll());
+		ClassCardRenderer.drawBody(graphics, font, card, view.model(), view.measured(), scrollPx);
+		CardLayout.ButtonRect bar = CardLayout.scrollBar(card, view.measured().layout(), scrollPx);
 		if (bar != null) {
 			graphics.fill(bar.x(), bar.y(), bar.x() + bar.w(), bar.y() + bar.h(), 0xFF8A8A8A);
 		}
@@ -134,9 +143,9 @@ public class ClassSelectScreen extends Screen {
 	@Override
 	public boolean mouseScrolled(double mouseX, double mouseY, double horizontalAmount, double verticalAmount) {
 		if (!classes.isEmpty()) {
-			CardLayout.CardRect card = CardLayout.focusedCard(width, height);
-			if (CardLayout.isHovering(card, (int) mouseX, (int) mouseY)) {
-				scrollPx = CardLayout.clampScroll(scrollPx - (int) (verticalAmount * 12), lastMaxScroll);
+			View view = resolve((int) mouseX, (int) mouseY);
+			if (CardLayout.isHovering(view.card(), (int) mouseX, (int) mouseY)) {
+				scrollPx = CardLayout.clampScroll(scrollPx - (int) (verticalAmount * 12), view.maxScroll());
 				return true;
 			}
 		}

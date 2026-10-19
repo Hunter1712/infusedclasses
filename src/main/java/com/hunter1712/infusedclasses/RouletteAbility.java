@@ -108,6 +108,16 @@ public final class RouletteAbility {
 		return List.of(WARD_PLATE, HASTE_ALACRITY);
 	}
 
+	/**
+	 * The wheel's window family row: both stat auras in play, the live spin's one wanted.
+	 * The row lives here beside the auras it spells, so the applier never names a band.
+	 */
+	public static WindowFamily windowFamily() {
+		return new WindowFamily(ClassRegistry.ROULETTE_ABILITY, allStatModifiers(),
+				state -> state.rouletteOutcome() == null
+						? List.of() : statAuraFor(state.rouletteOutcome()));
+	}
+
 	/** The stats the given outcome grants while its window is live. Timed, never consumed: expiry is silent. */
 	public static List<PassiveEffect.Modifier> statAuraFor(Outcome outcome) {
 		return switch (outcome) {
@@ -146,13 +156,14 @@ public final class RouletteAbility {
 	 * Arms the lane and stamps the outcome window together on a fired press; rejected
 	 * presses leave both untouched. The arm reads the same lane and now the trigger
 	 * just checked, so it cannot fail. Free: no HP is spent, checked or touched anywhere.
+	 * Returns the shared outcome envelope; the landed band is the runtime's read.
 	 */
-	public static Result fire(ClassDefinition def, PlayerRuntime runtime, long now, float roll) {
+	public static AbilityOutcome fire(ClassDefinition def, PlayerRuntime runtime, long now, float roll) {
 		Result result = trigger(def, runtime.state(now).laneRemaining(Lane.ROULETTE), roll);
 		if (result.outcome().fired()) {
 			runtime.roulette(now, result.band());
 		}
-		return result;
+		return result.outcome();
 	}
 
 	/** Melee dealt mult of the live spin, 1.0 when no outcome window is live. Read by the melee plan. */

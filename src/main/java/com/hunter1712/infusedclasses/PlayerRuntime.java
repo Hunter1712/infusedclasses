@@ -2,6 +2,7 @@ package com.hunter1712.infusedclasses;
 
 import java.util.EnumMap;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * Transient per-player state: conditional-passive stacks and ability cooldowns. Nothing here is
@@ -92,6 +93,37 @@ public final class PlayerRuntime {
 		/** The Impetus flip buff: the rotate lane's one-shot, which only a Gladius landing carries. */
 		public boolean impetusPending() {
 			return lanes.get(Lane.ROTATE).windowPending();
+		}
+
+		/**
+		 * Whether anything a client cannot derive moved since the given read: the discrete
+		 * facts plus each lane's armed flags, never raw remainders, which decay on every
+		 * rebuild. A null previous read is always a move (nothing was sent).
+		 */
+		public boolean movedSince(State prev) {
+			if (prev == null) {
+				return true;
+			}
+			if (!Objects.equals(flipTarget, prev.flipTarget())
+					|| !Objects.equals(rouletteOutcome, prev.rouletteOutcome())
+					|| !Objects.equals(stance, prev.stance())
+					|| streak != prev.streak()) {
+				return true;
+			}
+			for (Lane lane : Lane.values()) {
+				LaneRead self = lanes.get(lane);
+				LaneRead before = prev.lane(lane);
+				if (armed(self.remainingMs()) != armed(before.remainingMs())
+						|| armed(self.windowRemainingMs()) != armed(before.windowRemainingMs())
+						|| self.windowPending() != before.windowPending()) {
+					return true;
+				}
+			}
+			return false;
+		}
+
+		private static boolean armed(long remainingMs) {
+			return remainingMs > 0;
 		}
 	}
 
@@ -252,14 +284,21 @@ public final class PlayerRuntime {
 		return passiveStacks.stacks(passive);
 	}
 
-	/** Millis until the next stack is owed, 0 when the bar holds none. The same clock the bleed runs on. */
-	public long graceRemaining(ConditionalPassive passive, long now) {
-		return passiveStacks.graceRemaining(passive, now);
+	/**
+	 * One bar's whole read at {@code now}: its count, the grace millis left and the feed
+	 * stamp. The snapshot takes this one value instead of three forwards, so the three
+	 * facts that travel together are assembled once.
+	 */
+	public BarRead bar(ConditionalPassive passive, long now) {
+		return new BarRead(passiveStacks.stacks(passive),
+				passiveStacks.graceRemaining(passive, now),
+				passiveStacks.graceStamp(passive));
 	}
 
-	/** The feed clock's last stamp for this passive, 0 when it holds none. Compared for movement, never read as time. */
-	public long graceStamp(ConditionalPassive passive) {
-		return passiveStacks.graceStamp(passive);
+	/** One bar's whole wire read: the count, the grace remainder and the feed stamp. */
+	public record BarRead(int stacks, long graceRemainingMs, long graceStampMs) {
+		/** No bar at all, for a classless player. */
+		public static final BarRead NONE = new BarRead(0, 0L, 0L);
 	}
 
 	/** Bumps every passive on the given class whose earns name the trigger, each by its own amount.

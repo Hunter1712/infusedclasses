@@ -77,6 +77,21 @@ class PlayerStatusTest {
 	}
 
 	@Test
+	void snapshotComposesTheRuntimeReads() {
+		PlayerRuntime runtime = new PlayerRuntime();
+		long now = 1_000L;
+		runtime.onTrigger(juggernaut(), Trigger.ON_HIT_DEALT, now, 1.0F);
+		ConditionalPassive momentum = juggernaut().passiveForTrigger(Trigger.ON_HIT_DEALT);
+
+		PlayerRuntime.State state = runtime.state(now);
+		PlayerStatusPayload payload = PlayerStatusPayload.of(juggernaut(), runtime, state, now);
+
+		// The payload is the two reads it composes, not a field-by-field restatement.
+		assertEquals(state, payload.state());
+		assertEquals(runtime.bar(momentum, now), payload.bar());
+	}
+
+	@Test
 	void movedSinceCatchesAGraceRestampAtTheStackCap() {
 		PlayerRuntime runtime = new PlayerRuntime();
 		for (int i = 0; i < Momentum.MAX_STACKS; i++) {
@@ -215,14 +230,14 @@ class PlayerStatusTest {
 
 		runtime.onTrigger(juggernaut(), Trigger.ON_HIT_DEALT, 1_000, 1.0F);
 		ConditionalPassive momentum = juggernaut().passiveForTrigger(Trigger.ON_HIT_DEALT);
-		assertEquals(5_000, runtime.graceRemaining(momentum, 1_000));
-		assertEquals(1, runtime.graceRemaining(momentum, 5_999));
-		assertEquals(0, runtime.graceRemaining(momentum, 6_000));
-		assertEquals(1_000, runtime.graceStamp(momentum));
+		assertEquals(5_000, runtime.bar(momentum, 1_000).graceRemainingMs());
+		assertEquals(1, runtime.bar(momentum, 5_999).graceRemainingMs());
+		assertEquals(0, runtime.bar(momentum, 6_000).graceRemainingMs());
+		assertEquals(1_000, runtime.bar(momentum, 1_000).graceStampMs());
 		runtime.spendStacks(momentum, 1);
-		assertEquals(0, runtime.graceRemaining(momentum, 1_000));
-		assertEquals(0, runtime.graceStamp(momentum));
+		assertEquals(0, runtime.bar(momentum, 1_000).graceRemainingMs());
+		assertEquals(0, runtime.bar(momentum, 1_000).graceStampMs());
 
-		assertEquals(0, new PlayerRuntime().graceStamp(momentum));
+		assertEquals(0, new PlayerRuntime().bar(momentum, 0).graceStampMs());
 	}
 }

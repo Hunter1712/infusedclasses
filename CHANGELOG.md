@@ -13,8 +13,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Cooldowns, ability windows and passive grace run on a monotonic clock (`InfusedClasses.now()`, `System.nanoTime` millis) instead of wall time, so a clock step — a VM snapshot restore, an NTP correction — can no longer skip a cooldown or freeze one. The client HUD's countdowns stay client-local.
 
 ### Changed
+- Ability firing, window auras and the status snapshot get their decisions beside their
+  constants (ADR-0029/0030/0031): the roster row carries its reused slot, its fanfare and its
+  pure fire, so `BindMorph` is one slot walk and `SlotPresses` is one press; each window
+  ability carries its own aura family and `ConditionalPassive` carries the rows its bar writes,
+  so the applier is a loop; the snapshot composes the runtime's own `State` and `BarRead` reads
+  and the tick's sequence is the named `TickPass`. No player-visible rule changes: the wire order,
+  the HUD rows, the cooldown boundaries and the attribute reconcile are unchanged.
 - `PROJECT_DESCRIPTION.md` catches up with Beta: current kits (Momentum checkpoints with Offload and Onslaught), Crooked Dice at 15% and All In at x1.75 on `V`, and no alpha contract.
-- `ServerEvents` splits at its two bulky seams: `MeleeHook` owns the AFTER_DAMAGE body and `SlotPresses` the reused-bind arms (ADR-0009's explicit shape, new home), leaving the file as lifecycle wiring and the one steady-state emission point, under the repo's ~150-line line. The settle's landed math is the new `HitMitigation`.
+- `ServerEvents` splits at its two bulky seams: `MeleeHook` owns the AFTER_DAMAGE body and `SlotPresses` the reused-bind presses (one press per slot, ADR-0029), leaving the file as lifecycle wiring and the one steady-state emission point, under the repo's ~150-line line. The settle's landed math is the new `HitMitigation`.
 
 ## [0.4.0] - 2026-10-19
 

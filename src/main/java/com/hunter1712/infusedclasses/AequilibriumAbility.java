@@ -36,6 +36,15 @@ public final class AequilibriumAbility {
 	private static final List<PassiveEffect.Modifier> WINDOW_AURA = List.of(
 			new PassiveEffect.Modifier(ClassRegistry.ARMOR, PLATE_ID, PLATE_BONUS));
 
+	/**
+	 * The oath-window family row: the plate in play, wanted only while the shared oath
+	 * window is live. The row lives here beside the plate it spells, so the applier never
+	 * names the oath lane or its window.
+	 */
+	public static WindowFamily windowFamily() {
+		return WindowFamily.whileLive(ClassRegistry.AEQUILIBRIUM_ABILITY, Lane.OATH, WINDOW_AURA);
+	}
+
 	private AequilibriumAbility() {
 	}
 

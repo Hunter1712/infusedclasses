@@ -90,13 +90,13 @@ class OffloadAbilityTest {
 	@Test
 	void theFamilyWantsItsPairOnlyWhileTheWindowIsLive() {
 		PlayerRuntime runtime = loaded(5);
-		assertEquals(List.of(), PassiveApplier.offloadWanted(runtime.state(0)));
+		assertEquals(List.of(), OffloadAbility.windowFamily().wanted().apply(runtime.state(0)));
 
 		OffloadAbility.fire(juggernaut(), runtime, 0);
 
-		assertEquals(OffloadAbility.windowModifiers(), PassiveApplier.offloadWanted(runtime.state(0)));
-		assertEquals(OffloadAbility.windowModifiers(), PassiveApplier.offloadWanted(runtime.state(4_999)));
-		assertEquals(List.of(), PassiveApplier.offloadWanted(runtime.state(5_000)));
+		assertEquals(OffloadAbility.windowModifiers(), OffloadAbility.windowFamily().wanted().apply(runtime.state(0)));
+		assertEquals(OffloadAbility.windowModifiers(), OffloadAbility.windowFamily().wanted().apply(runtime.state(4_999)));
+		assertEquals(List.of(), OffloadAbility.windowFamily().wanted().apply(runtime.state(5_000)));
 	}
 
 	@Test

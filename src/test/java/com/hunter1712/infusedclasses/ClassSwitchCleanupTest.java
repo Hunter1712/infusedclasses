@@ -75,6 +75,18 @@ class ClassSwitchCleanupTest {
 	}
 
 	@Test
+	void aClassCarryingAequilibriumWithoutRotateStillSweepsItsPlate() {
+		ClassDefinition aeqOnly = new ClassDefinition(Identifier.fromNamespaceAndPath("infusedclasses", "aeq_only"),
+				"Aeq Only", List.of(), List.of(), List.of(), 0, "",
+				List.of(new ClassDefinition.ActiveAbility(ClassRegistry.AEQUILIBRIUM_ABILITY, "Aequilibrium", "copy")),
+				List.of(), CritRule.universal());
+
+		// The oath window family belongs to Aequilibrium, not to the stance: its plate
+		// sweeps for a class that never marks Rotate.
+		assertEquals(List.of("aequilibrium_plate"), ids(aeqOnly, null));
+	}
+
+	@Test
 	void everyRemovedEntryNamesAnAttributeAndIsListedOnce() {
 		for (ClassDefinition oldDef : ClassRegistry.all()) {
 			for (ClassDefinition newDef : ClassRegistry.all()) {

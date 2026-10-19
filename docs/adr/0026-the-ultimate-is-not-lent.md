@@ -1,6 +1,6 @@
 # ADR-0026: The ultimate is not lent
 
-Status: accepted
+Status: accepted (its target names are replaced by row slots in ADR-0029; the outcome stands)
 
 ## Context
 

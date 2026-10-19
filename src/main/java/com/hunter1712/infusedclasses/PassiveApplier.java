@@ -7,7 +7,6 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.function.Function;
 
 /** Adapter for {@link PassiveEffect}: makes the player's attributes agree with the decision. */
 public final class PassiveApplier {
@@ -15,26 +14,20 @@ public final class PassiveApplier {
 	}
 
 	/**
-	 * One window-aura family: the marker ability that owns it, every modifier it can
-	 * write, and the pure decision of what its live windows want. The reconcile walks
-	 * the family once, so the write and remove sides cannot drift, and a class without
-	 * the marker sweeps whatever the family could have written.
+	 * Every window family in the game, each row owned by the ability whose window it spells.
+	 * Adding a window ability adds its row here; the reconcile below never names an ability
+	 * id or a lane.
 	 */
-	private record WindowFamily(
-			Identifier marker,
-			List<PassiveEffect.Modifier> all,
-			Function<PlayerRuntime.State, List<PassiveEffect.Modifier>> wanted) {
-	}
-
-	private static final List<WindowFamily> FAMILIES = List.of(
-			new WindowFamily(ClassRegistry.ROTATE_ABILITY, stanceModifiers(), PassiveApplier::stanceWanted),
-			new WindowFamily(ClassRegistry.ROULETTE_ABILITY, RouletteAbility.allStatModifiers(), PassiveApplier::rouletteWanted),
-			new WindowFamily(ClassRegistry.OFFLOAD_ABILITY, OffloadAbility.windowModifiers(), PassiveApplier::offloadWanted));
+	private static final List<WindowFamily> WINDOWS = List.of(
+			RotateAbility.windowFamily(),
+			AequilibriumAbility.windowFamily(),
+			RouletteAbility.windowFamily(),
+			OffloadAbility.windowFamily());
 
 	/**
 	 * One tick for one player: the single reconcile home. Bleed, then the tiered bars,
 	 * then the always-on chassis, then the HP-scaled pair, then the window-aura families
-	 * (the stance and its Aequilibrium window, the wheel's live spin, Offload's loosened
+	 * (the stance, Aequilibrium's oath window, the wheel's live spin, Offload's loosened
 	 * window), in that order; the switch's cleanup takes off what {@link #cleanupFor}
 	 * decides is stale. The tick order and the write-only-on-change discipline are
 	 * decided once. The caller owns the tick's one state read and passes it: the bleed
@@ -49,16 +42,10 @@ public final class PassiveApplier {
 		}
 		runtime.decay(def, now);
 		for (ConditionalPassive passive : def.passives()) {
-			// Momentum owns the one tier-to-modifier table today. Another bar adds its
-			// own module and a dispatch here; applying Momentum's ids to it would leak
-			// the wrong rows onto the player and into the switch cleanup.
-			if (!Momentum.PASSIVE.equals(passive)) {
-				continue;
-			}
-			// The bar is read, never remembered: losing or spending stacks re-reconciles
-			// to the row the bar names now, and below the first checkpoint the sweep takes
-			// the row off entirely.
-			reconcile(player, Momentum.allModifiers(), Momentum.forStacks(runtime.stacks(passive)));
+			// The bar owns its rows: each passive names what it writes at a stack count,
+			// so a second bar adds its own row, not a dispatch here.
+			reconcile(player, passive.barRows().apply(passive.maxStacks()),
+					passive.barRows().apply(runtime.stacks(passive)));
 		}
 		for (ClassDefinition.AlwaysOn alwaysOn : def.alwaysOn()) {
 			for (PassiveEffect.Modifier modifier : alwaysOn.modifiers()) {
@@ -76,7 +63,7 @@ public final class PassiveApplier {
 
 	/** One reconcile pass over every family: a held marker writes what its state wants, an absent one wants nothing. */
 	private static void reconcileWindows(ServerPlayer player, ClassDefinition def, PlayerRuntime.State state) {
-		for (WindowFamily family : FAMILIES) {
+		for (WindowFamily family : WINDOWS) {
 			List<PassiveEffect.Modifier> wanted = def.hasAbility(family.marker())
 					? family.wanted().apply(state) : List.of();
 			reconcile(player, family.all(), wanted);
@@ -108,35 +95,6 @@ public final class PassiveApplier {
 			}
 		}
 		return false;
-	}
-
-	/** The stance family's wanted set: the current stance's aura, plus Aequilibrium's while its window is live. */
-	static List<PassiveEffect.Modifier> stanceWanted(PlayerRuntime.State state) {
-		List<PassiveEffect.Modifier> wanted = new ArrayList<>(RotateAbility.auraFor(state.stance()));
-		if (state.lane(Lane.OATH).windowRemainingMs() > 0) {
-			wanted.addAll(AequilibriumAbility.windowModifiers());
-		}
-		return wanted;
-	}
-
-	/** The wheel family's wanted set: the live spin's stat aura, empty when no spin is live. */
-	static List<PassiveEffect.Modifier> rouletteWanted(PlayerRuntime.State state) {
-		RouletteAbility.Outcome outcome = state.rouletteOutcome();
-		return outcome == null ? List.of() : RouletteAbility.statAuraFor(outcome);
-	}
-
-	/** The Offload family's wanted set: the haste and speed pair while the loosened window is live. */
-	static List<PassiveEffect.Modifier> offloadWanted(PlayerRuntime.State state) {
-		return state.lane(Lane.OFFLOAD).windowRemainingMs() > 0
-				? OffloadAbility.windowModifiers() : List.of();
-	}
-
-	/** The stance family's full set: both stances' auras plus the window pair, so write and remove cannot drift. */
-	private static List<PassiveEffect.Modifier> stanceModifiers() {
-		List<PassiveEffect.Modifier> all = new ArrayList<>(RotateAbility.auraFor(RotateAbility.Stance.GLADIUS));
-		all.addAll(RotateAbility.auraFor(RotateAbility.Stance.SCUTUM));
-		all.addAll(AequilibriumAbility.windowModifiers());
-		return all;
 	}
 
 	/**
@@ -205,9 +163,7 @@ public final class PassiveApplier {
 		}
 		List<PassiveEffect.Modifier> all = new ArrayList<>();
 		for (ConditionalPassive passive : def.passives()) {
-			if (Momentum.PASSIVE.equals(passive)) {
-				all.addAll(Momentum.allModifiers());
-			}
+			all.addAll(passive.barRows().apply(passive.maxStacks()));
 		}
 		for (ClassDefinition.AlwaysOn alwaysOn : def.alwaysOn()) {
 			all.addAll(alwaysOn.modifiers());
@@ -215,7 +171,7 @@ public final class PassiveApplier {
 		for (HpScaledPassive hp : def.hpPassives()) {
 			all.add(PassiveEffect.forBucket(hp, 1));
 		}
-		for (WindowFamily family : FAMILIES) {
+		for (WindowFamily family : WINDOWS) {
 			if (def.hasAbility(family.marker())) {
 				all.addAll(family.all());
 			}

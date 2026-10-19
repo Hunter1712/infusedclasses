@@ -22,10 +22,8 @@ public final class StatusSync {
 	private StatusSync() {
 	}
 
-	/** Rebuilds the snapshot from the already-resolved class and the tick's one state read, and sends it only when anything discrete moved since the last send. */
-	public static void maybeSend(ServerPlayer player, ClassDefinition def, PlayerRuntime runtime,
-			PlayerRuntime.State state, long now) {
-		PlayerStatusPayload snapshot = snapshot(def, runtime, state, now);
+	/** Sends the tick's snapshot only when anything discrete moved since the last send. */
+	public static void maybeSend(ServerPlayer player, PlayerStatusPayload snapshot) {
 		PlayerStatusPayload prev = lastSent.get(player.getUUID());
 		if (!snapshot.movedSince(prev)) {
 			return;

@@ -42,6 +42,31 @@ class AbilityRosterTest {
 	}
 
 	@Test
+	void rowsCarryTheirSlot() {
+		assertEquals(AbilityRoster.Slot.SIGNATURE, AbilityRoster.OFFLOAD.slot());
+		assertEquals(AbilityRoster.Slot.SIGNATURE, AbilityRoster.ROTATE.slot());
+		assertEquals(AbilityRoster.Slot.SIGNATURE, AbilityRoster.ROULETTE.slot());
+		assertEquals(AbilityRoster.Slot.ULTIMATE, AbilityRoster.ONSLAUGHT.slot());
+		assertEquals(AbilityRoster.Slot.ULTIMATE, AbilityRoster.AEQUILIBRIUM.slot());
+		assertEquals(AbilityRoster.Slot.ULTIMATE, AbilityRoster.ALL_IN.slot());
+	}
+
+	@Test
+	void aRowFiresTheAbilityItNames() {
+		PlayerRuntime runtime = new PlayerRuntime();
+
+		AbilityOutcome rotated = AbilityRoster.ROTATE.fire().fire(legionary(), runtime, 0, 0.5F);
+		assertTrue(rotated.fired());
+		assertEquals(RotateAbility.Stance.GLADIUS, runtime.state(0).stance());
+		assertEquals("Gladius!", rotated.announcement().text());
+
+		// The wheel reads the pressed roll through the same one-argument-shape fire.
+		AbilityOutcome spun = AbilityRoster.ROULETTE.fire().fire(gambler(), runtime, 0, 0.5F);
+		assertTrue(spun.fired());
+		assertEquals(RouletteAbility.Outcome.HASTE, runtime.state(0).rouletteOutcome());
+	}
+
+	@Test
 	void rowsReadTheirOwnLane() {
 		PlayerRuntime runtime = new PlayerRuntime();
 		runtime.arm(Lane.OFFLOAD, 0, OffloadAbility.WINDOW_TICKS * 50L);
@@ -190,8 +215,9 @@ class AbilityRosterTest {
 		lanes.put(Lane.ROULETTE, new LaneRead(0, roulette, false));
 		lanes.put(Lane.OATH, new LaneRead(0, aeq, false));
 		lanes.put(Lane.ALL_IN, new LaneRead(0, allIn, false));
-		return new PlayerStatusPayload("infusedclasses:juggernaut", lanes, RotateAbility.Stance.SCUTUM,
-				RouletteAbility.Outcome.EDGE, 0, 0, 0, null, 0);
+		PlayerRuntime.State state = new PlayerRuntime.State(lanes, RotateAbility.Stance.SCUTUM,
+				RouletteAbility.Outcome.EDGE, null, 0);
+		return new PlayerStatusPayload("infusedclasses:juggernaut", state, PlayerRuntime.BarRead.NONE);
 	}
 
 	/** The snapshot a server would send for this runtime; the class does not matter to what rows read. */

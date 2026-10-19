@@ -47,30 +47,20 @@ final class ServerEvents {
 		// The melee hook: one AFTER_DAMAGE body, routed and settled in MeleeHook.
 		ServerLivingEntityEvents.AFTER_DAMAGE.register(MeleeHook::afterDamage);
 
-		// Server tick: decay conditional passive stacks, then put their effect on the player.
+		// Server tick: the passive pass, the drained-window end and the snapshot are one
+		// named sequence; this only loops the players and sends.
 		ServerTickEvents.END_SERVER_TICK.register(server -> {
 			long now = InfusedClasses.now();
 			for (ServerPlayer player : server.getPlayerList().getPlayers()) {
-				PlayerClasses classes = PlayerClassAccess.of(player);
-				ClassDefinition def = classes.currentDefinition();
+				ClassDefinition def = PlayerClassAccess.of(player).currentDefinition();
 				if (def == null) {
 					continue;
 				}
-				PlayerRuntime runtime = InfusedClasses.runtime(player);
-				// One transient read for the tick: the applier reconciles from it and the
-				// snapshot is rebuilt from it, so a tick reads state once per player.
-				PlayerRuntime.State state = runtime.state(now);
-				PassiveApplier.apply(player, def, runtime, state, now);
-				// The Onslaught window lasts the bar as well as the clock: an empty bar
-				// ends it here, after the bleed. If it ended, re-read before the snapshot:
-				// otherwise the tick would draw a rider for a window that just closed.
-				boolean ended = OnslaughtAbility.endIfDrained(def, runtime, state);
-				if (ended) {
-					state = runtime.state(now);
-				}
+				PlayerStatusPayload snapshot =
+						TickPass.run(player, def, InfusedClasses.runtime(player), now);
 				// The one steady-state emission point: a tick that moved a lane, a window
-				// or a stack tells the client; a quiet tick rebuilds and compares for free.
-				StatusSync.maybeSend(player, def, runtime, state, now);
+				// or a stack tells the client; a quiet tick compares for free.
+				StatusSync.maybeSend(player, snapshot);
 			}
 		});
 	}
@@ -92,9 +82,9 @@ final class ServerEvents {
 				}));
 
 		ServerPlayNetworking.registerGlobalReceiver(RushPayload.TYPE, (payload, context) -> context.server()
-				.execute(() -> SlotPresses.press(context.player(), SlotPresses::pressSignature)));
+				.execute(() -> SlotPresses.pressSignature(context.player())));
 
 		ServerPlayNetworking.registerGlobalReceiver(RendPayload.TYPE, (payload, context) -> context.server()
-				.execute(() -> SlotPresses.press(context.player(), SlotPresses::pressUltimate)));
+				.execute(() -> SlotPresses.pressUltimate(context.player())));
 	}
 }

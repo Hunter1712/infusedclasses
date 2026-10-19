@@ -3,77 +3,38 @@ package com.hunter1712.infusedclasses;
 import net.minecraft.server.level.ServerPlayer;
 
 /**
- * The reused slot binds' landing: one press path for both slots, with the switch arms
- * kept explicit in the wiring layer per ADR-0009 — this routes, the abilities decide.
- * The entry keeps payload registration and the receivers; what a press lands lives here.
+ * The reused slot binds' landing: one walk from the slot to its roster row, the row's own
+ * fire, and the shared announcement. A further ability adds a row to {@link AbilityRoster},
+ * not an arm here; the two binds share this path so they cannot land differently.
  */
 final class SlotPresses {
 	private SlotPresses() {
 	}
 
-	/** One slot press: the class read, the classless bail and the runtime lookup are the one path both binds share. */
-	static void press(ServerPlayer player, SlotPress slot) {
-		long now = InfusedClasses.now();
+	/** The signature bind: the row the class's first signature active names, Offload for everyone else. */
+	static void pressSignature(ServerPlayer player) {
+		press(player, AbilityRoster.Slot.SIGNATURE);
+	}
+
+	/** The ultimate bind: the row the class's first ultimate active names, Onslaught for everyone else. */
+	static void pressUltimate(ServerPlayer player) {
+		press(player, AbilityRoster.Slot.ULTIMATE);
+	}
+
+	private static void press(ServerPlayer player, AbilityRoster.Slot slot) {
 		ClassDefinition def = PlayerClassAccess.of(player).currentDefinition();
-		// A classless press can only reject, silently, so it costs no state
-		// (ADR-0005): the runtime lookup below runs for a classed player only.
+		// A classless press can only reject, silently, so it costs no state (ADR-0005):
+		// the runtime lookup below runs for a classed player only.
 		if (def == null) {
 			return;
 		}
-		slot.land(player, def, InfusedClasses.runtime(player), now);
-	}
-
-	/** What one slot's press lands once the class is known: the target's ability plus its adapter. */
-	interface SlotPress {
-		void land(ServerPlayer player, ClassDefinition def, PlayerRuntime runtime, long now);
-	}
-
-	/**
-	 * The signature slot: the reused bind's target fires and its landing runs, one line per
-	 * arm. The arms stay explicit here per ADR-0009: this routes, the abilities decide.
-	 */
-	static void pressSignature(ServerPlayer player, ClassDefinition def, PlayerRuntime runtime, long now) {
-		// Reused signature bind: the wheel for Gamblers, the rotate intent for Legionaries,
-		// Offload for everyone else, so binds survive the class.
-		switch (BindMorph.signatureFor(def)) {
-			// Rotate announces without fanfare on purpose: it carries no cast sound.
-			case ROTATE -> {
-				RotateAbility.Result result = RotateAbility.fire(def, runtime, now);
-				AbilityApplier.announce(player, result.outcome().announcement(), true);
-			}
-			case ROULETTE -> {
-				RouletteAbility.Result result =
-						RouletteAbility.fire(def, runtime, now, player.getRandom().nextFloat());
-				AbilityApplier.announceAndCast(player, result.outcome().announcement(),
-						result.outcome().fired(), true);
-			}
-			case OFFLOAD -> {
-				AbilityOutcome result = OffloadAbility.fire(def, runtime, now);
-				AbilityApplier.announceAndCast(player, result.announcement(), result.fired(), true);
-			}
-		}
-	}
-
-	/**
-	 * The ultimate slot: the reused bind's target fires and its landing runs, one line per
-	 * arm, the arms explicit here for the same reason.
-	 */
-	static void pressUltimate(ServerPlayer player, ClassDefinition def, PlayerRuntime runtime, long now) {
-		// Reused ultimate bind: All In for Gamblers, the oath ultimate for Legionaries,
-		// Onslaught for everyone else.
-		switch (BindMorph.ultimateFor(def)) {
-			case AEQUILIBRIUM -> {
-				AbilityOutcome result = AequilibriumAbility.fire(def, runtime, now);
-				AbilityApplier.announceAndCast(player, result.announcement(), result.fired(), true);
-			}
-			case ALL_IN -> {
-				AbilityOutcome result = AllInAbility.fire(def, runtime, now);
-				AbilityApplier.announceAndCast(player, result.announcement(), result.fired(), true);
-			}
-			case ONSLAUGHT -> {
-				AbilityOutcome result = OnslaughtAbility.fire(def, runtime, now);
-				AbilityApplier.announceAndCast(player, result.announcement(), result.fired(), true);
-			}
-		}
+		AbilityRoster.Row row = BindMorph.slotFor(def, slot);
+		// One roll per press: only the wheel reads it, and every press draws it so the
+		// row's fire keeps one shape.
+		AbilityOutcome result = row.fire().fire(def, InfusedClasses.runtime(player),
+				InfusedClasses.now(), player.getRandom().nextFloat());
+		// The row decides the fanfare: Rotate announces without one on purpose, every
+		// other ability plays the cast sound when it fired.
+		AbilityApplier.announceAndCast(player, result.announcement(), result.fired() && row.fans(), true);
 	}
 }

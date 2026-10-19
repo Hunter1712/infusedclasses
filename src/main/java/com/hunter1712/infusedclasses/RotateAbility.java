@@ -3,6 +3,7 @@ package com.hunter1712.infusedclasses;
 import net.minecraft.ChatFormatting;
 import net.minecraft.resources.Identifier;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -103,6 +104,23 @@ public final class RotateAbility {
 			new PassiveEffect.Modifier(ClassRegistry.ARMOR, SCUTUM_PLATE_ID, SCUTUM_ARMOR),
 			new PassiveEffect.Modifier(ClassRegistry.ARMOR_TOUGHNESS, SCUTUM_TOUGHNESS_ID, SCUTUM_TOUGHNESS),
 			new PassiveEffect.Modifier(ClassRegistry.MOVEMENT_SPEED, SCUTUM_WEIGHT_ID, SCUTUM_WEIGHT));
+	/** Both stances' auras: the family's sweep set, so the write and remove sides cannot drift. */
+	private static final List<PassiveEffect.Modifier> STANCE_AURAS = allStanceAuras();
+
+	private static List<PassiveEffect.Modifier> allStanceAuras() {
+		List<PassiveEffect.Modifier> all = new ArrayList<>(GLADIUS_AURA);
+		all.addAll(SCUTUM_AURA);
+		return List.copyOf(all);
+	}
+
+	/**
+	 * The stance family row: both auras in play, the current stance's one wanted. The row
+	 * lives here beside the auras it spells, so the applier never names a stance id.
+	 */
+	public static WindowFamily windowFamily() {
+		return new WindowFamily(ClassRegistry.ROTATE_ABILITY, STANCE_AURAS,
+				state -> auraFor(state.stance()));
+	}
 
 	/**
 	 * Outgoing melee multiplier for a stance (no flip buff).
@@ -162,14 +180,15 @@ public final class RotateAbility {
 	/**
 	 * Arms the transient runtime's rotate lane and flips the stance together on a fired
 	 * press; rejected presses leave both untouched. The arm reads the same lane and now
-	 * the trigger just checked, so it cannot fail.
+	 * the trigger just checked, so it cannot fail. Returns the shared outcome envelope:
+	 * the landing itself is the runtime's read, not a second answer shape.
 	 */
-	public static Result fire(ClassDefinition def, PlayerRuntime runtime, long now) {
+	public static AbilityOutcome fire(ClassDefinition def, PlayerRuntime runtime, long now) {
 		PlayerRuntime.State state = runtime.state(now);
 		Result result = trigger(def, state.laneRemaining(Lane.ROTATE), state.stance());
 		if (result.outcome().fired()) {
 			runtime.rotate(now, result.stance());
 		}
-		return result;
+		return result.outcome();
 	}
 }

@@ -42,7 +42,7 @@ public final class Momentum {
 	public static final Identifier KNOCKBACK_ID =
 			Identifier.fromNamespaceAndPath(InfusedClasses.MOD_ID, "momentum_knockback");
 
-	/** The one passive: fed by hits dealt and taken, tiered 15/30/45, quiet 5s then -1/s. */
+	/** The one passive: fed by hits dealt and taken, tiered 15/30/45, quiet 5s then -1/s. Its rows are its own. */
 	public static final ConditionalPassive PASSIVE = new ConditionalPassive(
 			NAME,
 			List.of(
@@ -50,7 +50,8 @@ public final class Momentum {
 					new ConditionalPassive.Earn(Trigger.ON_HIT_TAKEN, PER_HIT_TAKEN)),
 			MAX_STACKS,
 			TIERS,
-			GRACE_SECONDS);
+			GRACE_SECONDS,
+			Momentum::forStacks);
 
 	private Momentum() {
 	}

@@ -62,12 +62,11 @@ class LegionaryTest {
 		PlayerRuntime runtime = new PlayerRuntime();
 		assertEquals(RotateAbility.Stance.SCUTUM, runtime.state(0).stance());
 
-		RotateAbility.Result first = RotateAbility.fire(legionary(), runtime, 0);
+		AbilityOutcome first = RotateAbility.fire(legionary(), runtime, 0);
 
-		assertTrue(first.outcome().fired());
+		assertTrue(first.fired());
 		assertEquals(RotateAbility.Stance.GLADIUS, runtime.state(0).stance());
-		assertEquals(RotateAbility.Stance.GLADIUS, first.stance());
-		assertEquals("Gladius!", first.outcome().announcement().text());
+		assertEquals("Gladius!", first.announcement().text());
 		assertEquals(Lane.ROTATE.cooldownMs(), runtime.state(0).laneRemaining(Lane.ROTATE));
 		// The arm is joint: the lane and the flip window are stamped together.
 		assertEquals(RotateAbility.SWITCH_DEAL_MS, runtime.state(0).lane(Lane.ROTATE).windowRemainingMs());
@@ -80,10 +79,10 @@ class LegionaryTest {
 	void rotateRejectsArmNothing() {
 		PlayerRuntime runtime = new PlayerRuntime();
 		RotateAbility.fire(legionary(), runtime, 0);
-		RotateAbility.Result second = RotateAbility.fire(legionary(), runtime, 1_000);
+		AbilityOutcome second = RotateAbility.fire(legionary(), runtime, 1_000);
 
-		assertFalse(second.outcome().fired());
-		assertNull(second.stance());
+		assertFalse(second.fired());
+		assertNull(second.announcement());
 		assertEquals(RotateAbility.Stance.GLADIUS, runtime.state(1_000).stance());
 		// The reject left the flip record alone: it still reads the first flip.
 		assertEquals(RotateAbility.Stance.GLADIUS, runtime.state(1_000).flipTarget());
@@ -91,10 +90,10 @@ class LegionaryTest {
 				runtime.state(1_000).lane(Lane.ROTATE).windowRemainingMs());
 
 		PlayerRuntime wrong = new PlayerRuntime();
-		RotateAbility.Result rejected = RotateAbility.fire(null, wrong, 0);
+		AbilityOutcome rejected = RotateAbility.fire(null, wrong, 0);
 
-		assertFalse(rejected.outcome().fired());
-		assertNull(rejected.outcome().announcement());
+		assertFalse(rejected.fired());
+		assertNull(rejected.announcement());
 		assertEquals(0, wrong.state(0).laneRemaining(Lane.ROTATE));
 		assertEquals(RotateAbility.Stance.SCUTUM, wrong.state(0).stance());
 		assertNull(wrong.state(0).flipTarget());

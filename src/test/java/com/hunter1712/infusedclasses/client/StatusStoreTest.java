@@ -2,6 +2,7 @@ package com.hunter1712.infusedclasses.client;
 
 import com.hunter1712.infusedclasses.Lane;
 import com.hunter1712.infusedclasses.LaneRead;
+import com.hunter1712.infusedclasses.PlayerRuntime;
 import com.hunter1712.infusedclasses.PlayerStatusPayload;
 import com.hunter1712.infusedclasses.RotateAbility;
 import org.junit.jupiter.api.Test;
@@ -19,8 +20,9 @@ class StatusStoreTest {
 		for (Lane lane : Lane.values()) {
 			lanes.put(lane, new LaneRead(0, 0, false));
 		}
-		return new PlayerStatusPayload(classId, lanes, null, null, 0, 0, 0,
+		PlayerRuntime.State state = new PlayerRuntime.State(lanes, null, null,
 				RotateAbility.Stance.SCUTUM, 0);
+		return new PlayerStatusPayload(classId, state, PlayerRuntime.BarRead.NONE);
 	}
 
 	@Test

@@ -9,23 +9,35 @@ import java.util.function.ToLongFunction;
 
 /**
  * The ability roster: one row per ability the mod fires, and the one place its lane, its
- * gating id, its word and the stack's view of it live. Consumers walk the rows —
- * {@code /class info} draws its cooldown lines, the HUD's rows decision draws each lane
- * line with its riders, {@link BindMorph} resolves what the reused slots mean — so an
- * ability's facts cannot drift between them. Words are the ability modules' own NAME
- * constants; both lane reads derive from the row's {@link Lane}, so a row cannot draw one
- * lane and count down another.
+ * slot, its gating id, its word, its fire and the stack's view of it live. Consumers walk
+ * the rows — {@code /class info}, the HUD's rows decision, {@link BindMorph} and
+ * {@link SlotPresses} — so an ability's facts cannot drift between them. Both lane reads
+ * derive from the row's {@link Lane}, so a row cannot draw one lane and count down another.
  *
- * <p>The lane read stays split in two: server-side consumers read the runtime state, the
- * stack reads the wire snapshot a client already holds (ADR-0023). Riders are always
- * spelled over their own row's lane's window, so a rider cannot read someone else's.
+ * <p>A row owns both halves a slot bind needs: its {@link Slot} and its pure fire, so the
+ * bind walk picks a row rather than an id a second table would map back. The lane read
+ * stays split in two (ADR-0023); riders are spelled over their own row's lane's window.
  */
 public final class AbilityRoster {
+	/** The two reused binds every class shares. */
+	public enum Slot {
+		SIGNATURE,
+		ULTIMATE
+	}
+
+	/** One ability's fire as the row carries it; the float is the press's one roll, read by the wheel only. */
+	@FunctionalInterface
+	public interface Fire {
+		AbilityOutcome fire(ClassDefinition def, PlayerRuntime runtime, long now, float roll);
+	}
+
 	/**
-	 * One ability's shared facts: the lane it runs on, the id that gates it, its Title
-	 * Case word, and the rider rules that draw beside its lane line.
+	 * One ability's shared facts: the lane it runs on, the slot it belongs to, the id that
+	 * gates it, its Title Case word, the rider rules that draw beside its lane line, whether
+	 * a fired press plays the cast fanfare, and its fire.
 	 */
-	public record Row(Lane lane, Identifier ability, String name, List<Rider> riders) {
+	public record Row(Lane lane, Slot slot, Identifier ability, String name, List<Rider> riders,
+			boolean fans, Fire fire) {
 		/** The lane read over the runtime state: the server-side half of the stack's view. */
 		public long laneRemaining(PlayerRuntime.State state) {
 			return state.laneRemaining(lane);
@@ -68,37 +80,46 @@ public final class AbilityRoster {
 	}
 
 	/** Offload: the loosened window draws its countdown while it lives, spent or not; the price is already paid. */
-	public static final Row OFFLOAD = new Row(Lane.OFFLOAD, ClassRegistry.OFFLOAD_ABILITY, OffloadAbility.NAME,
-			List.of(window(Lane.OFFLOAD)));
+	public static final Row OFFLOAD = new Row(Lane.OFFLOAD, Slot.SIGNATURE, ClassRegistry.OFFLOAD_ABILITY,
+			OffloadAbility.NAME, List.of(window(Lane.OFFLOAD)), true,
+			(def, runtime, now, roll) -> OffloadAbility.fire(def, runtime, now));
 
 	/** Onslaught: the window draws its countdown while it lives; both ends of it are bar-side. */
-	public static final Row ONSLAUGHT = new Row(Lane.ONSLAUGHT, ClassRegistry.ONSLAUGHT_ABILITY, OnslaughtAbility.NAME,
-			List.of(window(Lane.ONSLAUGHT)));
+	public static final Row ONSLAUGHT = new Row(Lane.ONSLAUGHT, Slot.ULTIMATE, ClassRegistry.ONSLAUGHT_ABILITY,
+			OnslaughtAbility.NAME, List.of(window(Lane.ONSLAUGHT)), true,
+			(def, runtime, now, roll) -> OnslaughtAbility.fire(def, runtime, now));
 
 	/**
 	 * Rotate: the Impetus rider is one-shot (pending only), so it vanishes on the spend;
-	 * the Testudo rider is the timed catch, live for its window in Scutum.
+	 * the Testudo rider is the timed catch, live for its window in Scutum. Its fire is the
+	 * one that announces without fanfare: the toggle carries no cast sound.
 	 */
-	public static final Row ROTATE = new Row(Lane.ROTATE, ClassRegistry.ROTATE_ABILITY, RotateAbility.NAME,
+	public static final Row ROTATE = new Row(Lane.ROTATE, Slot.SIGNATURE, ClassRegistry.ROTATE_ABILITY,
+			RotateAbility.NAME,
 			List.of(pendingWindow(Lane.ROTATE),
 					new Rider(status -> status.flipTarget() == RotateAbility.Stance.SCUTUM,
-							windowRemaining(Lane.ROTATE), status -> "")));
+							windowRemaining(Lane.ROTATE), status -> "")),
+			false, (def, runtime, now, roll) -> RotateAbility.fire(def, runtime, now));
 
 	/** Aequilibrium: the window draws while it lives; it rides the shared oath lane. */
-	public static final Row AEQUILIBRIUM = new Row(Lane.OATH, ClassRegistry.AEQUILIBRIUM_ABILITY,
-			AequilibriumAbility.NAME, List.of(window(Lane.OATH)));
+	public static final Row AEQUILIBRIUM = new Row(Lane.OATH, Slot.ULTIMATE, ClassRegistry.AEQUILIBRIUM_ABILITY,
+			AequilibriumAbility.NAME, List.of(window(Lane.OATH)), true,
+			(def, runtime, now, roll) -> AequilibriumAbility.fire(def, runtime, now));
 
 	/** The wheel's rider: Zero is the dead band and draws nothing, every other band draws its name. */
-	public static final Row ROULETTE = new Row(Lane.ROULETTE, ClassRegistry.ROULETTE_ABILITY, RouletteAbility.NAME,
+	public static final Row ROULETTE = new Row(Lane.ROULETTE, Slot.SIGNATURE, ClassRegistry.ROULETTE_ABILITY,
+			RouletteAbility.NAME,
 			List.of(new Rider(
 					status -> status.rouletteOutcome() != null
 							&& status.rouletteOutcome() != RouletteAbility.Outcome.ZERO,
 					windowRemaining(Lane.ROULETTE),
-					status -> status.rouletteOutcome() == null ? "" : status.rouletteOutcome().label())));
+					status -> status.rouletteOutcome() == null ? "" : status.rouletteOutcome().label())),
+			true, RouletteAbility::fire);
 
 	/** All In: the ultimate's window, persistent like Aequilibrium's. */
-	public static final Row ALL_IN = new Row(Lane.ALL_IN, ClassRegistry.ALL_IN_ABILITY, AllInAbility.NAME,
-			List.of(window(Lane.ALL_IN)));
+	public static final Row ALL_IN = new Row(Lane.ALL_IN, Slot.ULTIMATE, ClassRegistry.ALL_IN_ABILITY,
+			AllInAbility.NAME, List.of(window(Lane.ALL_IN)), true,
+			(def, runtime, now, roll) -> AllInAbility.fire(def, runtime, now));
 
 	/** Rows in lane order: the order {@code /class info} prints and the classes carry their actives in. */
 	private static final List<Row> ALL = List.of(OFFLOAD, ONSLAUGHT, ROTATE, AEQUILIBRIUM, ROULETTE, ALL_IN);

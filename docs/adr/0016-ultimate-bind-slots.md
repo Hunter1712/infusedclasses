@@ -1,6 +1,6 @@
 # ADR-0016: The ultimate's own bind — Signature R, Ultimate V
 
-Status: accepted
+Status: accepted (point 2's target vocabulary superseded by ADR-0029)
 
 ## Context
 

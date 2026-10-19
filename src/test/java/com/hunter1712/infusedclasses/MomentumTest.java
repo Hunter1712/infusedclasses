@@ -84,6 +84,13 @@ class MomentumTest {
 	}
 
 	@Test
+	void theBarCarriesItsOwnRows() {
+		assertEquals(Momentum.allModifiers(), Momentum.PASSIVE.barRows().apply(Momentum.MAX_STACKS));
+		assertEquals(Momentum.forStacks(30), Momentum.PASSIVE.barRows().apply(30));
+		assertEquals(List.of(), Momentum.PASSIVE.barRows().apply(0));
+	}
+
+	@Test
 	void theOnePassiveIsFedByBothHitDirections() {
 		ConditionalPassive momentum = Momentum.PASSIVE;
 

@@ -60,8 +60,10 @@ class ProtocolTest {
 		lanes.put(Lane.ROULETTE, new LaneRead(9_000, 10_000, true));
 		lanes.put(Lane.ALL_IN, new LaneRead(11_000, 12_000, false));
 		PlayerStatusPayload populated = new PlayerStatusPayload(
-				"infusedclasses:gambler", lanes, RotateAbility.Stance.SCUTUM,
-				RouletteAbility.Outcome.JACKPOT, 7, 3_500, 2_500, RotateAbility.Stance.GLADIUS, 2);
+				"infusedclasses:gambler",
+				new PlayerRuntime.State(lanes, RotateAbility.Stance.SCUTUM,
+						RouletteAbility.Outcome.JACKPOT, RotateAbility.Stance.GLADIUS, 2),
+				new PlayerRuntime.BarRead(7, 3_500, 2_500));
 		ByteBuf raw = Unpooled.buffer();
 		FriendlyByteBuf buf = new FriendlyByteBuf(raw);
 		try {

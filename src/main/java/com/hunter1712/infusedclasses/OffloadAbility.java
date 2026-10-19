@@ -53,6 +53,14 @@ public final class OffloadAbility {
 	}
 
 	/**
+	 * The loosened-window family row: the haste and speed pair in play, wanted only while
+	 * the Offload window is live. The row lives here beside the pair it spells.
+	 */
+	public static WindowFamily windowFamily() {
+		return WindowFamily.whileLive(ClassRegistry.OFFLOAD_ABILITY, Lane.OFFLOAD, WINDOW);
+	}
+
+	/**
 	 * Decides offloading for Juggernauts holding the price off cooldown; fewer than
 	 * {@link #COST_STACKS} fizzles before the cooldown is even read. Pure and read-only:
 	 * only {@link #fire} arms the lane and spends.

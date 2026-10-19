@@ -1,27 +1,36 @@
 package com.hunter1712.infusedclasses;
 
 import java.util.List;
+import java.util.function.IntFunction;
 
 /**
  * Conditional passive, the one live shape: a bar fed by earning events and their amounts,
  * a cap, three-checkpoint tiers of attributes, and a grace before the bar bleeds one stack
  * per second. Plain data, no game bootstrap needed, so tests assert on it directly. The
  * picker copy is generated from these numbers, so it can say what the passive does but
- * never an earning event its earns do not carry.
+ * never an earning event its earns do not carry. The bar also names the attribute rows it
+ * writes at a stack count, so the applier reconciles every bar through one shape instead of
+ * a per-bar dispatch.
  *
  * @param name the passive's word, as the stack and the card draw it
  * @param earns the events that feed the bar, each with its own amount and its own copy
  * @param maxStacks the bar's ceiling: headroom above the top tier is spend reserve
  * @param tiers the checkpoints, ascending: the bar reads the last one it has reached
  * @param graceSeconds quiet seconds after a feed before the bar starts bleeding
+ * @param barRows the modifier rows the bar writes at a stack count; empty when it writes none
  */
 public record ConditionalPassive(
 		String name,
 		List<Earn> earns,
 		int maxStacks,
 		List<Tier> tiers,
-		int graceSeconds
+		int graceSeconds,
+		IntFunction<List<PassiveEffect.Modifier>> barRows
 ) {
+	/** A bar that writes no attribute rows, for passives that only carry semantics. */
+	public ConditionalPassive(String name, List<Earn> earns, int maxStacks, List<Tier> tiers, int graceSeconds) {
+		this(name, earns, maxStacks, tiers, graceSeconds, stacks -> List.of());
+	}
 	/** One earning event: the trigger plus what it pays, so a double-fed bar stays one mechanism. */
 	public record Earn(Trigger trigger, int stacks) {
 	}

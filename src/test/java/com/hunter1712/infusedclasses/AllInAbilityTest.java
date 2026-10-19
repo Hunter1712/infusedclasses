@@ -63,7 +63,7 @@ class AllInAbilityTest {
 		PlayerRuntime runtime = new PlayerRuntime();
 
 		AllInAbility.fire(gambler(), runtime, 0);
-		assertTrue(RouletteAbility.fire(gambler(), runtime, 0, 0.1F).outcome().fired());
+		assertTrue(RouletteAbility.fire(gambler(), runtime, 0, 0.1F).fired());
 
 		// The wheel fired at 0 and did not touch the All In lane; the ultimate did not touch Roulette's.
 		assertFalse(AllInAbility.fire(gambler(), runtime, 1).fired());

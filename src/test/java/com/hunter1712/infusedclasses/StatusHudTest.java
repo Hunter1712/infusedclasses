@@ -66,8 +66,9 @@ class StatusHudTest {
 						&& (lane != Lane.ROTATE || flipTarget == RotateAbility.Stance.GLADIUS);
 				reads.put(lane, new LaneRead(lanes.getOrDefault(lane, 0L), windowMs, pending));
 			}
-			return new PlayerStatusPayload(classId, reads, flipTarget, outcome,
-					stacks, grace, graceStamp, stance, streak);
+			return new PlayerStatusPayload(classId,
+					new PlayerRuntime.State(reads, flipTarget, outcome, stance, streak),
+					new PlayerRuntime.BarRead(stacks, grace, graceStamp));
 		}
 	}
 

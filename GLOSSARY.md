@@ -28,32 +28,35 @@ _Avoid_: passive bonus, armor bonus, stack effect (the decision is not the thing
 The adapter that makes the player's attributes agree with the passive effect. It writes only when
 the applied value differs from the wanted one, following one reconcile-by-modifier-id pass:
 write every wanted row, then remove every id in the family's full set that the wanted set does
-not name. Each tick runs the bleed (`PlayerRuntime.decay`), the Momentum rows for the bar's
-current count (`Momentum.forStacks`), each always-on chassis row (`Burden`), the HP-scaled
+not name. Each tick runs the bleed (`PlayerRuntime.decay`), each bar's own rows for its
+current count (`ConditionalPassive.barRows`), each always-on chassis row (`Burden`), the HP-scaled
 buckets, then the window-aura families. A class switch removes what the old class wrote but the
 new one does not carry — the pure `cleanupFor(oldDef, newDef)` answers every modifier of that
 list, keyed by id, and `onClassChanged` only removes what it answered — then drops the old
 stacks and resets the lanes. The hit settle belongs to the melee plan (see `Melee plan`).
 _Avoid_: passive system, stat updater
 
-**Window aura family** (`PassiveApplier.WindowFamily`):
+**Window aura family** (`WindowFamily`):
 One window ability's aura group: the marker ability that owns it, every modifier the family can
-write, and `wanted(state)`, the pure decision of what the ability's live windows earn. The tick
-reconciles each family once after the bar and bucket passes — a held marker writes what is wanted
-and removes the rest, so the write and remove sides cannot drift; an absent marker sweeps
-everything the family could write. The three families are the Legionary stance plus its
-Aequilibrium window, the wheel's live spin, and Offload's loosened pair.
+write, and `wanted(state)`, the pure decision of what the ability's live windows earn. Each
+ability exposes its own row (`X.windowFamily()`) beside the modifiers it spells, so a further
+window ability adds its family there instead of editing the applier. The tick reconciles each
+family once after the bar and bucket passes — a held marker writes what is wanted and removes the
+rest, so the write and remove sides cannot drift; an absent marker sweeps everything the family
+could write. The four families are the Legionary stance, Aequilibrium's oath window, the wheel's
+live spin, and Offload's loosened pair.
 _Avoid_: aura group, modifier set, buff family
 
 **Ability outcome** (`AbilityOutcome`):
 The shared envelope every ability decision returns: whether the press fired and the
 announcement that goes with it. `fired`, `rejected` (silent — a wrong class and a lane
 still cooling down are the same shape) and `fizzled` (says its line, no cast) are the
-three factories. An ability with a payload wraps the envelope in its
-own `Result` record instead of widening it: Rotate's landed stance, Roulette's band.
-`trigger` gates read-only; `fire` gates and arms the transient runtime's cooldown together, so no
-caller can fire without arming, and rejected presses leave the cooldown untouched.
-_Avoid_: applied outcome, ability result (both name the wrapper), buff
+three factories. Rotate and Roulette still cut their landings into `trigger`'s own `Result`
+record (the landed stance, the landed band); their `fire` returns the shared envelope, and the
+landing itself is the runtime's read. `trigger` gates read-only; `fire` gates and arms the
+transient runtime's cooldown together, so no caller can fire without arming, and rejected presses
+leave the cooldown untouched.
+_Avoid_: applied outcome, ability result
 
 **Ability applier** (`AbilityApplier`):
 The shared adapter seams every ability outcome and class-choice outcome passes through: the announcement
@@ -69,18 +72,19 @@ path. Class-choice rejections and accepts route through `announce` with the `act
 _Avoid_: ability system, effect handler
 
 **Ability roster** (`AbilityRoster`):
-The one table of the abilities the mod fires: a row per ability carrying its `Lane`, the id
-that gates it, its Title Case word (the ability module's own `NAME`) and the rider rules that
-draw beside its lane. Both lane reads derive from the row's lane — the `State` read
+The one table of the abilities the mod fires: a row per ability carrying its `Lane`, its
+`Slot` (signature or ultimate), the id that gates it, its Title Case word (the ability module's
+own `NAME`), the rider rules that draw beside its lane, whether a fired press plays the cast
+fanfare, and its pure `fire`. Both lane reads derive from the row's lane — the `State` read
 server-side, the payload read client-side (ADR-0023) — so a row cannot draw one lane and count
 down another. `/class info` draws a lane line per row the class carries, the HUD's rows
 decision draws each lane line, word and countdown and riders included, from the row, and
-`BindMorph` resolves what a reused slot means by walking the class's own actives through each
-target's `ability()` (the first that answers wins) and returns the fired target's own row
-(`shape(def)`), so a word, a lane read, a rider rule or a bind cannot drift between the
-consumers. The ultimate is the class's own ultimate ability, never lent from the signature row
-(ADR-0026) — a class carrying neither slot ability draws no slot lines and falls back to Offload
-and Onslaught. A new ability adds a row; a test
+`BindMorph` resolves what a reused slot means by walking the class's own actives to the first
+row whose slot matches (`slotFor(def, slot)`) and returns the rows to draw (`shape(def)`);
+`SlotPresses` fires that same row. A word, a lane read, a rider rule, a fire or a bind cannot
+drift between the consumers. The ultimate is the class's own ultimate ability, never lent from
+the signature row (ADR-0026) — a class carrying neither slot ability draws no slot lines and
+falls back to Offload and Onslaught. A new ability adds a row; a test
 pins that every registered active id has one.
 _Avoid_: ability list, lane table, ability registry
 
@@ -162,9 +166,11 @@ _Avoid_: unconditional buff, base stat
 
 **Conditional passive** (`ConditionalPassive`):
 A passive that earns stacks when a named trigger fires, rather than always being on. It carries its
-own numbers — the earns list (a trigger plus its amount each), stack cap, attribute tiers and grace
-period — and its picker copy is generated from those numbers so the copy cannot claim something
-the behaviour does not do. Momentum, the Juggernaut's one bar, is earned by both `on_hit_dealt`
+own numbers — the earns list (a trigger plus its amount each), stack cap, attribute tiers, grace
+period, and the attribute rows it writes at a stack count (`barRows`) — and its picker copy is
+generated from those numbers so the copy cannot claim something
+the behaviour does not do. The rows being its own, the applier reconciles every bar through one
+shape instead of a per-bar dispatch. Momentum, the Juggernaut's one bar, is earned by both `on_hit_dealt`
 and `on_hit_taken` (+1 each), caps at 60, bleeds 1/s after 5s quiet, and reads three checkpoints:
 15 Steady (+1 armor, -0.005 speed, +0.25 knockback resistance), 30 Braced (+3/-0.01/+0.5) and
 45 Rooted (+5/-0.015/+1.0); past 45 the bar stays Rooted, and the reserve above 45 is the actives'
@@ -396,13 +402,14 @@ same thread, and the hook grants nothing twice while it is set. Replaces the twi
 _Avoid_: recursion flag, lock
 
 **Stance applier** (`PassiveApplier`):
-The adapter that makes the player's attributes agree with the Legionary stance: only
-the current stance's modifiers sit on the player, the other stance's come off, same
-write-only-on-change shape as the always-on and bucket passes. Aequilibrium plate rides the oath
-window while live (its edge is a deal mult, never written). Both sides iterate the stance's single aura list (`RotateAbility.auraFor`,
-`AequilibriumAbility.windowModifiers`), so write and remove cannot drift. The Roulette
-outcome window's stat auras are the wheel's own family (`rouletteWanted`) on the same tick,
-swept when the class leaves. Leaving the class
+The adapter that makes the player's attributes agree with the Legionary stance through the
+stance's own family (`RotateAbility.windowFamily`): only the current stance's modifiers sit on
+the player, the other stance's come off, same write-only-on-change shape as the always-on and
+bucket passes. Aequilibrium's plate is its own family on the shared oath window
+(`AequilibriumAbility.windowFamily`, its edge a deal mult, never written); the wheel's live spin
+and Offload's loosened pair are theirs (`RouletteAbility.windowFamily`,
+`OffloadAbility.windowFamily`). Each family carries its full modifier set, so the write and
+remove sides cannot drift. Leaving the class
 takes them all off through `onClassChanged`, which removes exactly `cleanupFor`'s answer.
 _Avoid_: stance system, aura updater
 
@@ -411,12 +418,12 @@ The decision of what a slot bind means for a class: the signature slot (`R`)
 arrives as the rotate intent for Legionaries, the roulette intent for Gamblers,
 and Offload for everyone else; the ultimate slot (`V`) arrives as the
 oath ultimate for Legionaries in any stance, All In for Gamblers, and Onslaught for
-everyone else. One ultimate per class, never lent from the signature row (ADR-0026): each
-target names the ability it fires, so one walk of the class's own actives answers both the
-slot and the row that draws it (`shape(def)`): the keys fire from the same walk, and the
-HUD's slot lines read the same rows.
-The intent receivers wire; `SlotPresses` keeps the shared `press` prologue (class read,
-classless bail, runtime lookup) and the explicit arms per ADR-0009 — this decides.
+everyone else. One ultimate per class, never lent from the signature row (ADR-0026): one walk
+of the class's own actives picks the roster row whose `AbilityRoster.Slot` matches, so the same
+row answers what the slot fires and what the stack draws (`shape(def)`): the keys fire from the
+same walk, and the HUD's slot lines read the same rows.
+The intent receivers wire; `SlotPresses` fires the picked row's own `fire` and announces through
+the shared path — this decides.
 _Avoid_: key routing, bind table
 
 **Stack gate**:
@@ -508,7 +515,8 @@ counter that last only as long as the session. It is handed the class they
 belong to and the current time on each call, so it holds neither a clock nor a reference to anyone's
 choice, and it is owned per player by the server entry rather than stored on the player. Stack
 storage (counts, last-feed stamps and the next-loss clock in definition-keyed maps) lives in `PassiveStacks`:
-`stacks` reads one passive, `onTrigger` bumps
+`stacks` reads one passive, `bar` reads a bar's count, grace remainder and feed stamp as one value,
+`onTrigger` bumps
 every passive on the class whose trigger matches (unknown triggers, a missing class and trigger-less
 classes are inert, each bump re-stamps grace), `decay` bleeds every passive past its own grace
 and catches up whole seconds in one step, and `spendStacks` pays a price without re-stamping.
@@ -529,7 +537,8 @@ Streak, taken in one `PlayerRuntime.state(now)` call. It is the one read every s
 crosses — the snapshot builder, `/class info`, the melee plan, the ability fires and the
 passive applier — so lane and window semantics cannot be re-stated per caller; the per-window
 read verbs are gone, while arms, consumes, movement verbs and the passive-stack verbs stay
-verbs.
+verbs. `movedSince(prev)` compares two reads for the emission guard: the discrete facts and each
+lane's armed flags, never the raw remainders, which decay on every rebuild.
 _Avoid_: runtime read, state object, snapshot
 
 **Transient runtime store** (`PlayerRuntimes`):
@@ -598,8 +607,10 @@ printed on the card and no tooltips anywhere. Side previous/next controls, click
 dots and keyboard paging (arrows/`A`/`D`) move between pages with wraparound; the
 signal carries the current class so reopening lands on its page. One pinned `Select`
 control per page, title, subtitle and the `Click a class to choose it` footer. It positions
-widgets from the renderer's focused math, resolves one `CardModel`
-per frame; how the card draws is the card renderer's business, and what the card says is the card text's. It never pauses and never closes on Esc. A new class definition adds its own page with no layout change.
+widgets from the renderer's focused math, resolves one view
+per frame (card rectangle, `CardModel` and measured layout together) and reuses it across the
+background and body passes, clamping the scroll against that view's own measure; how the card
+draws is the card renderer's business, and what the card says is the card text's. It never pauses and never closes on Esc. A new class definition adds its own page with no layout change.
 _Avoid_: GUI, menu
 
 **Card layout** (`client/CardLayout`):
@@ -654,25 +665,34 @@ spend (the Rotate Impetus rider works that way); a Zero outcome draws no rider a
 _Avoid_: window chip, badge
 
 **Status snapshot** (`PlayerStatusPayload`):
-The S2C `infusedclasses:player_status` snapshot and wire payload in one: the class id, a
-`LaneRead` per lane, Momentum stacks plus grace and the grace stamp, the stance, the flip
-target, Streak and the Roulette outcome. Built from the resolved class
+The S2C `infusedclasses:player_status` snapshot and wire payload in one: the class id plus the
+two reads the runtime already answers — the `PlayerRuntime.State` (a `LaneRead` per lane, the
+stance, the flip target, Streak and the Roulette outcome) and the bar's `PlayerRuntime.BarRead`
+(count, grace remainder and grace stamp). Built from the resolved class
 definition, the tick's one transient state read taken at a `now`, and the runtime the
-stack facts come from, so it can be asserted without a player — the
-builder never touches the registry, and a missing class is the empty shape. Its codec and its
-`movedSince` loop the lanes, so the wire order cannot drift from the read and a seventh window
+bar read comes from, so it can be asserted without a player — the
+builder never touches the registry, and a missing class is the empty shape. Its codec and
+`movedSince` walk the lanes, so the wire order cannot drift from the read and a seventh window
 adds no field. `movedSince` is the emission
-guard: the discrete fields and each lane's read only — including the grace stamp, which moves on
+guard: the class id, the bar's count and stamp — which moves on
 every re-stamp, so a
-hit at the stack cap still reaches the client — never the raw remainders that decay every
+hit at the stack cap still reaches the client — and the state's own comparison of the discrete
+facts and lane armed flags, never the raw remainders that decay every
 rebuild. An empty class id is a state, not an absence — a classless join sends one so the
 client hides the stack by fact.
 _Avoid_: state packet, sync payload
 
+**Tick pass** (`TickPass`):
+The server tick's one steady-state sequence per classed player: one `State` read, the passive
+applier, the drained-Onslaught window end, a re-read only when that end actually closed the
+window, then the snapshot the emission guard compares. The wiring loops the players and sends;
+the order lives here, so the re-read cannot be forgotten or run on a quiet tick.
+_Avoid_: tick loop, update pass
+
 **Status sync** (`StatusSync`):
 The emission adapter: one last-sent snapshot per player UUID. `maybeSend` runs in the server
-tick, the one steady-state change point (ADR-0022) — the tick hands it the class, the runtime
-and the one state read it already resolved — and sends only when `movedSince` says something
+tick, the one steady-state change point (ADR-0022) — the tick's `TickPass` hands it the snapshot
+it already built — and sends only when `movedSince` says something
 moved, so a rejected
 press, a spam swing or a quiet tick costs no packets and everything else reaches the client
 on the next tick. `sendNow` forces one snapshot on join and respawn (classless included, no
@@ -831,3 +851,11 @@ the same timeline as offense, band checked around the mean) settled Burden's swi
 Gladius's glass tax at x1.2, the dice at 15% base and All In at x1.75; Scutum stays as it
 reads. The wire
 names `rush`/`rend` stay on the reused signature and ultimate intents.
+`0029` puts the slot, the fanfare and the fire on the roster row: `BindMorph` walks rows
+(`slotFor`/`shape`), `SlotPresses` is one press, and every `fire` returns the shared envelope
+(superseding `0009` point 1 and revising `0013`'s fire shape and `0026`'s target names).
+`0030` moves each decision beside what it applies to: the `WindowFamily` rows sit on their
+abilities (Aequilibrium's oath plate now its own family), `ConditionalPassive.barRows` puts each
+bar's rows on the bar, and the applier is two loops. `0031` composes the status snapshot from the
+runtime's own reads (`State` plus `BarRead`), homes the armed comparison on `State.movedSince`,
+and names the tick sequence `TickPass`.
