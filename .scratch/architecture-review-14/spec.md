@@ -1,6 +1,6 @@
 # Spec: Architecture review round 14 — implement the six deepening candidates
 
-Status: implemented — picker hand check owed
+Status: done
 
 ## Goal
 
@@ -59,7 +59,7 @@ attribute reconcile are pinned by the tests that already existed, plus the new o
   `PlayerStatusTest`/`StatusHudTest`/`StatusStoreTest`/`ProtocolTest` (composed payload).
 - Full suite: 261 tests, 0 failures.
 
-## Hand check owed
+## Hand check seen
 
-The picker is client-visible: reopen it in game (deployed jar) and read the instance log; card
-content, scroll clamping and paging must read unchanged.
+Picker reopened in game on the deployed jar (2026-10-19): card content, scroll clamping and
+paging read unchanged, and the instance log holds no `infusedclasses` exception.
