@@ -106,10 +106,12 @@ not formatted by whoever sends it. Class-choice lines use the same seam: `unknow
 for a rejected pick, and `classPicked(displayName)` (gray, chat) for an accepted switch.
 _Avoid_: message, notification, cooldown echo
 
-**Picker copy** (`ConditionalPassive.fullDesc`):
+**Picker copy** (`ConditionalPassive.rulesDesc`, `ConditionalPassive.tierDesc`):
 The decision of what a conditional passive's picker copy says, generated from its own numbers so it
-cannot drift from behaviour. Every detail line shows name plus short copy
-(`Land a hit: +1. Take a hit: +1. Max 60. 5s no feed: -1/s.`).
+cannot drift from behaviour. A bar draws as its rules line — name plus the earns, the cap and the
+bleed rate (`Land a hit: +1. Take a hit: +1. Max 60. 5s no feed: -1/s.`) — then one card line per
+checkpoint, named `Steady at 15` with its own numbers (`+1 armor, -0.005 speed, +0.25 knockback
+resistance.`), so a bar scans row by row instead of as one paragraph.
 Copy stays short on purpose: every active desc holds at most 200 chars, pinned by
 test, so full kits fit the focused card with little scroll.
 Both triggers the mod emits are described as the event they are ("Land a hit" for
@@ -181,7 +183,7 @@ _Avoid_: buff, stackable stat
 The Juggernaut's always-on chassis: melee dealt x1.15 (`DEAL_MULT`) and -0.4 attack speed
 (`infusedclasses:burden_swing`), written every tick while classed and never earned. The heavier
 hit is a deal mult the melee plan reads (see `Always-on passive`), never a written attribute. The
-class reads heavy first; Momentum is what moves under that weight.
+class reads slow and heavy first; Momentum never gives that speed back.
 _Avoid_: rage, frenzy stacks
 
 **HP-scaled passive** (`HpScaledPassive`):

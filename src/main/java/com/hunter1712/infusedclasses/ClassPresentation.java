@@ -68,11 +68,12 @@ public final class ClassPresentation {
 	}
 
 	/**
-	 * Lines shown on the focused card: Passives header plus one detail line per passive
-	 * (one per HP-scaled family, with joined descriptions), one per always-on row, one per
-	 * flip buff plus the generated Crooked Dice and Streak lines for a class carrying dice,
-	 * then Active header plus one detail line per fired active. Every detail line carries
-	 * name plus short description, so nothing hides behind hover.
+	 * Lines shown on the focused card: Passives header plus, per passive, its rules line
+	 * then one line per checkpoint (e.g. `Steady at 15`), one per HP-scaled family (with
+	 * joined descriptions), one per always-on row, one per flip buff plus the generated
+	 * Crooked Dice and Streak lines for a class carrying dice, then Active header plus one
+	 * detail line per fired active. Every detail line carries name plus short description,
+	 * so nothing hides behind hover.
 	 */
 	public static List<CardLine> cardLinesFor(ClassDefinition def) {
 		List<CardLine> lines = new ArrayList<>();
@@ -80,7 +81,13 @@ public final class ClassPresentation {
 		if (!def.passives().isEmpty() || !def.hpPassives().isEmpty() || !def.alwaysOn().isEmpty()
 				|| !def.flipBuffs().isEmpty() || def.critRule().hasDice()) {
 			for (ConditionalPassive p : def.passives()) {
-				lines.add(new CardLine(p.name(), p.fullDesc(), LineKind.PASSIVE));
+				lines.add(new CardLine(p.name(), p.rulesDesc(), LineKind.PASSIVE));
+				// Each checkpoint gets its own row: a bar scans tier by tier instead
+				// of running together as one paragraph.
+				for (ConditionalPassive.Tier tier : p.tiers()) {
+					lines.add(new CardLine(tier.name() + " at " + tier.threshold(),
+							p.tierDesc(tier), LineKind.PASSIVE));
+				}
 			}
 			for (Map.Entry<String, List<HpScaledPassive>> entry : groupedHp(def).entrySet()) {
 				StringBuilder joined = new StringBuilder();

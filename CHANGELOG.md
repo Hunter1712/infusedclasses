@@ -13,6 +13,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Cooldowns, ability windows and passive grace run on a monotonic clock (`InfusedClasses.now()`, `System.nanoTime` millis) instead of wall time, so a clock step — a VM snapshot restore, an NTP correction — can no longer skip a cooldown or freeze one. The client HUD's countdowns stay client-local.
 
 ### Changed
+- Player copy pass: Momentum's card line splits into its rules line plus one row per checkpoint
+  (`Steady at 15` …), each still generated from the bar's own numbers, so the bar scans row by row;
+  Burden's card line drops its flavour sentence, and weight wording leaves the reader-facing prose
+  (module javadocs, GLOSSARY, project description). Ids and `Tier.weight` are unchanged.
 - Ability firing, window auras and the status snapshot get their decisions beside their
   constants (ADR-0029/0030/0031): the roster row carries its reused slot, its fanfare and its
   pure fire, so `BindMorph` is one slot walk and `SlotPresses` is one press; each window

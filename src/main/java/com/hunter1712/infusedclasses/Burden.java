@@ -6,11 +6,10 @@ import java.util.List;
 
 /**
  * Burden, the Juggernaut's chassis: always on while classed, never earned. Heavier hits,
- * slower swings — the class reads slow and heavy first, and Momentum is what moves under
- * that weight, never a speed it forgot it gave up. The heavier hit is a deal mult the
- * melee plan reads; the swing penalty is the one attribute row. Pure data; the applier
- * writes it every tick while classed and the class-switch cleanup takes it off, the same
- * way as any row.
+ * slower swings — the class reads slow and heavy first, and Momentum never gives that
+ * speed back. The heavier hit is a deal mult the melee plan reads; the swing penalty is
+ * the one attribute row. Pure data; the applier writes it every tick while classed and the
+ * class-switch cleanup takes it off, the same way as any row.
  */
 public final class Burden {
 	public static final String NAME = "Burden";
@@ -28,7 +27,7 @@ public final class Burden {
 	/** Picker copy, generated from the numbers so it cannot drift from behaviour. */
 	public static String desc() {
 		return "x" + ConditionalPassive.amount(DEAL_MULT) + " damage, "
-				+ ConditionalPassive.amount(SWING_PENALTY) + " attack speed. Weight is the point.";
+				+ ConditionalPassive.amount(SWING_PENALTY) + " attack speed.";
 	}
 
 	/** The chassis as the definition's always-on row: the name, the copy, the swing it writes and the mult it deals. */

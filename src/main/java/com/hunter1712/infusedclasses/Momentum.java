@@ -6,7 +6,7 @@ import java.util.List;
 
 /**
  * The Juggernaut's one mechanic, as a decision: a 60-stack Momentum bar fed by hits
- * dealt and taken and worth a three-checkpoint weight the world can see. Pure: the
+ * dealt and taken and worth a three-checkpoint payoff the world can see. Pure: the
  * bar's numbers, its rows and the modifiers each row writes live here, so plain JUnit
  * asserts the mapping and the server entry only has to apply it. The row words and the
  * picker copy ride the {@link ConditionalPassive} row itself; this module owns the ids
@@ -26,7 +26,7 @@ public final class Momentum {
 	public static final int PER_HIT_DEALT = 1;
 	public static final int PER_HIT_TAKEN = 1;
 
-	/** The three checkpoints: armor up, weight up, a heavier stance against knockback each row. */
+	/** The three checkpoints: armor up, feet slower, a firmer stance against knockback each row. */
 	public static final List<ConditionalPassive.Tier> TIERS = List.of(
 			new ConditionalPassive.Tier(15, "Steady", 1.0, -0.005, 0.25),
 			new ConditionalPassive.Tier(30, "Braced", 3.0, -0.01, 0.5),
@@ -57,7 +57,7 @@ public final class Momentum {
 	}
 
 	/**
-	 * The modifiers the current bar calls for: the reached row's armor, weight and
+	 * The modifiers the current bar calls for: the reached row's armor, move-speed delta and
 	 * knockback entries, empty below the first checkpoint. One list for the whole row,
 	 * so the applier's write and remove sides read the same answer.
 	 */

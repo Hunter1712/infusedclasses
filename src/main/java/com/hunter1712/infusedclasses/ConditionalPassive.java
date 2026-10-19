@@ -75,21 +75,21 @@ public record ConditionalPassive(
 		return tier == null ? "" : tier.name();
 	}
 
-	/** Short picker copy. Generated from the numbers so it cannot drift from behaviour. */
-	public String fullDesc() {
+	/** The rules copy: earns, cap and bleed rate. Generated from the numbers so it cannot drift from behaviour. */
+	public String rulesDesc() {
 		StringBuilder copy = new StringBuilder();
 		for (Earn earn : earns) {
 			copy.append(earn.trigger().earn()).append(": +").append(earn.stacks()).append(". ");
 		}
 		copy.append("Max ").append(maxStacks).append(". ");
-		copy.append(graceSeconds).append("s no feed: -1/s. ");
-		for (Tier tier : tiers) {
-			copy.append(tier.threshold()).append(' ').append(tier.name()).append(": +")
-					.append(amount(tier.armor())).append(" armor, ")
-					.append(amount(tier.weight())).append(" speed, +")
-					.append(amount(tier.knockback())).append(" knockback resistance. ");
-		}
-		return copy.toString().trim();
+		copy.append(graceSeconds).append("s no feed: -1/s.");
+		return copy.toString();
+	}
+
+	/** One checkpoint's copy: its own numbers in the unit the game writes them. Generated like the rules line. */
+	public String tierDesc(Tier tier) {
+		return "+" + amount(tier.armor()) + " armor, " + amount(tier.weight()) + " speed, +"
+				+ amount(tier.knockback()) + " knockback resistance.";
 	}
 
 	/** Whole numbers read as "1", not "1.0", so the copy matches the game. */

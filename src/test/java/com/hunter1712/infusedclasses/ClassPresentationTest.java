@@ -39,7 +39,8 @@ class ClassPresentationTest {
 		List<String> texts = ClassPresentation.cardLinesFor(juggernaut).stream()
 				.map(ClassPresentation.CardLine::text).toList();
 
-		assertTrue(texts.contains("Momentum \u2014 " + momentum.fullDesc()));
+		assertTrue(texts.contains("Momentum \u2014 " + momentum.rulesDesc()));
+		assertTrue(texts.contains("Steady at 15 \u2014 " + momentum.tierDesc(momentum.tiers().get(0))));
 		assertTrue(texts.stream().anyMatch(t -> t.contains("Max " + momentum.maxStacks() + ".")));
 		assertTrue(texts.stream().anyMatch(t -> t.startsWith("Offload \u2014 ")
 				&& t.contains("(R, " + (Lane.OFFLOAD.cooldownMs() / 1000) + "s)")));
@@ -127,15 +128,20 @@ class ClassPresentationTest {
 		assertEquals(ClassPresentation.LineKind.PASSIVE, lines.get(1).kind());
 		assertEquals(0xFFBDBDBD, lines.get(1).style().color());
 		assertFalse(lines.get(1).style().bold());
-		assertTrue(lines.get(2).text().startsWith("Burden \u2014 "));
+		// Each checkpoint is its own row, named for its threshold.
+		assertTrue(lines.get(2).text().startsWith("Steady at 15 \u2014 "));
 		assertEquals(ClassPresentation.LineKind.PASSIVE, lines.get(2).kind());
+		assertTrue(lines.get(3).text().startsWith("Braced at 30 \u2014 "));
+		assertTrue(lines.get(4).text().startsWith("Rooted at 45 \u2014 "));
+		assertTrue(lines.get(5).text().startsWith("Burden \u2014 "));
+		assertEquals(ClassPresentation.LineKind.PASSIVE, lines.get(5).kind());
 		// Active section
-		assertEquals("Active", lines.get(3).text());
-		assertEquals(ClassPresentation.LineKind.ABILITY_HEADER, lines.get(3).kind());
-		assertTrue(lines.get(4).text().startsWith("Offload \u2014 "));
-		assertEquals(ClassPresentation.LineKind.ABILITY, lines.get(4).kind());
-		assertEquals(0xFF7ED6FF, lines.get(4).style().color());
-		assertTrue(lines.get(5).text().startsWith("Onslaught \u2014 "));
+		assertEquals("Active", lines.get(6).text());
+		assertEquals(ClassPresentation.LineKind.ABILITY_HEADER, lines.get(6).kind());
+		assertTrue(lines.get(7).text().startsWith("Offload \u2014 "));
+		assertEquals(ClassPresentation.LineKind.ABILITY, lines.get(7).kind());
+		assertEquals(0xFF7ED6FF, lines.get(7).style().color());
+		assertTrue(lines.get(8).text().startsWith("Onslaught \u2014 "));
 	}
 
 	@Test

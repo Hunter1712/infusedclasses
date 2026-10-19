@@ -106,10 +106,14 @@ class MomentumTest {
 
 	@Test
 	void copySpellsTheEarnsTheRowsAndTheRate() {
-		assertEquals("Land a hit: +1. Take a hit: +1. Max 60. 5s no feed: -1/s. "
-				+ "15 Steady: +1 armor, -0.005 speed, +0.25 knockback resistance. "
-				+ "30 Braced: +3 armor, -0.01 speed, +0.5 knockback resistance. "
-				+ "45 Rooted: +5 armor, -0.015 speed, +1 knockback resistance.",
-				Momentum.PASSIVE.fullDesc());
+		ConditionalPassive momentum = Momentum.PASSIVE;
+
+		assertEquals("Land a hit: +1. Take a hit: +1. Max 60. 5s no feed: -1/s.", momentum.rulesDesc());
+		assertEquals("+1 armor, -0.005 speed, +0.25 knockback resistance.",
+				momentum.tierDesc(momentum.tiers().get(0)));
+		assertEquals("+3 armor, -0.01 speed, +0.5 knockback resistance.",
+				momentum.tierDesc(momentum.tiers().get(1)));
+		assertEquals("+5 armor, -0.015 speed, +1 knockback resistance.",
+				momentum.tierDesc(momentum.tiers().get(2)));
 	}
 }

@@ -61,7 +61,7 @@ class ClassRegistryTest {
 		assertEquals(1, momentum.amountFor(Trigger.ON_HIT_TAKEN));
 		assertEquals(Momentum.MAX_STACKS, momentum.maxStacks());
 		assertEquals(Momentum.GRACE_SECONDS, momentum.graceSeconds());
-		assertFalse(momentum.fullDesc().isBlank());
+		assertFalse(momentum.rulesDesc().isBlank());
 	}
 
 	@Test
@@ -85,11 +85,10 @@ class ClassRegistryTest {
 	void juggernautPassiveCopySaysWhatItDoesToday() {
 		ConditionalPassive momentum = ClassRegistry.byId(ClassRegistry.JUGGERNAUT).passives().get(0);
 
-		assertEquals("Land a hit: +1. Take a hit: +1. Max 60. 5s no feed: -1/s. "
-						+ "15 Steady: +1 armor, -0.005 speed, +0.25 knockback resistance. "
-						+ "30 Braced: +3 armor, -0.01 speed, +0.5 knockback resistance. "
-						+ "45 Rooted: +5 armor, -0.015 speed, +1 knockback resistance.",
-				momentum.fullDesc());
+		assertEquals("Land a hit: +1. Take a hit: +1. Max 60. 5s no feed: -1/s.", momentum.rulesDesc());
+		assertEquals("+1 armor, -0.005 speed, +0.25 knockback resistance.",
+				momentum.tierDesc(momentum.tiers().get(0)));
+		assertEquals(3, momentum.tiers().size());
 	}
 
 	@Test
@@ -99,10 +98,10 @@ class ClassRegistryTest {
 				List.of(new ConditionalPassive.Tier(2, "Quick", 0.5, -0.001, 0.25)), 3);
 
 		// The words ride the earns: an on_land passive is described by its own, never as a hit.
-		assertEquals("Land a swing: +1. Max 4. 3s no feed: -1/s. "
-						+ "2 Quick: +0.5 armor, -0.001 speed, +0.25 knockback resistance.",
-				swift.fullDesc());
-		assertFalse(swift.fullDesc().contains("hit"));
+		assertEquals("Land a swing: +1. Max 4. 3s no feed: -1/s.", swift.rulesDesc());
+		assertEquals("+0.5 armor, -0.001 speed, +0.25 knockback resistance.",
+				swift.tierDesc(swift.tiers().get(0)));
+		assertFalse(swift.rulesDesc().contains("hit"));
 	}
 
 	@Test

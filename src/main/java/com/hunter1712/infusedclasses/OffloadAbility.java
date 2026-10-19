@@ -16,7 +16,7 @@ public final class OffloadAbility {
 	public static final String NAME = "Offload";
 	/** What the press spends: a flat price, paid out of the reserve above the last checkpoint. */
 	public static final int COST_STACKS = 5;
-	/** Window in ticks: 5 seconds of loosened weight. */
+	/** Window in ticks: 5 seconds of loosened swings. */
 	public static final int WINDOW_TICKS = 100;
 	/** Attack speed while the window is live: +0.2, the burden easing off the arm. */
 	public static final double HASTE_BONUS = 0.2;
