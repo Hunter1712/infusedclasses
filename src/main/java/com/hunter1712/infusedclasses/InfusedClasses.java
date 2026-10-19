@@ -20,6 +20,15 @@ public class InfusedClasses implements ModInitializer {
 		ClassCommands.register();
 	}
 
+	/**
+	 * The one clock for every cooldown, window and grace read: monotonic millis, so a
+	 * wall-clock step — a VM snapshot restore, an NTP correction — can neither expire a
+	 * cooldown early nor freeze one. Callers inject it down the chain as {@code now}.
+	 */
+	static long now() {
+		return System.nanoTime() / 1_000_000L;
+	}
+
 	private static void registerPayloads() {
 		PayloadTypeRegistry.playC2S().register(SelectClassPayload.TYPE, SelectClassPayload.STREAM_CODEC);
 		PayloadTypeRegistry.playC2S().register(RushPayload.TYPE, RushPayload.STREAM_CODEC);

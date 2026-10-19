@@ -7,13 +7,12 @@ import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.server.level.ServerPlayer;
 
-import java.util.function.Supplier;
-
 /**
  * Server event wiring for the entry: intent receivers, first-join picker, respawn copy,
- * logout drop, hit trigger, and the per-tick decay-plus-apply. Decisions stay in pure modules
- * and application in adapters; this only routes between them. The oath switch stays explicit
- * here per ADR-0009: it moved home, it did not shrink.
+ * logout drop, hit trigger, and the per-tick decay-plus-apply. Decisions stay in pure
+ * modules and application in adapters; this only routes between them. The hit body lives
+ * in {@link MeleeHook} and the slot presses in {@link SlotPresses}, so this file keeps
+ * the wiring, the lifecycle fan-outs and the one steady-state emission point.
  */
 final class ServerEvents {
 	private ServerEvents() {
@@ -27,7 +26,7 @@ final class ServerEvents {
 			}
 			// One forced snapshot on join, classless included: the client starts from a
 			// known state instead of guessing until the first change point.
-			StatusSync.sendNow(player, System.currentTimeMillis());
+			StatusSync.sendNow(player, InfusedClasses.now());
 		});
 
 		ServerPlayerEvents.AFTER_RESPAWN.register((oldPlayer, newPlayer, alive) -> {
@@ -37,7 +36,7 @@ final class ServerEvents {
 			// Load-bearing ordering lives in the runtime store: both players share one UUID.
 			InfusedClasses.runtimes().respawn(newPlayer.getUUID());
 			StatusSync.forget(newPlayer.getUUID());
-			StatusSync.sendNow(newPlayer, System.currentTimeMillis());
+			StatusSync.sendNow(newPlayer, InfusedClasses.now());
 		});
 
 		ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> {
@@ -45,41 +44,12 @@ final class ServerEvents {
 			StatusSync.forget(handler.getPlayer().getUUID());
 		});
 
-		ServerLivingEntityEvents.AFTER_DAMAGE.register((entity, source, baseDamageTaken, damageTaken, blocked) -> {
-			long now = System.currentTimeMillis();
-			// Melee hook, three jobs: stacks, bonuses, stance mults. The plan decides,
-			// adapters apply; this only routes. Settled hurts re-enter this hook
-			// on the same thread, guarded so they grant nothing twice. `damageTaken`
-			// is what the hit took after shield and modifier reductions; a hit that
-			// took none earns nothing, so the branches settle from that value only.
-			if (DamageSettle.isResolving()) {
-				return;
-			}
-			// Attacker and victim melee settle below in field order; this only routes.
-			if (source.getEntity() instanceof ServerPlayer attacker && source.getDirectEntity() == attacker
-					&& attacker != entity) {
-				settleAttackerHit(attacker, entity, damageTaken, now);
-			} else if (entity instanceof ServerPlayer victim
-					&& source.getEntity() instanceof net.minecraft.world.entity.LivingEntity mobAttacker
-					&& !(mobAttacker instanceof ServerPlayer)
-					&& source.getDirectEntity() == mobAttacker) {
-				// Victim: mob melee on a Legionary still pays the stance take mult
-				// (player-vs-player take settles in the attacker branch above).
-				// takeFor is 1.0 for non-Legionaries, and the settle is a no-op at 1.0.
-				ClassDefinition victimDef = PlayerClassAccess.of(victim).currentDefinition();
-				double take = MeleePlan.takeFor(victimDef,
-						() -> InfusedClasses.runtime(victim), now);
-				DamageSettle.settleTake(victim, damageTaken, take,
-						() -> mobAttacker.damageSources().mobAttack(mobAttacker));
-				// The struck player's own bar feeds here too: a melee hit taken is the
-				// same earning event as one dealt, and the same zero-damage gate applies.
-				MeleePlan.resolveTaken(victimDef, () -> InfusedClasses.runtime(victim), damageTaken, now);
-			}
-		});
+		// The melee hook: one AFTER_DAMAGE body, routed and settled in MeleeHook.
+		ServerLivingEntityEvents.AFTER_DAMAGE.register(MeleeHook::afterDamage);
 
 		// Server tick: decay conditional passive stacks, then put their effect on the player.
 		ServerTickEvents.END_SERVER_TICK.register(server -> {
-			long now = System.currentTimeMillis();
+			long now = InfusedClasses.now();
 			for (ServerPlayer player : server.getPlayerList().getPlayers()) {
 				PlayerClasses classes = PlayerClassAccess.of(player);
 				ClassDefinition def = classes.currentDefinition();
@@ -107,8 +77,8 @@ final class ServerEvents {
 
 	/**
 	 * Intent receivers: what a reused bind means per class plus the picker switch path.
-	 * Lives here with the hit sequence and the tick fan-out so all routing has one home;
-	 * the initializer keeps payload registration and delegates.
+	 * The arms and the classless bail live in {@link SlotPresses}; the initializer keeps
+	 * payload registration and delegates.
 	 */
 	static void registerReceivers() {
 		ServerPlayNetworking.registerGlobalReceiver(SelectClassPayload.TYPE, (payload, context) -> context.server()
@@ -122,126 +92,9 @@ final class ServerEvents {
 				}));
 
 		ServerPlayNetworking.registerGlobalReceiver(RushPayload.TYPE, (payload, context) -> context.server()
-				.execute(() -> press(context.player(), ServerEvents::pressSignature)));
+				.execute(() -> SlotPresses.press(context.player(), SlotPresses::pressSignature)));
 
 		ServerPlayNetworking.registerGlobalReceiver(RendPayload.TYPE, (payload, context) -> context.server()
-				.execute(() -> press(context.player(), ServerEvents::pressUltimate)));
-	}
-
-	/** One slot press: the class read, the classless bail and the runtime lookup are the one path both binds share. */
-	private static void press(ServerPlayer player, SlotPress slot) {
-		long now = System.currentTimeMillis();
-		ClassDefinition def = PlayerClassAccess.of(player).currentDefinition();
-		// A classless press can only reject, silently, so it costs no state
-		// (ADR-0005): the runtime lookup below runs for a classed player only.
-		if (def == null) {
-			return;
-		}
-		slot.land(player, def, InfusedClasses.runtime(player), now);
-	}
-
-	/** What one slot's press lands once the class is known: the target's ability plus its adapter. */
-	private interface SlotPress {
-		void land(ServerPlayer player, ClassDefinition def, PlayerRuntime runtime, long now);
-	}
-
-	/**
-	 * The signature slot: the reused bind's target fires and its landing runs, one line per
-	 * arm. The arms stay explicit here per ADR-0009: this routes, the abilities decide.
-	 */
-	private static void pressSignature(ServerPlayer player, ClassDefinition def, PlayerRuntime runtime, long now) {
-		// Reused signature bind: the wheel for Gamblers, the rotate intent for Legionaries,
-		// Offload for everyone else, so binds survive the class.
-		switch (BindMorph.signatureFor(def)) {
-			// Rotate announces without fanfare on purpose: it carries no cast sound.
-			case ROTATE -> {
-				RotateAbility.Result result = RotateAbility.fire(def, runtime, now);
-				AbilityApplier.announce(player, result.outcome().announcement(), true);
-			}
-			case ROULETTE -> {
-				RouletteAbility.Result result =
-						RouletteAbility.fire(def, runtime, now, player.getRandom().nextFloat());
-				AbilityApplier.announceAndCast(player, result.outcome().announcement(),
-						result.outcome().fired(), true);
-			}
-			case OFFLOAD -> {
-				AbilityOutcome result = OffloadAbility.fire(def, runtime, now);
-				AbilityApplier.announceAndCast(player, result.announcement(), result.fired(), true);
-			}
-		}
-	}
-
-	/**
-	 * The ultimate slot: the reused bind's target fires and its landing runs, one line per
-	 * arm, the arms explicit here for the same reason.
-	 */
-	private static void pressUltimate(ServerPlayer player, ClassDefinition def, PlayerRuntime runtime, long now) {
-		// Reused ultimate bind: All In for Gamblers, the oath ultimate for Legionaries,
-		// Onslaught for everyone else.
-		switch (BindMorph.ultimateFor(def)) {
-			case AEQUILIBRIUM -> {
-				AbilityOutcome result = AequilibriumAbility.fire(def, runtime, now);
-				AbilityApplier.announceAndCast(player, result.announcement(), result.fired(), true);
-			}
-			case ALL_IN -> {
-				AbilityOutcome result = AllInAbility.fire(def, runtime, now);
-				AbilityApplier.announceAndCast(player, result.announcement(), result.fired(), true);
-			}
-			case ONSLAUGHT -> {
-				AbilityOutcome result = OnslaughtAbility.fire(def, runtime, now);
-				AbilityApplier.announceAndCast(player, result.announcement(), result.fired(), true);
-			}
-		}
-	}
-
-	/**
-	 * One attacker melee hit: the plan resolves the whole hit in field order (deciding,
-	 * then settling the bump, dice movement, Impetus spend and Onslaught price on the
-	 * runtime), and this entry lands exactly what the resolve returned — the verdict's
-	 * cue, the combined mult (chassis, stance, wheel, oath, window and dice), and the
-	 * victim's own taken feed. The sequence lives behind the seam so the hook cannot
-	 * reorder or half-apply it. A direct melee hit builds stacks for any class carrying
-	 * an on-hit-dealt bar — full swings only, spam earns zero, and a hit that took no
-	 * damage earns and spends nothing — and a hit inside a live Onslaught window pays the
-	 * ultimate's mult instead of feeding, its price running on full swings. Classless
-	 * players settle the universal crit and nothing else: the entry draws one roll per
-	 * landed full-charge hit for every player, classless included, and sweeps draw per
-	 * swept target. Self-damage excluded by the attacker check, projectiles and spells by
-	 * the direct check.
-	 */
-	private static void settleAttackerHit(ServerPlayer attacker, net.minecraft.world.entity.Entity entity,
-			float landedDamage, long now) {
-		ClassDefinition atkDef = PlayerClassAccess.of(attacker).currentDefinition();
-		// Classless hits settle the universal dice and cost no transient state (ADR-0005):
-		// the plan and the settle both read a null runtime as "no abilities to move".
-		PlayerRuntime atkRuntime = atkDef == null ? null : InfusedClasses.runtime(attacker);
-		// Captured at swing time, not read here: vanilla zeroes the attack-strength
-		// ticker in onAttack() before the hit lands, so a read from this hook is always
-		// zero and every full-swing gate below it was dead until the capture landed.
-		float charge = SwingChargeAccess.of(attacker);
-		// The dice are the mod's, not the class's: every landed full-charge hit draws
-		// its own roll; half swings never roll and so never draw one.
-		float roll = FullSwing.isFull(charge) ? attacker.getRandom().nextFloat() : 0.0F;
-		ClassDefinition victimDef = entity instanceof ServerPlayer v
-				? PlayerClassAccess.of(v).currentDefinition() : null;
-		Supplier<PlayerRuntime> victimRt = entity instanceof ServerPlayer v2
-				? () -> InfusedClasses.runtime(v2) : null;
-		// The plan resolves the whole hit: it decides in field order and settles the
-		// runtime movements in the same order, returning exactly what this entry lands.
-		MeleePlan.Landed landed = MeleePlan.resolve(atkDef, atkRuntime, victimDef, victimRt, charge, landedDamage, now, roll);
-		// Spam grants zero stacks; the ultimate's price waits for a full swing.
-		// The verdict's cue lands once per hit, classless included: a crit replays the
-		// vanilla particles and sound, a betrayal gets its own crack.
-		CritCue.apply(attacker, entity, landed.verdict());
-		// The victim's own bar: a player struck by a player feeds ON_HIT_TAKEN here
-		// (mob strikes feed it in the branch below), under the same landed gate.
-		MeleePlan.resolveTaken(victimDef, victimRt, landedDamage, now);
-		// Every attacker-side mult folds into combined: chassis, stance, wheel, oath,
-		// window and dice, times the victim's take; settled at once from what the hit
-		// landed. Gladius + Impetus reads x1.1 deal, Scutum + Testudo x0.85 take, a
-		// crit x1.25: see HitPlan.combined. A hit that took no damage lands 0 x mult,
-		// which is nothing.
-		DamageSettle.settleTake(entity, landedDamage, landed.combined(),
-				() -> attacker.damageSources().playerAttack(attacker));
+				.execute(() -> SlotPresses.press(context.player(), SlotPresses::pressUltimate)));
 	}
 }

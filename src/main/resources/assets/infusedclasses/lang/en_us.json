@@ -1,4 +1,5 @@
 {
   "key.infusedclasses.signature": "Signature",
-  "key.infusedclasses.ultimate": "Ultimate"
+  "key.infusedclasses.ultimate": "Ultimate",
+  "death.attack.infusedclasses.settle": "%1$s was slain by %2$s"
 }

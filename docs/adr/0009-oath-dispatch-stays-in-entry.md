@@ -1,6 +1,6 @@
 # ADR-0009: Oath dispatch stays in the server entry
 
-Status: accepted (point 3's shared-marker keying is superseded by ADR-0026)
+Status: accepted (point 3's shared-marker keying is superseded by ADR-0026; point 1's switch home moved to `SlotPresses` — the shape is unchanged)
 
 ## Context
 

@@ -1,14 +1,14 @@
 # Infused Classes
 
-> **Character classes for Minecraft (Fabric): Juggernaut bruiser, Legionary stance trader plus Gambler dice roller — ALPHA.**
+> **Character classes for Minecraft (Fabric): Juggernaut bruiser, Legionary stance trader plus Gambler dice roller — BETA.**
 
-**Infused Classes** gives every player a class choice that shapes abilities and passives. Juggernauts engage with Rush and execute with Rend off Momentum armor; Legionaries rotate Gladius/Scutum stances, cash in Impetus/Testudo flip buffs, and swear the Aequilibrium oath; Gamblers bet on Crooked Dice with Streak loading the odds, spin the free Roulette wheel and go All In for heavier crits. First join opens the picker; the choice persists while stacks and cooldowns stay transient.
+**Infused Classes** gives every player a class choice that shapes abilities and passives. Juggernauts carry Momentum checkpoints and Burden's heavy chassis, ease the weight with Offload and spend the bar on Onslaught; Legionaries rotate Gladius/Scutum stances, cash in Impetus/Testudo flip buffs, and swear the Aequilibrium oath; Gamblers bet on Crooked Dice with Streak loading the odds, spin the free Roulette wheel and go All In for heavier crits. First join opens the picker; the choice persists while stacks and cooldowns stay transient.
 
 ## Classes
 
-- **Juggernaut** (Frontline bruiser) — Rush engage with cleanse, Momentum armor on landing hits, Rend execute to spend it. Vigor rewards staying topped.
+- **Juggernaut** (Frontline bruiser) — Momentum checkpoints and Burden's heavy chassis, Offload to ease the weight for a moment, Onslaught to spend the bar on damage.
 - **Legionary** (Sword and shield) — Rotate stances, Impetus/Testudo flip buffs, Aequilibrium oath ultimate. Enters in Scutum.
-- **Gambler** (Double or nothing) — Crooked Dice: 20% crit at ×1.5 with a fixed 5% betrayal at ×0.5; Streak adds +15% crit per non-crit full hit up to a 95/5 lock. Free Roulette wheel on R; All In grants 15s of ×2.0 crits on G.
+- **Gambler** (Double or nothing) — Crooked Dice: 15% crit at ×1.5 with a fixed 5% betrayal at ×0.5; Streak adds +15% crit per non-crit full hit up to a 95/5 lock. Free Roulette wheel on R; All In grants 15s of ×1.75 crits on V.
 
 Crits are mod-owned: vanilla jump crits are retired, and every full-charge landed hit rolls a flat 10% chance at ×1.25 for any player (classless included). A class's crit rule overrides it — the Gambler's Crooked Dice is the first.
 
@@ -23,9 +23,9 @@ Crits are mod-owned: vanilla jump crits are retired, and every full-charge lande
 1. Install Fabric Loader for 1.21.11 + Fabric API.
 2. Download the jar matching your game (`infusedclasses-<mod>+1.21.11.jar`).
 3. Place it in `mods/` on client and server, then launch. The picker opens on first join.
-4. After alpha updates, reselect if told to: `/class select <player>`.
+4. Reset class data after updates if told to: `/class select <player>`.
 
-**Alpha contract:** wipes and class resets at any time in 0.x, no data migration until beta. Manual installs only, no auto-updater.
+**Manual installs only**, no auto-updater; Modrinth + CurseForge listings arrive as manual uploads on the Beta channel.
 
 ## Full documentation
 

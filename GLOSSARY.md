@@ -229,13 +229,13 @@ _Avoid_: cast time, wind-up
 
 **Onslaught** (`OnslaughtAbility`):
 The Juggernaut's ultimate on `V`: needs 10 Momentum (`MIN_STACKS`), arms its own 60s lane
-and a 15s window (`WINDOW_TICKS`). Inside it every landed hit deals x1.15 melee (`DEAL_MULT`)
+and a 15s window (`WINDOW_TICKS`). Inside it every hit deals x1.15 melee (`DEAL_MULT`)
 and each full-swing hit spends 2 stacks (`COST_PER_HIT`), and nothing feeds the bar — dealt or
 taken. The window lasts the bar and the window, whichever empties first: a spend down to
 zero ends it there, and a bleed does too on the tick that reads the empty bar. Below 10
 stacks the press fizzles with a `No Momentum` line and arms nothing. Decided in the
-trigger/fire gate-and-arm shape; the melee plan pays the mult on any landed hit while the
-window is live and prices full swings only, so a hit eaten by a shield never pays. Spam inside
+trigger/fire gate-and-arm shape; the melee plan pays the mult on any hit inside the
+window and prices full swings only, so a hit eaten by a shield never pays. Spam inside
 the window pays the mult without a price: the bar drains only on full swings and the bleed.
 Like every cast, firing plays the shared fanfare (see `Spellcast`).
 _Avoid_: execute, heal button, second ability
@@ -339,7 +339,7 @@ _Avoid_: damage falloff, charge multiplier
 
 **Melee plan** (`MeleePlan`):
 The decision of what one melee hit earns and settles, taken from definitions,
-transient state and what the hit landed: whether the swing earns stacks (full
+transient state and what the hit took: whether the swing earns stacks (full
 swings only, spam earns zero; a hit that took no damage earns nothing and reads
 no state at all), the Onslaught price (full swings only, 2 stacks, inside a live window),
 the chassis deal mult (every always-on row's `dealMult`, any charge), the stance deal and take
@@ -351,8 +351,8 @@ wheel x oath x onslaught x take x dice) — peeking
 only. `resolve` plans through it and settles the runtime movements in the same order at the
 same moment, returning `Landed(verdict, combined)` for the entry to land, so the
 pairing the plan saw is the pairing that lands and empty hits never touch a window; the
-attacker branch (`settleAttackerHit`) lands exactly what the resolve returned (cue,
-combined mult) so the hook cannot reorder or half-apply it; Gladius plus
+attacker branch (`settleAttackerHit` in `MeleeHook`) lands exactly what the resolve
+returned (cue, combined mult) so the hook cannot reorder or half-apply it; Gladius plus
 Impetus reads x1.1 deal, Scutum plus Testudo x0.85 take, a crit x1.25 deal, named once in the
 plan rather than emerging in the entry. `resolveTaken` feeds the victim's `on_hit_taken`
 +1, suppressed while its Onslaught window is live and only for a landed hit; the server
@@ -365,17 +365,29 @@ _Avoid_: damage handler, hook logic
 The single guarded hurt for the whole mod plus the mult settle every melee
 branch funnels through. Over 1.0 lands extra hurt (dead targets deal nothing); under
 1.0 heals back the discount, so the net hit reads as landed times mult; exactly 1.0
-touches nothing. The base it scales is what the hit landed after shield and modifier
-reductions, so a blocked hit settles nothing. Every attacker-side mult — chassis,
+touches nothing. The base it scales is what the hit landed on the victim: the
+post-shield amount the damage hook reports, put through armor, resistance and
+enchantments the way the hit itself paid them (`HitMitigation`), so a blocked hit
+settles nothing. The bonus hurt rides `infusedclasses:settle`, whose tag files keep
+armor, effects and shields from pricing mitigation a second time. Every attacker-side mult — chassis,
 stance, wheel, oath, window, dice — arrives as the one combined mult, so the
 settle is the single landing point.
 Vanilla drops any same-tick
 follow-up that does not beat `lastHurt`, so the extra goes in with that memory
-cleared and leaves the memory at the hit plus the bonus: the step lands silently
-with armor, death
+cleared and leaves it at the hit plus what the bonus actually took off: the step lands
+silently with absorption, death
 protection and kill credit intact, and later hits still compare against the
 combined swing.
 _Avoid_: damage handler, hurt helper
+
+**Hit mitigation** (`HitMitigation`):
+What a hit lands on a victim: the amount left after armor, resistance and
+enchantments, in the order `LivingEntity` applies them and with the same tag gates,
+using its own `CombatRules` helpers — without the instance pair's side effects,
+since the armor-durability hit and the resistance stats belong to the real hit
+once. The settle scales this number, so a stance or crit mult never pays armor
+twice.
+_Avoid_: damage formula, reduction math
 
 **Hurt guard** (`DamageSettle.isResolving`):
 The one re-entrancy flag for the mod: settled hurts re-enter the damage hook on the
@@ -403,8 +415,8 @@ everyone else. One ultimate per class, never lent from the signature row (ADR-00
 target names the ability it fires, so one walk of the class's own actives answers both the
 slot and the row that draws it (`shape(def)`): the keys fire from the same walk, and the
 HUD's slot lines read the same rows.
-The intent receivers wire — sharing one `press` prologue (class read, classless bail, runtime
-lookup) — this decides.
+The intent receivers wire; `SlotPresses` keeps the shared `press` prologue (class read,
+classless bail, runtime lookup) and the explicit arms per ADR-0009 — this decides.
 _Avoid_: key routing, bind table
 
 **Stack gate**:
@@ -427,7 +439,9 @@ the swing charge and a roll the caller drew. The universal baseline is 10%
 crit at ×1.25, full-charge hits only, no betrayal and no Streak movement; a
 class override replaces it, and a classless player reads as the baseline.
 Vanilla crits are retired: the mixin cancels `canCriticalAttack` for every
-player, so crits are a mod rule.
+player, so the verdict, its sound and its particle burst are the mod's own —
+`CritCue` replays them, the burst spawned there because 1.21.11's own crit method
+is empty.
 _Avoid_: crit check, damage roll
 
 **Crit rule** (`CritRule`):

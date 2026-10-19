@@ -73,7 +73,7 @@ public final class ClassCommands {
 		// Classless reads no transient state (ADR-0005): the lines decision needs a
 		// runtime state only when there is a class to draw lines for.
 		PlayerRuntime.State state = def == null
-				? null : InfusedClasses.runtime(player).state(System.currentTimeMillis());
+				? null : InfusedClasses.runtime(player).state(InfusedClasses.now());
 		for (ChatLine line : ClassInfo.lines(def, state)) {
 			AbilityApplier.announce(player, line, false);
 		}

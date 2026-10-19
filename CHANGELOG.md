@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+- Damage mults scale what a hit actually landed on the victim: armor, resistance and enchantments the base hit paid for are not paid again by the bonus, so a x1.25 crit on an armored target lands as x1.25 of the health the hit took, exactly as the balance model always priced it. The bonus hurt rides its own damage type (`infusedclasses:settle`, tagged to bypass armor, effects and shields, and to cost a player victim no second hunger exhaustion), and the `lastHurt` memory is restored by what the bonus actually took off, so a rejected or fully eaten bonus no longer inflates the window.
+- Mod crits show their particle burst again: 1.21.11's own `Player.crit` is empty, so `CritCue` spawns `ParticleTypes.CRIT` at the victim beside the crit sound.
+- Cooldowns, ability windows and passive grace run on a monotonic clock (`InfusedClasses.now()`, `System.nanoTime` millis) instead of wall time, so a clock step — a VM snapshot restore, an NTP correction — can no longer skip a cooldown or freeze one. The client HUD's countdowns stay client-local.
+
+### Changed
+- `PROJECT_DESCRIPTION.md` catches up with Beta: current kits (Momentum checkpoints with Offload and Onslaught), Crooked Dice at 15% and All In at x1.75 on `V`, and no alpha contract.
+- `ServerEvents` splits at its two bulky seams: `MeleeHook` owns the AFTER_DAMAGE body and `SlotPresses` the reused-bind arms (ADR-0009's explicit shape, new home), leaving the file as lifecycle wiring and the one steady-state emission point, under the repo's ~150-line line. The settle's landed math is the new `HitMitigation`.
+
 ## [0.4.0] - 2026-10-19
 
 ### Added

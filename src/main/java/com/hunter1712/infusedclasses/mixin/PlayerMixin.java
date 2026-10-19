@@ -20,12 +20,13 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
  * One PlayerClasses slot per player, saved with player data so class survives relogs,
  * plus two Player reads the server entry cannot make for itself. The vanilla-crit
  * retirement: {@code canCriticalAttack} is the single 1.21.11 gate for the
- * falling-swing x1.5, the crit sound and the crit particles, and this returns false
+ * falling-swing x1.5 and its crit cue, and this returns false
  * for every player. The swing charge: vanilla zeroes the attack-strength ticker at
  * the top of {@code onAttack}, before a normal swing's hit lands, and the stab route
  * (spear thrusts, mace smashes) damages inside {@code stabAttack} instead, so this
  * records the ticker above both entry points. The mixin holds zero policy; the mod's
- * crits live in {@code CritRoll} and settle through the melee hook. Mobs are untouched.
+ * crits live in {@code CritRoll}, settle through the melee hook and cue through
+ * {@code CritCue}. Mobs are untouched.
  */
 @Mixin(Player.class)
 public abstract class PlayerMixin implements PlayerClassAccess, SwingChargeAccess {

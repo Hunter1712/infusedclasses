@@ -42,10 +42,12 @@ their numbers, not part of them.
 - Crits become learnable, documented state (glossary: crit roll, betrayal,
   Streak) instead of an undocumented vanilla quirk; copy and docs must not
   promise jump crits again.
-- The second-hurt settle means armor and enchantment reduction apply to the
-  crit part too (near-linear, so the net reads as base times mult), and the
-  bonus is dropped when the base hit already killed. Betrayal's heal-back is
-  pre-armor, so it lands shallower against armored targets.
+- The second-hurt settle prices the mult off what the base hit landed: the
+  bonus rides a damage type tagged past armor, effects and shields (the base
+  already paid them), so the net reads as exactly base times mult on any
+  target, and the bonus is dropped when the base hit already killed.
+  Betrayal's heal-back prices the same landed base, so its give-back stays
+  proportional on armored targets.
 - A future class can declare its own crit identity with data alone; a class
   that wants vanilla jump crits back would reintroduce a policy seam, which
   was deleted here on purpose.

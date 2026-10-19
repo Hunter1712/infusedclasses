@@ -4,7 +4,7 @@ import java.util.function.Supplier;
 
 /**
  * Melee plan decisions: what one melee hit earns and settles, decided from definitions,
- * transient state and what the hit landed. The decision half peeks; {@link #resolve} then
+ * transient state and what the hit took. The decision half peeks; {@link #resolve} then
  * settles the runtime movements and hands the entry exactly what to land. The server
  * entry maps, adapters apply; this owns every ability-id check the hook needs, so the
  * entry never compares ability ids to gate rewards. The victim runtime arrives lazily: a
@@ -50,7 +50,7 @@ public final class MeleePlan {
 	 * What one melee hit earns and settles, decided in field order: the stack bump (bars
 	 * feed only outside an Onslaught window), the Onslaught price (full swings only, 2
 	 * stacks), the Impetus spend, then the chassis, stance, wheel, oath and window mults.
-	 * The Onslaught mult pays on any landed hit while its window is live; its price waits
+	 * The Onslaught mult pays on any hit inside its window; its price waits
 	 * for a full swing. Resolving applies the movements in the same order and returns the
 	 * stamped verdict and combined mult to land. One-shot flags are peeked here and
 	 * consumed there, at the same {@code now}. A hit that took no damage (a raised shield
@@ -59,27 +59,28 @@ public final class MeleePlan {
 	 */
 	public record HitPlan(boolean bump, float charge, boolean priceOnslaught, boolean impetusPending,
 			double deal, double take, double combined, CritRoll.Result dice) {
-		/** The plan of a hit that earned nothing: no peek, no verdict, neutral mults against the zero landed. */
+		/** The plan of a hit that earned nothing: no peek, no verdict, neutral mults. */
 		static HitPlan none(float charge) {
 			return new HitPlan(false, charge, false, false, 1.0, 1.0, 1.0, CritRoll.Result.NONE);
 		}
 	}
 
-	/** What one settled hit lands: the verdict to cue and the combined mult to settle. */
+	/** What one resolved hit returns: the verdict to cue and the combined mult to settle. */
 	public record Landed(CritRoll.Verdict verdict, double combined) {
 	}
 
 	/**
-	 * Full hit decision from definitions, transient state and what the hit landed, the
-	 * caller's roll included. The pure half: peeks only, settles nothing. A landed amount
+	 * Full hit decision from definitions, transient state and what the hit took, the
+	 * caller's roll included. The pure half: peeks only, settles nothing. A taken amount
 	 * of zero — a fully blocked hit — returns the empty plan before any read that costs
 	 * state, so a shield neither earns nor spends. Victim parts are 1.0 without a victim;
 	 * a missing class reads the universal crit rule. Full swings roll for every class,
-	 * classless included.
+	 * classless included. The stamped mults price what the settle lands, not this
+	 * reported amount.
 	 */
 	static HitPlan planHit(ClassDefinition atkDef, PlayerRuntime atkRuntime, ClassDefinition victimDef,
-			Supplier<PlayerRuntime> victimRuntime, float charge, float landedDamage, long now, float roll) {
-		if (landedDamage <= 0) {
+			Supplier<PlayerRuntime> victimRuntime, float charge, float damageTaken, long now, float roll) {
+		if (damageTaken <= 0) {
 			return HitPlan.none(charge);
 		}
 		PlayerRuntime.State state = atkRuntime == null ? null : atkRuntime.state(now);
@@ -106,14 +107,13 @@ public final class MeleePlan {
 	 * Decision and settle in one: plans the hit through {@link #planHit} and settles the
 	 * runtime movements in the plan's field order — the stack bump, the dice movement,
 	 * the Impetus spend, then the Onslaught price — all at the same {@code now} the plan
-	 * peeked them. Returns what the entry lands: the crit verdict to cue and the combined
-	 * mult to settle. The one seam between the plan and the entry, so nothing lands a hit
-	 * that was not resolved. A hit that took no damage resolves the empty plan and moves
-	 * nothing.
+	 * peeked them. Returns the crit verdict to cue and the combined mult to settle. The
+	 * one seam between the plan and the entry, so nothing lands a hit that was not
+	 * resolved. A hit that took no damage resolves the empty plan and moves nothing.
 	 */
 	public static Landed resolve(ClassDefinition atkDef, PlayerRuntime atkRuntime, ClassDefinition victimDef,
-			Supplier<PlayerRuntime> victimRuntime, float charge, float landedDamage, long now, float roll) {
-		HitPlan plan = planHit(atkDef, atkRuntime, victimDef, victimRuntime, charge, landedDamage, now, roll);
+			Supplier<PlayerRuntime> victimRuntime, float charge, float damageTaken, long now, float roll) {
+		HitPlan plan = planHit(atkDef, atkRuntime, victimDef, victimRuntime, charge, damageTaken, now, roll);
 		settle(atkRuntime, atkDef, plan, now);
 		return new Landed(plan.dice().verdict(), plan.combined());
 	}
@@ -164,8 +164,8 @@ public final class MeleePlan {
 	 * ON_HIT_TAKEN bar never pays for one.
 	 */
 	public static void resolveTaken(ClassDefinition victimDef, Supplier<PlayerRuntime> victimRuntime,
-			float landedDamage, long now) {
-		if (landedDamage <= 0 || victimDef == null
+			float damageTaken, long now) {
+		if (damageTaken <= 0 || victimDef == null
 				|| victimDef.passiveForTrigger(Trigger.ON_HIT_TAKEN) == null) {
 			return;
 		}
