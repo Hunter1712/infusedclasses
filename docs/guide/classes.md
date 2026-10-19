@@ -59,6 +59,7 @@ Wheel-and-dice class: Roulette spins stat bands and All In loads the crits, and 
 
 - **Full swing**: only a `>= 1.0` charge earns stacks, rolls a crit or prices Onslaught. Spam
   earns zero, and a hit fully eaten by a raised shield earns nothing on either side.
-- **Charged bonus**: flat ability bonus damage scales with charge (`base x charge x
-  charge`): full swings pay full, half pays a quarter, spam pays chips. Base weapon damage
-  never routes here — vanilla already halves spam.
+- **Charged bonus** (universal, every class and classless players alike): flat ability
+  bonus damage scales with charge (`base x charge x charge`): full swings pay full, half
+  pays a quarter, spam pays chips. Base weapon damage never routes here — vanilla already
+  halves spam.

@@ -28,10 +28,10 @@ curve existed only to price Rush's bonus hit and Rend's payout.
 5. **Onslaught replaces Rend on the ultimate slot.** A 10-stack gate, a 60s lane and a 15s
    window that also ends when the bar empties; each full-swing hit pays +1 damage and spends 2
    stacks, and nothing feeds the bar while it is live.
-6. **The charged curve stays.** `BonusCurve.bonusFor` remains the shared rule for flat
-   ability bonus damage (`base x charge x charge`, clamped); Onslaught's +1 runs through it,
-   and its full-swing gate still means spam pays nothing. Rush, Rend and their appliers are
-   deleted.
+6. **The charged curve stays universal.** `BonusCurve.bonusFor` remains the rule for every
+   flat bonus damage the mod adds, every class and classless players alike (`base x charge x
+   charge`, clamped); Onslaught's +1 is its current caller, and the full-swing gate still
+   means spam pays nothing. Rush, Rend and their appliers are deleted.
 7. **The wire keeps its names.** `RushPayload`/`RendPayload`, their channels and the R/V keys
    keep their old names; only the lanes and ability ids change
    (`infusedclasses:offload`, `infusedclasses:onslaught`, `Lane.OFFLOAD`, `Lane.ONSLAUGHT`).

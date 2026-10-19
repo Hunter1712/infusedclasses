@@ -1,10 +1,11 @@
 package com.hunter1712.infusedclasses;
 
 /**
- * Charged bonus damage shared by every flat ability bonus: mod hook bonus damage
- * scales quadratically with swing charge. Full swings pay full bonus, half charge
- * pays a quarter, spam pays chips. Base weapon damage is never routed here — vanilla
- * already halves spam, and the mod adds no second cut to it.
+ * Universal charged rule for all flat bonus damage the mod adds, every class and
+ * classless players alike: mod hook bonus damage scales quadratically with swing
+ * charge. Full swings pay full bonus, half charge pays a quarter, spam pays chips.
+ * Base weapon damage is never routed here — vanilla already halves spam, and the mod
+ * adds no second cut to it.
  *
  * <p>The same module owns the one full-swing definition, shared by the stack feed,
  * the crit roll and the Onslaught price.

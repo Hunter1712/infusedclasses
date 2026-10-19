@@ -323,8 +323,9 @@ The one definition of a full swing, shared by the stack feed, the crit roll and 
 Onslaught price: exact `>= 1.0F`, so overcharge counts, half swings and spam earn
 nothing and roll nothing. The same module owns the charged bonus curve (`bonusFor`:
 `base x charge x charge`, clamped): flat ability bonus damage scales with the swing —
-full swings pay full, half pays a quarter, spam pays chips. Base weapon damage never
-routes here — vanilla already halves spam.
+full swings pay full, half pays a quarter, spam pays chips. The curve is universal,
+every class and classless players alike; Onslaught's +1 is the only flat-bonus caller
+today. Base weapon damage never routes here — vanilla already halves spam.
 _Avoid_: damage falloff, charge multiplier
 
 **Melee plan** (`MeleePlan`):

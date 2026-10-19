@@ -111,10 +111,10 @@ you keep.
 - `PlayerRuntime.State`: `rendBonusStacks` goes; nothing takes its place
   (Onslaught reads its lane and the stack count). Add `spendStacks(passive,
   n)` and `endWindow(Lane)` (the Onslaught early end at an empty bar).
-- `BonusCurve`: `bonusFor` stays as the shared flat-bonus rule (`base x
-  charge x charge`, clamped); Onslaught's +1 routes through it, and the
-  full-swing gate still blocks spam. `isFullSwing` remains the
-  stack/crit/Onslaught gate.
+- `BonusCurve`: `bonusFor` stays as the universal flat-bonus rule for every
+  class and classless players alike (`base x charge x charge`, clamped);
+  Onslaught's +1 is the current caller, and the full-swing gate still blocks
+  spam. `isFullSwing` remains the stack/crit/Onslaught gate.
 - `MeleePlan`: `HitPlan` drops `rushBonus`, `rendStacks`, `rendHp`; adds
   `onslaughtHp` (1.0 when the Onslaught window is live and the swing is a full
   swing, else 0). The bump is suppressed while the Onslaught window is live
