@@ -15,17 +15,8 @@ fi
 class="$1"
 method="$2"
 
-mcver=$(sed -n 's/^minecraft_version=//p' gradle.properties)
-[ -n "$mcver" ] || { echo "mc-method: no minecraft_version in gradle.properties" >&2; exit 1; }
-
-# The mappings hash in the path rots; take the newest jar for the target version.
-jar=$(ls -t \
-	"$HOME/.gradle/caches/fabric-loom/minecraftMaven/net/minecraft/minecraft-merged/${mcver}"-*/minecraft-merged-*.jar \
-	2>/dev/null | head -1 || true)
-if [ -z "$jar" ]; then
-	echo "mc-method: no merged jar for $mcver in the Loom cache — run ./gradlew classes once" >&2
-	exit 1
-fi
+# mc-jar.sh owns the cache lookup: the mappings hash in the path rots.
+jar=$(tools/mc-jar.sh)
 
 tmp=$(mktemp -d)
 trap 'rm -rf "$tmp"' EXIT

@@ -21,7 +21,7 @@ Five-role vocabulary: `needs-triage`, `needs-info`, `ready-for-agent`, `ready-fo
 ## Pre-flight
 
 Before touching source: `git status` for uncommitted work, read `.scratch/` for active specs, `grep` for callers before changing a public method.
-After any edit in `src/main/java`, expect `./gradlew compileJava` or `./gradlew test` before calling it done. `tools/doc-flags.sh` before calling a round done flags docs drift: a changed class named in `GLOSSARY.md` with the glossary untouched, or no `CHANGELOG.md` touch at all.
+After any edit in `src/main/java`, expect `./gradlew compileJava` or `./gradlew test` before calling it done. `tools/doc-flags.sh` before calling a round done flags docs drift: a changed class named in `GLOSSARY.md` with the glossary untouched, no `CHANGELOG.md` touch at all, or an ADR missing from the `docs/adr/README.md` index.
 
 ## Architecture review trigger
 
@@ -39,7 +39,9 @@ The `DamageSettle` guarded hurt needs the same hand check: a bonus smaller than 
 
 ## Shell notes (Linux)
 
-Bash — plain `head`, `tail`, `grep` for output; inspect jars with `unzip -l` or `jar tf`; `python3` is available.
+Bash — plain `head`, `tail`, `grep` for output; inspect jars with `unzip -l` or `jar tf`.
 Edit files with the edit tool; never rewrite file contents through the shell (redirection, `tee`, `sed -i`).
-Resolve Fabric/vanilla signatures with `javap`: the merged jar lives under `~/.gradle/caches/fabric-loom/minecraftMaven` (glob `minecraft-merged-1.21.11-*.jar`, the hash rots), and `tools/mc-method.sh <class> <method>` prints one method body out of it. After a build that adds or edits a mixin, run `tools/mixin-targets.sh`: it resolves the built jar's annotation targets from intermediary ids (`method_75123`) to named members via `~/.gradle/caches/fabric-loom/1.21.11/loom.mappings.*/mappings.tiny`. The JDK lives in `~/.local/share/jdks/jdk-25.0.4.1`, with `java`/`javac`/`jar`/`javap` symlinked into `/usr/local/bin`.
+Resolve Fabric/vanilla signatures with `javap` against `tools/mc-jar.sh` — the Loom-cached merged jar, newest for `minecraft_version`; the hash in its path rots, so never hand-roll the lookup — and `tools/mc-method.sh <class> <method>` prints one method body out of it. `tools/mc-jar.sh --client` prints the client jar.
+Vanilla assets (sounds.json, oggs, textures, lang) live in `~/.local/share/ElyPrismLauncher/assets` (`indexes/` maps names to content-addressed `objects/`); `tools/mc-sound.sh <event-id>` resolves a sound event to its ogg files. `python3` and `ffmpeg` are available for inspecting them.
+After a build that adds or edits a mixin, run `tools/mixin-targets.sh`: it resolves the built jar's annotation targets from intermediary ids (`method_75123`) to named members via `~/.gradle/caches/fabric-loom/1.21.11/loom.mappings.*/mappings.tiny`. The JDK lives in `~/.local/share/jdks/jdk-25.0.4.1`, with `java`/`javac`/`jar`/`javap` symlinked into `/usr/local/bin`.
 Target is Minecraft 1.21.11: prefer `Button` widgets over `Screen` input/tooltip overrides — the 1.21 input and tooltip signatures drifted and Buttons compile first try.
