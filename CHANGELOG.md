@@ -45,6 +45,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   the HUD rows, the cooldown boundaries and the attribute reconcile are unchanged.
 - `PROJECT_DESCRIPTION.md` catches up with Beta: current kits (Momentum checkpoints with Offload and Onslaught), Crooked Dice at 15% and All In at x1.75 on `V`, and no alpha contract.
 - `ServerEvents` splits at its two bulky seams: `MeleeHook` owns the AFTER_DAMAGE body and `SlotPresses` the reused-bind presses (one press per slot, ADR-0029), leaving the file as lifecycle wiring and the one steady-state emission point, under the repo's ~150-line line. The settle's landed math is the new `HitMitigation`.
+- Jars carry the game version from `build.gradle` (`infusedclasses-0.5.0+1.21.11.jar`), so a future 26.x jar slots onto the same project page with zero rename.
 
 ## [0.4.0] - 2026-10-19
 

@@ -25,7 +25,7 @@ Crits are mod-owned: vanilla jump crits are retired, and every full-charge lande
 3. Place it in `mods/` on client and server, then launch. The picker opens on first join.
 4. Reset class data after updates if told to: `/class select <player>`.
 
-**Manual installs only**, no auto-updater; Modrinth + CurseForge listings arrive as manual uploads on the Beta channel.
+**Manual installs only**, no auto-updater; Modrinth and CurseForge host Beta-channel manual uploads.
 
 ## Full documentation
 
