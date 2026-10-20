@@ -41,7 +41,7 @@ public class InfusedClassesClient implements ClientModInitializer {
 
 		ClientPlayNetworking.registerGlobalReceiver(PlayerStatusPayload.TYPE,
 				(PlayerStatusPayload payload, ClientPlayNetworking.Context context) -> context.client()
-						.execute(() -> StatusStore.accept(payload, System.currentTimeMillis())));
+						.execute(() -> StatusStore.accept(payload, now())));
 		ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> StatusStore.clear());
 
 		// The stack on screen: one element under its own id; what draws and what hides lives inside it.
@@ -67,5 +67,10 @@ public class InfusedClassesClient implements ClientModInitializer {
 
 	public static void pickClass(Identifier id) {
 		ClientPlayNetworking.send(new SelectClassPayload(id));
+	}
+
+	/** Monotonic millis for the HUD's local interpolation anchor; no clock crosses the wire. */
+	static long now() {
+		return System.nanoTime() / 1_000_000L;
 	}
 }

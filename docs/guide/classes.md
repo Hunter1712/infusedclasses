@@ -18,12 +18,12 @@ moves under that weight. No max-health bonus (vanilla 20 HP).
 **Actives**
 
 - **Offload** (`R`): pays a flat 5 Momentum, then 5s of +0.2 attack speed and +0.01 move speed.
-  Own 10s lane. Below 5 stacks fizzles with a `No Momentum` line and arms nothing. An unspent
-  window owes nothing back.
+  Own 10s lane. Below 5 stacks fizzles with a `No Momentum` line when the lane is ready and
+  arms nothing; a press on cooldown is silent. An unspent window owes nothing back.
 - **Onslaught** (`V`): needs 10 Momentum; for 15s every landed hit deals x1.15 melee and every
   full swing spends 2 stacks. Nothing feeds the bar while it is live, and the window ends when
   its 15s runs out or the bar empties, whichever comes first. Own 60s lane. Below 10 stacks
-  fizzles with a `No Momentum` line.
+  fizzles with a `No Momentum` line when the lane is ready; a press on cooldown is silent.
 
 ## Legionary — Sword and shield
 

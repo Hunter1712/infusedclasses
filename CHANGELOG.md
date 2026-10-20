@@ -8,6 +8,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
+- Class picks are gated by a server-issued, transient picker grant: a `select_class` intent that arrives without the server having opened the picker is ignored, so a modified client can no longer switch class mid-fight and reset cooldowns.
+- Killing blows run the state-only melee plan: the hit that finishes a fight now grants Momentum, pays Onslaught's price, spends Impetus, moves Streak and plays the crit cue. The extra settle damage still drops on a kill.
+- The settle bonus no longer scales with difficulty a second time (`scaling: never`), so a Gladius Legionary pays x1.2 of the landed base on every difficulty.
+- Client HUD countdowns run on monotonic millis, so a system clock step cannot freeze or skip a countdown.
+- `/class set` reports success or rejection to the command source instead of leaving the admin guessing; the picker footer names the `Select` button; and a press on a cooling Offload or Onslaught lane is silent even when the stack price is also short.
 - Damage mults scale what a hit actually landed on the victim: armor, resistance and enchantments the base hit paid for are not paid again by the bonus, so a x1.25 crit on an armored target lands as x1.25 of the health the hit took, exactly as the balance model always priced it. The bonus hurt rides its own damage type (`infusedclasses:settle`, tagged to bypass armor, effects and shields, and to cost a player victim no second hunger exhaustion), and the `lastHurt` memory is restored by what the bonus actually took off, so a rejected or fully eaten bonus no longer inflates the window.
 - Mod crits show their particle burst again: 1.21.11's own `Player.crit` is empty, so `CritCue` spawns `ParticleTypes.CRIT` at the victim beside the crit sound.
 - Cooldowns, ability windows and passive grace run on a monotonic clock (`InfusedClasses.now()`, `System.nanoTime` millis) instead of wall time, so a clock step — a VM snapshot restore, an NTP correction — can no longer skip a cooldown or freeze one. The client HUD's countdowns stay client-local.

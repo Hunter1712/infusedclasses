@@ -24,4 +24,15 @@ public record ChatLine(String text, ChatFormatting style) {
 	public static ChatLine classPicked(String displayName) {
 		return new ChatLine("Class: " + displayName, ChatFormatting.GRAY);
 	}
+
+	/** Command-source confirmation: "Set <player>'s class to <display>". */
+	public static ChatLine classSet(String playerName, String displayName) {
+		return new ChatLine("Set " + playerName + "'s class to " + displayName, ChatFormatting.GRAY);
+	}
+
+	/** Command-source rejection: the target was left unchanged. */
+	public static ChatLine classSetRejected(String playerName) {
+		return new ChatLine("Could not set " + playerName + "'s class: " + InfusedClasses.UNKNOWN_OR_LOCKED,
+				ChatFormatting.RED);
+	}
 }

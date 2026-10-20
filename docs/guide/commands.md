@@ -19,14 +19,14 @@ Gamemaster only. Sets the player's class choice. Suggests registered playable id
 
 - One id, validated: an id that matches no playable class — or is locked — yields `Unknown or locked class` and leaves the previous choice untouched. Text that is not a valid id fails at parse time with the vanilla argument error.
 - Type the full id (tab-complete writes it): a bare name resolves to the vanilla `minecraft:` namespace, so `juggernaut` means `minecraft:juggernaut` and is rejected.
-- Accepted: writes the choice, clears old-class earnings, resets cooldowns.
+- Accepted: writes the choice, clears old-class earnings, resets cooldowns, and clears any picker grant the player was holding. The command source gets `Set <player>'s class to <display>`; the target keeps the switch's own class line.
 
 ## `/class select <player>`
 
 Gamemaster only, testing-only. Reopens the picker on the player's current page for GUI iteration — used after updates when players are told to reselect, and by developers iterating on card copy.
 
 - Carries the current class so reopening lands on its page.
-- Picking still validates server-side; the picker closes only on the pick confirm. A rejected pick stays open for retry.
+- Picking still validates server-side; the command grants the one pick the receiver will accept, and the picker closes only on the pick confirm. A rejected pick stays open for retry.
 
 ## `/class pick`
 
@@ -48,5 +48,6 @@ Gamemaster only — the per-player "has cheats". Reopens your own picker on your
 ## Picker behaviour (no command needed)
 
 - First join with no class choice opens the picker automatically.
+- The server honors a pick only after it has opened the picker; a cold `select_class` intent is ignored.
 - Rejoining with a saved choice loads silently — no GUI.
 - `R` arrives as the rotate intent for Legionaries, the roulette intent for Gamblers and Offload for everyone else; `V` arrives as the oath intent for Legionaries, All In for Gamblers and Onslaught for everyone else (bind morph). Binds survive the class.

@@ -9,8 +9,9 @@ import java.util.List;
  * Offload decisions: the Juggernaut's spender on {@code R}. Pure gate-and-arm shape:
  * the press spends a flat 5 Momentum, arms its own 10s lane and stamps a 5s window of
  * looser swings and a quicker step. Below the price it fizzles with a {@code No Momentum}
- * line and arms nothing; a wrong-class press and one during the lane's cooldown reject
- * silently. Nothing is owed back when the window goes unspent: the stacks are already gone.
+ * line when the lane is ready and arms nothing; a wrong-class press and one during the
+ * lane's cooldown reject silently. Nothing is owed back when the window goes unspent: the
+ * stacks are already gone.
  */
 public final class OffloadAbility {
 	public static final String NAME = "Offload";
@@ -61,19 +62,19 @@ public final class OffloadAbility {
 	}
 
 	/**
-	 * Decides offloading for Juggernauts holding the price off cooldown; fewer than
-	 * {@link #COST_STACKS} fizzles before the cooldown is even read. Pure and read-only:
-	 * only {@link #fire} arms the lane and spends.
+	 * Decides offloading for Juggernauts holding the price off cooldown: a cooling lane
+	 * rejects silently first, then fewer than {@link #COST_STACKS} fizzles. Pure and
+	 * read-only: only {@link #fire} arms the lane and spends.
 	 */
 	public static AbilityOutcome trigger(ClassDefinition def, long offloadRemaining, int stacks) {
 		if (def == null || !def.hasAbility(ClassRegistry.OFFLOAD_ABILITY)) {
 			return AbilityOutcome.rejected();
 		}
-		if (stacks < COST_STACKS) {
-			return AbilityOutcome.fizzled(new ChatLine("No Momentum", null));
-		}
 		if (offloadRemaining > 0) {
 			return AbilityOutcome.rejected();
+		}
+		if (stacks < COST_STACKS) {
+			return AbilityOutcome.fizzled(new ChatLine("No Momentum", null));
 		}
 		return AbilityOutcome.fired(new ChatLine(NAME + "!", ChatFormatting.YELLOW));
 	}

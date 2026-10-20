@@ -62,6 +62,20 @@ class OffloadAbilityTest {
 	}
 
 	@Test
+	void aCoolingPressBelowThePriceIsSilentRatherThanSayingNoMomentum() {
+		PlayerRuntime runtime = loaded(5);
+		assertTrue(OffloadAbility.fire(juggernaut(), runtime, 0).fired());
+
+		AbilityOutcome second = OffloadAbility.fire(juggernaut(), runtime, 1_000);
+
+		assertFalse(second.fired());
+		assertNull(second.announcement());
+		assertEquals(0, runtime.stacks(momentum()));
+		assertEquals(Lane.OFFLOAD.cooldownMs() - 1_000,
+				runtime.state(1_000).laneRemaining(Lane.OFFLOAD));
+	}
+
+	@Test
 	void aSecondPressWhileCoolingIsRejectedSilentlyAndSpendsNothing() {
 		PlayerRuntime runtime = loaded(10);
 		assertTrue(OffloadAbility.fire(juggernaut(), runtime, 0).fired());

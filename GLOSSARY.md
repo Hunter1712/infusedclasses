@@ -103,7 +103,9 @@ speak only what happened: a press on cooldown says nothing, so `ChatLine.cooldow
 (`%.1fs`, one decimal) stays the `/class info` lane shape (ADR-0017, whose silence
 carried at ADR-0019). Its wording, rounding and locale are decided with the ability (or class-choice outcome),
 not formatted by whoever sends it. Class-choice lines use the same seam: `unknownOrLocked()` (red, chat)
-for a rejected pick, and `classPicked(displayName)` (gray, chat) for an accepted switch.
+for a rejected pick, `classPicked(displayName)` (gray, chat) for an accepted switch, and
+`classSet(playerName, displayName)` / `classSetRejected(playerName)` for the command source's
+own confirmation or rejection.
 _Avoid_: message, notification, cooldown echo
 
 **Picker copy** (`ConditionalPassive.rulesDesc`, `ConditionalPassive.tierDesc`):
@@ -220,8 +222,9 @@ _Avoid_: timer
 The Juggernaut's spender on `R`: pays a flat 5 Momentum (`COST_STACKS`), arms its own 10s
 lane and stamps a 5s window (`WINDOW_TICKS`) of looser swings and a quicker step
 (+0.2 attack speed `infusedclasses:offload_haste`, +0.01 move speed
-`infusedclasses:offload_speed`). Below the price it fizzles with a `No Momentum` line and
-arms nothing; a wrong-class press and one during the lane's cooldown reject silently.
+`infusedclasses:offload_speed`). Below the price it fizzles with a `No Momentum` line when
+the lane is ready and arms nothing; a wrong-class press and one during the lane's cooldown
+reject silently first.
 Nothing is owed back when the window goes unspent: the stacks are already gone. Decided in
 the trigger/fire gate-and-arm shape. A stat, never a vanilla effect: no effect icon, no
 effect dependency.
@@ -242,7 +245,8 @@ and a 15s window (`WINDOW_TICKS`). Inside it every hit deals x1.15 melee (`DEAL_
 and each full-swing hit spends 2 stacks (`COST_PER_HIT`), and nothing feeds the bar — dealt or
 taken. The window lasts the bar and the window, whichever empties first: a spend down to
 zero ends it there, and a bleed does too on the tick that reads the empty bar. Below 10
-stacks the press fizzles with a `No Momentum` line and arms nothing. Decided in the
+stacks the press fizzles with a `No Momentum` line when the lane is ready; a press on
+cooldown rejects silently first, and neither arms anything. Decided in the
 trigger/fire gate-and-arm shape; the melee plan pays the mult on any hit inside the
 window and prices full swings only, so a hit eaten by a shield never pays. Spam inside
 the window pays the mult without a price: the bar drains only on full swings and the bleed.
@@ -506,10 +510,11 @@ _Avoid_: player hook, mixin state
 **Class switch** (`ClassSwitch`):
 The one adapter path behind both switch entries: validate the pick in the choice module,
 clean what the old class earned (`PassiveApplier.cleanupFor`'s answer, removed by
-`onClassChanged`) and announce the outcome,
-rejection included; it returns the new definition, or null when the pick was rejected.
-Callers keep only their own extra — the picker's confirm packet, the command's return
-code — so the two entries cannot sequence the switch differently.
+`onClassChanged`), announce the outcome,
+rejection included, and consume the picker grant; it returns the new definition, or null
+when the pick was rejected. Callers keep only their own extra — the picker's confirm
+packet, the command's return code and source line — so the two entries cannot sequence
+the switch differently.
 _Avoid_: class change, switch handler
 
 **Transient runtime** (`PlayerRuntime`):
@@ -625,7 +630,7 @@ The picker itself: dimmed backdrop, one large focused card per page with its ful
 printed on the card and no tooltips anywhere. Side previous/next controls, clickable
 dots and keyboard paging (arrows/`A`/`D`) move between pages with wraparound; the
 signal carries the current class so reopening lands on its page. One pinned `Select`
-control per page, title, subtitle and the `Click a class to choose it` footer. It positions
+control per page, title, subtitle and the `Use Select to choose it` footer. It positions
 widgets from the renderer's focused math, resolves one view
 per frame (card rectangle, `CardModel` and measured layout together) and reuses it across the
 background and body passes, clamping the scroll against that view's own measure; how the card
@@ -731,8 +736,9 @@ _Avoid_: cache
 ### Protocol and commands
 
 **Select intent** (`SelectClassPayload`):
-The client's `infusedclasses:select_class` intent: "I picked this class". The server validates it
-against the choice module; a rejected pick leaves the picker open for retry. An accepted switch
+The client's `infusedclasses:select_class` intent: "I picked this class". The server accepts it
+only while the player holds a picker grant, then validates it against the choice module; a pick
+with no grant is ignored, and a rejected pick leaves the picker open for retry. An accepted switch
 clears what the old class earned and resets the cooldown, so no stale modifier survives.
 _Avoid_: select packet
 
@@ -758,6 +764,13 @@ For a Juggernaut the press fires Onslaught; for a Legionary the same bind arrive
 intent (Aequilibrium in any stance) and for a Gambler as All In, so binds survive the class.
 _Avoid_: heal packet, key packet, Rend intent
 
+**Picker grant** (`PickerGrants`):
+The transient, per-player permission that lets one `select_class` intent through the server's
+gate. Granted when the join picker or an admin's `/class select` / `/class pick` opens the
+screen, cleared only after a switch lands, and dropped on disconnect, respawn and a successful
+`/class set`. Never saved: a relog cannot reuse a stale pick.
+_Avoid_: pick permission, open flag
+
 **Picker signal** (`OpenClassScreenPayload`):
 The server's `infusedclasses:open_class_screen` signal telling the client to open the picker,
 carrying the player's current class id (empty when none) so reopening lands on its page. Sent
@@ -776,10 +789,13 @@ remaining, the Legionary's stance, and `No class chosen` when classless, compose
 pure `ClassInfo.lines` decision. `/class set <player> <class>` suggests registered ids
 (playable only), parses a namespaced id through the vanilla identifier argument, and
 validates in the choice module (`Unknown or locked class` on failure); an accepted
-switch clears what the old class earned like the picker path does; `/class pick` (gamemaster-
+switch clears what the old class earned and consumes the picker grant like the picker
+path does, and the command source gets `Set <player>'s class to <display>` (or
+`Could not set <player>'s class: ...`) when it is not the target; `/class pick` (gamemaster-
 gated per player) reopens the invoking player's picker on their current page with no chat
-output, and `/class select <player>` is testing-only, gamemaster-gated, reopening the picker
-on the target's current page for GUI iteration.
+output and grants the one pick, and `/class select <player>` is testing-only, gamemaster-
+gated, reopening the picker on the target's current page for GUI iteration with the same
+grant.
 _Avoid_: admin command, cheat
 
 ## Decisions

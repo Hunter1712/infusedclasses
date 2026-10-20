@@ -9,6 +9,7 @@ import net.minecraft.commands.Commands;
 import net.minecraft.commands.arguments.EntityArgument;
 import net.minecraft.commands.arguments.IdentifierArgument;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.permissions.Permissions;
@@ -80,13 +81,30 @@ public final class ClassCommands {
 		return 1;
 	}
 
-	/** The picker signal: the player's current class id, empty when none. */
-	private static void openPicker(ServerPlayer player) {
+	/** The picker signal: the player's current class id, empty when none. One grant per open. */
+	static void openPicker(ServerPlayer player) {
+		PickerGrants.grant(player.getUUID());
 		String current = PlayerClassAccess.of(player).writeId();
 		ServerPlayNetworking.send(player, new OpenClassScreenPayload(current == null ? "" : current));
 	}
 
 	private static int setClass(CommandSourceStack source, ServerPlayer player, Identifier id) {
-		return ClassSwitch.trySwitch(player, id) == null ? 0 : 1;
+		ClassDefinition def = ClassSwitch.trySwitch(player, id);
+		if (def == null) {
+			if (source.getEntity() != player) {
+				send(source, ChatLine.classSetRejected(player.getName().getString()));
+			}
+			return 0;
+		}
+		if (source.getEntity() != player) {
+			send(source, ChatLine.classSet(player.getName().getString(), def.displayName()));
+		}
+		return 1;
+	}
+
+	/** One command-source line; the target already got the class-choice line from the switch. */
+	private static void send(CommandSourceStack source, ChatLine line) {
+		MutableComponent sent = AbilityApplier.component(line);
+		source.sendSuccess(() -> sent, false);
 	}
 }

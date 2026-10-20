@@ -3,7 +3,10 @@ package com.hunter1712.infusedclasses;
 import net.minecraft.resources.Identifier;
 import org.junit.jupiter.api.Test;
 
+import java.util.List;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * The HP-scaled passive's own facts: bucket math from live HP and copy generated from the
@@ -45,5 +48,22 @@ class HpScaledPassiveTest {
 	@Test
 	void copyIsGeneratedFromTheNumbers() {
 		assertEquals("HP-scaled: -0.25 at 0 HP to +0.5 full HP.", SPEED.fullDesc());
+	}
+
+	@Test
+	void aClassCarryingThePassiveSweepsItsModifierAndGroupsItsCardLine() {
+		ClassDefinition def = new ClassDefinition(
+				Identifier.fromNamespaceAndPath("infusedclasses", "hp_only"),
+				"HP Only", List.of(), List.of(SPEED), 0, "",
+				List.of(), List.of(), CritRule.universal());
+
+		assertEquals(List.of("test_speed"), PassiveApplier.cleanupFor(def, null).stream()
+				.map(PassiveEffect.Modifier::modifierId)
+				.map(Identifier::getPath)
+				.toList());
+		assertTrue(ClassPresentation.cardLinesFor(def).stream()
+				.anyMatch(line -> line.kind() == ClassPresentation.LineKind.PASSIVE
+						&& line.name().equals(SPEED.group())
+						&& line.desc().equals(SPEED.fullDesc())));
 	}
 }

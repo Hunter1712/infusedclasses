@@ -32,19 +32,19 @@ public final class OnslaughtAbility {
 	}
 
 	/**
-	 * Decides pressing for Juggernauts holding the price off cooldown; fewer than
-	 * {@link #MIN_STACKS} fizzles before the cooldown is even read. Pure and read-only:
-	 * only {@link #fire} arms the lane.
+	 * Decides pressing for Juggernauts holding the price off cooldown: a cooling lane
+	 * rejects silently first, then fewer than {@link #MIN_STACKS} fizzles. Pure and
+	 * read-only: only {@link #fire} arms the lane.
 	 */
 	public static AbilityOutcome trigger(ClassDefinition def, long onslaughtRemaining, int stacks) {
 		if (def == null || !def.hasAbility(ClassRegistry.ONSLAUGHT_ABILITY)) {
 			return AbilityOutcome.rejected();
 		}
-		if (stacks < MIN_STACKS) {
-			return AbilityOutcome.fizzled(new ChatLine("No Momentum", null));
-		}
 		if (onslaughtRemaining > 0) {
 			return AbilityOutcome.rejected();
+		}
+		if (stacks < MIN_STACKS) {
+			return AbilityOutcome.fizzled(new ChatLine("No Momentum", null));
 		}
 		return AbilityOutcome.fired(new ChatLine(NAME + "!", ChatFormatting.RED));
 	}

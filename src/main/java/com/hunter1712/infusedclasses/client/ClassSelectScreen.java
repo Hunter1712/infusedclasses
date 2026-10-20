@@ -155,7 +155,7 @@ public class ClassSelectScreen extends Screen {
 		for (int i = 0; i < dots.size(); i++) {
 			dots.get(i).setMessage(Component.literal(i == page ? "\u25CF" : "\u25CB"));
 		}
-		graphics.drawCenteredString(font, "Click a class to choose it", width / 2, CardLayout.footerY(card),
+		graphics.drawCenteredString(font, "Use Select to choose it", width / 2, CardLayout.footerY(card),
 				FOOTER_COLOR);
 	}
 

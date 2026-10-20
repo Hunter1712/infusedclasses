@@ -22,16 +22,21 @@ public final class AbilityApplier {
 	private AbilityApplier() {
 	}
 
+	/** One text conversion for every chat line, so a command source and a player read the same style. */
+	public static MutableComponent component(ChatLine line) {
+		MutableComponent text = Component.literal(line.text());
+		if (line.style() != null) {
+			text = text.withStyle(line.style());
+		}
+		return text;
+	}
+
 	/** One announcement path for every ability result and choice line: null says nothing. If actionBar is true, sends to action bar; otherwise to chat. */
 	public static void announce(ServerPlayer player, ChatLine announcement, boolean actionBar) {
 		if (announcement == null) {
 			return;
 		}
-		MutableComponent line = Component.literal(announcement.text());
-		if (announcement.style() != null) {
-			line = line.withStyle(announcement.style());
-		}
-		player.displayClientMessage(line, actionBar);
+		player.displayClientMessage(component(announcement), actionBar);
 	}
 
 	/**

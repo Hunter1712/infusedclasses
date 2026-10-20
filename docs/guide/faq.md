@@ -37,9 +37,10 @@ full-swing hit spends 2 stacks while every landed hit deals x1.15 melee; nothing
 If the bar empties first, the window ends there.
 
 **Offload did nothing.**
-Offload needs at least 5 Momentum and its own 10s lane. A press below the price says
-`No Momentum`; a wrong class or a press on cooldown rejects silently. The stacks are spent at
-the press, so an unspent window owes nothing back.
+Offload needs at least 5 Momentum and its own 10s lane. An off-cooldown press below the price
+says `No Momentum`; a wrong class or a press on cooldown rejects silently, and a cooling lane
+wins even when the bar is short. The stacks are spent at the press, so an unspent window owes
+nothing back.
 
 **Rotate did nothing.**
 Rotate has an 8s lock. Rejects arm nothing and grant no buff — flip when the lock is ready.

@@ -22,7 +22,7 @@ final class ServerEvents {
 		ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> {
 			ServerPlayer player = handler.getPlayer();
 			if (!PlayerClassAccess.of(player).hasClass()) {
-				sender.sendPacket(new OpenClassScreenPayload(""));
+				ClassCommands.openPicker(player);
 			}
 			// One forced snapshot on join, classless included: the client starts from a
 			// known state instead of guessing until the first change point.
@@ -36,16 +36,20 @@ final class ServerEvents {
 			// Load-bearing ordering lives in the runtime store: both players share one UUID.
 			InfusedClasses.runtimes().respawn(newPlayer.getUUID());
 			StatusSync.forget(newPlayer.getUUID());
+			PickerGrants.clear(newPlayer.getUUID());
 			StatusSync.sendNow(newPlayer, InfusedClasses.now());
 		});
 
 		ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> {
 			InfusedClasses.runtimes().remove(handler.getPlayer().getUUID());
 			StatusSync.forget(handler.getPlayer().getUUID());
+			PickerGrants.clear(handler.getPlayer().getUUID());
 		});
 
-		// The melee hook: one AFTER_DAMAGE body, routed and settled in MeleeHook.
+		// The melee hook: one AFTER_DAMAGE body, routed and settled in MeleeHook, plus
+		// the AFTER_DEATH body for a killing blow (AFTER_DAMAGE never fires for one).
 		ServerLivingEntityEvents.AFTER_DAMAGE.register(MeleeHook::afterDamage);
+		ServerLivingEntityEvents.AFTER_DEATH.register(MeleeHook::afterDeath);
 
 		// Server tick: the passive pass, the drained-window end and the snapshot are one
 		// named sequence; this only loops the players and sends.
@@ -74,6 +78,9 @@ final class ServerEvents {
 		ServerPlayNetworking.registerGlobalReceiver(SelectClassPayload.TYPE, (payload, context) -> context.server()
 				.execute(() -> {
 					ServerPlayer player = context.player();
+					if (!PickerGrants.isGranted(player.getUUID())) {
+						return;
+					}
 					ClassDefinition def = ClassSwitch.trySwitch(player, payload.classId());
 					if (def == null) {
 						return;

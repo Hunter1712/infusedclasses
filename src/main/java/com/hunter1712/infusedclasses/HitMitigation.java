@@ -30,20 +30,37 @@ final class HitMitigation {
 			landed = CombatRules.getDamageAfterAbsorb(living, damageTaken, source, living.getArmorValue(),
 					(float) living.getAttributeValue(Attributes.ARMOR_TOUGHNESS));
 		}
-		if (source.is(DamageTypeTags.BYPASSES_EFFECTS)) {
+		MobEffectInstance resistance = living.getEffect(MobEffects.RESISTANCE);
+		int amplifier = resistance == null ? -1 : resistance.getAmplifier();
+		float protection = 0.0F;
+		if (landed > 0.0F && !source.is(DamageTypeTags.BYPASSES_EFFECTS)
+				&& !source.is(DamageTypeTags.BYPASSES_ENCHANTMENTS)
+				&& living.level() instanceof ServerLevel level) {
+			protection = EnchantmentHelper.getDamageProtection(level, living, source);
+		}
+		return landedAfterArmor(landed, amplifier, protection,
+				source.is(DamageTypeTags.BYPASSES_EFFECTS),
+				source.is(DamageTypeTags.BYPASSES_RESISTANCE),
+				source.is(DamageTypeTags.BYPASSES_ENCHANTMENTS));
+	}
+
+	/**
+	 * The pure layer after vanilla armor: Resistance then protection, with each bypass
+	 * tag skipping its own layer. A negative amplifier is no Resistance effect. Vanilla
+	 * owns the armor formula because its armor-effectiveness enchantment needs the live
+	 * entity and source, so this seam starts at the already-armored amount.
+	 */
+	static float landedAfterArmor(float landed, int resistanceAmplifier, float protection,
+			boolean bypassEffects, boolean bypassResistance, boolean bypassEnchantments) {
+		if (bypassEffects) {
 			return Math.max(0.0F, landed);
 		}
-		MobEffectInstance resistance = living.getEffect(MobEffects.RESISTANCE);
-		if (!source.is(DamageTypeTags.BYPASSES_RESISTANCE) && resistance != null) {
-			int amplifier = (resistance.getAmplifier() + 1) * 5;
-			landed = Math.max(0.0F, landed * (25 - amplifier) / 25.0F);
+		if (landed > 0.0F && !bypassResistance && resistanceAmplifier >= 0) {
+			int percent = (resistanceAmplifier + 1) * 5;
+			landed = Math.max(0.0F, landed * (25 - percent) / 25.0F);
 		}
-		if (landed > 0.0F && !source.is(DamageTypeTags.BYPASSES_ENCHANTMENTS)
-				&& living.level() instanceof ServerLevel level) {
-			float protection = EnchantmentHelper.getDamageProtection(level, living, source);
-			if (protection > 0.0F) {
-				landed = CombatRules.getDamageAfterMagicAbsorb(landed, protection);
-			}
+		if (landed > 0.0F && !bypassEnchantments && protection > 0.0F) {
+			landed = CombatRules.getDamageAfterMagicAbsorb(landed, protection);
 		}
 		return landed;
 	}

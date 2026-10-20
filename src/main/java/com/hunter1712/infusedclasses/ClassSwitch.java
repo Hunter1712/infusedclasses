@@ -5,8 +5,9 @@ import net.minecraft.server.level.ServerPlayer;
 
 /**
  * The class-switch adapter: the single path behind every switch entry. Validates the
- * pick in the choice module, cleans what the old class earned, and announces the
- * outcome; callers keep only their own extra (the confirm packet, the command code).
+ * pick in the choice module, cleans what the old class earned, announces the outcome
+ * and consumes the picker grant; callers keep only their own extra (the confirm packet,
+ * the command code).
  */
 public final class ClassSwitch {
 	private ClassSwitch() {
@@ -27,6 +28,7 @@ public final class ClassSwitch {
 		PlayerRuntime runtime = InfusedClasses.runtime(player);
 		PassiveApplier.onClassChanged(player, runtime, oldDef, def);
 		AbilityApplier.announce(player, ChatLine.classPicked(def.displayName()), false);
+		PickerGrants.clear(player.getUUID());
 		return def;
 	}
 }

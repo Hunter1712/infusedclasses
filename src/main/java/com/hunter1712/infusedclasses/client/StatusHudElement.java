@@ -54,7 +54,7 @@ public final class StatusHudElement implements HudElement {
 			return;
 		}
 		draw(graphics, minecraft.font,
-				StatusHud.rows(status, StatusStore.elapsed(System.currentTimeMillis())));
+				StatusHud.rows(status, StatusStore.elapsed(InfusedClassesClient.now())));
 	}
 
 	/** The whole stack: rows top-down, the block centred on the screen's left edge. */

@@ -61,6 +61,21 @@ class OnslaughtAbilityTest {
 	}
 
 	@Test
+	void aCoolingPressBelowThePriceIsSilentRatherThanSayingNoMomentum() {
+		PlayerRuntime runtime = loaded(10);
+		assertTrue(OnslaughtAbility.fire(juggernaut(), runtime, 0).fired());
+		runtime.spendStacks(momentum(), 9);
+
+		AbilityOutcome second = OnslaughtAbility.fire(juggernaut(), runtime, 1_000);
+
+		assertFalse(second.fired());
+		assertNull(second.announcement());
+		assertEquals(1, runtime.stacks(momentum()));
+		assertEquals(Lane.ONSLAUGHT.cooldownMs() - 1_000,
+				runtime.state(1_000).laneRemaining(Lane.ONSLAUGHT));
+	}
+
+	@Test
 	void aSecondPressWhileCoolingIsRejectedSilently() {
 		PlayerRuntime runtime = loaded(10);
 		assertTrue(OnslaughtAbility.fire(juggernaut(), runtime, 0).fired());
