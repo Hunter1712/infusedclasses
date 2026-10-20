@@ -1,6 +1,6 @@
 # Spec: Audit fixes 02
 
-Status: implemented — in-game checks owed
+Status: implemented — shipped in 0.5.0; in-game checks owed
 
 ## Problem Statement
 
