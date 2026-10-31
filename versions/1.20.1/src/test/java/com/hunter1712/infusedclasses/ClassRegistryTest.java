@@ -1,6 +1,5 @@
 package com.hunter1712.infusedclasses;
 
-import net.minecraft.resources.ResourceLocation;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -23,9 +22,9 @@ class ClassRegistryTest {
 	@Test
 	void onlyPlayableClassesAreRegistered() {
 		assertEquals(3, ClassRegistry.all().size());
-		assertNull(ClassRegistry.byId(new ResourceLocation("infusedclasses", "ranger")));
-		assertNull(ClassRegistry.byId(new ResourceLocation("infusedclasses", "mage")));
-		assertNull(ClassRegistry.byId(new ResourceLocation("infusedclasses", "bard")));
+		assertNull(ClassRegistry.byId("infusedclasses:ranger"));
+		assertNull(ClassRegistry.byId("infusedclasses:mage"));
+		assertNull(ClassRegistry.byId("infusedclasses:bard"));
 	}
 
 	@Test
@@ -73,7 +72,7 @@ class ClassRegistryTest {
 		assertEquals(List.of("infusedclasses:burden_swing"),
 				juggernaut.alwaysOn().get(0).modifiers().stream()
 						.map(PassiveEffect.Modifier::modifierId)
-						.map(ResourceLocation::toString)
+						.map(Object::toString)
 						.toList());
 		// The heavier hit is a deal mult the plan reads, never a written attribute.
 		assertEquals(Burden.DEAL_MULT, juggernaut.alwaysOn().get(0).dealMult());

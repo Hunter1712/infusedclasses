@@ -4,11 +4,11 @@ import com.hunter1712.infusedclasses.InfusedClasses;
 import com.hunter1712.infusedclasses.PlayerStatusPayload;
 import com.hunter1712.infusedclasses.StatusHud;
 import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElement;
+import net.minecraft.resources.Identifier;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
-import net.minecraft.resources.Identifier;
 
 import java.util.List;
 

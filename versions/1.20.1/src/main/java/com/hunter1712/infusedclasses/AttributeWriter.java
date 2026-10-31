@@ -39,11 +39,11 @@ final class AttributeWriter {
 			instance.removeModifier(id);
 		}
 		instance.addPermanentModifier(new AttributeModifier(
-				id, wanted.modifierId().toString(), wanted.amount(), AttributeModifier.Operation.ADDITION));
+				id, wanted.modifierId(), wanted.amount(), AttributeModifier.Operation.ADDITION));
 	}
 
 	/** Takes off a modifier stacks used to earn. A no-op when there is none. */
-	static void remove(ServerPlayer player, ResourceKey<Attribute> attribute, ResourceLocation modifierId) {
+	static void remove(ServerPlayer player, AttributeRef attribute, String modifierId) {
 		AttributeInstance instance = attribute(player, attribute);
 		if (instance == null || instance.getModifier(uuid(modifierId)) == null) {
 			return;
@@ -51,13 +51,17 @@ final class AttributeWriter {
 		instance.removeModifier(uuid(modifierId));
 	}
 
-	private static AttributeInstance attribute(ServerPlayer player, ResourceKey<Attribute> key) {
+	private static AttributeInstance attribute(ServerPlayer player, AttributeRef ref) {
 		Registry<Attribute> registry = player.serverLevel().registryAccess().registryOrThrow(Registries.ATTRIBUTE);
-		Attribute attribute = registry.get(key);
+		Attribute attribute = registry.get(key(ref));
 		return attribute == null ? null : player.getAttribute(attribute);
 	}
 
-	private static UUID uuid(ResourceLocation id) {
-		return UUID.nameUUIDFromBytes(id.toString().getBytes(StandardCharsets.UTF_8));
+	private static ResourceKey<Attribute> key(AttributeRef ref) {
+		return ResourceKey.create(Registries.ATTRIBUTE, new ResourceLocation(ref.id()));
+	}
+
+	private static UUID uuid(String id) {
+		return UUID.nameUUIDFromBytes(id.getBytes(StandardCharsets.UTF_8));
 	}
 }

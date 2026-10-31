@@ -1,5 +1,6 @@
 package com.hunter1712.infusedclasses.client;
 
+import com.hunter1712.infusedclasses.client.CardWrap;
 import com.hunter1712.infusedclasses.ClassDefinition;
 import com.hunter1712.infusedclasses.ClassPresentation;
 import com.hunter1712.infusedclasses.ClassRegistry;
@@ -9,7 +10,6 @@ import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.input.KeyEvent;
 import net.minecraft.network.chat.Component;
 import com.mojang.blaze3d.platform.InputConstants;
-import net.minecraft.resources.Identifier;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -47,7 +47,7 @@ public class ClassSelectScreen extends Screen {
 
 	/** One frame's resolved card: its rectangle, its presentation and its wrapped layout. */
 	private record View(CardLayout.CardRect card, ClassPresentation.CardModel model,
-			ClassCardRenderer.Measured measured) {
+			CardWrap.Measured measured) {
 		int maxScroll() {
 			return measured.layout().maxScroll();
 		}
@@ -55,9 +55,8 @@ public class ClassSelectScreen extends Screen {
 
 	public ClassSelectScreen(String currentClassId) {
 		super(Component.literal(TITLE));
-		Identifier current = currentClassId == null || currentClassId.isEmpty()
-				? null : Identifier.tryParse(currentClassId);
-		ClassDefinition def = current == null ? null : ClassRegistry.byId(current);
+		ClassDefinition def = currentClassId == null || currentClassId.isEmpty()
+				? null : ClassRegistry.byId(currentClassId);
 		page = def == null ? 0 : Math.max(0, List.copyOf(ClassRegistry.all()).indexOf(def));
 	}
 
@@ -129,7 +128,7 @@ public class ClassSelectScreen extends Screen {
 		CardLayout.CardRect card = CardLayout.focusedCard(width, height);
 		ClassPresentation.CardModel model = ClassPresentation.cardFor(classes.get(page),
 				CardLayout.isHovering(card, mouseX, mouseY));
-		return new View(card, model, ClassCardRenderer.measure(card, model, font::width));
+		return new View(card, model, CardWrap.measure(card, model, font::width));
 	}
 
 	@Override

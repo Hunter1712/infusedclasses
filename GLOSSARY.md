@@ -560,6 +560,36 @@ _Avoid_: runtime map, session cache
 
 ### Presentation
 
+**Mod ids** (`ModIds`):
+The mod's own names as plain strings: the namespace every id builds on, and the one rejection
+line a class choice says. A decision can name an id without a client or a registry, because
+an id is data and not a game object.
+
+**Chat style** (`ChatStyle`):
+The chat colour a decision names, as plain data: RED, GRAY, YELLOW or GOLD. A null style on a
+`ChatLine` is a decision too — the line goes out unstyled. The adapter that builds the
+`Component` maps these to the client's own formatting colours at its single use site.
+
+**Attribute ref** (`AttributeRef`):
+Which attribute a modifier lands on, as a registry id string rather than a live holder or a
+registry key. A decision names the attribute without a registry; the writer resolves the key
+at its one use site.
+
+**Status view** (`StatusView`):
+The reads a status rider makes of a snapshot — one lane, the live flip target, the wheel's
+band. Defined as the seam the decision side needs, so a rider rule is assertable without a
+packet on the wire; the wire snapshot implements it in the version module.
+
+**Passive sweep** (`PassiveSweep`):
+What a class switch must take off: every modifier the old class's kit could write minus every
+one the new class writes, keyed by id so a re-earned modifier is kept and rewritten rather
+than removed and re-added. One entry per id.
+
+**Card wrap** (`CardWrap`):
+The card body's text layout as a decision: one wrapped row and the whole body measured for a
+frame. Takes its widths as a function of the string, so the layout is assertable with a stub
+measure and the screen passes `font::width`.
+
 **Card line** (`ClassPresentation.CardLine`):
 One line of a class card's body, carrying its name plus optional description, the section it belongs to, and the colour and
 weight it draws with. Full text derives via `text()`, and the tone boundary via `descStart()`: where the description starts

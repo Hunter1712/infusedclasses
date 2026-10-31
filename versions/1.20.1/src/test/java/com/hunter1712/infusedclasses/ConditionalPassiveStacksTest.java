@@ -1,6 +1,5 @@
 package com.hunter1712.infusedclasses;
 
-import net.minecraft.resources.ResourceLocation;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -254,7 +253,7 @@ class ConditionalPassiveStacksTest {
 
 	/** A class carrying exactly the given passives, so a rule can be read off a passive of our own. */
 	private static ClassDefinition withPassives(ConditionalPassive... passives) {
-		return new ClassDefinition(new ResourceLocation("infusedclasses", "test"), "Test",
+		return new ClassDefinition("infusedclasses:test", "Test",
 				List.of(passives), List.of(), 0, "", List.of(), List.of(), CritRule.universal());
 	}
 }

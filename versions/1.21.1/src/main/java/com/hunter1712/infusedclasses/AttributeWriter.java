@@ -13,6 +13,10 @@ import net.minecraft.world.entity.ai.attributes.AttributeModifier;
  * Attribute writer mechanics: the single place modifiers are written and removed.
  * Writes only what the decision names, and only when it differs from what is applied,
  * so a modifier is created once and left alone while the stacks hold still.
+ *
+ * <p>Two seams where plain data becomes game objects: {@link #modifierId} turns the
+ * decision's id string into the key a modifier is written under, and {@link #key}
+ * turns the decision's {@link AttributeRef} into a registry key.
  */
 final class AttributeWriter {
 	private AttributeWriter() {
@@ -24,30 +28,40 @@ final class AttributeWriter {
 		if (instance == null) {
 			return;
 		}
-		AttributeModifier existing = instance.getModifier(wanted.modifierId());
+		ResourceLocation id = modifierId(wanted.modifierId());
+		AttributeModifier existing = instance.getModifier(id);
 		if (existing != null) {
 			if (existing.amount() == wanted.amount()) {
 				return; // already correct
 			}
-			instance.removeModifier(wanted.modifierId());
+			instance.removeModifier(id);
 		}
 		instance.addPermanentModifier(new AttributeModifier(
-				wanted.modifierId(), wanted.amount(), AttributeModifier.Operation.ADD_VALUE));
+				id, wanted.amount(), AttributeModifier.Operation.ADD_VALUE));
 	}
 
 	/** Takes off a modifier stacks used to earn. A no-op when there is none. */
-	static void remove(ServerPlayer player, ResourceKey<Attribute> attribute, ResourceLocation modifierId) {
+	static void remove(ServerPlayer player, AttributeRef attribute, String modifierId) {
 		AttributeInstance instance = attribute(player, attribute);
-		if (instance == null || instance.getModifier(modifierId) == null) {
+		ResourceLocation id = modifierId(modifierId);
+		if (instance == null || instance.getModifier(id) == null) {
 			return;
 		}
-		instance.removeModifier(modifierId);
+		instance.removeModifier(id);
 	}
 
-	private static AttributeInstance attribute(ServerPlayer player, ResourceKey<Attribute> key) {
+	private static ResourceLocation modifierId(String id) {
+		return ResourceLocation.parse(id);
+	}
+
+	private static AttributeInstance attribute(ServerPlayer player, AttributeRef ref) {
 		Holder<Attribute> holder = player.registryAccess().lookupOrThrow(Registries.ATTRIBUTE)
-				.get(key)
+				.get(key(ref))
 				.orElse(null);
 		return holder == null ? null : player.getAttribute(holder);
+	}
+
+	private static ResourceKey<Attribute> key(AttributeRef ref) {
+		return ResourceKey.create(Registries.ATTRIBUTE, modifierId(ref.id()));
 	}
 }

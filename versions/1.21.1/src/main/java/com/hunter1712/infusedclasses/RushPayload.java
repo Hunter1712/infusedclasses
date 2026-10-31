@@ -1,9 +1,9 @@
 package com.hunter1712.infusedclasses;
 
 import io.netty.buffer.ByteBuf;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
-import net.minecraft.resources.ResourceLocation;
 
 /** Signature slot intent: "I pressed the signature bind". Server validates class and cooldown. */
 public record RushPayload() implements CustomPacketPayload {

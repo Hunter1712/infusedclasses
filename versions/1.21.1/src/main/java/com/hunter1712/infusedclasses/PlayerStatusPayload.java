@@ -1,9 +1,9 @@
 package com.hunter1712.infusedclasses;
 
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
-import net.minecraft.resources.ResourceLocation;
 
 import java.util.EnumMap;
 
@@ -34,7 +34,7 @@ public record PlayerStatusPayload(
 		String classId,
 		PlayerRuntime.State state,
 		PlayerRuntime.BarRead bar
-) implements CustomPacketPayload {
+) implements CustomPacketPayload, StatusView {
 	public static final CustomPacketPayload.Type<PlayerStatusPayload> TYPE =
 			new CustomPacketPayload.Type<>(ResourceLocation.fromNamespaceAndPath(InfusedClasses.MOD_ID, "player_status"));
 

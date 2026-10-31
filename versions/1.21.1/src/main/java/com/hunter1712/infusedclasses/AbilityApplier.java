@@ -2,6 +2,7 @@ package com.hunter1712.infusedclasses;
 
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.Registries;
+import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.ResourceLocation;
@@ -26,9 +27,19 @@ public final class AbilityApplier {
 	public static MutableComponent component(ChatLine line) {
 		MutableComponent text = Component.literal(line.text());
 		if (line.style() != null) {
-			text = text.withStyle(line.style());
+			text = text.withStyle(formatting(line.style()));
 		}
 		return text;
+	}
+
+	/** A style name to a client colour: one row per value, and a null style never reaches it. */
+	private static ChatFormatting formatting(ChatStyle style) {
+		return switch (style) {
+			case RED -> ChatFormatting.RED;
+			case GRAY -> ChatFormatting.GRAY;
+			case YELLOW -> ChatFormatting.YELLOW;
+			case GOLD -> ChatFormatting.GOLD;
+		};
 	}
 
 	/** One announcement path for every ability result and choice line: null says nothing. If actionBar is true, sends to action bar; otherwise to chat. */

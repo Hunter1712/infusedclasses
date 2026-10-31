@@ -25,64 +25,6 @@ public final class ClassCardRenderer {
 	private ClassCardRenderer() {
 	}
 
-	/** One wrapped row: its text, where the description starts, the style it draws with, and how far it indents. */
-	static record TextRow(String text, int descStart, ClassPresentation.LineStyle style, int indent) {
-	}
-
-	/** Wrapped body rows plus the scroll layout they imply: measured once per frame, drawn from the result. */
-	static record Measured(List<TextRow> rows, CardLayout.BodyLayout layout) {
-	}
-
-	/**
-	 * Where the description starts in a wrapped row: the name length on row one,
-	 * zero after (continuation rows are pure description). Pure ints, pinned by test.
-	 */
-	static int descStartFor(int rowIndex, int rowLength, int prefixLength) {
-		return rowIndex == 0 ? Math.min(rowLength, prefixLength) : 0;
-	}
-
-	/**
-	 * Greedy word wrap over the full line, tracking the name/desc split by character
-	 * offset so tone follows meaning, not row number. Names always fit row one. Widths
-	 * arrive as a function of the string, so the wrap is assertable with a stub measure;
-	 * the screen passes {@code font::width}.
-	 */
-	static List<TextRow> wrapRows(ClassPresentation.CardLine line, int wrapW, ToIntFunction<String> width) {
-		// The join lives in CardLine.text; the boundary is derived there, never searched.
-		String full = line.text();
-		int prefixLength = line.descStart();
-		int indent = CardLayout.rowIndent(line.kind());
-		List<TextRow> rows = new ArrayList<>();
-		StringBuilder row = new StringBuilder();
-		for (String word : full.split(" ")) {
-			String add = row.isEmpty() ? word : " " + word;
-			if (!row.isEmpty() && width.applyAsInt(row.toString() + add) > wrapW) {
-				rows.add(new TextRow(row.toString(),
-						descStartFor(rows.size(), row.length(), prefixLength), line.style(), indent));
-				row = new StringBuilder(word);
-			} else {
-				row.append(add);
-			}
-		}
-		rows.add(new TextRow(row.toString(),
-				descStartFor(rows.size(), row.length(), prefixLength), line.style(), indent));
-		return rows;
-	}
-
-	/**
-	 * Wraps the whole body for one frame: every row with its style, plus the scroll
-	 * layout those rows imply. The caller clamps its scroll from the result before
-	 * drawing, so no frame draws past a range that frame already knows.
-	 */
-	static Measured measure(CardLayout.CardRect card, ClassPresentation.CardModel model, ToIntFunction<String> width) {
-		List<TextRow> rows = new ArrayList<>();
-		int wrapW = CardLayout.innerWidth(card);
-		for (ClassPresentation.CardLine line : model.text().lines()) {
-			rows.addAll(wrapRows(line, wrapW, width));
-		}
-		return new Measured(List.copyOf(rows), CardLayout.layoutFor(card, rows.size()));
-	}
-
 	/** Body, accent strip, border and hover highlight. Drawn behind the widgets. Takes the whole model, like the body pass, so the screen resolves once per page. */
 	public static void drawFrame(GuiGraphicsExtractor graphics, CardLayout.CardRect card, ClassPresentation.CardModel model) {
 		ClassPresentation.CardText text = model.text();
@@ -108,7 +50,7 @@ public final class ClassCardRenderer {
 	 * shared subtle tone; where everything sits is CardLayout's anchors.
 	 */
 	public static void drawBody(GuiGraphicsExtractor graphics, Font font, CardLayout.CardRect card,
-			ClassPresentation.CardModel model, Measured measured, int scrollPx) {
+			ClassPresentation.CardModel model, CardWrap.Measured measured, int scrollPx) {
 		ClassPresentation.CardStyle style = model.style();
 		int accent = model.text().accent();
 		int left = CardLayout.bodyLeft(card);
@@ -121,9 +63,9 @@ public final class ClassCardRenderer {
 
 		int top = CardLayout.bodyTop(card);
 		int stop = CardLayout.stopY(card);
-		List<TextRow> rows = measured.rows();
+		List<CardWrap.TextRow> rows = measured.rows();
 		for (int i = 0; i < rows.size(); i++) {
-			TextRow row = rows.get(i);
+			CardWrap.TextRow row = rows.get(i);
 			int y = top + i * CardLayout.ROW_H - scrollPx;
 			if (y >= top && y + font.lineHeight <= stop) {
 				net.minecraft.network.chat.Style rowStyle = row.style().bold()

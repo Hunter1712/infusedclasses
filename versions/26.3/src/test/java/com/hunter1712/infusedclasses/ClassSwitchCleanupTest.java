@@ -1,6 +1,5 @@
 package com.hunter1712.infusedclasses;
 
-import net.minecraft.resources.Identifier;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -27,7 +26,7 @@ class ClassSwitchCleanupTest {
 	private static List<String> ids(ClassDefinition oldDef, ClassDefinition newDef) {
 		return PassiveApplier.cleanupFor(oldDef, newDef).stream()
 				.map(PassiveEffect.Modifier::modifierId)
-				.map(Identifier::toString)
+				.map(Object::toString)
 				.map(id -> id.substring(id.indexOf(':') + 1))
 				.toList();
 	}
@@ -76,7 +75,7 @@ class ClassSwitchCleanupTest {
 
 	@Test
 	void aClassCarryingAequilibriumWithoutRotateStillSweepsItsPlate() {
-		ClassDefinition aeqOnly = new ClassDefinition(Identifier.fromNamespaceAndPath("infusedclasses", "aeq_only"),
+		ClassDefinition aeqOnly = new ClassDefinition("infusedclasses:aeq_only",
 				"Aeq Only", List.of(), List.of(), List.of(), 0, "",
 				List.of(new ClassDefinition.ActiveAbility(ClassRegistry.AEQUILIBRIUM_ABILITY, "Aequilibrium", "copy")),
 				List.of(), CritRule.universal());

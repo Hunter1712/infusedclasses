@@ -15,7 +15,6 @@ import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.KeyMapping.Category;
 import net.minecraft.client.Minecraft;
-import net.minecraft.resources.Identifier;
 import com.mojang.blaze3d.platform.InputConstants;
 
 /** Client: opens picker on server signal, sends class pick and ability keys as intents. */
@@ -65,7 +64,7 @@ public class InfusedClassesClient implements ClientModInitializer {
 		});
 	}
 
-	public static void pickClass(Identifier id) {
+	public static void pickClass(String id) {
 		ClientPlayNetworking.send(new SelectClassPayload(id));
 	}
 

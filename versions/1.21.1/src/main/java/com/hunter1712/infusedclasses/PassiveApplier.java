@@ -1,28 +1,14 @@
 package com.hunter1712.infusedclasses;
 
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 /** Adapter for {@link PassiveEffect}: makes the player's attributes agree with the decision. */
 public final class PassiveApplier {
 	private PassiveApplier() {
 	}
-
-	/**
-	 * Every window family in the game, each row owned by the ability whose window it spells.
-	 * Adding a window ability adds its row here; the reconcile below never names an ability
-	 * id or a lane.
-	 */
-	private static final List<WindowFamily> WINDOWS = List.of(
-			RotateAbility.windowFamily(),
-			AequilibriumAbility.windowFamily(),
-			RouletteAbility.windowFamily(),
-			OffloadAbility.windowFamily());
 
 	/**
 	 * One tick for one player: the single reconcile home. Bleed, then the tiered bars,
@@ -63,7 +49,7 @@ public final class PassiveApplier {
 
 	/** One reconcile pass over every family: a held marker writes what its state wants, an absent one wants nothing. */
 	private static void reconcileWindows(ServerPlayer player, ClassDefinition def, PlayerRuntime.State state) {
-		for (WindowFamily family : WINDOWS) {
+		for (WindowFamily family : WindowFamily.allFamilies()) {
 			List<PassiveEffect.Modifier> wanted = def.hasAbility(family.marker())
 					? family.wanted().apply(state) : List.of();
 			reconcile(player, family.all(), wanted);
@@ -88,7 +74,7 @@ public final class PassiveApplier {
 	}
 
 	/** Whether any modifier in the list carries the id. */
-	private static boolean names(List<PassiveEffect.Modifier> modifiers, ResourceLocation id) {
+	private static boolean names(List<PassiveEffect.Modifier> modifiers, String id) {
 		for (PassiveEffect.Modifier modifier : modifiers) {
 			if (modifier.modifierId().equals(id)) {
 				return true;
@@ -128,54 +114,8 @@ public final class PassiveApplier {
 		runtime.resetAll();
 	}
 
-	/**
-	 * What a switch must take off: every modifier the old class's kit could write — its
-	 * tiered bars, its always-on rows, its HP-scaled pair, and the whole list of every
-	 * window-aura family it marks — minus every modifier id the new class writes. One
-	 * entry per id, so a kit naming an id twice removes it once; keyed by id, so a class
-	 * that re-earns a modifier keeps it and the next tick rewrites its value, and a family
-	 * both classes mark is left to the family's own sweep. Pure: the wiring only removes.
-	 */
+	/** What a switch takes off. {@link PassiveSweep#sweepFor} is the decision; this only removes. */
 	static List<PassiveEffect.Modifier> cleanupFor(ClassDefinition oldDef, ClassDefinition newDef) {
-		Set<ResourceLocation> stillWritten = new HashSet<>();
-		for (PassiveEffect.Modifier kept : writtenBy(newDef)) {
-			stillWritten.add(kept.modifierId());
-		}
-		Set<ResourceLocation> staleIds = new HashSet<>();
-		List<PassiveEffect.Modifier> stale = new ArrayList<>();
-		for (PassiveEffect.Modifier written : writtenBy(oldDef)) {
-			if (!stillWritten.contains(written.modifierId()) && staleIds.add(written.modifierId())) {
-				stale.add(written);
-			}
-		}
-		return stale;
-	}
-
-	/**
-	 * Every modifier a class's kit can put on the player: its tiered bars, its always-on
-	 * rows, its HP-scaled pair, and the whole modifier list of each window family whose
-	 * marker it holds — the same sets the tick can write, read through the same mapping.
-	 * Empty for no class.
-	 */
-	private static List<PassiveEffect.Modifier> writtenBy(ClassDefinition def) {
-		if (def == null) {
-			return List.of();
-		}
-		List<PassiveEffect.Modifier> all = new ArrayList<>();
-		for (ConditionalPassive passive : def.passives()) {
-			all.addAll(passive.barRows().apply(passive.maxStacks()));
-		}
-		for (ClassDefinition.AlwaysOn alwaysOn : def.alwaysOn()) {
-			all.addAll(alwaysOn.modifiers());
-		}
-		for (HpScaledPassive hp : def.hpPassives()) {
-			all.add(PassiveEffect.forBucket(hp, 1));
-		}
-		for (WindowFamily family : WINDOWS) {
-			if (def.hasAbility(family.marker())) {
-				all.addAll(family.all());
-			}
-		}
-		return all;
+		return PassiveSweep.sweepFor(oldDef, newDef);
 	}
 }

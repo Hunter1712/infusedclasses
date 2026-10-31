@@ -2,8 +2,8 @@ package com.hunter1712.infusedclasses;
 
 import net.fabricmc.fabric.api.networking.v1.FabricPacket;
 import net.fabricmc.fabric.api.networking.v1.PacketType;
-import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.network.FriendlyByteBuf;
 
 /** Signature slot intent: "I pressed the signature bind". Server validates class and cooldown. */
 public record RushPayload() implements FabricPacket {

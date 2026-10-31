@@ -2,8 +2,8 @@ package com.hunter1712.infusedclasses;
 
 import net.fabricmc.fabric.api.networking.v1.FabricPacket;
 import net.fabricmc.fabric.api.networking.v1.PacketType;
-import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.network.FriendlyByteBuf;
 
 import java.util.EnumMap;
 
@@ -34,7 +34,7 @@ public record PlayerStatusPayload(
 		String classId,
 		PlayerRuntime.State state,
 		PlayerRuntime.BarRead bar
-) implements FabricPacket {
+) implements FabricPacket, StatusView {
 	/**
 	 * Hand-rolled rather than a composite: the snapshot is wider than the composite
 	 * overloads and carries two nullable enums. Enums travel by name, so a reorder

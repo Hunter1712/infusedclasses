@@ -10,7 +10,6 @@ import net.minecraft.commands.arguments.EntityArgument;
 import net.minecraft.commands.arguments.ResourceLocationArgument;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 
 import java.util.function.Predicate;
@@ -44,7 +43,7 @@ public final class ClassCommands {
 												})
 												.executes(ctx -> setClass(ctx.getSource(),
 														EntityArgument.getPlayer(ctx, "player"),
-														ResourceLocationArgument.getId(ctx, "class"))))))
+														ResourceLocationArgument.getId(ctx, "class").toString())))))
 						// testing-only: reopens the picker for GUI iteration. Picking is still server-validated.
 						.then(Commands.literal("select")
 								.requires(GAMEMASTER)
@@ -86,7 +85,7 @@ public final class ClassCommands {
 		ServerPlayNetworking.send(player, new OpenClassScreenPayload(current == null ? "" : current));
 	}
 
-	private static int setClass(CommandSourceStack source, ServerPlayer player, ResourceLocation id) {
+	private static int setClass(CommandSourceStack source, ServerPlayer player, String id) {
 		ClassDefinition def = ClassSwitch.trySwitch(player, id);
 		if (def == null) {
 			if (source.getEntity() != player) {

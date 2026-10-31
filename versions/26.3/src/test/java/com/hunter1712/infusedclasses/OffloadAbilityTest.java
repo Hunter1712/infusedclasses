@@ -121,7 +121,7 @@ class OffloadAbilityTest {
 				pair.stream().map(PassiveEffect.Modifier::attribute).toList());
 		assertEquals(List.of("infusedclasses:offload_haste", "infusedclasses:offload_speed"),
 				pair.stream().map(PassiveEffect.Modifier::modifierId)
-						.map(net.minecraft.resources.Identifier::toString).toList());
+						.toList());
 		assertEquals(List.of(0.2, 0.01), pair.stream().map(PassiveEffect.Modifier::amount).toList());
 	}
 

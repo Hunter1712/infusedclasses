@@ -14,7 +14,6 @@ import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
-import net.minecraft.resources.ResourceLocation;
 import com.mojang.blaze3d.platform.InputConstants;
 import org.lwjgl.glfw.GLFW;
 
@@ -64,7 +63,7 @@ public class InfusedClassesClient implements ClientModInitializer {
 		});
 	}
 
-	public static void pickClass(ResourceLocation id) {
+	public static void pickClass(String id) {
 		ClientPlayNetworking.send(new SelectClassPayload(id));
 	}
 

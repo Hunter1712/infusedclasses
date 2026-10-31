@@ -1,6 +1,5 @@
 package com.hunter1712.infusedclasses;
 
-import net.minecraft.resources.Identifier;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -47,7 +46,7 @@ public final class StatusHud {
 	public static List<Row> rows(PlayerStatusPayload status, long elapsedMs) {
 		ClassDefinition def = status.classId() == null || status.classId().isEmpty()
 				? null
-				: ClassRegistry.byId(Identifier.tryParse(status.classId()));
+				: ClassRegistry.byId(status.classId());
 		if (def == null) {
 			return List.of();
 		}

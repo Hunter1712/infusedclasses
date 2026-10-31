@@ -1,6 +1,5 @@
 package com.hunter1712.infusedclasses;
 
-import net.minecraft.resources.ResourceLocation;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -15,7 +14,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 class HpScaledPassiveTest {
 	private static final HpScaledPassive SPEED = new HpScaledPassive(ClassRegistry.ATTACK_SPEED,
-			new ResourceLocation("infusedclasses", "test_speed"), 0.075, "Test", -0.25);
+			"infusedclasses:test_speed", 0.075, "Test", -0.25);
 
 	@Test
 	void bucketsFollowCurrentHp() {
@@ -53,13 +52,12 @@ class HpScaledPassiveTest {
 	@Test
 	void aClassCarryingThePassiveSweepsItsModifierAndGroupsItsCardLine() {
 		ClassDefinition def = new ClassDefinition(
-				new ResourceLocation("infusedclasses", "hp_only"),
+				"infusedclasses:hp_only",
 				"HP Only", List.of(), List.of(SPEED), 0, "",
 				List.of(), List.of(), CritRule.universal());
 
-		assertEquals(List.of("test_speed"), PassiveApplier.cleanupFor(def, null).stream()
+		assertEquals(List.of("infusedclasses:test_speed"), PassiveApplier.cleanupFor(def, null).stream()
 				.map(PassiveEffect.Modifier::modifierId)
-				.map(ResourceLocation::getPath)
 				.toList());
 		assertTrue(ClassPresentation.cardLinesFor(def).stream()
 				.anyMatch(line -> line.kind() == ClassPresentation.LineKind.PASSIVE

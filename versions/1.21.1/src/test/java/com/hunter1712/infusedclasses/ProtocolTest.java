@@ -36,7 +36,7 @@ class ProtocolTest {
 
 	@Test
 	void selectClassCodecRoundTrips() {
-		ResourceLocation id = ResourceLocation.fromNamespaceAndPath("infusedclasses", "juggernaut");
+		String id = "infusedclasses:juggernaut";
 		SelectClassPayload original = new SelectClassPayload(id);
 		ByteBuf buf = Unpooled.buffer();
 		try {

@@ -1,7 +1,5 @@
 package com.hunter1712.infusedclasses;
 
-import net.minecraft.ChatFormatting;
-import net.minecraft.resources.ResourceLocation;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -95,7 +93,7 @@ class ClassInfoTest {
 		List<ChatLine> lines = ClassInfo.lines(null, null);
 
 		assertEquals(List.of("No class chosen"), lines.stream().map(ChatLine::text).toList());
-		assertEquals(ChatFormatting.GRAY, lines.get(0).style());
+		assertEquals(ChatStyle.GRAY, lines.get(0).style());
 	}
 
 	@Test
@@ -103,7 +101,7 @@ class ClassInfoTest {
 		List<ChatLine> lines = ClassInfo.lines(juggernaut(), new PlayerRuntime().state(0));
 
 		assertEquals("Class: Juggernaut", lines.get(0).text());
-		assertEquals(ChatFormatting.GRAY, lines.get(0).style());
+		assertEquals(ChatStyle.GRAY, lines.get(0).style());
 		for (ChatLine lane : lines.subList(1, lines.size())) {
 			assertNull(lane.style(), lane.text());
 		}
@@ -138,7 +136,7 @@ class ClassInfoTest {
 	@Test
 	void aCustomDefinitionComposesByItsOwnActives() {
 		ClassDefinition onslaughtOnly = new ClassDefinition(
-				new ResourceLocation("infusedclasses", "test"), "Test",
+				"infusedclasses:test", "Test",
 				List.of(), List.of(), 0, "",
 				List.of(new ClassDefinition.ActiveAbility(ClassRegistry.ONSLAUGHT_ABILITY, "Onslaught", "test copy")),
 				List.of(),
@@ -150,10 +148,10 @@ class ClassInfoTest {
 	@Test
 	void anUnknownActiveIsLeftOut() {
 		ClassDefinition mystery = new ClassDefinition(
-				new ResourceLocation("infusedclasses", "test"), "Test",
+				"infusedclasses:test", "Test",
 				List.of(), List.of(), 0, "",
 				List.of(new ClassDefinition.ActiveAbility(
-						new ResourceLocation("infusedclasses", "mystery"), "Mystery", "test copy")),
+						"infusedclasses:mystery", "Mystery", "test copy")),
 				List.of(),
 				CritRule.universal());
 

@@ -33,32 +33,34 @@ roster, bar, plan, palette and layout — has no Minecraft import at all.
 
 2. **`common` holds no Minecraft import.** The extraction rule is mechanical: a class and its
    transitive type references move to `common` only when none of them import `net.minecraft`.
-   What remains coupled (class registry, ability modules, attribute writer, payloads, mixins,
-   damage hooks, client screens and HUD, server entry) stays per module. Tests follow their
-   class: pure tests run once in `common`, tests that touch a coupled type run per module.
+   What remains coupled (attribute writer, mixins, networking payloads, damage hooks, client
+   screens and HUD, server entry) stays per module. Tests follow their class: pure tests run
+   once in `common`, tests that touch a coupled type run per module.
 
-   **Where the rule stops.** A decision can need no game object at all and still fail the
-   rule, because a *value type* (`net.minecraft.resources.Identifier` on an id,
-   `net.minecraft.resources.ResourceKey<Attribute>` in `PassiveEffect.Modifier`) is an
-   import too. The whole melee/runtime/crit path sits on that edge: `ClassDefinition.id`,
-   the per-ability modifier ids, the ability enum shapes and `ChatFormatting` on a
-   `ChatLine`. Those are not game objects — ADR-0001 would call them a decision — yet the
-   multi-module rule keeps them per version, so `MeleePlan`, `PlayerRuntime`,
-   `ConditionalPassive`, `CritRule`/`CritRoll`, `BindMorph` and `PassiveStacks` are
-   currently triplicated, byte-identical. This is the honest cost of the scaffold landing
-   first: the mechanical rule buys the leaf decisions (`CardPalette`, `Lane`, `LaneRead`,
-   `Trigger`, `Cooldowns`, `FullSwing`, `PickerGrants`), and the rest waits on lifting that
-   id/attribute/style vocabulary into `common`-side plain data — see ticket 02's remaining
-   work.
+   **Where the rule stops.** A decision can need no game object at all and still fail the rule,
+   because a *value type* (`net.minecraft.resources.Identifier` on an id,
+   `net.minecraft.resources.ResourceKey<Attribute>` in `PassiveEffect.Modifier`) is an import
+   too. The whole melee/runtime/crit path sat on that edge, so the vocabulary was lifted into
+   `common`-side plain data: `ModIds` for ids, `AttributeRef` for the attribute a modifier
+   lands on, `LineStyle` for a chat style, and `StatusView` as the seam the HUD reads a
+   snapshot through. With those in place the decision core — class registry and definitions,
+   every ability module, the HP-scaled and conditional passives, `MeleePlan`, `PlayerRuntime`,
+   `CritRule`/`CritRoll`, `BindMorph`, `AbilityRoster`, `PassiveSweep`, `ClassPresentation`,
+   `CardLayout`/`CardWrap`, `ClassInfo`, `WindowFamily` and `ChatLine` — lives once in
+   `common` with its tests.
+
+   What still stays per module is coupled for a structural reason rather than a value one:
+   the status snapshot owns the wire codec, and the two classes that consume it wholesale
+   (`StatusHud`, `StatusStore`) go with it. That is a documented boundary, not an oversight.
 
 3. **Each version module owns its adapters, not its own copy of the rules.** Identifier naming
-   (`Identifier` on 1.21.11 and 26.3, `ResourceLocation` earlier), save data (`ValueInput`/
+   (`Identifier` on 26.3, `ResourceLocation` earlier), save data (`ValueInput`/
    `ValueOutput` vs `CompoundTag`), attribute modifier keys (`ResourceLocation` vs a
    `UUID.nameUUIDFromBytes` of it), the melee hook (Fabric's after-damage event vs a
-   `LivingEntityMixin` on 1.20.1), the vanilla-crit retirement (`canCriticalAttack` on
-   1.21.11 and 26.3 vs the inline `1.5F` in `attack` plus `crit`/`magicCrit` on 1.20.1 and
-   1.21.1), networking (`PayloadTypeRegistry` vs `PacketType` vs `CustomPacketPayload`) and
-   client rendering (`GuiGraphics` vs `GuiGraphicsExtractor`, `HudElement.render` vs
+   `LivingEntityMixin` on 1.20.1), the vanilla-crit retirement (the inline `1.5F` in `attack`
+   plus `crit`/`magicCrit`, since no target exposes a cancellable `canCriticalAttack`),
+   networking (`PayloadTypeRegistry` vs `PacketType` vs `CustomPacketPayload`) and client
+   rendering (`GuiGraphics` vs `GuiGraphicsExtractor`, `HudElement.render` vs
    `extractRenderState`) all adapt inside the module that needs them.
 
 4. **One jar per version, named by it.** Each module produces `infusedclasses-<mod>+<mc>.jar`
@@ -71,10 +73,8 @@ roster, bar, plan, palette and layout — has no Minecraft import at all.
 
 ## Consequences
 
-- A gameplay change is made once in `common` and ships to all three versions — for the classes
-  that have cleared the rule. For the decision core still on the value-type edge (see point 2),
-  a change is made three times today, which is why the remaining extraction is tracked, not
-  claimed.
+- A gameplay change is made once in `common` and ships to all three versions; a version-coupled
+  change is made once in the one module that needs it. A balance or rule edit touches one file.
 - Adding a version is a new directory plus a port, not a fork; dropping one is a directory
   deletion. Removing 1.21.11 is therefore a deletion, not a deprecation.
 - Each module must compile and test independently, so a breakage in one target does not block

@@ -1,6 +1,5 @@
 package com.hunter1712.infusedclasses;
 
-import net.minecraft.resources.ResourceLocation;
 import org.junit.jupiter.api.Test;
 
 import java.util.EnumMap;
@@ -97,7 +96,7 @@ class AbilityRosterTest {
 
 		// A class carrying neither slot's abilities draws neither line, and the
 		// printed fallbacks still pick the keys up for everyone else.
-		ClassDefinition mystery = new ClassDefinition(new ResourceLocation("infusedclasses", "mystery"),
+		ClassDefinition mystery = new ClassDefinition("infusedclasses:mystery",
 				"Mystery", List.of(), List.of(), 0, "", List.of(), List.of(), CritRule.universal());
 		assertNull(BindMorph.shape(mystery).signatureRow());
 		assertNull(BindMorph.shape(mystery).ultimateRow());
@@ -107,7 +106,7 @@ class AbilityRosterTest {
 	@Test
 	void unknownIdsFindNoRow() {
 		assertNull(AbilityRoster.byAbility(
-				new ResourceLocation("infusedclasses", "mystery")));
+				"infusedclasses:mystery"));
 	}
 
 	@Test

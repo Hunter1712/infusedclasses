@@ -1,6 +1,5 @@
 package com.hunter1712.infusedclasses;
 
-import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
 
 /**
@@ -17,7 +16,7 @@ public final class ClassSwitch {
 	 * Switches the player to the given class id and announces the outcome, rejection
 	 * included. Returns the new definition, or null when the pick was rejected.
 	 */
-	public static ClassDefinition trySwitch(ServerPlayer player, Identifier id) {
+	public static ClassDefinition trySwitch(ServerPlayer player, String id) {
 		PlayerClasses classes = PlayerClassAccess.of(player);
 		ClassDefinition oldDef = classes.currentDefinition();
 		ClassDefinition def = classes.trySetClass(id);

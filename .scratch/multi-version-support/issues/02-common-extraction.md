@@ -4,7 +4,7 @@
 
 **Blocked by:** 01 (Multi-module build scaffolding)
 
-**Status:** ready-for-agent
+**Status:** done
 
 - [x] All classes with no Minecraft imports live in `common`
 - [x] Their transitive pure dependencies are included in `common`
@@ -13,33 +13,27 @@
 - [x] All three version modules still compile after extraction
 - [x] No gameplay decision logic is duplicated across modules
 
-## Reopened 2026-10-31 (spec review)
+## Resolved 2026-10-31
 
-The mechanical rule extracted the seven leaf decisions only. The decision core is still
-triplicated, byte-identical across all three version modules, because each is transitively
-tangled with Minecraft *value types* (not game objects):
+The value-type edge was lifted by introducing four `common`-side types, and the decision
+core moved with its tests:
 
-- `ClassDefinition.id` is a `net.minecraft.resources.Identifier`
-- `PassiveEffect.Modifier` carries `ResourceKey<Attribute>` and an `Identifier` modifier id
-- every ability module names its own modifier ids, and `ChatLine.style` is `ChatFormatting`
+- `ModIds` — the namespace and the one rejection line
+- `AttributeRef` — the attribute a modifier lands on, as a registry id string
+- `LineStyle` — the chat style a decision names
+- `StatusView` — the seam a status rider reads a snapshot through
 
-No `net.minecraft` import blocks the move of `MeleePlan`, `PlayerRuntime`, `PlayerRuntimes`,
-`ConditionalPassive`, `PassiveStacks`, `CritRule`, `CritRoll`, `BindMorph` and `AbilityOutcome`
-directly — the coupling is the value types named above. Their tests (`MeleePlanTest`,
-`CritRollTest`, `LegionaryTest`, `PlayerRuntimeDeepeningTest`, `PlayerStatusTest`, ...) would
-move with them.
+Moved to `common` and deleted from all three version modules (byte-identical before the
+move): `ChatLine`, `ClassDefinition`, `ClassRegistry`, `PassiveEffect`, `HpScaledPassive`,
+`ConditionalPassive`, `Momentum`, `Burden`, all six ability modules, `AbilityOutcome`,
+`AbilityRoster`, `BindMorph`, `ClassPresentation`, `ClassInfo`, `WindowFamily`, `CritRule`,
+`CritRoll`, `PassiveStacks`, `PlayerRuntime`, `PlayerRuntimes`, `MeleePlan`, `PlayerClasses`,
+`CardLayout` and `CardWrap`, plus their tests; `PassiveSweep` holds the switch sweep that was
+triplicated inside `PassiveApplier`.
 
-**Remaining work, in order:**
-1. Replace `ChatLine.style`'s `ChatFormatting` with a `common`-side style name (or null); the
-   adapter maps it to `ChatFormatting` when it builds the `Component`.
-2. Replace `PassiveEffect.Modifier`'s `ResourceKey<Attribute>` + `Identifier` with a
-   `common`-side pair (attribute registry name, modifier id string); `AttributeWriter` resolves
-   the `ResourceKey` at its single use site.
-3. Replace `ClassDefinition.id` (and the roster's ability ids) with a plain string, and have the
-   adapters build `Identifier`s from it at their use sites.
-4. Move the classes above plus their tests to `common`; delete the three copies; keep the pure
-   tests running once.
-5. Re-run `./gradlew build` and all four modules' tests.
+**Remaining boundary, documented rather than forced:** `StatusHud` and `StatusStore` consume
+the status snapshot, which owns its own wire codec and therefore stays per version. They are
+coupled to a per-module type, not to a game object. ADR-0033 point 2 records this.
 
-ADR-0033 point 2 records where the rule stops and why. Ticket closes when the checklists' first,
-second and last lines are literally true.
+Result: 41 main and 23 test classes in `common`, 30-31 adapter files per version module, no
+Minecraft or Fabric import anywhere in `common`, and zero duplicated decision files.

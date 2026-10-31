@@ -101,10 +101,10 @@ class CardLayoutTest {
 
 	@Test
 	void descStartsOnlyOnRowOne() {
-		assertEquals(10, ClassCardRenderer.descStartFor(0, 20, 10));
-		assertEquals(5, ClassCardRenderer.descStartFor(0, 5, 10));
-		assertEquals(0, ClassCardRenderer.descStartFor(1, 20, 10));
-		assertEquals(0, ClassCardRenderer.descStartFor(2, 8, 10));
+		assertEquals(10, CardWrap.descStartFor(0, 20, 10));
+		assertEquals(5, CardWrap.descStartFor(0, 5, 10));
+		assertEquals(0, CardWrap.descStartFor(1, 20, 10));
+		assertEquals(0, CardWrap.descStartFor(2, 8, 10));
 	}
 
 	@Test

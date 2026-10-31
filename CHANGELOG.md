@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- The version-agnostic decision core now lives once in `common` rather than three times. Four
+  common-side value types hold what was Minecraft-coupled: `ModIds` for ids, `AttributeRef`
+  for the attribute a modifier lands on, `ChatStyle` for a chat style, and `StatusView` as the
+  seam a status rider reads a snapshot through. The class registry and definitions, every
+  ability module, the HP-scaled and conditional passives, `MeleePlan`, `PlayerRuntime`,
+  `CritRule`/`CritRoll`, `BindMorph`, `AbilityRoster`, `PassiveSweep`, `ClassPresentation`,
+  `CardLayout`/`CardWrap`, `ClassInfo`, `WindowFamily` and `ChatLine` moved with their tests.
+  A balance or rule edit is one file again, not three.
+
 ### Added
 - Multi-version support (ADR-0033): one jar per supported Minecraft version, `infusedclasses-<mod>+<mc>.jar`.
   - Minecraft **1.20.1** (Fabric API `0.92.12+1.20.1`, Java 17)

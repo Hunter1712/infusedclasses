@@ -1,6 +1,5 @@
 package com.hunter1712.infusedclasses;
 
-import net.minecraft.resources.Identifier;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -22,8 +21,8 @@ class PlayerClassStateTest {
 	void rejectsUnknownAndMissing() {
 		PlayerClasses classes = new PlayerClasses();
 
-		assertNull(classes.trySetClass(Identifier.fromNamespaceAndPath("infusedclasses", "ranger")));
-		assertNull(classes.trySetClass(Identifier.fromNamespaceAndPath("infusedclasses", "bard")));
+		assertNull(classes.trySetClass("infusedclasses:ranger"));
+		assertNull(classes.trySetClass("infusedclasses:bard"));
 		assertNull(classes.trySetClass(null));
 		assertNull(classes.classId());
 		assertNull(classes.currentDefinition());
@@ -34,7 +33,7 @@ class PlayerClassStateTest {
 		PlayerClasses classes = new PlayerClasses();
 		classes.trySetClass(ClassRegistry.JUGGERNAUT);
 
-		assertNull(classes.trySetClass(Identifier.fromNamespaceAndPath("infusedclasses", "mage")));
+		assertNull(classes.trySetClass("infusedclasses:mage"));
 
 		assertEquals(ClassRegistry.JUGGERNAUT, classes.classId());
 	}

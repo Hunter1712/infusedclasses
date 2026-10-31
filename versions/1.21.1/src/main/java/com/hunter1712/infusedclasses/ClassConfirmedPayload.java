@@ -1,9 +1,9 @@
 package com.hunter1712.infusedclasses;
 
 import io.netty.buffer.ByteBuf;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
-import net.minecraft.resources.ResourceLocation;
 
 /** Server confirms the pick. Client closes the picker only on this, so rejected picks stay for retry. */
 public record ClassConfirmedPayload() implements CustomPacketPayload {
