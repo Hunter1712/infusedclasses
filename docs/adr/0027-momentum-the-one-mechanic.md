@@ -35,6 +35,9 @@ curve existed only to price Rush's bonus hit and Rend's payout.
 7. **The wire keeps its names.** `RushPayload`/`RendPayload`, their channels and the R/V keys
    keep their old names; only the lanes and ability ids change
    (`infusedclasses:offload`, `infusedclasses:onslaught`, `Lane.OFFLOAD`, `Lane.ONSLAUGHT`).
+   *(superseded 2026-10-31: the payloads are now `SignaturePayload`/`UltimatePayload` and the
+   channels `infusedclasses:signature`/`infusedclasses:ultimate`; the lanes and ability ids
+   this point names are unchanged.)*
 
 ## Consequences
 

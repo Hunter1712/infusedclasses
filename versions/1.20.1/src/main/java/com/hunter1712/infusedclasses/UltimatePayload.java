@@ -6,10 +6,10 @@ import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.ResourceLocation;
 
 /** Ultimate slot intent: "I pressed the ultimate bind". Server validates class, stacks and cooldown. */
-public record RendPayload() implements FabricPacket {
-	public static final PacketType<RendPayload> TYPE =
-			PacketType.create(new ResourceLocation(InfusedClasses.MOD_ID, "rend"),
-					buf -> new RendPayload());
+public record UltimatePayload() implements FabricPacket {
+	public static final PacketType<UltimatePayload> TYPE =
+			PacketType.create(new ResourceLocation(ModIds.MOD_ID, "ultimate"),
+					buf -> new UltimatePayload());
 
 	@Override
 	public void write(FriendlyByteBuf buf) {

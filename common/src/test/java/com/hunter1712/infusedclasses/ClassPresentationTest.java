@@ -51,9 +51,9 @@ class ClassPresentationTest {
 	@Test
 	void descStartIsDerivedFromTheJoin() {
 		ClassPresentation.CardLine withDesc = new ClassPresentation.CardLine(
-				"Rush", "Engage.", ClassPresentation.LineKind.ABILITY, 0xFFE74C3C);
+				"Offload", "Engage.", ClassPresentation.LineKind.ABILITY, 0xFFE74C3C);
 
-		assertEquals("Rush \u2014 ".length(), withDesc.descStart());
+		assertEquals("Offload \u2014 ".length(), withDesc.descStart());
 		assertEquals("Engage.", withDesc.text().substring(withDesc.descStart()));
 
 		ClassPresentation.CardLine bare = new ClassPresentation.CardLine(

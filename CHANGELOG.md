@@ -16,6 +16,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `CritRule`/`CritRoll`, `BindMorph`, `AbilityRoster`, `PassiveSweep`, `ClassPresentation`,
   `CardLayout`/`CardWrap`, `ClassInfo`, `WindowFamily` and `ChatLine` moved with their tests.
   A balance or rule edit is one file again, not three.
+- The signature and ultimate intents are named for their slots. `RushPayload`/`RendPayload`
+  became `SignaturePayload`/`UltimatePayload` and their channels
+  `infusedclasses:rush`/`infusedclasses:rend` became `infusedclasses:signature`/
+  `infusedclasses:ultimate`. Rush and Rend were retired by ADR-0027, so the old names were
+  dead vocabulary that read as live code; ADR-0016 point 5 and ADR-0027 point 7 are marked
+  superseded rather than rewritten. Wire-compatible clients from before this are not
+  supported under 0.x.
 
 ### Added
 - Multi-version support (ADR-0033): one jar per supported Minecraft version, `infusedclasses-<mod>+<mc>.jar`.

@@ -6,12 +6,12 @@ import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.Identifier;
 
 /** Ultimate slot intent: "I pressed the ultimate bind". Server validates class, stacks and cooldown. */
-public record RendPayload() implements CustomPacketPayload {
-	public static final CustomPacketPayload.Type<RendPayload> TYPE =
-			new CustomPacketPayload.Type<>(Identifier.fromNamespaceAndPath(InfusedClasses.MOD_ID, "rend"));
+public record UltimatePayload() implements CustomPacketPayload {
+	public static final CustomPacketPayload.Type<UltimatePayload> TYPE =
+			new CustomPacketPayload.Type<>(Identifier.fromNamespaceAndPath(ModIds.MOD_ID, "ultimate"));
 
-	public static final StreamCodec<ByteBuf, RendPayload> STREAM_CODEC =
-			StreamCodec.unit(new RendPayload());
+	public static final StreamCodec<ByteBuf, UltimatePayload> STREAM_CODEC =
+			StreamCodec.unit(new UltimatePayload());
 
 	@Override
 	public Type<? extends CustomPacketPayload> type() {

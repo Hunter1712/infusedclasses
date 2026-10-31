@@ -34,6 +34,9 @@ Signature and Ultimate, and the UI letters are slot names only.
    reset under the 0.x contract.
 5. **No protocol churn**: `RushPayload`/`RendPayload` keep their names and
    channels; comments re-home them as the signature/ultimate slot's intents.
+   *(superseded 2026-10-31: the payloads were renamed `SignaturePayload`/`UltimatePayload`
+   and their channels `infusedclasses:signature`/`infusedclasses:ultimate`, because the old
+   names were retired-ability vocabulary that read as live code — see ADR-0033's round.)*
 
 ## Consequences
 

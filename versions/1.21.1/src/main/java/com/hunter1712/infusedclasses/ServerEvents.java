@@ -88,10 +88,10 @@ final class ServerEvents {
 					context.responseSender().sendPacket(new ClassConfirmedPayload());
 				}));
 
-		ServerPlayNetworking.registerGlobalReceiver(RushPayload.TYPE, (payload, context) -> context.server()
+		ServerPlayNetworking.registerGlobalReceiver(SignaturePayload.TYPE, (payload, context) -> context.server()
 				.execute(() -> SlotPresses.pressSignature(context.player())));
 
-		ServerPlayNetworking.registerGlobalReceiver(RendPayload.TYPE, (payload, context) -> context.server()
+		ServerPlayNetworking.registerGlobalReceiver(UltimatePayload.TYPE, (payload, context) -> context.server()
 				.execute(() -> SlotPresses.pressUltimate(context.player())));
 	}
 }

@@ -18,7 +18,7 @@ class ProtocolTest {
 		Set<ResourceLocation> ids = new HashSet<>(Set.of(
 				SelectClassPayload.TYPE.getId(),
 				OpenClassScreenPayload.TYPE.getId(),
-				RendPayload.TYPE.getId(),
+				UltimatePayload.TYPE.getId(),
 				ClassConfirmedPayload.TYPE.getId(),
 				PlayerStatusPayload.TYPE.getId()));
 
@@ -30,8 +30,8 @@ class ProtocolTest {
 
 	@Test
 	void rushPayloadHasItsOwnChannel() {
-		assertEquals("infusedclasses:rush", RushPayload.TYPE.getId().toString());
-		assertEquals(InfusedClasses.MOD_ID, RushPayload.TYPE.getId().getNamespace());
+		assertEquals("infusedclasses:signature", SignaturePayload.TYPE.getId().toString());
+		assertEquals(InfusedClasses.MOD_ID, SignaturePayload.TYPE.getId().getNamespace());
 	}
 
 	@Test
@@ -100,14 +100,14 @@ class ProtocolTest {
 			assertEquals(confirmed, ClassConfirmedPayload.TYPE.read(buf));
 
 			buf.clear();
-			RendPayload rend = new RendPayload();
-			rend.write(buf);
-			assertEquals(rend, RendPayload.TYPE.read(buf));
+			UltimatePayload ultimate = new UltimatePayload();
+			ultimate.write(buf);
+			assertEquals(ultimate, UltimatePayload.TYPE.read(buf));
 
 			buf.clear();
-			RushPayload rush = new RushPayload();
-			rush.write(buf);
-			assertEquals(rush, RushPayload.TYPE.read(buf));
+			SignaturePayload signature = new SignaturePayload();
+			signature.write(buf);
+			assertEquals(signature, SignaturePayload.TYPE.read(buf));
 		} finally {
 			raw.release();
 		}

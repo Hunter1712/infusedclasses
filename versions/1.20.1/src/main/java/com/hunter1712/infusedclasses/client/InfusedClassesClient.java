@@ -3,9 +3,9 @@ package com.hunter1712.infusedclasses.client;
 import com.hunter1712.infusedclasses.ClassConfirmedPayload;
 import com.hunter1712.infusedclasses.OpenClassScreenPayload;
 import com.hunter1712.infusedclasses.PlayerStatusPayload;
-import com.hunter1712.infusedclasses.RendPayload;
+import com.hunter1712.infusedclasses.UltimatePayload;
 import com.hunter1712.infusedclasses.SelectClassPayload;
-import com.hunter1712.infusedclasses.RushPayload;
+import com.hunter1712.infusedclasses.SignaturePayload;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
@@ -55,10 +55,10 @@ public class InfusedClassesClient implements ClientModInitializer {
 				return;
 			}
 			while (signatureKey.consumeClick()) {
-				ClientPlayNetworking.send(new RushPayload());
+				ClientPlayNetworking.send(new SignaturePayload());
 			}
 			while (ultimateKey.consumeClick()) {
-				ClientPlayNetworking.send(new RendPayload());
+				ClientPlayNetworking.send(new UltimatePayload());
 			}
 		});
 	}

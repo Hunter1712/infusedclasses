@@ -26,9 +26,9 @@ class CardWrapTest {
 
 	@Test
 	void wrapsOnlyAtWordBoundariesAndKeepsEveryWord() {
-		ClassPresentation.CardLine rush = line("Rush", "Cleanses harmful effects and quickens you for 5s.");
+		ClassPresentation.CardLine offload = line("Offload", "Loosens the swing for 10s.");
 
-		List<CardWrap.TextRow> rows = CardWrap.wrapRows(rush, 20, PIXELS);
+		List<CardWrap.TextRow> rows = CardWrap.wrapRows(offload, 20, PIXELS);
 
 		StringBuilder rejoined = new StringBuilder();
 		for (CardWrap.TextRow row : rows) {
@@ -36,17 +36,17 @@ class CardWrapTest {
 			assertTrue(row.text().length() <= 20 || !row.text().contains(" "), row.text());
 			rejoined.append(rejoined.isEmpty() ? row.text() : " " + row.text());
 		}
-		assertEquals(rush.text(), rejoined.toString(), "no word is split or lost");
+		assertEquals(offload.text(), rejoined.toString(), "no word is split or lost");
 		assertTrue(rows.size() > 1, "the line wraps at 20 units");
 	}
 
 	@Test
 	void toneBoundaryLandsOnRowOneAndZeroAfter() {
-		ClassPresentation.CardLine rush = line("Rush", "Cleanses harmful effects and quickens you for 5s.");
+		ClassPresentation.CardLine offload = line("Offload", "Loosens the swing for 10s.");
 
-		List<CardWrap.TextRow> rows = CardWrap.wrapRows(rush, 20, PIXELS);
+		List<CardWrap.TextRow> rows = CardWrap.wrapRows(offload, 20, PIXELS);
 
-		assertEquals("Rush \u2014 ".length(), rows.get(0).descStart());
+		assertEquals("Offload \u2014 ".length(), rows.get(0).descStart());
 		for (int i = 1; i < rows.size(); i++) {
 			assertEquals(0, rows.get(i).descStart(), "row " + i + " is pure description");
 		}
@@ -87,7 +87,7 @@ class CardWrapTest {
 			assertEquals(CardLayout.TIER_INDENT, row.indent(), row.text());
 		}
 		// Every other kind starts at the body's left edge.
-		for (CardWrap.TextRow row : CardWrap.wrapRows(line("Rush", "Engage."), 40, PIXELS)) {
+		for (CardWrap.TextRow row : CardWrap.wrapRows(line("Offload", "Engage."), 40, PIXELS)) {
 			assertEquals(0, row.indent());
 		}
 	}
