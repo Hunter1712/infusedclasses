@@ -33,6 +33,9 @@ dependencies {
 		modImplementation "net.fabricmc.fabric-api:fabric-api:${fabric_version}"
 	}
 
+	// common is a plain Java library: `implementation` puts it on the compile classpath but does
+	// NOT bundle it, so the jar must take its classes and resources too or the mod crashes at
+	// launch with NoClassDefFoundError on the first decision it touches.
 	implementation project(':common')
 
 	testImplementation platform("org.junit:junit-bom:${junit_version}")
@@ -56,6 +59,11 @@ processResources {
 
 tasks.withType(JavaCompile).configureEach {
 	options.compilerArgs << '-Xmaxerrs' << '2000'
+}
+
+// Ship common's decisions inside each version jar: one jar per game version, self-contained.
+tasks.named('jar') {
+	from(project(':common').sourceSets.main.output)
 }
 
 test {
