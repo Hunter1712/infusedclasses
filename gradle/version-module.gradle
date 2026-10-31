@@ -1,0 +1,87 @@
+// Shared configuration for a Fabric module targeting one Minecraft version.
+// Per-version values come from the module's own gradle.properties.
+version = "${mod_version}+${minecraft_version}"
+
+base {
+	archivesName = project.archives_base_name
+}
+
+java {
+	sourceCompatibility = JavaVersion.toVersion(project.java_release)
+	targetCompatibility = JavaVersion.toVersion(project.java_release)
+}
+
+repositories {
+	mavenCentral()
+}
+
+// 26.x ships deobfuscated (see fabric.loom.disableObfuscation in its gradle.properties)
+// and publishes no Mojang mappings; earlier versions use official names.
+def unobfuscated = project.findProperty('mappings_kind') == 'identity'
+
+dependencies {
+	minecraft "com.mojang:minecraft:${minecraft_version}"
+	if (!unobfuscated) {
+		mappings loom.officialMojangMappings()
+	}
+	if (unobfuscated) {
+		// No remap configurations exist without obfuscation; a plain classpath is enough.
+		implementation "net.fabricmc:fabric-loader:${loader_version}"
+		implementation "net.fabricmc.fabric-api:fabric-api:${fabric_version}"
+	} else {
+		modImplementation "net.fabricmc:fabric-loader:${loader_version}"
+		modImplementation "net.fabricmc.fabric-api:fabric-api:${fabric_version}"
+	}
+
+	implementation project(':common')
+
+	testImplementation platform("org.junit:junit-bom:${junit_version}")
+	testImplementation 'org.junit.jupiter:junit-jupiter'
+	testImplementation 'org.junit.platform:junit-platform-launcher'
+}
+
+processResources {
+	inputs.property 'version', project.version
+	inputs.property 'minecraft_version', project.minecraft_version
+	inputs.property 'loader_version', project.loader_version
+	inputs.property 'java_version', project.java_release
+
+	filesMatching('fabric.mod.json') {
+		expand 'version': project.version,
+				'minecraft_version': project.minecraft_version,
+				'loader_version': project.loader_version,
+				'java_version': project.java_release
+	}
+}
+
+tasks.withType(JavaCompile).configureEach {
+	options.compilerArgs << '-Xmaxerrs' << '2000'
+}
+
+test {
+	useJUnitPlatform()
+}
+
+// Client-visible changes ship as a jar, and compileJava alone never refreshes it.
+// Each version module's deployClient rebuilds, copies build/libs/infusedclasses-<mod>+<mc>.jar
+// to the live instance mods folder, and fails loudly if the jar is missing afterwards.
+// Override the target with -PmcModsDir=<path> or the MC_MODS_DIR env var.
+def mcModsDir = findProperty('mcModsDir') ?: System.getenv('MC_MODS_DIR') ?:
+		"${System.getProperty('user.home')}/.local/share/ElyPrismLauncher/instances/${project.minecraft_version}/minecraft/mods"
+
+tasks.register('deployClient', Copy) {
+	group = 'infusedclasses'
+	description = "Rebuilds the ${project.minecraft_version} jar and copies it to the client mods folder."
+	dependsOn build
+	from(layout.buildDirectory.dir('libs')) {
+		include "infusedclasses-${project.version}.jar"
+	}
+	into mcModsDir
+	doLast {
+		def target = file("${mcModsDir}/infusedclasses-${project.version}.jar")
+		if (!target.exists()) {
+			throw new GradleException("deployClient: jar missing at ${target}")
+		}
+		logger.lifecycle("deployClient: ${target} (${target.length()} bytes)")
+	}
+}

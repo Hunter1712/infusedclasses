@@ -5,6 +5,28 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+- Multi-version support (ADR-0033): one jar per supported Minecraft version, `infusedclasses-<mod>+<mc>.jar`.
+  - Minecraft **1.20.1** (Fabric API `0.92.12+1.20.1`, Java 17)
+  - Minecraft **1.21.1** (`0.116.17+1.21.1`, Java 21)
+  - Minecraft **26.3** (`0.165.0+26.3`, Java 25)
+
+### Changed
+- The build is multi-module: a plain Java library `common` holds the version-agnostic decisions and their
+  tests, and one Fabric module per version (`versions/1.20.1`, `versions/1.21.1`, `versions/26.3`)
+  holds its adapters, mixins, networking, client code and resources. Gameplay decisions are written
+  once, so class balance and behaviour do not differ by release; only the Minecraft-coupled seams
+  (identifier naming, save data, mixin targets, networking API, damage hooks, attribute keys, client
+  widgets) are per version.
+- `deployClient` runs per version module and copies that version's jar to its own launcher instance
+  (`./gradlew :mc1211:deployClient`, and so on).
+
+### Removed
+- **Minecraft 1.21.11 is no longer supported** and ships no artifact. Metadata, docs and tooling list
+  the three supported versions; a jar declared `~<mc>` is rejected at launch on the wrong version.
+
 ## [0.5.0] - 2026-10-20
 
 ### Fixed

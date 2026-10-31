@@ -2,22 +2,40 @@
 # Resolves the built mixin jar's vanilla targets from their intermediary ids
 # (method_75123) back to named members, so a wrong @Inject/@Accessor target is
 # readable before launch. Exits 1 when a target did not remap or does not resolve.
-# Usage: tools/mixin-targets.sh [jar]
-#        (default: the newest build/libs/infusedclasses-*.jar)
+# Usage: tools/mixin-targets.sh [jar] [<version>]
+#        (default: the newest version-module built jar, and each version
+#        module's declared minecraft_version for its mappings)
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-if [ $# -ge 1 ]; then
-	jar="$1"
-else
-	jar=$(ls -t build/libs/infusedclasses-*.jar 2>/dev/null | head -1 || true)
+jar=""
+requested=""
+while [ $# -gt 0 ]; do
+	case "$1" in
+	*.jar) jar="$1" ;;
+	"") ;;
+	*) requested="$1" ;;
+	esac
+	shift
+done
+
+if [ -z "$jar" ]; then
+	# Each version module builds its own jar under versions/<mc>/build/libs.
+	jar=$(ls -t versions/*/build/libs/infusedclasses-*.jar 2>/dev/null | head -1 || true)
+fi
+# The game version comes from the jar's +<mc> suffix, or the requested one.
+mcver="${requested:-}"
+if [ -z "$mcver" ] && [ -n "$jar" ]; then
+	mcver=$(basename "$jar" | sed -n 's/.*+\([^/]*\)\.jar$/\1/p')
 fi
 if [ -z "$jar" ] || [ ! -f "$jar" ]; then
-	echo "mixin-targets: no jar under build/libs — run ./gradlew build first" >&2
+	echo "mixin-targets: no jar under versions/*/build/libs — run ./gradlew build first" >&2
 	exit 1
 fi
 
-mcver=$(sed -n 's/^minecraft_version=//p' gradle.properties)
+if [ -z "$mcver" ]; then
+	mcver=$(sed -n 's/^minecraft_version=//p' versions/*/gradle.properties 2>/dev/null | head -1)
+fi
 map=$(ls -t "$HOME/.gradle/caches/fabric-loom/$mcver"/loom.mappings.*/mappings.tiny 2>/dev/null | head -1 || true)
 if [ -z "$map" ]; then
 	echo "mixin-targets: no Loom mappings for $mcver — run ./gradlew classes once" >&2

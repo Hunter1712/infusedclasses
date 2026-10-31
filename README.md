@@ -1,6 +1,6 @@
 # Infused Classes
 
-Character classes for Minecraft (Fabric). **Beta — manual builds only.**
+Character classes for Minecraft (Fabric).
 
 - Juggernaut: Momentum checkpoints and Burden's heavy chassis, Offload to ease the weight for a moment, Onslaught to spend the bar on damage.
 - Legionary: rotate stances, Impetus/Testudo flip buffs, Aequilibrium oath.
@@ -8,20 +8,18 @@ Character classes for Minecraft (Fabric). **Beta — manual builds only.**
 
 Crits are a mod rule: vanilla jump crits are retired, and every full-charge landed hit rolls a flat 10% chance at x1.25 (classless players included), with a per-class crit rule on top — the Gambler's Crooked Dice is the first.
 
-## Requirements (0.x locked)
+## Requirements 
 
-- Minecraft **1.21.11** only (`~1.21.11` in `src/main/resources/fabric.mod.json:23`)
-- Fabric Loader `>=0.19.5`, Fabric API, Java 21
-- No Forge/Quilt support. No 1.20.x backports in 0.x. A 26.x port comes later as a separate branch.
+- Minecraft **1.20.1**, **1.21.1** or **26.3** — one jar per version, each declaring `~<mc>` in its module's `src/main/resources/fabric.mod.json`
+- Fabric Loader `>=0.19.5`, Fabric API, and the Java runtime your version needs (17 / 21 / 25)
+- No Forge/Quilt support. **1.21.11 is no longer supported** — see [docs/guide/version-policy.md](docs/guide/version-policy.md).
 
-## Install (manual, forever)
+## Install
 
-1. Install Fabric Loader for 1.21.11 + Fabric API.
-2. Build or fetch the jar: `./gradlew build` produces `build/libs/infusedclasses-0.5.0+1.21.11.jar` (`gradle.properties:8` + `build.gradle:5`, gitignored via `.gitignore:2`). Jars carry the game version (`infusedclasses-<mod>+<mc>.jar`) so a future 26.x jar slots onto the same page.
-3. Drop the same jar in `mods/` on **both client and server** (server-required; the supported setup installs both sides). For the live dev instance: `./gradlew deployClient` (`build.gradle:50-65`).
+1. Install Fabric Loader + Fabric API for your Minecraft version.
+2. Build or fetch the jar for it: `./gradlew build` produces one jar per supported version under `versions/<mc>/build/libs/infusedclasses-<mod>+<mc>.jar` (gitignored via `.gitignore:2`). Jars carry the game version (`infusedclasses-<mod>+<mc>.jar`) so each slots onto the same page.
+3. Drop the same jar in `mods/` on **both client and server** (server-required; the supported setup installs both sides). For the live dev instance: `./gradlew deployClient` (`gradle/version-module.gradle`).
 4. Reset class data after updates if told to: `/class select <player>`.
-
-No auto-updater. Modrinth + CurseForge listings (Beta channel) are future manual uploads — this repo stays the source of truth.
 
 ## Feedback
 
@@ -32,12 +30,6 @@ Single funnel: [GitHub Issues](https://github.com/Hunter1712/infusedclasses/issu
 - Repro steps (class, stance/passive, server or client)
 
 Homepage/sources: https://github.com/Hunter1712/infusedclasses
-
-## Draft listing blurb (Modrinth/CurseForge, when listed)
-
-> Infused Classes — BETA. Fabric 1.21.11 + Java 21 + Fabric API required, server + client install. Manual installs only. Report crashes with latest.log to GitHub Issues.
-
-Icon: `src/main/resources/assets/infusedclasses/icon.png` (128x128, wired in `fabric.mod.json`). Listing is prepped for the Beta channel — no upload yet.
 
 ## Player guide (prepped for listing, source of truth)
 

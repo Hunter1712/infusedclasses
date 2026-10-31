@@ -4,18 +4,18 @@
 
 | Requirement | Version |
 |-------------|---------|
-| Minecraft | **1.21.11** only |
+| Minecraft | **1.20.1**, **1.21.1** or **26.3** (one jar per version) |
 | **Fabric Loader** | `>=0.19.5` |
-| **Fabric API** | Any build matching 1.21.11 |
-| **Java** | 21 |
+| **Fabric API** | Any build matching your Minecraft version |
+| **Java** | The runtime your game version needs: 17 (1.20.1), 21 (1.21.1) or 25 (26.3) |
 | **Side** | Same jar on **both client and server** (server-required) |
 
-No Forge/Quilt support. No 1.20.x backports in 0.x. A 26.x port comes later as a separate branch — see [version-policy.md](version-policy.md).
+No Forge/Quilt support. 1.21.11 is no longer supported — see [version-policy.md](version-policy.md).
 
 ## Steps
 
-1. Install Fabric Loader for 1.21.11 plus Fabric API.
-2. Build or fetch the jar: `./gradlew build` produces `build/libs/infusedclasses-<mod>+<mc>.jar` (currently `infusedclasses-0.5.0+1.21.11.jar`) — the `+1.21.11` suffix must match your game exactly.
+1. Install Fabric Loader and Fabric API for your Minecraft version.
+2. Build or fetch the jar for your version: `./gradlew build` produces one jar per supported version under `versions/<mc>/build/libs/infusedclasses-<mod>+<mc>.jar` (currently `infusedclasses-0.5.0+1.20.1.jar`, `infusedclasses-0.5.0+1.21.1.jar` and `infusedclasses-0.5.0+26.3.jar`). The `+<mc>` suffix must match your game exactly.
 3. Drop the same jar into `mods/` on both sides:
    - Singleplayer: `.minecraft/mods/`
    - Server: the server's `mods/` folder
@@ -29,7 +29,7 @@ No Forge/Quilt support. No 1.20.x backports in 0.x. A 26.x port comes later as a
 
 ## Updating
 
-Replace the old jar with the new one. If your class choice doesn't carry over, reselect: `/class select <player>`.
+Replace the old jar with the new one, keeping the same `+<mc>` suffix as your game. If your class choice doesn't carry over, reselect: `/class select <player>`.
 
 ## Troubleshooting install problems
 

@@ -1,6 +1,6 @@
 # Infused Classes
 
-> **Character classes for Minecraft (Fabric): Juggernaut bruiser, Legionary stance trader plus Gambler dice roller — BETA.**
+> **Character classes for Minecraft (Fabric): Juggernaut bruiser, Legionary stance trader plus Gambler dice roller** 
 
 **Infused Classes** gives every player a class choice that shapes abilities and passives. Juggernauts carry Momentum checkpoints and Burden's heavy chassis, loosen the swing with Offload and spend the bar on Onslaught; Legionaries rotate Gladius/Scutum stances, cash in Impetus/Testudo flip buffs, and swear the Aequilibrium oath; Gamblers bet on Crooked Dice with Streak loading the odds, spin the free Roulette wheel and go All In for heavier crits. First join opens the picker; the choice persists while stacks and cooldowns stay transient.
 
@@ -14,18 +14,17 @@ Crits are mod-owned: vanilla jump crits are retired, and every full-charge lande
 
 ## Requirements
 
-- Minecraft **1.21.11** only, **Fabric Loader 0.19.5+**, **Fabric API**, **Java 21**
+- Minecraft **1.20.1**, **1.21.1** or **26.3** (one jar per version), **Fabric Loader 0.19.5+**, **Fabric API**, **Java 17 / 21 / 25** per version
 - Install the same jar on **both client and server** (server-required)
-- No Forge/Quilt. No 1.20.x backports in 0.x.
+- No Forge/Quilt. 1.21.11 is no longer supported.
 
 ## Installation
 
-1. Install Fabric Loader for 1.21.11 + Fabric API.
-2. Download the jar matching your game (`infusedclasses-<mod>+1.21.11.jar`).
+1. Install Fabric Loader + Fabric API for your Minecraft version.
+2. Download the jar matching your game (`infusedclasses-<mod>+<mc>.jar`, e.g. `infusedclasses-<mod>+1.21.1.jar`).
 3. Place it in `mods/` on client and server, then launch. The picker opens on first join.
 4. Reset class data after updates if told to: `/class select <player>`.
 
-**Manual installs only**, no auto-updater; Modrinth and CurseForge host Beta-channel manual uploads.
 
 ## Full documentation
 

@@ -1,0 +1,33 @@
+{
+	"schemaVersion": 1,
+	"id": "infusedclasses",
+	"version": "${version}",
+	"name": "Infused Classes",
+	"description": "Character classes for Minecraft. Juggernaut: Momentum checkpoints and Burden's heavy chassis, Offload to loosen the swing, Onslaught to spend the bar. Legionary: Rotate stances, Impetus/Testudo flips, Aequilibrium oath. Gambler: Crooked Dice crits, Roulette wheel, All In.",
+	"icon": "assets/infusedclasses/icon.png",
+	"authors": ["hunter1712"],
+	"contact": {
+		"homepage": "https://github.com/Hunter1712/infusedclasses",
+		"sources": "https://github.com/Hunter1712/infusedclasses",
+		"issues": "https://github.com/Hunter1712/infusedclasses/issues"
+	},
+	"license": "ARR",
+	"environment": "*",
+	"mixins": [
+		"infusedclasses.mixins.json"
+	],
+	"entrypoints": {
+		"main": [
+			"com.hunter1712.infusedclasses.InfusedClasses"
+		],
+		"client": [
+			"com.hunter1712.infusedclasses.client.InfusedClassesClient"
+		]
+	},
+	"depends": {
+		"fabricloader": ">=${loader_version}",
+		"minecraft": "~${minecraft_version}",
+		"java": ">=${java_version}",
+		"fabric-api": "*"
+	}
+}

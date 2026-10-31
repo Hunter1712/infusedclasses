@@ -1,0 +1,43 @@
+package com.hunter1712.infusedclasses;
+
+import net.fabricmc.api.ModInitializer;
+import net.minecraft.server.level.ServerPlayer;
+
+/** Server side. Authoritative: client sends intents, every decision happens here. */
+public class InfusedClasses implements ModInitializer {
+	static final String UNKNOWN_OR_LOCKED = "Unknown or locked class";
+	/** Mod namespace, owned here: the one field every id, payload type and modifier id builds on. */
+	public static final String MOD_ID = "infusedclasses";
+	/** The transient half of per-player state, held here because it is not reachable from the player. */
+	private static final PlayerRuntimes RUNTIMES = new PlayerRuntimes();
+
+	@Override
+	public void onInitialize() {
+		ServerEvents.register();
+		ServerEvents.registerReceivers();
+		ClassCommands.register();
+	}
+
+	/**
+	 * The one clock for every cooldown, window and grace read: monotonic millis, so a
+	 * wall-clock step — a VM snapshot restore, an NTP correction — can neither expire a
+	 * cooldown early nor freeze one. Callers inject it down the chain as {@code now}.
+	 */
+	static long now() {
+		return System.nanoTime() / 1_000_000L;
+	}
+
+	/**
+	 * The transient state of one player, and the whole of its lifetime: created the first time
+	 * something needs it, replaced by an empty one when the player respawns, dropped when they
+	 * log out. Nothing in it is persisted, so none of it is ever written or copied.
+	 */
+	static PlayerRuntime runtime(ServerPlayer player) {
+		return RUNTIMES.runtime(player.getUUID());
+	}
+
+	/** The runtime store, for event wiring that owns no state of its own. */
+	static PlayerRuntimes runtimes() {
+		return RUNTIMES;
+	}
+}

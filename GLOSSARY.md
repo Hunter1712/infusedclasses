@@ -4,7 +4,10 @@ Class selection and what a chosen class does for a player: the classes on offer,
 makes, the passives and ability that follow from it, and the picker screen that offers it.
 
 The code anchor is given next to each term where one exists, so the vocabulary can be traced to the
-module that carries it.
+module that carries it. The build is multi-module (ADR-0033): a version-agnostic decision lives in the
+`common` library, and its adapters live in the version module for each supported Minecraft version. A term
+anchored on a class with no `net.minecraft` import sits in `common`; a class that touches game objects sits in
+every version module, so its anchor is the class name rather than a single path.
 
 ## Language
 
@@ -454,7 +457,7 @@ crit at ×1.25, full-charge hits only, no betrayal and no Streak movement; a
 class override replaces it, and a classless player reads as the baseline.
 Vanilla crits are retired: the mixin cancels `canCriticalAttack` for every
 player, so the verdict, its sound and its particle burst are the mod's own —
-`CritCue` replays them, the burst spawned there because 1.21.11's own crit method
+`CritCue` replays them, the burst spawned there because vanilla's own crit method
 is empty.
 _Avoid_: crit check, damage roll
 

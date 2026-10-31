@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Prints the round's changed src/main/java files that sit over the
+# Prints the round's changed main-source files that sit over the
 # architecture-review line in AGENTS.md (~150), each with its line count before
 # the round ("new" when untracked), so growth is visible while the round is
 # still open. Always exits 0: the line is a flag, not a gate.
@@ -23,11 +23,11 @@ while IFS= read -r file; do
 	fi
 done < <(
 	{
-		git diff --name-only HEAD -- 'src/main/java'
-		git ls-files --others --exclude-standard -- 'src/main/java'
+		git diff --name-only HEAD -- 'common/src/main/java' 'versions/*/src/main/java'
+		git ls-files --others --exclude-standard -- 'common/src/main/java' 'versions/*/src/main/java'
 	} | sort -u
 )
 
 if [ "$found" -eq 0 ]; then
-	echo "arch-flags: no changed src/main/java file over $THRESHOLD lines"
+	echo "arch-flags: no changed main-source file over $THRESHOLD lines"
 fi

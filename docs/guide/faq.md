@@ -3,10 +3,10 @@
 ## Install / launch
 
 **Do I need Fabric API?**
-Yes. Install Fabric API for 1.21.11 alongside Fabric Loader 0.19.5+ and Java 21.
+Yes. Install Fabric API for your Minecraft version (1.20.1, 1.21.1 or 26.3) alongside Fabric Loader 0.19.5+ and the Java runtime that version needs (17, 21 or 25).
 
 **The game says I'm missing a dependency.**
-Usually a missing or outdated **Fabric API**, the **wrong jar** for your game version, or the jar installed on **only one side** — the supported setup installs the same jar on both client and server. See [installation.md](installation.md).
+Usually a missing or outdated **Fabric API**, the **wrong jar** for your game version, or the jar installed on **only one side** — the supported setup installs the same jar on both client and server, matched to the same game version on both sides. See [installation.md](installation.md).
 
 **Does it work with vanilla clients?**
 No. Install the mod on both client and server. All logic is server-side and server-authoritative; the client sends intents and renders the picker. See [compatibility.md](compatibility.md#client--server).

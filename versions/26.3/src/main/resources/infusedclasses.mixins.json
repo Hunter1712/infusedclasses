@@ -1,0 +1,12 @@
+{
+	"required": true,
+	"package": "com.hunter1712.infusedclasses.mixin",
+	"compatibilityLevel": "JAVA_25",
+	"mixins": [
+		"PlayerMixin",
+		"LivingEntityAccessor"
+	],
+	"injectors": {
+		"defaultRequire": 1
+	}
+}

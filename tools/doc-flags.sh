@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Flags a round whose docs probably lag its code:
-#   - a changed src/main/java class named in GLOSSARY.md, with GLOSSARY.md untouched
-#   - any src/main/java change with CHANGELOG.md untouched
+#   - a changed main-source class named in GLOSSARY.md, with GLOSSARY.md untouched
+#   - any main-source change with CHANGELOG.md untouched
 #   - a new docs/adr/NNNN-*.md with docs/adr/README.md untouched, or a number
 #     missing from that index
 # Heuristic, always exits 0: the flags are for the round's author to read.
@@ -36,13 +36,13 @@ fi
 
 changed=$(
 	{
-		git diff --name-only HEAD -- 'src/main/java'
-		git ls-files --others --exclude-standard -- 'src/main/java'
+		git diff --name-only HEAD -- 'common/src/main/java' 'versions/*/src/main/java'
+		git ls-files --others --exclude-standard -- 'common/src/main/java' 'versions/*/src/main/java'
 	} | sort -u
 )
 if [ -z "$changed" ]; then
 	if [ "$found" -eq 0 ]; then
-		echo "doc-flags: no src/main/java changes in the round"
+		echo "doc-flags: no main-source changes in the round"
 	fi
 	exit 0
 fi
@@ -58,7 +58,7 @@ if ! touched GLOSSARY.md; then
 fi
 
 if ! touched CHANGELOG.md; then
-	echo "doc-flags: src/main/java changed and CHANGELOG.md is untouched (fine for a refactor, expected for a player-visible change)"
+	echo "doc-flags: main sources changed and CHANGELOG.md is untouched (fine for a refactor, expected for a player-visible change)"
 	found=1
 fi
 

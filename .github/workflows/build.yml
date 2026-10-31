@@ -11,7 +11,7 @@ jobs:
       - uses: actions/checkout@v7
       - uses: actions/setup-java@v6
         with:
-          # fabric-loom 1.18.2 requires a Java 25 JVM to run; the mod still targets Java 21.
+          # fabric-loom 1.18.2 requires a Java 25 JVM to run; the mod still targets Java 17/21/25 per version module.
           distribution: temurin
           java-version: 25
       - uses: gradle/actions/setup-gradle@v6
@@ -19,10 +19,19 @@ jobs:
         run: |
           grep -q "All Rights Reserved" LICENSE
           grep -q "All Rights Reserved" README.md
-          grep -q '"license": "ARR"' src/main/resources/fabric.mod.json
-          if grep -rnw "MIT" LICENSE README.md src/main/resources/fabric.mod.json; then
+          for jar in versions/*/src/main/resources/fabric.mod.json; do
+            grep -q '"license": "ARR"' "$jar"
+          done
+          if grep -rnw "MIT" LICENSE README.md versions/*/src/main/resources/fabric.mod.json; then
             echo "license-agreement: stale MIT reference in license metadata"; exit 1
           fi
-      # ./gradlew: the wrapper is the single source of the Gradle version.
-      - run: ./gradlew build --info
-      - run: tools/mixin-targets.sh
+      - name: build-and-test every version
+        run: |
+          ./gradlew build --info
+          ./gradlew test --info
+      # Per-version mixin targets: one obfuscated target list per version module.
+      # 26.3 ships deobfuscated, so its jar has no intermediary ids to resolve.
+      - name: mixin-targets 1.20.1
+        run: tools/mixin-targets.sh
+      - name: mixin-targets 1.21.1
+        run: tools/mixin-targets.sh versions/1.21.1/build/libs/infusedclasses-*.jar
