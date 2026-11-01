@@ -55,9 +55,6 @@ public final class PassiveSweep {
 		for (ClassDefinition.AlwaysOn alwaysOn : def.alwaysOn()) {
 			all.addAll(alwaysOn.modifiers());
 		}
-		for (HpScaledPassive hp : def.hpPassives()) {
-			all.add(PassiveEffect.forBucket(hp, 1));
-		}
 		for (WindowFamily family : WindowFamily.allFamilies()) {
 			if (def.hasAbility(family.marker())) {
 				all.addAll(family.all());

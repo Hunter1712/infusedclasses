@@ -76,7 +76,7 @@ class ClassSwitchCleanupTest {
 	@Test
 	void aClassCarryingAequilibriumWithoutRotateStillSweepsItsPlate() {
 		ClassDefinition aeqOnly = new ClassDefinition("infusedclasses:aeq_only",
-				"Aeq Only", List.of(), List.of(), List.of(), 0, "",
+				"Aeq Only", List.of(), List.of(), 0, "",
 				List.of(new ClassDefinition.ActiveAbility(ClassRegistry.AEQUILIBRIUM_ABILITY, "Aequilibrium", "copy")),
 				List.of(), CritRule.universal());
 

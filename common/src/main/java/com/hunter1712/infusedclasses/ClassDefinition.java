@@ -8,7 +8,6 @@ public record ClassDefinition(
 		String id,
 		String displayName,
 		List<ConditionalPassive> passives,
-		List<HpScaledPassive> hpPassives,
 		List<AlwaysOn> alwaysOn,
 		int accentColor,
 		String tagline,
@@ -35,13 +34,6 @@ public record ClassDefinition(
 
 	/** One flip buff on a card: display copy only, never gated. */
 	public record FlipBuff(String name, String desc) {
-	}
-
-	/** A kit with no always-on rows: nothing to write while classed. */
-	public ClassDefinition(String id, String displayName, List<ConditionalPassive> passives,
-			List<HpScaledPassive> hpPassives, int accentColor, String tagline,
-			List<ActiveAbility> actives, List<FlipBuff> flipBuffs, CritRule critRule) {
-		this(id, displayName, passives, hpPassives, List.of(), accentColor, tagline, actives, flipBuffs, critRule);
 	}
 
 	/**

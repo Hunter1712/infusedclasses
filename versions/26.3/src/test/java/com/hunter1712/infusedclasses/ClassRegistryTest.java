@@ -76,8 +76,6 @@ class ClassRegistryTest {
 						.toList());
 		// The heavier hit is a deal mult the plan reads, never a written attribute.
 		assertEquals(Burden.DEAL_MULT, juggernaut.alwaysOn().get(0).dealMult());
-		// Vigor is cut: the class carries no HP-scaled passive.
-		assertTrue(juggernaut.hpPassives().isEmpty());
 	}
 
 	@Test

@@ -42,7 +42,6 @@ public final class ClassRegistry {
 				JUGGERNAUT,
 				"Juggernaut",
 				List.of(Momentum.PASSIVE),
-				List.of(),
 				List.of(Burden.chassis()),
 				0xFFE74C3C,
 				"Frontline bruiser",

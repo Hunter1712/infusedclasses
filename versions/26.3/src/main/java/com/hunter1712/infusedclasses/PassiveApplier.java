@@ -38,12 +38,6 @@ public final class PassiveApplier {
 				AttributeWriter.write(player, modifier);
 			}
 		}
-		// No stacks, no grace: recomputed from live HP every tick; the writer's early-out
-		// already covers no-op ticks, bucket 0 removes like a dead bar.
-		int bucket = HpScaledPassive.bucketForCurrent(player.getHealth(), player.getMaxHealth());
-		for (HpScaledPassive hp : def.hpPassives()) {
-			settlePlan(player, PassiveEffect.planForBucket(hp, bucket));
-		}
 		reconcileWindows(player, def, state);
 	}
 
@@ -81,19 +75,6 @@ public final class PassiveApplier {
 			}
 		}
 		return false;
-	}
-
-	/**
-	 * Applies a single passive effect plan: write the wanted modifier, remove the stale one,
-	 * or skip. The adapter owns the write/remove/skip decision so the caller only computes plans.
-	 */
-	private static void settlePlan(ServerPlayer player, PassiveEffect.Plan plan) {
-		switch (plan) {
-			case PassiveEffect.Plan.Write(var wanted) -> AttributeWriter.write(player, wanted);
-			case PassiveEffect.Plan.Remove(var attribute, var modifierId) -> AttributeWriter.remove(player, attribute, modifierId);
-			case PassiveEffect.Plan.Skip() -> {
-			}
-		}
 	}
 
 	/**

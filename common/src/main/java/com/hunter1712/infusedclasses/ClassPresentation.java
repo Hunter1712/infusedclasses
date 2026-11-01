@@ -1,9 +1,7 @@
 package com.hunter1712.infusedclasses;
 
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 
 /**
  * Pure presentation for the focused picker card. One seam for all renderers:
@@ -77,7 +75,7 @@ public final class ClassPresentation {
 		int accent = def.accentColor();
 		List<CardLine> lines = new ArrayList<>();
 		lines.add(new CardLine("Passives", null, LineKind.PASSIVE_HEADER, accent));
-		if (!def.passives().isEmpty() || !def.hpPassives().isEmpty() || !def.alwaysOn().isEmpty()
+		if (!def.passives().isEmpty() || !def.alwaysOn().isEmpty()
 				|| !def.flipBuffs().isEmpty() || def.critRule().hasDice()) {
 			for (ConditionalPassive p : def.passives()) {
 				lines.add(new CardLine(p.name(), p.rulesDesc(), LineKind.PASSIVE, accent));
@@ -87,16 +85,6 @@ public final class ClassPresentation {
 					lines.add(new CardLine(tier.name() + " at " + tier.threshold(),
 							p.tierDesc(tier), LineKind.TIER, accent));
 				}
-			}
-			for (Map.Entry<String, List<HpScaledPassive>> entry : groupedHp(def).entrySet()) {
-				StringBuilder joined = new StringBuilder();
-				for (HpScaledPassive hp : entry.getValue()) {
-					if (!joined.isEmpty()) {
-						joined.append(" ");
-					}
-					joined.append(hp.fullDesc());
-				}
-				lines.add(new CardLine(entry.getKey(), joined.toString(), LineKind.PASSIVE, accent));
 			}
 			for (ClassDefinition.AlwaysOn alwaysOn : def.alwaysOn()) {
 				lines.add(new CardLine(alwaysOn.name(), alwaysOn.desc(), LineKind.PASSIVE, accent));
@@ -118,15 +106,6 @@ public final class ClassPresentation {
 			}
 		}
 		return lines;
-	}
-
-	/** HP-scaled passives read as one entry per family, in first-appearance order. */
-	private static Map<String, List<HpScaledPassive>> groupedHp(ClassDefinition def) {
-		Map<String, List<HpScaledPassive>> groups = new LinkedHashMap<>();
-		for (HpScaledPassive hp : def.hpPassives()) {
-			groups.computeIfAbsent(hp.group(), k -> new ArrayList<>()).add(hp);
-		}
-		return groups;
 	}
 
 	/**

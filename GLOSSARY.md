@@ -191,12 +191,6 @@ hit is a deal mult the melee plan reads (see `Always-on passive`), never a writt
 class reads slow and heavy first; Momentum never gives that speed back.
 _Avoid_: rage, frenzy stacks
 
-**HP-scaled passive** (`HpScaledPassive`):
-The shared bucket machinery: current HP maps to ten stepped buckets, each a fixed bonus over a
-floor, recomputed every tick and transient. No class registers one today — Vigor retired with
-ADR-0027 — but the module and the applier's bucket pass remain for the next kit that wants one.
-_Avoid_: rage, frenzy stacks
-
 **Stack**:
 One earned increment of a conditional passive, counted per player and capped at that passive's
 maximum. Stacks are keyed by the passive definition, never by its name, so a passive is addressed
