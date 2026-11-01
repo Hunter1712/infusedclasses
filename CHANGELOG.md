@@ -26,13 +26,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - Multi-version support (ADR-0033): one jar per supported Minecraft version, `infusedclasses-<mod>+<mc>.jar`.
-  - Minecraft **1.20.1** (Fabric API `0.92.12+1.20.1`, Java 17)
   - Minecraft **1.21.1** (`0.116.17+1.21.1`, Java 21)
   - Minecraft **26.3** (`0.165.0+26.3`, Java 25)
 
 ### Changed
 - The build is multi-module: a plain Java library `common` holds the version-agnostic decisions and their
-  tests, and one Fabric module per version (`versions/1.20.1`, `versions/1.21.1`, `versions/26.3`)
+  tests, and one Fabric module per version (`versions/1.21.1`, `versions/26.3`)
   holds its adapters, mixins, networking, client code and resources. Gameplay decisions are written
   once, so class balance and behaviour do not differ by release; only the Minecraft-coupled seams
   (identifier naming, save data, mixin targets, networking API, damage hooks, attribute keys, client

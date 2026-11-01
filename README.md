@@ -10,9 +10,9 @@ Crits are a mod rule: vanilla jump crits are retired, and every full-charge land
 
 ## Requirements 
 
-- Minecraft **1.20.1**, **1.21.1** or **26.3** — one jar per version, each declaring `~<mc>` in its module's `src/main/resources/fabric.mod.json`
-- Fabric Loader `>=0.19.5`, Fabric API, and the Java runtime your version needs (17 / 21 / 25)
-- No Forge/Quilt support. **1.21.11 is no longer supported** — see [docs/guide/version-policy.md](docs/guide/version-policy.md).
+- Minecraft **1.21.1** or **26.3** — one jar per version, each declaring `~<mc>` in its module's `src/main/resources/fabric.mod.json`
+- Fabric Loader `>=0.19.5`, Fabric API, and the Java runtime your version needs (21 / 25)
+- No Forge/Quilt support. **1.20.1 and 1.21.11 are no longer supported** — see [docs/guide/version-policy.md](docs/guide/version-policy.md).
 
 ## Install
 

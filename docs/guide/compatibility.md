@@ -6,11 +6,10 @@ One project page, one jar per game version. Download the jar whose `+<mc>` suffi
 
 | Mod loader | Minecraft | Java | Jar |
 |------------|-----------|------|-----|
-| Fabric | 1.20.1 | 17+ | `infusedclasses-<mod>+1.20.1.jar` |
 | Fabric | 1.21.1 | 21+ | `infusedclasses-<mod>+1.21.1.jar` |
 | Fabric | 26.3 | 25+ | `infusedclasses-<mod>+26.3.jar` |
 
-Each jar declares a single-version range (`~<mc>`) in its own `fabric.mod.json`, so a jar for the wrong version is rejected at launch rather than misbehaving. No Forge/Quilt support. **1.21.11 is no longer supported** — its jar does not exist downstream of that release; move to the nearest supported version — see [version-policy.md](version-policy.md).
+Each jar declares a single-version range (`~<mc>`) in its own `fabric.mod.json`, so a jar for the wrong version is rejected at launch rather than misbehaving. No Forge/Quilt support. **1.20.1 and 1.21.11 are no longer supported** — their jars do not exist downstream of that release; move to the nearest supported version — see [version-policy.md](version-policy.md).
 
 ## Dependencies
 

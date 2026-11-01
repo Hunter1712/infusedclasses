@@ -13,7 +13,7 @@ rootProject.name = 'infusedclasses'
 
 include 'common'
 
-['1.20.1': 'mc1201', '1.21.1': 'mc1211', '26.3': 'mc263'].each { gameVersion, moduleName ->
+['1.21.1': 'mc1211', '26.3': 'mc263'].each { gameVersion, moduleName ->
 	include moduleName
 	project(":${moduleName}").projectDir = file("versions/${gameVersion}")
 }

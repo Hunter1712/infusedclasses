@@ -47,7 +47,7 @@ public final class AbilityApplier {
 		if (announcement == null) {
 			return;
 		}
-		player.sendSystemMessage(component(announcement));
+		player.sendSystemMessage(component(announcement), actionBar);
 	}
 
 	/**

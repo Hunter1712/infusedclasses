@@ -14,9 +14,9 @@ Crits are mod-owned: vanilla jump crits are retired, and every full-charge lande
 
 ## Requirements
 
-- Minecraft **1.20.1**, **1.21.1** or **26.3** (one jar per version), **Fabric Loader 0.19.5+**, **Fabric API**, **Java 17 / 21 / 25** per version
+- Minecraft **1.21.1** or **26.3** (one jar per version), **Fabric Loader 0.19.5+**, **Fabric API**, **Java 21 / 25** per version
 - Install the same jar on **both client and server** (server-required)
-- No Forge/Quilt. 1.21.11 is no longer supported.
+- No Forge/Quilt. 1.20.1 and 1.21.11 are no longer supported.
 
 ## Installation
 

@@ -31,7 +31,5 @@ jobs:
           ./gradlew test --info
       # Per-version mixin targets: one obfuscated target list per version module.
       # 26.3 ships deobfuscated, so its jar has no intermediary ids to resolve.
-      - name: mixin-targets 1.20.1
-        run: tools/mixin-targets.sh
       - name: mixin-targets 1.21.1
         run: tools/mixin-targets.sh versions/1.21.1/build/libs/infusedclasses-*.jar

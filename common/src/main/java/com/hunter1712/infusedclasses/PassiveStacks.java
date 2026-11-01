@@ -131,13 +131,17 @@ final class PassiveStacks {
 		}
 	}
 
-	/** Millis until the next stack is owed, 0 when the bar holds none. The same clock the bleed runs on. */
+	/** Millis until the quiet grace ends, 0 once the bar is bleeding. The bleed's own clock
+	 *  (nextDecayAt) is advanced by decay and is not grace — once grace has expired there is
+	 *  no countdown left to show, just the falling count. */
 	long graceRemaining(ConditionalPassive passive, long now) {
 		Held current = held.get(passive);
 		if (current == null || current.stacks() <= 0) {
 			return 0L;
 		}
-		return Math.max(0L, current.nextDecayAt() - now);
+		long graceEndsAt = current.lastFeedAt() + passive.graceSeconds() * 1000L;
+		long remaining = graceEndsAt - now;
+		return remaining > 0 ? remaining : 0L;
 	}
 
 	/**
