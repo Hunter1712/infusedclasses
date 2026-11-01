@@ -9,62 +9,20 @@ import java.util.Objects;
  * persisted or copied, so all of it dies with the session. The server entry holds one per player
  * and owns that lifetime: created on first use, empty again after a respawn, dropped on logout.
  *
- * Time arrives as a parameter and the class whose passives these are is passed in too, so this
- * module holds no clock and no reference to anyone's choice. Stack storage (counts, feed
- * stamps, the per-second bleed) lives in {@link PassiveStacks}; this module coordinates it
- * with cooldowns and ability windows. Stacks, the cap, the grace period and the earn amounts
- * are the passive's own facts, read off the definition it is handed, which is also what a
- * stack is keyed by: a passive is addressed by what it is, not by its name.
- *
- * <p>Ability state is keyed by {@link Lane}: one entry per lane, holding the cooldown
- * ({@link Cooldowns}) and the lane's window. Each ability owns its window constant and passes it
- * in where it arms, so this module never spells a lane's duration and a seventh window adds a
- * {@link Lane} value, not a field. Windows are timed and peeked, never owed: a window's spend
- * is decided by whoever reads it (the melee plan prices Onslaught off the live window), so a
- * window carries no payload of its own.
+ * <p>Time arrives as a parameter and the class whose passives these are is passed in too, so this
+ * module holds no clock and no reference to anyone's choice. Stack storage lives in
+ * {@link PassiveStacks}, ability windows in {@link AbilityWindows}, stance/flip/Streak in
+ * {@link AbilityState}, and cooldowns in {@link Cooldowns}. This module coordinates them and
+ * exposes one transient read: {@link #state}.
  *
  * <p>Reads cross one seam: {@link #state} answers the whole transient read at a {@code now},
- * so the status paths (the snapshot builder, {@code /class info}, the melee plan) take one
- * shape and one clock. Everything below it mutates.
+ * so the status paths take one shape and one clock. Everything below it mutates.
  */
 public final class PlayerRuntime {
-	// ponytail: cooldowns reset on relog, persist to NBT if the reset becomes an exploit.
 	private final Cooldowns cooldowns = new Cooldowns();
-	// Ability windows: press timestamps, one per lane. A window carries the duration stamped
-	// beside it at arm time (the firing ability's own constant, passed in). Timed windows
-	// nothing consumes are peeked every tick of the applier instead (Aequilibrium, All In,
-	// the Roulette outcome, Offload and Onslaught's rate reads) and can be ended early by
-	// their owner ({@link #endWindow}). Cleared with everything else, so switch and respawn
-	// never inherit a window.
-	private final EnumMap<Lane, Window> windows = freshWindows();
-	// Conditional-passive stacks: the bar, its feed stamp and its bleed clock, keyed by the
-	// passive definition, never by its name.
+	private final AbilityWindows windows = new AbilityWindows();
 	private final PassiveStacks passiveStacks = new PassiveStacks();
-	// Legionary form: transient per ADR-0002, every Legionary enters in Scutum.
-	// The choice stays in PlayerClasses; this is where the body is, not the pick.
-	private RotateAbility.Stance stance = RotateAbility.Stance.SCUTUM;
-	// Flip record: the last Rotate flip's landing, read beside the rotate lane's window on the
-	// same millis clock as every ability window. The Impetus flip buff peeks it (landed on
-	// Gladius inside the window, one-shot through the window's pending flag) and the Testudo
-	// buff peeks it (landed on Scutum, timed, never consumed). Stamped by rotate, cleared with
-	// everything else. Pending is only ever read under a Gladius landing, so flipping to Scutum
-	// needs no extra clear.
-	private RotateAbility.Stance flippedTo = null;
-	// Roulette's landed band, read beside the roulette lane's window: the passive applier peeks
-	// it every tick, the melee plan reads its deal mult, nothing spends it. Null when no spin's
-	// window is live.
-	private RouletteAbility.Outcome rouletteOutcome = null;
-	// Streak: the Gambler's loaded pocket, bumped and reset by the hit settle and
-	// nothing else. Transient like every earned count.
-	private int streak = 0;
-
-	private static EnumMap<Lane, Window> freshWindows() {
-		EnumMap<Lane, Window> map = new EnumMap<>(Lane.class);
-		for (Lane lane : Lane.values()) {
-			map.put(lane, new Window());
-		}
-		return map;
-	}
+	private final AbilityState abilityState = new AbilityState();
 
 	/**
 	 * The whole transient read at {@code now}: the one shape every status path crosses
@@ -131,18 +89,17 @@ public final class PlayerRuntime {
 	public State state(long now) {
 		EnumMap<Lane, LaneRead> lanes = new EnumMap<>(Lane.class);
 		for (Lane lane : Lane.values()) {
-			Window window = windows.get(lane);
 			lanes.put(lane, new LaneRead(
 					cooldowns.remaining(lane, now),
-					window.remainingMs(now),
-					oneShot(lane, window, now)));
+					windows.remainingMs(lane, now),
+					oneShot(lane, now)));
 		}
 		return new State(
 				lanes,
-				windows.get(Lane.ROTATE).isLive(now) ? flippedTo : null,
-				windows.get(Lane.ROULETTE).isLive(now) ? rouletteOutcome : null,
-				stance,
-				streak);
+				windows.isLive(Lane.ROTATE, now) ? abilityState.flippedTo() : null,
+				windows.isLive(Lane.ROULETTE, now) ? abilityState.rouletteOutcome() : null,
+				abilityState.stance(),
+				abilityState.streak());
 	}
 
 	/**
@@ -150,9 +107,9 @@ public final class PlayerRuntime {
 	 * whose one-shot is the Impetus buff — only a flip landed on Gladius carries one, so
 	 * the raw window flag (set by every arm) is never the read its consumers want.
 	 */
-	private boolean oneShot(Lane lane, Window window, long now) {
-		return window.hasPending(now)
-				&& (lane != Lane.ROTATE || flippedTo == RotateAbility.Stance.GLADIUS);
+	private boolean oneShot(Lane lane, long now) {
+		return windows.hasPending(lane, now)
+				&& (lane != Lane.ROTATE || abilityState.flippedTo() == RotateAbility.Stance.GLADIUS);
 	}
 
 	// Joint arms: lane plus window stamped together, so a fired press can never arm one
@@ -164,7 +121,7 @@ public final class PlayerRuntime {
 		if (!cooldowns.use(lane, now)) {
 			return false;
 		}
-		windows.get(lane).arm(now, windowMs);
+		windows.arm(lane, now, windowMs);
 		return true;
 	}
 
@@ -175,8 +132,8 @@ public final class PlayerRuntime {
 		if (!arm(Lane.ROTATE, now, windowMs)) {
 			return false;
 		}
-		stance = landing;
-		flippedTo = landing;
+		abilityState.stance(landing);
+		abilityState.flippedTo(landing);
 		return true;
 	}
 
@@ -185,7 +142,7 @@ public final class PlayerRuntime {
 		if (!arm(Lane.ROULETTE, now, RouletteAbility.WINDOW_TICKS * 50L)) {
 			return false;
 		}
-		rouletteOutcome = outcome;
+		abilityState.rouletteOutcome(outcome);
 		return true;
 	}
 
@@ -195,7 +152,7 @@ public final class PlayerRuntime {
 	 * no bonus left grants nothing, and an unswung window simply stops being live.
 	 */
 	public boolean consumeBonus(Lane lane, long now) {
-		return windows.get(lane).consume(now);
+		return windows.consume(lane, now);
 	}
 
 	/**
@@ -204,17 +161,17 @@ public final class PlayerRuntime {
 	 * Nothing owed is spilled — a timed window's rate is read while it lives and nowhere else.
 	 */
 	public void endWindow(Lane lane) {
-		windows.get(lane).clear();
+		windows.clear(lane);
 	}
 
 	/** One non-crit full hit loads the pocket: called by the hit settle with the plan's movement. */
 	public void bumpStreak() {
-		streak++;
+		abilityState.bumpStreak();
 	}
 
 	/** A landed crit spends the pocket: called by the hit settle with the plan's movement. */
 	public void resetStreak() {
-		streak = 0;
+		abilityState.resetStreak();
 	}
 
 	/**
@@ -223,60 +180,8 @@ public final class PlayerRuntime {
 	 */
 	public void resetAll() {
 		cooldowns.reset();
-		for (Window window : windows.values()) {
-			window.clear();
-		}
-		flippedTo = null;
-		rouletteOutcome = null;
-		streak = 0;
-		stance = RotateAbility.Stance.SCUTUM;
-	}
-
-	/**
-	 * One ability window: a press timestamp and the duration stamped beside it at arm time,
-	 * live for that duration after a fired press. Cleared with everything else, so switch
-	 * and respawn never inherit a window. One clock throughout: each ability names its
-	 * window constant once, where it arms.
-	 */
-	private static final class Window {
-		private long pressedAt = -1L;
-		private long durationMs;
-		private boolean pending;
-
-		boolean isLive(long now) {
-			return pressedAt >= 0 && now - pressedAt < durationMs;
-		}
-
-		long remainingMs(long now) {
-			if (!isLive(now)) {
-				return 0L;
-			}
-			return durationMs - (now - pressedAt);
-		}
-
-		void arm(long now, long durationMs) {
-			pressedAt = now;
-			this.durationMs = durationMs;
-			pending = true;
-		}
-
-		boolean hasPending(long now) {
-			return pending && isLive(now);
-		}
-
-		boolean consume(long now) {
-			if (!hasPending(now)) {
-				return false;
-			}
-			pending = false;
-			return true;
-		}
-
-		void clear() {
-			pressedAt = -1L;
-			durationMs = 0;
-			pending = false;
-		}
+		windows.clearAll();
+		abilityState.resetAll();
 	}
 
 	/** Current stacks for a passive, 0 when never triggered. */

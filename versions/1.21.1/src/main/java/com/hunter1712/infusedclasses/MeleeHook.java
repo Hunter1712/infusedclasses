@@ -49,9 +49,7 @@ final class MeleeHook {
 					() -> InfusedClasses.runtime(victim), now);
 			DamageSettle.settleTake(victim, damageTaken, take,
 					() -> mobAttacker.damageSources().mobAttack(mobAttacker));
-			// The struck player's own bar feeds here too: a melee hit taken is the
-			// same earning event as one dealt, and the same zero-damage gate applies.
-			MeleePlan.resolveTaken(victimDef, () -> InfusedClasses.runtime(victim), damageTaken, now);
+			feedVictim(victimDef, () -> InfusedClasses.runtime(victim), damageTaken, now);
 		}
 	}
 
@@ -80,6 +78,15 @@ final class MeleeHook {
 			return attacker;
 		}
 		return null;
+	}
+
+	/**
+	 * The struck player's own bar: a melee hit taken is the same earning event as one dealt,
+	 * under the same zero-damage gate. One seam so mob and player strikers feed identically.
+	 */
+	private static void feedVictim(ClassDefinition victimDef, Supplier<PlayerRuntime> victimRuntime,
+			float damageTaken, long now) {
+		MeleePlan.resolveTaken(victimDef, victimRuntime, damageTaken, now);
 	}
 
 	/**
@@ -124,9 +131,7 @@ final class MeleeHook {
 		if (lethal) {
 			return;
 		}
-		// The victim's own bar: a player struck by a player feeds ON_HIT_TAKEN here
-		// (mob strikes feed it in the branch above), under the same landed gate.
-		MeleePlan.resolveTaken(victimDef, victimRt, damageTaken, now);
+		feedVictim(victimDef, victimRt, damageTaken, now);
 		// Every attacker-side mult folds into combined: chassis, stance, wheel, oath,
 		// window and dice, times the victim's take; the settle turns what the hook
 		// reported into what landed and scales that once. Gladius + Impetus reads x1.1
