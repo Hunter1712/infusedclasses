@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-11-02
+
 ### Changed
 - Byte-identical adapters and their tests now live once under `versions/shared` and compile
   into each version module against that module's mappings. A fix lands on both Minecraft
