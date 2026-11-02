@@ -53,8 +53,8 @@ public final class StatusHud {
 		long elapsed = Math.max(0L, elapsedMs);
 		List<Row> rows = new ArrayList<>();
 		if (def.hasAbility(ClassRegistry.ROTATE_ABILITY)) {
-			RotateAbility.Stance stance = status.stance() == null
-					? RotateAbility.Stance.SCUTUM : status.stance();
+			RotateAbility.Stance stance = status.state().stance() == null
+					? RotateAbility.Stance.SCUTUM : status.state().stance();
 			rows.add(new Row(List.of(new Chip(stance.displayName(), "", true, false))));
 		}
 		// The class's shape draws both slot lines: the rows of the very targets the binds fire.
@@ -62,19 +62,19 @@ public final class StatusHud {
 		rows.add(laneRow(status, shape.signatureRow(), elapsed));
 		rows.add(laneRow(status, shape.ultimateRow(), elapsed));
 		ConditionalPassive momentum = def.passiveForTrigger(Trigger.ON_HIT_DEALT);
-		if (momentum != null && status.momentumStacks() > 0) {
+		if (momentum != null && status.bar().stacks() > 0) {
 			List<Chip> chips = new ArrayList<>();
 			chips.add(new Chip(momentum.name(), momentumValue(status, elapsed), true, false));
 			// The live checkpoint rides beside the bar as a bare word, the same shape
 			// as the wheel's band rider: which row the bar has reached is the information.
-			String tier = momentum.tierNameFor(status.momentumStacks());
+			String tier = momentum.tierNameFor(status.bar().stacks());
 			if (!tier.isEmpty()) {
 				chips.add(new Chip(tier, "", true, true));
 			}
 			rows.add(new Row(List.copyOf(chips)));
 		}
-		if (def.critRule().hasDice() && status.streak() > 0) {
-			rows.add(new Row(List.of(new Chip(CritRule.STREAK, Integer.toString(status.streak()), true, false))));
+		if (def.critRule().hasDice() && status.state().streak() > 0) {
+			rows.add(new Row(List.of(new Chip(CritRule.STREAK, Integer.toString(status.state().streak()), true, false))));
 		}
 		// A definition whose abilities map to no lane draws no row rather than a blank one.
 		rows.removeIf(row -> row.chips().isEmpty());
@@ -107,10 +107,10 @@ public final class StatusHud {
 	 * bare stacks rather than a `0s`, so the number only ever shows live time.
 	 */
 	private static String momentumValue(PlayerStatusPayload status, long elapsed) {
-		long grace = status.momentumGraceRemainingMs() - elapsed;
+		long grace = status.bar().graceRemainingMs() - elapsed;
 		return grace > 0
-				? status.momentumStacks() + " \u00b7 " + countdown(grace)
-				: Integer.toString(status.momentumStacks());
+				? status.bar().stacks() + " \u00b7 " + countdown(grace)
+				: Integer.toString(status.bar().stacks());
 	}
 
 	/** A lane chip: lit with its countdown while cooling, dim with no number the moment it is ready. */

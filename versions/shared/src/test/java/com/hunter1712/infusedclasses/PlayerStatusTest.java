@@ -52,7 +52,7 @@ class PlayerStatusTest {
 		assertEquals(0, payload.lane(Lane.ROTATE).windowRemainingMs());
 		assertNull(payload.flipTarget());
 		assertFalse(payload.lane(Lane.ROTATE).windowPending());
-		assertEquals(RotateAbility.Stance.SCUTUM, payload.stance());
+		assertEquals(RotateAbility.Stance.SCUTUM, payload.state().stance());
 	}
 
 	@Test
@@ -65,15 +65,15 @@ class PlayerStatusTest {
 
 		PlayerStatusPayload payload = snapshot(juggernaut(), runtime, now);
 
-		assertEquals(3, payload.momentumStacks());
-		assertEquals(5_000, payload.momentumGraceRemainingMs());
-		assertEquals(now, payload.momentumGraceStampMs());
+		assertEquals(3, payload.bar().stacks());
+		assertEquals(5_000, payload.bar().graceRemainingMs());
+		assertEquals(now, payload.bar().graceStampMs());
 
 		// A second later the stacks hold and only the grace remainder moved.
 		PlayerStatusPayload later = snapshot(juggernaut(), runtime, now + 1_000);
-		assertEquals(3, later.momentumStacks());
-		assertEquals(4_000, later.momentumGraceRemainingMs());
-		assertEquals(now, later.momentumGraceStampMs());
+		assertEquals(3, later.bar().stacks());
+		assertEquals(4_000, later.bar().graceRemainingMs());
+		assertEquals(now, later.bar().graceStampMs());
 	}
 
 	@Test
@@ -98,15 +98,15 @@ class PlayerStatusTest {
 			runtime.onTrigger(juggernaut(), Trigger.ON_HIT_DEALT, 0, 1.0F);
 		}
 		PlayerStatusPayload capped = snapshot(juggernaut(), runtime, 0);
-		assertEquals(Momentum.MAX_STACKS, capped.momentumStacks());
+		assertEquals(Momentum.MAX_STACKS, capped.bar().stacks());
 
 		// A hit at the cap moves neither count nor any armed flag: only the grace stamp.
 		runtime.onTrigger(juggernaut(), Trigger.ON_HIT_DEALT, 4_000, 1.0F);
 		PlayerStatusPayload restamped = snapshot(juggernaut(), runtime, 4_000);
 
-		assertEquals(Momentum.MAX_STACKS, restamped.momentumStacks());
-		assertEquals(5_000, restamped.momentumGraceRemainingMs());
-		assertEquals(4_000, restamped.momentumGraceStampMs());
+		assertEquals(Momentum.MAX_STACKS, restamped.bar().stacks());
+		assertEquals(5_000, restamped.bar().graceRemainingMs());
+		assertEquals(4_000, restamped.bar().graceStampMs());
 		assertTrue(restamped.movedSince(capped));
 	}
 
@@ -119,7 +119,7 @@ class PlayerStatusTest {
 
 		PlayerStatusPayload payload = snapshot(legionary(), runtime, now);
 
-		assertEquals(RotateAbility.Stance.GLADIUS, payload.stance());
+		assertEquals(RotateAbility.Stance.GLADIUS, payload.state().stance());
 		assertEquals(5_000, payload.lane(Lane.ROTATE).windowRemainingMs());
 		assertEquals(RotateAbility.Stance.GLADIUS, payload.flipTarget());
 		assertTrue(payload.lane(Lane.ROTATE).windowPending());
@@ -142,7 +142,7 @@ class PlayerStatusTest {
 		assertEquals(Lane.ROULETTE.cooldownMs(), payload.lane(Lane.ROULETTE).remainingMs());
 		assertEquals(15_000, payload.lane(Lane.ALL_IN).windowRemainingMs());
 		assertEquals(Lane.ALL_IN.cooldownMs(), payload.lane(Lane.ALL_IN).remainingMs());
-		assertEquals(1, payload.streak());
+		assertEquals(1, payload.state().streak());
 	}
 
 	@Test
@@ -151,8 +151,8 @@ class PlayerStatusTest {
 
 		PlayerStatusPayload classless = snapshot(null, runtime, 0);
 		assertEquals("", classless.classId());
-		assertEquals(0, classless.momentumStacks());
-		assertEquals(0, classless.momentumGraceRemainingMs());
+		assertEquals(0, classless.bar().stacks());
+		assertEquals(0, classless.bar().graceRemainingMs());
 		// The classless factory is the same shape, and reads no state at all.
 		assertEquals(PlayerStatusPayload.classless(), classless);
 		assertEquals(PlayerStatusPayload.classless(), snapshot(null, null, 0));

@@ -64,31 +64,6 @@ public record PlayerStatusPayload(
 		return state.rouletteOutcome();
 	}
 
-	/** The bar's count, 0 for a classless player or one carrying no bar. */
-	public int momentumStacks() {
-		return bar.stacks();
-	}
-
-	/** Millis until the bar's next stack is owed. A countdown, so the stack draws it; never compared. */
-	public long momentumGraceRemainingMs() {
-		return bar.graceRemainingMs();
-	}
-
-	/** The feed clock's last stamp; compared for movement, never read as time. */
-	public long momentumGraceStampMs() {
-		return bar.graceStampMs();
-	}
-
-	/** The Legionary's current stance; Scutum until the first Rotate. */
-	public RotateAbility.Stance stance() {
-		return state.stance();
-	}
-
-	/** The Gambler's loaded pocket. */
-	public int streak() {
-		return state.streak();
-	}
-
 	/**
 	 * The snapshot at {@code now}: the caller's one runtime state read behind every lane
 	 * read and every discrete fact, plus one bar read. The definition arrives already
@@ -133,11 +108,11 @@ public record PlayerStatusPayload(
 		}
 		writeStance(buf, p.flipTarget());
 		writeOutcome(buf, p.rouletteOutcome());
-		buf.writeInt(p.momentumStacks());
-		buf.writeLong(p.momentumGraceRemainingMs());
-		buf.writeLong(p.momentumGraceStampMs());
-		writeStance(buf, p.stance());
-		buf.writeInt(p.streak());
+		buf.writeInt(p.bar().stacks());
+		buf.writeLong(p.bar().graceRemainingMs());
+		buf.writeLong(p.bar().graceStampMs());
+		writeStance(buf, p.state().stance());
+		buf.writeInt(p.state().streak());
 	}
 
 	/** Reads what {@link #encode} writes, in the same order; ProtocolTest's populated round trip pins the two. */
