@@ -59,7 +59,7 @@ public final class OffloadAbility {
 	 * rejects silently first, then fewer than {@link #COST_STACKS} fizzles. Pure and
 	 * read-only: only {@link #fire} arms the lane and spends.
 	 */
-	public static AbilityOutcome trigger(ClassDefinition def, long offloadRemaining, int stacks) {
+	static AbilityOutcome trigger(ClassDefinition def, long offloadRemaining, int stacks) {
 		if (def == null || !def.hasAbility(ClassRegistry.OFFLOAD_ABILITY)) {
 			return AbilityOutcome.rejected();
 		}

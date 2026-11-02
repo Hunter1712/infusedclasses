@@ -27,7 +27,7 @@ public final class AllInAbility {
 	 * Decides firing for Gamblers off their lane, its fired line gold. Pure and
 	 * read-only: only {@link #fire} arms the lane and the window.
 	 */
-	public static AbilityOutcome trigger(ClassDefinition def, long allInRemaining) {
+	static AbilityOutcome trigger(ClassDefinition def, long allInRemaining) {
 		if (def == null || !def.hasAbility(ClassRegistry.ALL_IN_ABILITY)) {
 			return AbilityOutcome.rejected();
 		}

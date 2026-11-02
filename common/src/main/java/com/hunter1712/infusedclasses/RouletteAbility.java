@@ -141,7 +141,7 @@ public final class RouletteAbility {
 	 * Decides spinning for Gamblers off cooldown: the outcome is already cut from the
 	 * caller's roll. Pure and read-only: only {@link #fire} arms the lane and window.
 	 */
-	public static Result trigger(ClassDefinition def, long rouletteRemaining, float roll) {
+	static Result trigger(ClassDefinition def, long rouletteRemaining, float roll) {
 		if (def == null || !def.hasAbility(ClassRegistry.ROULETTE_ABILITY)) {
 			return Result.rejected();
 		}

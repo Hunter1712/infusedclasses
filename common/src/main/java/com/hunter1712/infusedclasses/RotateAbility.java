@@ -165,7 +165,7 @@ public final class RotateAbility {
 	}
 
 	/** Decides flipping for Legionaries off the rotate lock. Never fizzles on stance. Pure and read-only: only {@link #fire} arms the lane and flips. */
-	public static Result trigger(ClassDefinition def, long rotateRemaining, Stance current) {
+	static Result trigger(ClassDefinition def, long rotateRemaining, Stance current) {
 		if (def == null || !def.hasAbility(ClassRegistry.ROTATE_ABILITY)) {
 			return Result.rejected();
 		}

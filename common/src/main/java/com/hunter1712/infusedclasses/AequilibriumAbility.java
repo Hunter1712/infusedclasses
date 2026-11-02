@@ -57,7 +57,7 @@ public final class AequilibriumAbility {
 	 * Decides firing for Legionaries off the shared oath lane, in either stance, its
 	 * fired line gold. Pure and read-only: only {@link #fire} arms the lane and the window.
 	 */
-	public static AbilityOutcome trigger(ClassDefinition def, long oathRemaining) {
+	static AbilityOutcome trigger(ClassDefinition def, long oathRemaining) {
 		if (def == null || !def.hasAbility(ClassRegistry.AEQUILIBRIUM_ABILITY)) {
 			return AbilityOutcome.rejected();
 		}

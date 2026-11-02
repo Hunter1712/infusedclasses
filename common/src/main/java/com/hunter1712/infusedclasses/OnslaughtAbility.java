@@ -35,7 +35,7 @@ public final class OnslaughtAbility {
 	 * rejects silently first, then fewer than {@link #MIN_STACKS} fizzles. Pure and
 	 * read-only: only {@link #fire} arms the lane.
 	 */
-	public static AbilityOutcome trigger(ClassDefinition def, long onslaughtRemaining, int stacks) {
+	static AbilityOutcome trigger(ClassDefinition def, long onslaughtRemaining, int stacks) {
 		if (def == null || !def.hasAbility(ClassRegistry.ONSLAUGHT_ABILITY)) {
 			return AbilityOutcome.rejected();
 		}
