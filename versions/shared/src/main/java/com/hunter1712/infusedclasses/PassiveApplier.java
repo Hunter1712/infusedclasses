@@ -30,7 +30,7 @@ public final class PassiveApplier {
 		for (ConditionalPassive passive : def.passives()) {
 			// The bar owns its rows: each passive names what it writes at a stack count,
 			// so a second bar adds its own row, not a dispatch here.
-			reconcile(player, passive.barRows().apply(passive.maxStacks()),
+			reconcile(player, passive.allRows(),
 					passive.barRows().apply(runtime.stacks(passive)));
 		}
 		for (ClassDefinition.AlwaysOn alwaysOn : def.alwaysOn()) {

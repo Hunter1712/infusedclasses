@@ -49,7 +49,7 @@ public final class PassiveSweep {
 		}
 		List<PassiveEffect.Modifier> all = new ArrayList<>();
 		for (ConditionalPassive passive : def.passives()) {
-			all.addAll(passive.barRows().apply(passive.maxStacks()));
+			all.addAll(passive.allRows());
 		}
 		for (ClassDefinition.AlwaysOn alwaysOn : def.alwaysOn()) {
 			all.addAll(alwaysOn.modifiers());

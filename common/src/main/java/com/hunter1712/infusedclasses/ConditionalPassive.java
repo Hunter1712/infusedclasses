@@ -48,6 +48,11 @@ public record ConditionalPassive(
 		return amountFor(trigger) > 0;
 	}
 
+	/** Every modifier this bar can write: the full reconcile set, at max stacks. */
+	public List<PassiveEffect.Modifier> allRows() {
+		return barRows().apply(maxStacks());
+	}
+
 	/** What one feed of this trigger pays, 0 when nothing earns on it. */
 	public int amountFor(Trigger trigger) {
 		for (Earn earn : earns) {
