@@ -10,8 +10,9 @@ package com.hunter1712.infusedclasses;
  * ability adds a row, not a branch, and the stack can never draw one ultimate while the key
  * fires another.
  *
- * <p>The printed fallbacks (Offload, Onslaught) keep both keys answering for a classless
- * player and for a class carrying neither slot's ability; the drawn rows stay null there,
+ * <p>The printed fallbacks (Offload, Onslaught) keep both keys answering for a class
+ * carrying neither slot's ability; a classless press is rejected silently before this
+ * walk (ADR-0005). The drawn rows stay null there,
  * because there is no lane to draw. The intent receivers wire, this decides; decisions and
  * applies stay pure/adapter (ADR-0001).
  */
@@ -29,7 +30,7 @@ public final class BindMorph {
 
 	/**
 	 * The row a slot fires: the class's first active in that slot, the printed fallback
-	 * (Offload, Onslaught) for a classless player or a class carrying neither.
+	 * (Offload, Onslaught) for a class carrying neither.
 	 */
 	public static AbilityRoster.Row slotFor(ClassDefinition def, AbilityRoster.Slot slot) {
 		if (def != null) {

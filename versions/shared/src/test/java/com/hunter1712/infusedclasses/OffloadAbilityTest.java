@@ -108,14 +108,14 @@ class OffloadAbilityTest {
 
 		OffloadAbility.fire(juggernaut(), runtime, 0);
 
-		assertEquals(OffloadAbility.windowModifiers(), OffloadAbility.windowFamily().wanted().apply(runtime.state(0)));
-		assertEquals(OffloadAbility.windowModifiers(), OffloadAbility.windowFamily().wanted().apply(runtime.state(4_999)));
+		assertEquals(OffloadAbility.windowFamily().all(), OffloadAbility.windowFamily().wanted().apply(runtime.state(0)));
+		assertEquals(OffloadAbility.windowFamily().all(), OffloadAbility.windowFamily().wanted().apply(runtime.state(4_999)));
 		assertEquals(List.of(), OffloadAbility.windowFamily().wanted().apply(runtime.state(5_000)));
 	}
 
 	@Test
 	void theWindowWritesHasteAndSpeedUnderTheirOwnIds() {
-		List<PassiveEffect.Modifier> pair = OffloadAbility.windowModifiers();
+		List<PassiveEffect.Modifier> pair = OffloadAbility.windowFamily().all();
 
 		assertEquals(List.of(ClassRegistry.ATTACK_SPEED, ClassRegistry.MOVEMENT_SPEED),
 				pair.stream().map(PassiveEffect.Modifier::attribute).toList());

@@ -7,13 +7,13 @@ import java.util.Set;
 
 /**
  * What a class switch must take off: the sweep set. Every modifier the old class's kit
- * could write — its tiered bars, its always-on rows, its HP-scaled pair, and the whole
- * list of every window-aura family it marks — minus every modifier id the new class
- * writes. One entry per id, so a kit naming an id twice sweeps once; keyed by id, so a
- * class that re-earns a modifier keeps it and the next tick rewrites its value, and a
- * family both classes mark is left to the family's own sweep. Pure: the wiring only
- * removes. Assertable without a player, which is the point — a switch that orphans a
- * modifier is invisible in game until the attribute stays wrong forever.
+ * could write — its tiered bars, its always-on rows, and the whole list of every
+ * window-aura family it marks — minus every modifier id the new class writes. One entry
+ * per id, so a kit naming an id twice sweeps once; keyed by id, so a class that re-earns
+ * a modifier keeps it and the next tick rewrites its value, and a family both classes
+ * mark is left to the family's own sweep. Pure: the wiring only removes. Assertable
+ * without a player, which is the point — a switch that orphans a modifier is invisible
+ * in game until the attribute stays wrong forever.
  */
 public final class PassiveSweep {
 	private PassiveSweep() {
@@ -40,9 +40,8 @@ public final class PassiveSweep {
 
 	/**
 	 * Every modifier a class's kit can put on the player: its tiered bars, its always-on
-	 * rows, its HP-scaled pair, and the whole modifier list of each window family whose
-	 * marker it holds — the same sets the tick can write, read through the same mapping.
-	 * Empty for no class.
+	 * rows, and the whole modifier list of each window family whose marker it holds — the
+	 * same sets the tick can write, read through the same mapping. Empty for no class.
 	 */
 	public static List<PassiveEffect.Modifier> writtenBy(ClassDefinition def) {
 		if (def == null) {

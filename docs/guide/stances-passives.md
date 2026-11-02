@@ -30,11 +30,6 @@ with it.
 **Burden** — x1.15 damage (`DEAL_MULT`, read by the melee plan), -0.4 attack speed
 (`infusedclasses:burden_swing`). The swing is written every tick while classed, never earned.
 
-## HP-scaled machinery
-
-No class registers an HP-scaled passive today. The shared bucket machinery remains for a later
-kit; Vigor retired with the Momentum rework.
-
 ## Stances (Legionary)
 
 Not stacks: transient auras applied and removed at once on flip. Only the current stance's modifiers sit on the player; leaving the class takes them all off.

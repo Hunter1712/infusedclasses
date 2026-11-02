@@ -66,10 +66,10 @@ public final class ClassPresentation {
 	/**
 	 * Lines shown on the focused card: Passives header plus, per passive, its rules line
 	 * then one `TIER` row per checkpoint (e.g. `Steady at 15`, drawn indented so it hangs
-	 * off its bar), one per HP-scaled family (with joined descriptions), one per always-on
-	 * row, one per flip buff plus the generated Crooked Dice and Streak lines for a class
-	 * carrying dice, then Actives header plus one detail line per fired active. Every detail
-	 * line carries name plus short description, so nothing hides behind hover.
+	 * off its bar), one per always-on row, one per flip buff plus the generated Crooked
+	 * Dice and Streak lines for a class carrying dice, then Actives header plus one detail
+	 * line per fired active. Every detail line carries name plus short description, so
+	 * nothing hides behind hover.
 	 */
 	public static List<CardLine> cardLinesFor(ClassDefinition def) {
 		int accent = def.accentColor();

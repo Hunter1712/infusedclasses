@@ -3,10 +3,10 @@ package com.hunter1712.infusedclasses;
 
 /**
  * Attribute-modifier math, as a decision: the shared {@link Modifier} value every kit
- * writes under, and the HP-scaled bucket mapping. Pure: no player, level or attribute
- * instance is involved, so plain JUnit asserts the mapping and the server entry only has
- * to apply the answer. Conditional passives map through their own module
- * ({@link Momentum#forStacks}), read as the same Modifier shape.
+ * writes. Pure: no player, level or attribute instance is involved, so plain JUnit
+ * asserts the mapping and the server entry only has to apply the answer. Conditional
+ * passives map through their own module ({@link Momentum#forStacks}), read as the same
+ * Modifier shape.
  */
 public final class PassiveEffect {
 	private PassiveEffect() {

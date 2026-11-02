@@ -21,10 +21,9 @@ JUnit; the adapter owns every one of those.
 _Avoid_: the seam, the pure/live split (both too vague on their own), effect system
 
 **Passive effect** (`PassiveEffect`):
-The decision of which attribute modifier an HP-scaled bucket is worth, as an attribute, a
-modifier id and an amount, plus the write/remove/skip plan for it. Bucket zero means the passive
-contributes nothing, and that answer is an absent modifier rather than a zero-valued one; the
-bar's own rows are the `ConditionalPassive` tiers, not this.
+The shared value a passive writes: an attribute, a modifier id and an amount. The bar's own
+rows are the `ConditionalPassive` tiers, and each window family spells its own; a passive that
+contributes nothing writes no row, never a zero-valued one.
 _Avoid_: passive bonus, armor bonus, stack effect (the decision is not the thing on the player)
 
 **Passive applier** (`PassiveApplier`):
@@ -32,8 +31,8 @@ The adapter that makes the player's attributes agree with the passive effect. It
 the applied value differs from the wanted one, following one reconcile-by-modifier-id pass:
 write every wanted row, then remove every id in the family's full set that the wanted set does
 not name. Each tick runs the bleed (`PlayerRuntime.decay`), each bar's own rows for its
-current count (`ConditionalPassive.barRows`), each always-on chassis row (`Burden`), the HP-scaled
-buckets, then the window-aura families. A class switch removes what the old class wrote but the
+current count (`ConditionalPassive.barRows`), each always-on chassis row (`Burden`), then the
+window-aura families. A class switch removes what the old class wrote but the
 new one does not carry — the pure `cleanupFor(oldDef, newDef)` answers every modifier of that
 list, keyed by id, and `onClassChanged` only removes what it answered — then drops the old
 stacks and resets the lanes. The hit settle belongs to the melee plan (see `Melee plan`).
@@ -44,7 +43,7 @@ One window ability's aura group: the marker ability that owns it, every modifier
 write, and `wanted(state)`, the pure decision of what the ability's live windows earn. Each
 ability exposes its own row (`X.windowFamily()`) beside the modifiers it spells, so a further
 window ability adds its family there instead of editing the applier. The tick reconciles each
-family once after the bar and bucket passes — a held marker writes what is wanted and removes the
+family once after the bar and always-on passes — a held marker writes what is wanted and removes the
 rest, so the write and remove sides cannot drift; an absent marker sweeps everything the family
 could write. The four families are the Legionary stance, Aequilibrium's oath window, the wheel's
 live spin, and Offload's loosened pair.
@@ -129,7 +128,7 @@ _Avoid_: description, lore text
 
 **Class** (`ClassDefinition`):
 A playable archetype, registered once with its id, display name, passives, always-on rows,
-HP-scaled passives, accent colour, tagline, the actives list (one row per fired active: its ability id, name and
+accent colour, tagline, the actives list (one row per fired active: its ability id, name and
 picker description) plus the flip-buff list (one `FlipBuff` row per trigger-fired
 active: name plus description, shown under `Passives`). A class is data: it carries no player and no state of its own. The first passive on a
 trigger is found with `passiveForTrigger`, never by list position. Juggernaut, Legionary and Gambler are the three
@@ -253,8 +252,8 @@ _Avoid_: execute, heal button, second ability
 **Legionary** (`ClassRegistry`):
 The second playable class: `infusedclasses:legionary`, display `Legionary`,
 accent bronze `0xFFB87333`, tagline `Sword and shield`, actives Rotate plus the
-Impetus/Testudo flip buffs and the Aequilibrium oath ultimate. It carries no conditional passives and
-no HP-scaled pair: its stances are transient auras on the runtime (see below),
+Impetus/Testudo flip buffs and the Aequilibrium oath ultimate. It carries no conditional passives:
+its stances are transient auras on the runtime (see below),
 not stacks, so the card groups the flip buffs under `Passives` and the play lives
 in the fired actives. Every Legionary enters in `Scutum`.
 _Avoid_: roman, tank class
@@ -384,7 +383,8 @@ stance, wheel, oath, window, dice — arrives as the one combined mult, so the
 settle is the single landing point.
 Vanilla drops any same-tick
 follow-up that does not beat `lastHurt`, so the extra goes in with that memory
-cleared and leaves it at the hit plus what the bonus actually took off: the step lands
+cleared and leaves it at the hit plus what the bonus actually took off
+(`LastHurtMemory.restore`): the step lands
 silently with absorption, death
 protection and kill credit intact, and later hits still compare against the
 combined swing.
@@ -409,7 +409,7 @@ _Avoid_: recursion flag, lock
 The adapter that makes the player's attributes agree with the Legionary stance through the
 stance's own family (`RotateAbility.windowFamily`): only the current stance's modifiers sit on
 the player, the other stance's come off, same write-only-on-change shape as the always-on and
-bucket passes. Aequilibrium's plate is its own family on the shared oath window
+bar passes. Aequilibrium's plate is its own family on the shared oath window
 (`AequilibriumAbility.windowFamily`, its edge a deal mult, never written); the wheel's live spin
 and Offload's loosened pair are theirs (`RouletteAbility.windowFamily`,
 `OffloadAbility.windowFamily`). Each family carries its full modifier set, so the write and
@@ -607,7 +607,7 @@ _Avoid_: format, theme
 **Card lines** (`ClassPresentation.cardLinesFor`):
 The detail lines a focused card shows. A class shows a `Passives` header plus one
 name-plus-description rules line per passive and one indented `TIER` row per checkpoint,
-then one line per HP-scaled family (with joined descriptions), one per flip buff plus
+then one per always-on row, one per flip buff plus
 the generated `Crooked Dice` and `Streak` lines for a class carrying dice,
 or the
 header plus `No passives yet` when it has none, and an `Actives` header plus one
@@ -631,7 +631,7 @@ _Avoid_: select button
 
 **Card text** (`ClassPresentation.CardText`, `cardFor`):
 The card content: display name, tagline, detail lines (with kinds and styles) and accent colour.
-Frame and body resolve the card model once per page per frame.
+Frame and body share one card model per page and hover state; the screen caches it until either changes.
 
 **Card style** (`ClassPresentation.CardStyle`, `cardFor`):
 The hover-dependent visual layer: border colour and name colour, both derived from the
@@ -658,9 +658,10 @@ printed on the card and no tooltips anywhere. Side previous/next controls, click
 dots and keyboard paging (arrows/`A`/`D`) move between pages with wraparound; the
 signal carries the current class so reopening lands on its page. One pinned `Select`
 control per page, title, subtitle and the `Use Select to choose it` footer. It positions
-widgets from the renderer's focused math, resolves one view
-per frame (card rectangle, `CardModel` and measured layout together) and reuses it across the
-background and body passes, clamping the scroll against that view's own measure; how the card
+widgets from the renderer's focused math, resolves one view per page, hover state and
+screen size (card rectangle, `CardModel` and measured layout together), caches it, and reuses it
+across the background, body and scroll passes, clamping the scroll against that view's own measure;
+how the card
 draws is the card renderer's business, and what the card says is the card text's. It never pauses and never closes on Esc. A new class definition adds its own page with no layout change.
 _Avoid_: GUI, menu
 
@@ -679,7 +680,8 @@ Everything the focused card looks like: body, accent strip, border and hover hig
 plus the name, tagline, divider and wrapped detail lines. Every line left-aligns at the
 body's left edge and checkpoint rows indent past it, so a bar's tiers hang off their
 rules line; the frame tones come from the card palette. The screen measures the body
-once per frame (`measure` → `Measured(rows, layout)`), clamps the same frame's scroll
+once per page, hover state and screen size (`measure` → `Measured(rows, layout)`), caches it
+until one changes, clamps the same frame's scroll
 from the result, then draws from it. The wrap and the measure take the width as a function of
 the string — the screen passes `font::width` — so both are assertable with a stub measure and
 neither reads a `Font`. Names draw in their

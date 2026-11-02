@@ -38,7 +38,7 @@ class WindowFamilyTest {
 		assertEquals(List.of(), family.wanted().apply(runtime.state(0)));
 
 		runtime.arm(Lane.OATH, 0, AequilibriumAbility.WINDOW_TICKS * 50L);
-		assertEquals(AequilibriumAbility.windowModifiers(), family.wanted().apply(runtime.state(0)));
+		assertEquals(family.all(), family.wanted().apply(runtime.state(0)));
 		// The window's read is the state's, so it drops at its boundary like every other window.
 		assertEquals(List.of(), family.wanted().apply(runtime.state(6_000)));
 	}
@@ -65,8 +65,8 @@ class WindowFamilyTest {
 		assertEquals(List.of(), family.wanted().apply(runtime.state(0)));
 
 		runtime.arm(Lane.OFFLOAD, 0, OffloadAbility.WINDOW_TICKS * 50L);
-		assertEquals(OffloadAbility.windowModifiers(), family.wanted().apply(runtime.state(0)));
-		assertEquals(OffloadAbility.windowModifiers(), family.wanted().apply(runtime.state(4_999)));
+		assertEquals(family.all(), family.wanted().apply(runtime.state(0)));
+		assertEquals(family.all(), family.wanted().apply(runtime.state(4_999)));
 		assertEquals(List.of(), family.wanted().apply(runtime.state(5_000)));
 	}
 }

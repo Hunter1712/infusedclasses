@@ -22,15 +22,6 @@ public final class AequilibriumAbility {
 	public static final String PLATE_ID =
 			ModIds.MOD_ID + ":aequilibrium_plate";
 
-	/**
-	 * The window aura as modifiers: what sits on the player while Aequilibrium is live.
-	 * Single source for the applier's write and remove paths, so they cannot drift.
-	 * Shared instance: the tick iterates it, never mutates.
-	 */
-	public static List<PassiveEffect.Modifier> windowModifiers() {
-		return WINDOW_AURA;
-	}
-
 	private static final List<PassiveEffect.Modifier> WINDOW_AURA = List.of(
 			new PassiveEffect.Modifier(ClassRegistry.ARMOR, PLATE_ID, PLATE_BONUS));
 

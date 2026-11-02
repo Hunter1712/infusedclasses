@@ -27,7 +27,7 @@ moves under that weight. No max-health bonus (vanilla 20 HP).
 
 ## Legionary — Sword and shield
 
-Stance trader with flip buffs and one oath ultimate. Carries no conditional passives and no HP-scaled pair: stances are transient auras, not stacks. Every Legionary enters in Scutum.
+Stance trader with flip buffs and one oath ultimate. Carries no conditional passives: stances are transient auras, not stacks. Every Legionary enters in Scutum.
 
 **Stances**
 
@@ -43,7 +43,7 @@ Stance trader with flip buffs and one oath ultimate. Carries no conditional pass
 
 ## Gambler — Double or nothing
 
-Wheel-and-dice class: Roulette spins stat bands and All In loads the crits, and the crit rule doubles as its passives. Carries no conditional passives and no HP-scaled pair: Streak is a transient counter, not stacks.
+Wheel-and-dice class: Roulette spins stat bands and All In loads the crits, and the crit rule doubles as its passives. Carries no conditional passives: Streak is a transient counter, not stacks.
 
 **Actives**
 

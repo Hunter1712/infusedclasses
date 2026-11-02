@@ -73,23 +73,6 @@ class MomentumTest {
 	}
 
 	@Test
-	void theSweepSetHoldsEveryIdOnce() {
-		List<PassiveEffect.Modifier> all = Momentum.allModifiers();
-
-		assertEquals(List.of("infusedclasses:momentum_armor", "infusedclasses:momentum_weight",
-				"infusedclasses:momentum_knockback"), ids(all));
-		assertEquals(all.size(),
-				all.stream().map(PassiveEffect.Modifier::modifierId).distinct().count());
-	}
-
-	@Test
-	void theBarCarriesItsOwnRows() {
-		assertEquals(Momentum.allModifiers(), Momentum.PASSIVE.barRows().apply(Momentum.MAX_STACKS));
-		assertEquals(Momentum.forStacks(30), Momentum.PASSIVE.barRows().apply(30));
-		assertEquals(List.of(), Momentum.PASSIVE.barRows().apply(0));
-	}
-
-	@Test
 	void theOnePassiveIsFedByBothHitDirections() {
 		ConditionalPassive momentum = Momentum.PASSIVE;
 

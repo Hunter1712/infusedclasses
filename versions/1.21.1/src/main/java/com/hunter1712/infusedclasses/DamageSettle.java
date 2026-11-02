@@ -124,8 +124,7 @@ public final class DamageSettle {
 				try {
 					living.hurt(settled, amount);
 				} finally {
-					float landed = Math.max(0.0F, before - living.getHealth());
-					access.infused$lastHurt(lastHurt + landed);
+					access.infused$lastHurt(LastHurtMemory.restore(lastHurt, before, living.getHealth()));
 				}
 			} else {
 				target.hurt(settled, amount);

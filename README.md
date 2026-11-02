@@ -18,7 +18,7 @@ Crits are a mod rule: vanilla jump crits are retired, and every full-charge land
 
 1. Install Fabric Loader + Fabric API for your Minecraft version.
 2. Build or fetch the jar for it: `./gradlew build` produces one jar per supported version under `versions/<mc>/build/libs/infusedclasses-<mod>+<mc>.jar` (gitignored via `.gitignore:2`). Jars carry the game version (`infusedclasses-<mod>+<mc>.jar`) so each slots onto the same page.
-3. Drop the same jar in `mods/` on **both client and server** (server-required; the supported setup installs both sides). For the live dev instance: `./gradlew deployClient` (`gradle/version-module.gradle`).
+3. Drop the same jar in `mods/` on **both client and server** (server-required; the supported setup installs both sides). For the live dev instance: `./gradlew :mc1211:deployClient` (or `:mc263:deployClient`) (`gradle/version-module.gradle`).
 4. Reset class data after updates if told to: `/class select <player>`.
 
 ## Feedback

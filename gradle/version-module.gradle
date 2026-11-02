@@ -15,6 +15,18 @@ repositories {
 	mavenCentral()
 }
 
+// Byte-identical adapters and their tests live once, outside the version modules, and
+// compile per module against that module's mappings. A file that needs a version-specific
+// API moves back into the module.
+sourceSets {
+	main {
+		java.srcDir rootProject.file('versions/shared/src/main/java')
+	}
+	test {
+		java.srcDir rootProject.file('versions/shared/src/test/java')
+	}
+}
+
 // 26.x ships deobfuscated (see fabric.loom.disableObfuscation in its gradle.properties)
 // and publishes no Mojang mappings; earlier versions use official names.
 def unobfuscated = project.findProperty('mappings_kind') == 'identity'

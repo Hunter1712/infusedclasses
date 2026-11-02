@@ -14,7 +14,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class ProtocolTest {
 	@Test
-	void fourDistinctNamespacedChannels() {
+	void fiveDistinctNamespacedChannels() {
 		Set<Identifier> ids = new HashSet<>(Set.of(
 				SelectClassPayload.TYPE.id(),
 				OpenClassScreenPayload.TYPE.id(),

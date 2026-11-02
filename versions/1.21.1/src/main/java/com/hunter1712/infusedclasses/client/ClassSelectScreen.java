@@ -39,10 +39,16 @@ public class ClassSelectScreen extends Screen {
 	private final List<Button> dots = new ArrayList<>();
 	private int page;
 	private int scrollPx;
-	// One resolved view per frame: the background pass resolves the card, its model and its
-	// measured layout together, and the body pass reuses that one value. Scroll clamps
-	// against the same measured layout instead of a separate last-max field.
+	// One resolved view: the background pass resolves the card, its model and its measured
+	// layout together, and the body pass reuses that one value. Scroll clamps against the
+	// same measured layout instead of a separate last-max field. The cache holds while the
+	// page, the hover state and the screen size hold: wrapping the card text is the
+	// expensive half of a frame.
 	private View frame;
+	private int framePage = -1;
+	private boolean frameHovered;
+	private int frameWidth;
+	private int frameHeight;
 
 	/** One frame's resolved card: its rectangle, its presentation and its wrapped layout. */
 	private record View(CardLayout.CardRect card, ClassPresentation.CardModel model,
@@ -122,12 +128,21 @@ public class ClassSelectScreen extends Screen {
 		}
 	}
 
-	/** The one per-frame resolution: card rectangle, presentation model and measured layout. */
+	/** The one resolution: card rectangle, presentation model and measured layout. */
 	private View resolve(int mouseX, int mouseY) {
 		CardLayout.CardRect card = CardLayout.focusedCard(width, height);
-		ClassPresentation.CardModel model = ClassPresentation.cardFor(classes.get(page),
-				CardLayout.isHovering(card, mouseX, mouseY));
-		return new View(card, model, CardWrap.measure(card, model, font::width));
+		boolean hovered = CardLayout.isHovering(card, mouseX, mouseY);
+		if (frame != null && framePage == page && frameHovered == hovered
+				&& frameWidth == width && frameHeight == height) {
+			return frame;
+		}
+		ClassPresentation.CardModel model = ClassPresentation.cardFor(classes.get(page), hovered);
+		frame = new View(card, model, CardWrap.measure(card, model, font::width));
+		framePage = page;
+		frameHovered = hovered;
+		frameWidth = width;
+		frameHeight = height;
+		return frame;
 	}
 
 	@Override

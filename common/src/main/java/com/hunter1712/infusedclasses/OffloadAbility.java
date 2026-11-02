@@ -46,11 +46,6 @@ public final class OffloadAbility {
 				+ (WINDOW_TICKS / 20) + "s (R, " + (Lane.OFFLOAD.cooldownMs() / 1000) + "s).";
 	}
 
-	/** Every stat modifier the window can write: both the apply and the removal paths iterate this. */
-	public static List<PassiveEffect.Modifier> windowModifiers() {
-		return WINDOW;
-	}
-
 	/**
 	 * The loosened-window family row: the haste and speed pair in play, wanted only while
 	 * the Offload window is live. The row lives here beside the pair it spells.

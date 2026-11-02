@@ -12,7 +12,7 @@ public final class PassiveApplier {
 
 	/**
 	 * One tick for one player: the single reconcile home. Bleed, then the tiered bars,
-	 * then the always-on chassis, then the HP-scaled pair, then the window-aura families
+	 * then the always-on chassis, then the window-aura families
 	 * (the stance, Aequilibrium's oath window, the wheel's live spin, Offload's loosened
 	 * window), in that order; the switch's cleanup takes off what {@link #cleanupFor}
 	 * decides is stale. The tick order and the write-only-on-change discipline are

@@ -70,13 +70,4 @@ public final class Momentum {
 				new PassiveEffect.Modifier(ClassRegistry.MOVEMENT_SPEED, WEIGHT_ID, row.weight()),
 				new PassiveEffect.Modifier(ClassRegistry.KNOCKBACK_RESISTANCE, KNOCKBACK_ID, row.knockback()));
 	}
-
-	/**
-	 * Every id the bar can ever write, one entry per id: the sweep set a tick removes
-	 * what the current row does not name, and the set a class switch takes off. The
-	 * amounts are the top row's; only the ids are this list's point.
-	 */
-	public static List<PassiveEffect.Modifier> allModifiers() {
-		return forStacks(TIERS.get(TIERS.size() - 1).threshold());
-	}
 }

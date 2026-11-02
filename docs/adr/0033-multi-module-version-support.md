@@ -26,8 +26,8 @@ roster, bar, plan, palette and layout — has no Minecraft import at all.
 
 1. **The build is multi-module.** A plain Java library `common` compiles the version-agnostic
    decisions to Java 17 bytecode (the lowest runtime any target needs), and one Fabric module
-   per supported version (`versions/1.20.1`, `versions/1.21.1`, `versions/26.3`, Gradle names
-   `:mc1201`, `:mc1211`, `:mc263`) applies them. A shared `gradle/version-module.gradle` holds
+   per supported version (`versions/1.21.1`, `versions/26.3`, Gradle names `:mc1211`, `:mc263`)
+   applies them. A shared `gradle/version-module.gradle` holds
    the module template; each module's own `gradle.properties` declares its Minecraft version,
    Fabric API build, Java release and mappings kind.
 
@@ -44,7 +44,7 @@ roster, bar, plan, palette and layout — has no Minecraft import at all.
    `common`-side plain data: `ModIds` for ids, `AttributeRef` for the attribute a modifier
    lands on, `LineStyle` for a chat style, and `StatusView` as the seam the HUD reads a
    snapshot through. With those in place the decision core — class registry and definitions,
-   every ability module, the HP-scaled and conditional passives, `MeleePlan`, `PlayerRuntime`,
+   every ability module, the conditional passives, `MeleePlan`, `PlayerRuntime`,
    `CritRule`/`CritRoll`, `BindMorph`, `AbilityRoster`, `PassiveSweep`, `ClassPresentation`,
    `CardLayout`/`CardWrap`, `ClassInfo`, `WindowFamily` and `ChatLine` — lives once in
    `common` with its tests.
@@ -57,11 +57,15 @@ roster, bar, plan, palette and layout — has no Minecraft import at all.
    (`Identifier` on 26.3, `ResourceLocation` earlier), save data (`ValueInput`/
    `ValueOutput` vs `CompoundTag`), attribute modifier keys (`ResourceLocation` vs a
    `UUID.nameUUIDFromBytes` of it), the melee hook (Fabric's after-damage event vs a
-   `LivingEntityMixin` on 1.20.1), the vanilla-crit retirement (the inline `1.5F` in `attack`
+   `LivingEntityMixin` where a version needs one), the vanilla-crit retirement (the inline `1.5F` in `attack`
    plus `crit`/`magicCrit`, since no target exposes a cancellable `canCriticalAttack`),
    networking (`PayloadTypeRegistry` vs `PacketType` vs `CustomPacketPayload`) and client
    rendering (`GuiGraphics` vs `GuiGraphicsExtractor`, `HudElement.render` vs
    `extractRenderState`) all adapt inside the module that needs them.
+
+   Byte-identical adapters and their tests live once under `versions/shared` and compile
+   into each module against that module's mappings; a file that needs a version-specific
+   API moves back into its module. 1.20.1 was removed by ADR-0034; 1.21.1 and 26.3 remain.
 
 4. **One jar per version, named by it.** Each module produces `infusedclasses-<mod>+<mc>.jar`
    declaring `~<mc>` and its own Java floor, so a jar for the wrong version is rejected at
@@ -73,16 +77,14 @@ roster, bar, plan, palette and layout — has no Minecraft import at all.
 
 ## Consequences
 
-- A gameplay change is made once in `common` and ships to all three versions; a version-coupled
+- A gameplay change is made once in `common` and ships to both versions; a version-coupled
   change is made once in the one module that needs it. A balance or rule edit touches one file.
 - Adding a version is a new directory plus a port, not a fork; dropping one is a directory
   deletion. Removing 1.21.11 is therefore a deletion, not a deprecation.
 - Each module must compile and test independently, so a breakage in one target does not block
   the others (`./gradlew :mc1211:test` works alone).
-- Test cost roughly triples: the pure tests run in `common` once, but the coupled tests run per
-  module. 1.20.1 additionally boots vanilla registries in its test JVM (`MinecraftTestBootstrap`),
-  because its `Registries` static init reaches `BuiltInRegistries`.
-- In-game validation is manual and per version — see the spec's checklist. No automated UI test
+- Test cost roughly doubles: the pure tests run in `common` once, but the coupled tests run per
+  module. In-game validation is manual and per version — see the spec's checklist. No automated UI test
   is attempted.
 
 ## Superseded points

@@ -8,6 +8,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed
+- Byte-identical adapters and their tests now live once under `versions/shared` and compile
+  into each version module against that module's mappings. A fix lands on both Minecraft
+  versions at once; a file that needs a version-specific API stays in its module.
+- The picker caches its measured card until the page, the hover state or the screen size
+  changes, instead of re-wrapping it every frame.
 - The version-agnostic decision core now lives once in `common` rather than three times. Four
   common-side value types hold what was Minecraft-coupled: `ModIds` for ids, `AttributeRef`
   for the attribute a modifier lands on, `ChatStyle` for a chat style, and `StatusView` as the

@@ -19,11 +19,11 @@ No Forge/Quilt support. 1.20.1 and 1.21.11 are no longer supported — see [vers
 3. Drop the same jar into `mods/` on both sides:
    - Singleplayer: `.minecraft/mods/`
    - Server: the server's `mods/` folder
-4. Launch. First join with no class choice opens the picker automatically.
+4. Launch. A join with no class choice opens the picker automatically.
 
 ## First run
 
-- The picker opens once, on first join when the player has no class choice. Picking validates server-side and closes only on confirm — a rejected pick stays open for retry.
+- The picker opens on every join until the player has a class choice. Picking validates server-side and closes only on confirm — a rejected pick stays open for retry.
 - The class choice is the only saved fact (survives relog and respawn). Stacks and cooldowns are transient: they do not survive relog or respawn.
 - After updates you may be told to reselect: `/class select <player>`.
 

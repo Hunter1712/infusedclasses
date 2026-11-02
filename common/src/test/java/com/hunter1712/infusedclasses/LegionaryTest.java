@@ -209,7 +209,7 @@ class LegionaryTest {
 	void stanceAurasAreSingleSourced() {
 		var gladius = RotateAbility.auraFor(RotateAbility.Stance.GLADIUS);
 		var scutum = RotateAbility.auraFor(RotateAbility.Stance.SCUTUM);
-		var window = AequilibriumAbility.windowModifiers();
+		var window = AequilibriumAbility.windowFamily().all();
 
 		// What the applier writes is what it removes: two auras plus the window plate.
 		assertEquals(
